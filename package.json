@@ -1,0 +1,11 @@
+{
+    "name" : "pi-nodejs",
+    "version" : "0.0.1",
+    "private" : true,
+    "dependencies" : {
+    	"nodejs" : "0.10.2",
+        "mongodb" : "2.1.1-pre-",
+        "express" : "3.4.4",
+        "passport" : "0.1.17"
+    }
+}
