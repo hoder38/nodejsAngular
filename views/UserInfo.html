@@ -1,0 +1,51 @@
+<span id="initial" ng-init="init()"></span>
+<ul id="info">
+    <li ng-repeat="user in uInfo | filter:{isDel:false}">
+        <form ng-submit="save(user, 'name')" class="info-name">
+            <span ng-show="user.nameEdit||user.newable">
+                ID：<input type="text" value="{{user.name}}" ng-model="user.name" name="user-name" focus-me="user.nameFocus" ng-enter="focusPwd(user, 'name')" />
+            </span>
+            <span ng-show="user.nameEdit">
+                Password：<input type="password" name="passwd" class="pwd" ng-model="password" focus-me="user.nameFocusPwd" />
+                <input type="submit" value="Save" />
+                <input type="button" value="Esc" ng-click="esc(user, 'name')" />
+            </span>
+            <span ng-hide="user.nameEdit||user.newable" ng-dblclick="edit(user, 'name')">ID：{{user.name}}</span>
+        </form>
+        <form ng-show="user.hasDesc" ng-submit="save(user, 'desc')" class="info-desc">
+            <span ng-show="user.descEdit||user.newable">
+                Description：<input type="text" value="{{user.desc}}" ng-model="user.desc" name="user-desc" focus-me="user.descFocus" ng-enter="focusPwd(user, 'desc')" />
+            </span>
+            <span ng-show="user.descEdit">
+                Password：<input type="password" name="passwd" class="pwd" ng-model="password" focus-me="user.descFocusPwd" />
+                <input type="submit" value="Save" />
+                <input type="button" value="Esc" ng-click="esc(user, 'desc')" />
+            </span>
+            <span ng-hide="user.descEdit||user.newable" ng-dblclick="edit(user, 'desc')">Description：{{user.desc}}</span>
+        </form>
+        <form ng-show="user.hasPerm" ng-submit="save(user, 'perm')" class="info-perm">
+            <span ng-show="user.permEdit||user.newable">
+                Permission：<input type="text" value="{{user.perm}}" ng-model="user.perm" name="user-perm" focus-me="user.permFocus" ng-enter="focusPwd(user, 'perm')" />
+            </span>
+            <span ng-show="user.permEdit">
+                Password：<input type="password" name="passwd" class="pwd" ng-model="password" focus-me="user.permFocusPwd" />
+                <input type="submit" value="Save" />
+                <input type="button" value="Esc" ng-click="esc(user, 'perm')" />
+            </span>
+            <span ng-hide="user.permEdit||user.newable" ng-dblclick="edit(user, 'perm')">Permission：{{user.perm}}</span>
+        </form>
+        <form ng-submit="saveClean(user)" class="info-new-pwd">
+            <section class="info-new-pwd">
+                New Password: <input type="password" name="user-new-passwd" ng-model="user.newPwd" ng-enter="focusPwd(user, 'conPwd')">
+            </section>
+            <section class="info-con-pwd">
+                Confirm Password: <input type="password" name="user-confirm-passwd" ng-model="user.conPwd" focus-me="user.conPwdFocusPwd" ng-enter="focusPwd(user, 'oldPwd')">
+            </section>
+            <section class="info-old-pwd">
+                Password: <input type="password" name="passwd" ng-model="password" focus-me="user.oldPwdFocusPwd">
+            </section>
+            <input type="submit" value="Save" />
+            <button ng-show="user.delable" type="button" confirmed-click="delUser(user)" ng-confirm-click="Would you sure to delete this user?">Delete</button>
+        </form>
+    </li>
+</ul>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html ng-app="app">
+    <head>
+        <meta charset="utf-8">
+        <title>邊學AngularJS邊做Todo List (3)</title>
+        <script src="http://code.angularjs.org/1.2.9/angular.min.js"></script>
+        <script src="http://code.angularjs.org/1.2.9/angular-route.min.js"></script>
+        <script src="http://code.angularjs.org/1.2.9/angular-resource.min.js"></script>
+        <script src="http://code.angularjs.org/1.2.9/angular-cookies.min.js"></script>
+        <script type="text/javascript" src="script/angular-file-upload.js"></script>
+        <script type="text/javascript" src="script/controllers.js"></script>
+        <script type="text/javascript" src="script/frontend.js"></script>
+    </head>
+    <body ng-controller="TodoCrtlRemovable" nv-file-drop="" uploader="uploader">
+        <h1>Todo List</h1>
+        <h5>{{ clock }}</h5>
+        <form ng-submit="addItem()">
+            <input type="text" ng-model="newItem" name="newItem" />
+            <input type="submit" id="submit" value="新增待辦事項" />
+        </form>
+        <ul id="todo">
+            <li ng-repeat="item in todoList | filter:{isFinish:false}">
+                <div ng-hide="item.editing"><input type="checkbox" ng-click="removeItem(item)"><span ng-dblclick="main_edit(item)">{{item.label }}</span></div>
+                <div ng-show="item.editing"><input type="text" value="{{item.label }}" ng-model="item.label"><button ng-click="main_save(item)">儲存</button></div>
+            </li>
+        </ul>
+
+        <ul id="navigate-list">
+            <li ng-repeat="item in navList">
+                <a href="{{item.hash}}">{{item.title}}</a>
+            </li>
+        </ul>
+
+        <section ng-view>
+
+        </section>
+        <hr>
+
+        <h1>Finished!</h1>
+        <ul id="finish">
+            <li ng-repeat="item in todoList | filter:{isFinish:true}">
+                {{item.label}}
+            </li>
+        </ul>
+        <span>{{id}}</span>
+        <br/>
+        <a ng-click="doLogout()">logout</a>
+        <section id="uploader-section">
+            <input type="file" nv-file-select uploader="uploader"/>
+            <ul>
+                <li ng-repeat="item in uploader.queue">{{ item.file.name }}</li>
+            </ul>
+            <span ng-show="uploader.progress !== 100">Total progress: {{ uploader.progress }}</span>
+            <span ng-show="uploader.progress === 100">上傳完成，後端處理中</span>
+            <button ng-click="uploader.uploadAll()" ng-disabled="!uploader.getNotUploadedItems().length" disabled="disabled">Upload all</button>
+            <button ng-click="uploader.cancelAll()" ng-disabled="!uploader.isUploading" disabled="disabled">Cancel all</button>
+            <button ng-click="uploader.clearQueue()" ng-disabled="!uploader.queue.length" disabled="disabled">Remove all</button>
+        </section>
+        <section ng-show="miscUploader.open" id="misc-uploader-section" nv-file-drop="" uploader="miscUploader" style="width:400px; height:200px; background:red">
+            <input type="file" nv-file-select uploader="miscUploader"/>
+            <span ng-show="miscUploader.progress !== 100">Total progress: {{ miscUploader.progress }}</span>
+            <span ng-show="miscUploader.progress === 100">上傳完成，後端處理中</span>
+        </section>
+        <section id="feedback" ng-show="feedback.run">
+            <span>{{feedback.name}}</span>
+            <span>{{feedback.queue.length}}</span>
+            <ul id="feedbackList">
+                <li ng-repeat="item in feedback.other">
+                    {{item}}
+                </li>
+                <li ng-repeat="item in feedback.list">
+                    <input type="checkbox" ng-model="item.select">
+                    {{item.tag}}
+                    <input type="radio" name="select-tag" ng-model="feedbackSelectTag" value="{{item.tag}}" ng-repeat-value />
+                </li>
+                <li><input type="text" name="feedbackInput" ng-model="feedbackInput" ng-enter="addFeedback()"></li>
+            </ul>
+            <ul id="feedbackDirList">
+                <li ng-repeat="item in dirList">
+                    <input type="radio" name="add-dir" ng-model="feedbackAddDir" value="{{item.name}}" ng-repeat-value />
+                    {{item.show}}
+                </li>
+                <button type="button" confirmed-click="feedbackAdd2Parent()" ng-confirm-click="Would you sure to add this tag to Dir?">Send</button>
+            </ul>
+            <button type="button" name="feedbackSend" ng-click="sendFeedback()">confirm</button>
+        </section>
+        <button type="button" name="image-toggle" ng-click="mediaToggle('image')">image toggle</button>
+        <section id="imageSection" ng-show="image.show">
+            <img  ng-src="{{image.src}}" alt="{{image.name}}" ng-click="mediaMove(1, 'image')">
+            <button type="button" name="imagePre" ng-click="mediaMove(-1, 'image')">Pre</button>
+            <button type="button" name="imageNext" ng-click="mediaMove(1, 'image')">Next</button>
+        </section>
+        <button type="button" name="video-toggle" ng-click="mediaToggle('video')">video toggle</button>
+        <section id="videoSection" ng-show="video.show">
+            <video ng-src="{{video.src}}" controls autoplay ng-video ng-ended="mediaMove(1, 'video', true)" ng-play="testLogin()" ng-pause="mediaRecord('video')">
+                <track ng-src="{{video.sub}}" kind="subtitle" srclang="en-US" label="English" />
+            </video>
+            <button type="button" name="videoPre" ng-click="mediaMove(-1, 'video')">Pre</button>
+            <button type="button" name="videoNext" ng-click="mediaMove(1, 'video')">Next</button>
+        </section>
+        <button type="button" name="music-toggle" ng-click="mediaToggle('music')">music toggle</button>
+        <section id="musicSection" ng-show="music.show">
+            <audio ng-src="{{music.src}}" controls autoplay ng-music ng-ended="mediaMove(1, 'music', true)" ng-play="testLogin()" ng-pause="mediaRecord('music')">
+            </audio>
+            <button type="button" name="musicPre" ng-click="mediaMove(-1, 'music')">Pre</button>
+            <button type="button" name="musicNext" ng-click="mediaMove(1, 'music')">Next</button>
+        </section>
+        <button type="button" name="doc-toggle" ng-click="mediaToggle('doc')">doc toggle</button>
+        <section id="docSection" ng-show="doc.show">
+            <object width="100%" height="400px" data="{{doc.src}}" type="application/pdf">
+                <embed ng-src="{{doc.src}}" type="application/pdf" />
+            </object>
+            <button type="button" name="docPre" ng-click="mediaMove(-1, 'doc')">Pre</button>
+            <button type="button" name="docNext" ng-click="mediaMove(1, 'doc')">Next</button>
+        </section>
+        <button type="button" name="rawdoc-toggle" ng-click="mediaToggle('rawdoc')">rawdoc toggle</button>
+        <section id="rawdocSection" ng-show="rawdoc.show">
+            <iframe ng-src="{{rawdoc.src}}" style="border: 0;"></iframe>
+            <button type="button" name="rawdocPre" ng-click="mediaMove(-1, 'rawdoc')">Pre</button>
+            <button type="button" name="rawdocNext" ng-click="mediaMove(1, 'rawdoc')">Next</button>
+        </section>
+    </body>
+</html>

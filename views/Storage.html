@@ -1,0 +1,112 @@
+<span id="initial" ng-init="init()"></span>
+<section id="bookmark">
+    <li><a href="" ng-click="changeSort('bookmarkSort', 'name')">name&nbsp;<span>{{bookmarkSort.name}}</span></a>&nbsp;<a href="" ng-click="changeSort('bookmarkSort', 'mtime')">mtime&nbsp;<span>{{bookmarkSort.mtime}}</span></a></li>
+    <li ng-repeat="item in bookmarkList">
+        <span ng-click="getBookmarkItem(item.id)">{{item.name}}</span>
+        <button type="button" confirmed-click="delBookmark(item.id)" ng-confirm-click="Would you sure to delete this bookmark?">Delete</button>
+    </li>
+</section>
+<section id="search-input">
+    <form ng-submit="submitText()">
+        <input type="text" ng-model="inputText" name="inputText" />
+        <input type="submit" id="submitText" value="Search" />
+        exactly<input type="checkbox" ng-model="exactlyMatch" name="exactlyMatch">
+    </form>
+</section>
+<section id="dir-section">
+    <ul id="dirList">
+        <li ng-repeat="item in dirList" ng-click="showTaglist(item.name)">
+            {{item.show}}
+        </li>
+    </ul>
+    <ul id="dirTaglist" ng-show="dirTaglist.show">
+        <button ng-click="dirTaglist.show = false;">close</button>
+        <li><a href="" ng-click="changeSort('dirSort', 'name')">name&nbsp;<span>{{dirSort.name}}</span></a>&nbsp;<a href="" ng-click="changeSort('dirSort', 'mtime')">mtime&nbsp;<span>{{dirSort.mtime}}</span></a></li>
+        <li ng-repeat="item in dirTaglist.list">
+            <span ng-click="dirItemlist(item.id)">{{item.name}}</span>
+            <button ng-if="dirTaglist.isDel" type="button" confirmed-click="del2Parent(item.id)" ng-confirm-click="Would you sure to delete this tag?">Delete</button>
+        </li>
+        <button id="parentMore" ng-show="parentMore" ng-click="moreDirtaglist()">More</button>
+    </ul>
+</section>
+<section id="tag-input">
+    <ul id="tagList">
+        <li ng-repeat="tag in tagList">
+            <input type="radio" name="select-tag" ng-model="selectTag" value="{{tag}}" ng-repeat-value />
+            {{tag}}
+            <button type="button" confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to delete this tag? You can only delete tag which you added.">Delete</button>
+        </li>
+    </ul>
+    <form ng-submit="submitTag()">
+        <input type="text" ng-model="inputTag" name="inputTag" />
+        <input type="submit" id="submitTag" value="Add" />
+    </form>
+</section>
+<ul id="addDirList">
+    <li ng-repeat="item in dirList">
+        <input type="radio" name="add-dir" ng-model="addDir" value="{{item.name}}" ng-repeat-value />
+        {{item.show}}
+    </li>
+    <button type="button" confirmed-click="add2Parent()" ng-confirm-click="Would you sure to add this tag to Dir?">Send</button>
+</ul>
+<ul id="parentList">
+    <li ng-click="resetStorage()">
+        reset
+    </li>
+    <li ng-repeat="item in parentList" ng-click="gotoStorage($parent.this, item, $index)">
+        {{item}}<span ng-show="exactlyList[$index]"> 1</span>
+    </li>
+    <li ng-repeat="item in historyList" ng-click="gotoStorage($parent.this, item, $index+parentList.length)" style="color:red;">
+        {{item}}<span ng-show="exactlyList[$index+parentList.length]"> 1</span>
+    </li>
+</ul>
+<input type="text" ng-model="bookmarkName" name="bookmarkName" />
+<button id="addBookmark" ng-click="addBookmark()">Add to Bookmark</button>
+<ul id="itemList">
+    <li><a href="" ng-click="changeSort('fileSort', 'name')">name&nbsp;<span>{{fileSort.name}}</span></a>&nbsp;<a href="" ng-click="changeSort('fileSort', 'mtime')">mtime&nbsp;<span>{{fileSort.mtime}}</span></a></li>
+    <li ng-repeat="item in itemList">
+        <input type="checkbox" ng-model="item.select">
+        <span ng-hide="item.Edit">
+            <span ng-if="item.status < 2" confirmed-click="downloadFile(item.id)" ng-confirm-click="Would you sure to download this file?">
+                <span ng-show="item.latest" style="color:red;">{{item.name}}</span>
+                <span ng-hide="item.latest">{{item.name}}</span>
+            </span>
+            <span ng-if="item.status === 2" ng-click="showMedia(item, 'image')">
+                <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" height="42" width="42">
+                <span ng-show="item.latest" style="color:red;">{{item.name}}</span>
+                <span ng-hide="item.latest">{{item.name}}</span>
+            </span>
+            <span ng-if="item.status === 3" ng-click="showMedia(item, 'video')">
+                <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" height="42" width="42">
+                <span ng-show="item.latest" style="color:red;">{{item.name}}</span>
+                <span ng-hide="item.latest">{{item.name}}</span>
+            </span>
+            <span ng-if="item.status === 3">
+                <button ng-click="uploaderSub(item.id)" name="uploadSubtitle">Upload subtitle</button>
+            </span>
+            <span ng-if="item.status === 4" ng-click="showMedia(item, 'music')">
+                <span ng-show="item.latest" style="color:red;">{{item.name}}</span>
+                <span ng-hide="item.latest">{{item.name}}</span>
+            </span>
+            <span ng-if="item.status === 5" ng-click="showMedia(item, 'doc')">
+                <span ng-show="item.latest" style="color:red;">{{item.name}}</span>
+                <span ng-hide="item.latest">{{item.name}}</span>
+            </span>
+            <span ng-if="item.status === 6" ng-click="showMedia(item, 'rawdoc')">
+                <span ng-show="item.latest" style="color:red;">{{item.name}}</span>
+                <span ng-hide="item.latest">{{item.name}}</span>
+            </span>
+        </span>
+        <span ng-show="item.Edit">
+            <input type="text" value="{{item.name}}" ng-model="item.name" ng-enter="fileEdit(item)" />
+            <input type="button" value="Esc" ng-click="esc(item)" />
+        </span>
+        {{item.recycle||0}}
+        <button ng-click="downloadFile(item.id)" name="downloadFile">Download</button>
+        <button ng-show="item.isOwn" id="edit" ng-click="edit(item)">Edit</button>
+        <button ng-show="item.isOwn" id="delete" confirmed-click="fileDel(item)" ng-confirm-click="Would you sure to delete this file?">Delete</button>
+        <span ng-if="item.media" confirmed-click="handleMedia(item, 'act')" ng-confirm-click="Would you sure to handle this media?">type: {{item.media.type}} key: {{item.media.key}} err: {{item.media.err}}</span>
+        <button ng-if="item.media" id="deleteMedia" confirmed-click="handleMedia(item, 'del')" ng-confirm-click="Would you sure to delete this Media?">Delete Media</button>
+    </li>
+</ul>
+<button id="more" ng-show="more" ng-click="moreStorage()">More</button>
