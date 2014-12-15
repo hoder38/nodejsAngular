@@ -348,8 +348,8 @@ app.get('/api/storage/get/:sortName(name|mtime)/:sortType(desc|asc)/:page(\\d+)/
             if (err) {
                 util.handleError(err, next, res);
             }
-            var itemList = getStorageItem(req.user, result.items, result.latest, result.mediaHadle);
-            res.json({itemList: itemList, parentList: result.parentList});
+            var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
         });
     });
 });
@@ -364,8 +364,8 @@ app.get('/api/storage/single/:uid', function(req, res, next){
             if (result.empty) {
                 res.json(result);
             } else {
-                var itemList = getStorageItem(req.user, [result.item], result.latest, result.mediaHadle);
-                res.json({item: itemList[0]});
+                var itemList = getStorageItem(req.user, [result.item], result.mediaHadle);
+                res.json({item: itemList[0], latest: result.latest, bookmarkID: result.bookmark});
             }
         });
     });
@@ -1236,8 +1236,8 @@ app.get('/api/parent/query/:id', function(req, res, next) {
             if(err) {
                 util.handleError(err, next, res);
             }
-            var itemList = getStorageItem(req.user, result.items, result.latest, result.mediaHadle);
-            res.json({itemList: itemList, parentList: result.parentList});
+            var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
         });
     });
 });
@@ -1357,8 +1357,8 @@ app.get('/api/bookmark/get/:id', function (req, res, next) {
             if(err) {
                 util.handleError(err, next, res);
             }
-            var itemList = getStorageItem(req.user, result.items, result.latest, result.mediaHadle);
-            res.json({itemList: itemList, parentList: result.parentList});
+            var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
         });
     });
 });
@@ -1430,23 +1430,13 @@ app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, re
         sql.nosql.$and.push({status: type});
         console.log(sql.options);
         console.log(sql.nosql.$and);
-        mongo.orig("count", 'storage', sql.nosql, function(err, count){
+        mongo.orig("find", 'storage', sql.nosql, sql.options, function(err, items){
             if(err) {
                 util.handleError(err, next, res);
             }
-            console.log(count);
-            if (count) {
-                mongo.orig("find", 'storage', sql.nosql, sql.options, function(err, items){
-                    if(err) {
-                        util.handleError(err, next, res);
-                    }
-                    console.log(items);
-                    var itemList = getStorageItem(req.user, items);
-                    res.json({itemList: itemList, count: count});
-                });
-            } else {
-                res.json({count: count});
-            }
+            console.log(items);
+            var itemList = getStorageItem(req.user, items);
+            res.json({itemList: itemList});
         });
     });
 });
@@ -1903,20 +1893,14 @@ function checkLogin(req, res, next, callback) {
     }
 }
 
-function getStorageItem(user, items, latest, mediaHandle) {
+function getStorageItem(user, items, mediaHandle) {
     var itemList = [];
     if (util.checkAdmin(1, user)) {
         for (var i in items) {
             if (items[i].adultonly === 1) {
                 items[i].tags.push('18禁');
             }
-            if (latest) {
-                if (latest.equals(items[i]._id)) {
-                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, latest: true});
-                } else {
-                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status});
-                }
-            } else if (mediaHandle === 1) {
+            if (mediaHandle === 1) {
                 itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, media: items[i].mediaType});
             } else {
                 itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status});
@@ -1928,25 +1912,13 @@ function getStorageItem(user, items, latest, mediaHandle) {
                 items[i].tags.push('18禁');
             }
             if (user._id.equals(items[i].owner)) {
-                if (latest) {
-                    if (latest.equals(items[i]._id)) {
-                        itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, latest: true});
-                    } else {
-                        itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status});
-                    }
-                } else if (mediaHandle === 1) {
+                if (mediaHandle === 1) {
                     itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, media: items[i].mediaType});
                 } else {
                     itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status});
                 }
             } else {
-                if (latest) {
-                    if (latest.equals(items[i]._id)) {
-                        itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, latest: true});
-                    } else {
-                        itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status});
-                    }
-                } else if (mediaHandle === 1) {
+                if (mediaHandle === 1) {
                     itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, media: items[i].mediaType});
                 } else {
                     itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status});

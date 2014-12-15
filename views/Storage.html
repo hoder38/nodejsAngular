@@ -68,33 +68,33 @@
         <input type="checkbox" ng-model="item.select">
         <span ng-hide="item.Edit">
             <span ng-if="item.status < 2" confirmed-click="downloadFile(item.id)" ng-confirm-click="Would you sure to download this file?">
-                <span ng-show="item.latest" style="color:red;">{{item.name}}</span>
-                <span ng-hide="item.latest">{{item.name}}</span>
+                <span ng-show="item.id === latest" style="color:red;">{{item.name}}</span>
+                <span ng-hide="item.id === latest">{{item.name}}</span>
             </span>
             <span ng-if="item.status === 2" ng-click="showMedia(item, 'image')">
                 <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" height="42" width="42">
-                <span ng-show="item.latest" style="color:red;">{{item.name}}</span>
-                <span ng-hide="item.latest">{{item.name}}</span>
+                <span ng-show="item.id === latest" style="color:red;">{{item.name}}</span>
+                <span ng-hide="item.id === latest">{{item.name}}</span>
             </span>
             <span ng-if="item.status === 3" ng-click="showMedia(item, 'video')">
                 <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" height="42" width="42">
-                <span ng-show="item.latest" style="color:red;">{{item.name}}</span>
-                <span ng-hide="item.latest">{{item.name}}</span>
+                <span ng-show="item.id === latest" style="color:red;">{{item.name}}</span>
+                <span ng-hide="item.id === latest">{{item.name}}</span>
             </span>
             <span ng-if="item.status === 3">
                 <button ng-click="uploaderSub(item.id)" name="uploadSubtitle">Upload subtitle</button>
             </span>
             <span ng-if="item.status === 4" ng-click="showMedia(item, 'music')">
-                <span ng-show="item.latest" style="color:red;">{{item.name}}</span>
-                <span ng-hide="item.latest">{{item.name}}</span>
+                <span ng-show="item.id === latest" style="color:red;">{{item.name}}</span>
+                <span ng-hide="item.id === latest">{{item.name}}</span>
             </span>
             <span ng-if="item.status === 5" ng-click="showMedia(item, 'doc')">
-                <span ng-show="item.latest" style="color:red;">{{item.name}}</span>
-                <span ng-hide="item.latest">{{item.name}}</span>
+                <span ng-show="item.id === latest" style="color:red;">{{item.name}}</span>
+                <span ng-hide="item.id === latest">{{item.name}}</span>
             </span>
             <span ng-if="item.status === 6" ng-click="showMedia(item, 'rawdoc')">
-                <span ng-show="item.latest" style="color:red;">{{item.name}}</span>
-                <span ng-hide="item.latest">{{item.name}}</span>
+                <span ng-show="item.id === latest" style="color:red;">{{item.name}}</span>
+                <span ng-hide="item.id === latest">{{item.name}}</span>
             </span>
         </span>
         <span ng-show="item.Edit">

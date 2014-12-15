@@ -361,6 +361,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.parentMore = true;
     $scope.bookmarkList = [];
     $scope.bookmarkName = '';
+    $scope.bookmarkID = '';
+    $scope.latest = '';
     $scope.fileSort = {name:'', mtime: '', sort: 'name/asc'};
     $scope.dirSort = {name:'', mtime: '', sort: 'name/asc'};
     $scope.bookmarkSort = {name:'', mtime: '', sort: 'name/asc'};
@@ -401,6 +403,13 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         var result = JSON.parse(d);
         $scope.dirTaglist.list.push({name: result.name, id: result.id});
     });
+    $scope.$on('latest', function(e, d) {
+        var result = JSON.parse(d);
+        console.log($scope);
+        if ($scope.bookmarkID && $scope.bookmarkID === result.id) {
+            $scope.latest = result.latest;
+        }
+    });
     $scope.$on('file', function(e, d) {
         var id = JSON.parse(d);
         var index = arrayObjectIndexOf($scope.itemList, id, 'id');
@@ -416,8 +425,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 if (result.empty) {
                     if (index !== -1) {
                         $scope.itemList.splice(index, 1);
+                        $scope.page--;
                     }
                 } else {
+                    $scope.latest = result.latest;
+                    $scope.bookmarkID = result.bookmarkID;
                     if (index !== -1) {
                         result.item.select = $scope.itemList[index].select;
                         $scope.itemList.splice(index, 1, result.item);
@@ -441,7 +453,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
 
     $scope.init = function(){
         this.page = 0;
-        $scope.more = true;
+        this.more = true;
         getItemlist(this);
         if ($scope.dirList.length === 0){
             getParentlist();
@@ -525,7 +537,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 getBookmarklist();
             } else if (sort === 'dirSort') {
                 this.parentPage = 0;
-                this.dirTaglist.list = [];
                 this.parentMore = true;
                 getTaglist(this);
             }
@@ -543,13 +554,12 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
 
     $scope.gotoStorage = function(this_obj, item, index) {
         this_obj.page = 0;
-        $scope.more = true;
+        this_obj.more = true;
         getItemlist(this_obj, item, index+1);
     }
 
     $scope.moreStorage = function() {
         if (this.more) {
-            this.page = this.itemList.length;
             getItemlist(this);
         }
     }
@@ -563,17 +573,18 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         this.$parent.more = true;
         parentApi.query({}, function (result) {
             console.log(result);
-            if (this_obj.$parent.page === 0) {
-                this_obj.$parent.itemList = [];
-            }
+            this_obj.$parent.itemList = [];
             if (result.itemList.length > 0) {
                 for (var i in result.itemList) {
-                    result.itemList[i].select = false;
-                    this_obj.$parent.itemList.push(result.itemList[i]);
+                    if (arrayObjectIndexOf(this_obj.$parent.itemList, result.itemList[i].id, 'id') === -1) {
+                        result.itemList[i].select = false;
+                        this_obj.$parent.itemList.push(result.itemList[i]);
+                    }
                 }
             } else {
                 $scope.more = false;
             }
+            this_obj.$parent.page = result.itemList.length;
             this_obj.$parent.parentList = result.parentList.cur;
             this_obj.$parent.historyList = result.parentList.his;
             this_obj.$parent.exactlyList = result.parentList.exactly;
@@ -639,12 +650,17 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 }
                 if (result.itemList.length > 0) {
                     for (var i in result.itemList) {
-                        result.itemList[i].select = false;
-                        this_obj.itemList.push(result.itemList[i]);
+                        if (arrayObjectIndexOf(this_obj.itemList, result.itemList[i].id, 'id') === -1) {
+                            result.itemList[i].select = false;
+                            this_obj.itemList.push(result.itemList[i]);
+                        }
                     }
                 } else {
                     $scope.more = false;
                 }
+                this_obj.page = this_obj.page + result.itemList.length;
+                this_obj.latest = result.latest;
+                this_obj.bookmarkID = result.bookmarkID;
                 this_obj.parentList = result.parentList.cur;
                 this_obj.historyList = result.parentList.his;
                 this_obj.exactlyList = result.parentList.exactly;
@@ -679,6 +695,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     result.itemList[i].select = false;
                     this_obj.itemList.push(result.itemList[i]);
                 }
+                this_obj.latest = '';
+                this_obj.bookmarkID = '';
+                this_obj.page = result.itemList.length;
                 this_obj.parentList = result.parentList.cur;
                 this_obj.historyList = result.parentList.his;
                 this_obj.exactlyList = result.parentList.exactly;
@@ -820,6 +839,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 index = arrayObjectIndexOf(this_obj.$parent.dirTaglist.list, result.id, "id");
                 if (index !== -1) {
                     this_obj.$parent.dirTaglist.list.splice(index, 1);
+                    this_obj.parentPage--;
                 }
             }
         }, function(errorResult) {
@@ -841,11 +861,16 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             });
             Info.getTaglist({}, function (result) {
                 console.log(result);
+                if (this_obj.parentPage === 0) {
+                    this_obj.dirTaglist.list = [];
+                }
                 if (result.taglist.length > 0) {
                     for (var i in result.taglist) {
-                        this_obj.dirTaglist.list.push(result.taglist[i]);
+                        if (arrayObjectIndexOf(this_obj.dirTaglist.list, result.taglist[i].id, 'id') === -1) {
+                            this_obj.dirTaglist.list.push(result.taglist[i]);
+                        }
                     }
-                    this_obj.parentPage = this_obj.dirTaglist.list.length;
+                    this_obj.parentPage = this_obj.parentPage + result.taglist.length;
                     this_obj.dirTaglist.isDel = result.isDel;
                     this_obj.dirTaglist.show = true;
                 } else {
@@ -870,7 +895,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         console.log(name);
         this.$parent.parentName = name;
         this.$parent.parentPage = 0;
-        this.$parent.dirTaglist.list = [];
+        this.$parent.parentMore = true;
         getTaglist(this.$parent);
     }
 
@@ -1030,7 +1055,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                             }
                             var tempList = $filter("filter")(this_obj.itemList, {status: status});
                             this_obj.$parent[type].name = item.name;
+                            this_obj.$parent[type].bookmarkID = $scope.bookmarkID;
                             this_obj.$parent[type].id = item.id;
+                            if ($scope.bookmarkID) {
+                                $scope.latest = item.id;
+                            }
                             this_obj.$parent[type].show = true;
                             this_obj.$parent[type].list = clone(tempList);
                             this_obj.$parent[type].front = this_obj.$parent[type].list.length;
@@ -1063,7 +1092,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     }
                     var tempList = $filter("filter")(this_obj.itemList, {status: status});
                     this_obj.$parent[type].name = item.name;
+                    this_obj.$parent[type].bookmarkID = $scope.bookmarkID;
                     this_obj.$parent[type].id = item.id;
+                    if ($scope.bookmarkID) {
+                        $scope.latest = item.id;
+                    }
                     this_obj.$parent[type].show = true;
                     this_obj.$parent[type].list = clone(tempList);
                     this_obj.$parent[type].front = this_obj.$parent[type].list.length;
@@ -1136,12 +1169,14 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
-                this_obj.$parent.page = 0;
                 this_obj.$parent.itemList = [];
                 for (var i in result.itemList) {
                     result.itemList[i].select = false;
                     this_obj.$parent.itemList.push(result.itemList[i]);
                 }
+                this_obj.$parent.page = result.itemList.length;
+                this_obj.$parent.latest = result.latest;
+                this_obj.$parent.bookmarkID = result.bookmarkID;
                 this_obj.$parent.parentList = result.parentList.cur;
                 this_obj.$parent.historyList = result.parentList.his;
                 this_obj.$parent.exactlyList = result.parentList.exactly;
@@ -1505,11 +1540,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     }*/
     $scope.feedback = {uid: '', name: '', list: [], run: false, queue: [], history: [], other: []};
     $scope.navList = [{title: "homepage", hash: "/" }, {title: "UserInfo", hash: "/UserInfo"}, {title: "Storage", hash: "/Storage"}];
-    $scope.image = {show: false, id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, end: false};
-    $scope.video = {show: false, id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, end: false};
-    $scope.music = {show: false, id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, end: false};
-    $scope.doc = {show: false, id: "", src: "123.pdf", name: "null", list: [], index: 0, front: 0, back: 0, end: false};
-    $scope.rawdoc = {show: false, id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, end: false};
+    $scope.image = {show: false, id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.video = {show: false, id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.music = {show: false, id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.doc = {show: false, id: "", src: "123.pdf", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.rawdoc = {show: false, id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.dirList = [];
 
     indexInit();
@@ -1683,26 +1718,22 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                         $window.location.href = $location.path();
                     } else {
                         if (result.itemList.length > 0) {
-                            var j = 0;
+                            var length = this_obj[type].list.length;
                             if (this_obj[type].back) {
                                 for (var i in result.itemList) {
                                     if (arrayObjectIndexOf(this_obj[type].list, result.itemList[i].id, 'id') === -1) {
                                         this_obj[type].list.push(result.itemList[i]);
-                                        j++;
                                     }
                                 }
                             } else {
                                 this_obj[type].list = this_obj[type].list.concat(result.itemList);
-                                j = result.itemList.length;
                             }
-                            if (j === 0) {
+                            if (length === this_obj[type].list.length) {
                                 this_obj[type].index = -this_obj[type].back;
                             } else {
-                                this_obj[type].front = this_obj[type].front + j;
+                                this_obj[type].front = this_obj[type].front + this_obj[type].list.length - length;
                             }
-                            if (this_obj[type].list.length >= result.count) {
-                                this_obj[type].end = true;
-                            }
+                            this_obj[type].frontPage = this_obj[type].frontPage + result.itemList.length;
                             console.log(this_obj[type].list);
                         } else {
                             this_obj[type].end = true;
@@ -1747,6 +1778,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                     }
                                     console.log(this_obj[type].index);
                                     this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                    this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
                                     this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
                                 }
                             }, function(errorResult) {
@@ -1779,6 +1811,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             }
                             console.log(this_obj[type].index);
                             this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                            this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
                             this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
                         }
                     }
@@ -1808,26 +1841,22 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                         $window.location.href = $location.path();
                     } else {
                         if (result.itemList.length > 0) {
-                            var j = 0;
+                            var length = this_obj[type].list.length;
                             if (this_obj[type].front) {
                                 for (var i in result.itemList) {
                                     if (arrayObjectIndexOf(this_obj[type].list, result.itemList[i].id, 'id') === -1) {
                                         this_obj[type].list.splice(0, 0, result.itemList[i]);
-                                        j++;
                                     }
                                 }
                             } else {
                                 this_obj[type].list = result.itemList.reverse().concat(this_obj[type].list);
-                                j = result.itemList.length;
                             }
-                            if (j === 0) {
+                            if (length === this_obj[type].list.length) {
                                 this_obj[type].index = this_obj[type].front - 1;
                             } else {
-                                this_obj[type].back = this_obj[type].back + j;
+                                this_obj[type].back = this_obj[type].back + this_obj[type].list.length - length;
                             }
-                            if (this_obj[type].list.length >= result.count) {
-                                this_obj[type].end = true;
-                            }
+                            this_obj[type].backPage = this_obj[type].backPage + result.itemList.length;
                             console.log(this_obj[type].list);
                         } else {
                             this_obj[type].index = this_obj[type].front - 1;
@@ -1872,6 +1901,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                     }
                                     console.log(this_obj[type].index);
                                     this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                    this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
                                     this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
                                 }
                             }, function(errorResult) {
@@ -1904,6 +1934,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             }
                             console.log(this_obj[type].index);
                             this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                            this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
                             this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
                         }
                     }
@@ -1960,6 +1991,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                         }
                         console.log(this_obj[type].index);
                         this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                        this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
                         this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
                     }
                 }, function(errorResult) {
@@ -1992,6 +2024,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 }
                 console.log(this[type].index);
                 this[type].id = this[type].list[this[type].index + this[type].back].id;
+                this.$broadcast('latest', JSON.stringify({id: this[type].bookmarkID, latest: this[type].id}));
                 this[type].name = this[type].list[this[type].index + this[type].back].name;
             }
         }

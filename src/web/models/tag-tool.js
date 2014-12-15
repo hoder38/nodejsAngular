@@ -401,11 +401,11 @@ module.exports = function(collection) {
                             this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
                                 if (latest) {
                                     setTimeout(function(){
-                                        callback(null, {items: items, parentList: parentList, latest: latest});
+                                        callback(null, {items: items, parentList: parentList, latest: latest, bookmark: parentList.bookmark});
                                     }, 0);
                                 } else {
                                     setTimeout(function(){
-                                        callback(null, {items: items, parentList: parentList});
+                                        callback(null, {items: items, parentList: parentList, bookmark: parentList.bookmark});
                                     }, 0);
                                 }
                             });
@@ -446,11 +446,11 @@ module.exports = function(collection) {
                             this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
                                 if (latest) {
                                     setTimeout(function(){
-                                        callback(null, {items: items, parentList: parentList, latest: latest});
+                                        callback(null, {items: items, parentList: parentList, latest: latest, bookmark: parentList.bookmark});
                                     }, 0);
                                 } else {
                                     setTimeout(function(){
-                                        callback(null, {items: items, parentList: parentList});
+                                        callback(null, {items: items, parentList: parentList, bookmark: parentList.bookmark});
                                     }, 0);
                                 }
                             });
@@ -495,11 +495,11 @@ module.exports = function(collection) {
                             this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
                                 if (latest) {
                                     setTimeout(function(){
-                                        callback(null, {items: items, parentList: parentList, latest: latest});
+                                        callback(null, {items: items, parentList: parentList, latest: latest, bookmark: parentList.bookmark});
                                     }, 0);
                                 } else {
                                     setTimeout(function(){
-                                        callback(null, {items: items, parentList: parentList});
+                                        callback(null, {items: items, parentList: parentList, bookmark: parentList.bookmark});
                                     }, 0);
                                 }
                             });
@@ -550,11 +550,11 @@ module.exports = function(collection) {
                             this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
                                 if (latest) {
                                     setTimeout(function(){
-                                        callback(null, {item: item, latest: latest});
+                                        callback(null, {item: item, latest: latest, bookmark: parentList.bookmark});
                                     }, 0);
                                 } else {
                                     setTimeout(function(){
-                                        callback(null, {item: item});
+                                        callback(null, {item: item, bookmark: parentList.bookmark});
                                     }, 0);
                                 }
                             });
