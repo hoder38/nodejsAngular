@@ -1,5 +1,5 @@
 var video, music, subtitles, videoStart=0, musicStart=0;
-var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularFileUpload'], function($routeProvider, $locationProvider) {
+var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularFileUpload', 'ui.bootstrap'], function($routeProvider, $locationProvider) {
     $routeProvider.when('/', {
         templateUrl: '/views/hello',
         controller: LoginCntl//,
@@ -42,11 +42,10 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
             var msg = attr.ngConfirmClick || "Are you sure?";
             var clickAction = attr.confirmedClick;
             element.bind('click',function (event) {
-                if (window.confirm(msg)) {
-                    scope.$apply(function (){
-                        scope.$eval(clickAction);
-                    });
-                }
+                openModal(msg).then(function () {
+                    scope.$eval(clickAction);
+                }, function () {
+                });
             });
         }
     };
@@ -110,9 +109,32 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
             });
         }
     };
+}).filter('gtFilter', function () {
+    return function (items, prop, num, obj) {
+        var filtered = [];
+        var isEqual = true;
+        var item;
+        for (var i = 0; i < items.length; i++) {
+            item = items[i];
+            if (obj) {
+                isEqual = true;
+                for (var j in obj) {
+                    if (obj[j] !== item[j]) {
+                        isEqual = false;
+                        break;
+                    }
+                }
+            }
+            if (isEqual && item[prop] > num) {
+                filtered.push(item);
+            }
+        }
+        return filtered;
+    };
 });
 
 function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $timeout) {
+    $scope.userCollapse = {owner: false, priority: true, normal: true};
     $scope.uInfo = [];
     $scope.password = "";
     $scope.timer = false;
@@ -146,6 +168,99 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                 $window.location.href = $location.path();
             }
         });
+    }
+
+    $scope.editAll = function(item) {
+        if (item.edit) {
+            item["name"] = item['nameOrig'];
+            item["desc"] = item['descOrig'];
+            item["perm"] = item['permOrig'];
+            item["newPwd"] = '';
+            item["conPwd"] = '';
+            item["password"] = '';
+            item.edit = false;
+        } else {
+            item["nameOrig"] = item['name'];
+            item["descOrig"] = item['desc'];
+            item["permOrig"] = item['perm'];
+            item.edit = true;
+            item.nameFocus = true;
+        }
+    }
+    $scope.saveAll = function(item) {
+        if (!isValidString(item.password, 'passwd')) {
+            alert('password error!!!');
+        } else {
+            if (!isValidString(item.name, 'name') && item.edit) {
+                alert('name not vaild!!!');
+            } else if (!isValidString(item.desc, 'desc') && item.edit) {
+                alert('desc not vaild!!!');
+            } else if (!isValidString(item.perm, 'perm') && item.edit) {
+                alert('perm not vaild!!!');
+            } else if ((item.newPwd || item.conPwd) && (!isValidString(item.newPwd, 'passwd') || !isValidString(item.conPwd, 'passwd'))) {
+                item.newPwd = '';
+                item.conPwd = '';
+                alert('new password is not valid!!!');
+            } else if (item.newPwd !== item.conPwd) {
+                item.newPwd = '';
+                item.conPwd = '';
+                alert('confirm password must equal!!!');
+            } else {
+                if (item.key) {
+                    var editInfo = $resource('/api/edituser/' + item.key, {}, {
+                        'editinfo': { method:'PUT' }
+                    });
+                } else {
+                    var editInfo = $resource('/api/edituser', {}, {
+                        'editinfo': { method:'PUT' }
+                    });
+                }
+                var this_obj = this;
+                var set_obj = {pwd: item.password};
+                if (item.name !== item.nameOrig && item.edit) {
+                    set_obj['name'] = item.name;
+                }
+                if (item.perm !== item.permOrig && item.edit) {
+                    set_obj['perm'] = item.perm;
+                }
+                if (item.desc !== item.descOrig && item.edit) {
+                    set_obj['desc'] = item.desc;
+                }
+                if (item.newPwd) {
+                    set_obj['newPwd'] = item.newPwd;
+                }
+                if (item.conPwd) {
+                    set_obj['conPwd'] = item.conPwd;
+                }
+                editInfo.editinfo(set_obj, function(result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    } else {
+                        alert('edit complete');
+                        if (item.perm === '') {
+                            item.perm = 0;
+                        }
+                        item.edit = false;
+                        item["newPwd"] = '';
+                        item["conPwd"] = '';
+                        item["password"] = '';
+                    }
+                }, function(errorResult) {
+                    item.newPwd = '';
+                    item.conPwd = '';
+                    console.log(errorResult);
+                    if (errorResult.status === 400) {
+                        alert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        alert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
+            }
+        }
+        item.password = '';
+        return false;
     }
     $scope.edit = function(item, type){
         item[type+"orig"] = item[type];
@@ -311,15 +426,14 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
         return false;
     }
     $scope.delUser = function(item) {
-        if (!isValidString(this.password, 'passwd')) {
+        if (!isValidString(item.password, 'passwd')) {
             alert('password error!!!');
         } else {
             var delInfo = $resource('/api/deluser/' + item.key, {}, {
                 'delinfo': { method:'PUT' }
             });
-            console.log({pwd: this.password});
             var this_obj = this;
-            delInfo.delinfo({pwd: this.password}, function(result) {
+            delInfo.delinfo({pwd: item.password}, function(result) {
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
@@ -337,7 +451,8 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                 }
             });
         }
-        this.cleanPwd();
+        item.password = '';
+        //this.cleanPwd();
         return false;
     }
 }
@@ -345,7 +460,7 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
 function LoginCntl($route, $routeParams, $location, $resource, $scope, $location) {
 }
 
-function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $cookies, $filter, $anchorScroll, FileUploader) {
+function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $cookies, $filter, FileUploader) {
     $scope.parentList = [];
     $scope.historyList = [];
     $scope.exactlyList = [];
@@ -355,10 +470,12 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.dirTaglist = {isDel: false, list: [], show: false};
     $scope.page = 0;
     $scope.more = true;
+    $scope.moreDisabled = false;
     $scope.exactlyMatch = false;
     $scope.parentPage = 0;
     $scope.parentName = '';
     $scope.parentMore = true;
+    $scope.parentMoreDisabled = false;
     $scope.bookmarkList = [];
     $scope.bookmarkName = '';
     $scope.bookmarkID = '';
@@ -368,7 +485,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.bookmarkSort = {name:'', mtime: '', sort: 'name/asc'};
     var lastRoute = $route.current;
     $scope.$on('$locationChangeSuccess', function(event) {
-        $route.current = lastRoute;
+        if ($window.location.pathname === '/Storage') {
+            $route.current = lastRoute;
+        }
     });
     //$scope.navList.splice(0,1);
     //console.log($routeParams);
@@ -454,49 +573,67 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.init = function(){
         this.page = 0;
         this.more = true;
-        getItemlist(this);
         if ($scope.dirList.length === 0){
             getParentlist();
         }
         if ($cookies.fileSortName === 'mtime') {
+            this.fileSort.sort = 'mtime/';
             if ($cookies.fileSortType === 'desc') {
+                this.fileSort.sort = this.fileSort.sort + 'desc';
                 this.fileSort.mtime = 'v';
             } else {
+                this.fileSort.sort = this.fileSort.sort + 'asc';
                 this.fileSort.mtime = '^';
             }
         } else {
+            this.fileSort.sort = 'name/';
             if ($cookies.fileSortType === 'desc') {
+                this.fileSort.sort = this.fileSort.sort + 'desc';
                 this.fileSort.name = 'v';
             } else {
+                this.fileSort.sort = this.fileSort.sort + 'asc';
                 this.fileSort.name = '^';
             }
         }
         if ($cookies.dirSortName === 'mtime') {
+            this.dirSort.sort = 'mtime/';
             if ($cookies.dirSortType === 'desc') {
+                this.dirSort.sort = this.dirSort.sort + 'desc';
                 this.dirSort.mtime = 'v';
             } else {
+                this.dirSort.sort = this.dirSort.sort + 'asc';
                 this.dirSort.mtime = '^';
             }
         } else {
+            this.dirSort.sort = 'name/';
             if ($cookies.dirSortType === 'desc') {
+                this.dirSort.sort = this.dirSort.sort + 'desc';
                 this.dirSort.name = 'v';
             } else {
+                this.dirSort.sort = this.dirSort.sort + 'asc';
                 this.dirSort.name = '^';
             }
         }
         if ($cookies.bookmarkSortName === 'mtime') {
+            this.bookmarkSort.sort = 'mtime/';
             if ($cookies.bookmarkSortType === 'desc') {
+                this.bookmarkSort.sort = this.bookmarkSort.sort + 'desc';
                 this.bookmarkSort.mtime = 'v';
             } else {
+                this.bookmarkSort.sort = this.bookmarkSort.sort + 'asc';
                 this.bookmarkSort.mtime = '^';
             }
         } else {
+            this.bookmarkSort.sort = 'name/';
             if ($cookies.bookmarkSortType === 'desc') {
+                this.bookmarkSort.sort = this.bookmarkSort.sort + 'desc';
                 this.bookmarkSort.name = 'v';
             } else {
+                this.bookmarkSort.sort = this.bookmarkSort.sort + 'asc';
                 this.bookmarkSort.name = '^';
             }
         }
+        getItemlist(this);
         getBookmarklist();
     }
 
@@ -571,6 +708,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         var this_obj = this;
         this.$parent.page = 0;
         this.$parent.more = true;
+        this.$parent.moreDisabled = true;
         parentApi.query({}, function (result) {
             console.log(result);
             this_obj.$parent.itemList = [];
@@ -588,8 +726,10 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             this_obj.$parent.parentList = result.parentList.cur;
             this_obj.$parent.historyList = result.parentList.his;
             this_obj.$parent.exactlyList = result.parentList.exactly;
+            this_obj.$parent.moreDisabled = false;
             console.log(this_obj.$parent.itemList);
         }, function(errorResult) {
+            this_obj.$parent.moreDisabled = false;
             console.log(errorResult);
             if (errorResult.status === 400) {
                 alert(errorResult.data);
@@ -640,6 +780,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 return false;
             }
         }
+        this_obj.moreDisabled = true;
         Info.storage({}, function (result) {
             if (result.loginOK) {
                 $window.location.href = $location.path();
@@ -664,9 +805,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 this_obj.parentList = result.parentList.cur;
                 this_obj.historyList = result.parentList.his;
                 this_obj.exactlyList = result.parentList.exactly;
+                this_obj.moreDisabled = false;
                 console.log(this_obj.itemList);
             }
         }, function(errorResult) {
+            this_obj.moreDisabled = false;
             console.log(errorResult);
             if (errorResult.status === 400) {
                 alert(errorResult.data);
@@ -682,6 +825,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         var this_obj = this;
         this.page = 0;
         $scope.more = true;
+        $scope.moreDisabled = true;
         Info = $resource('/api/storage/reset', {}, {
             'storage': { method:'GET' }
         });
@@ -701,9 +845,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 this_obj.parentList = result.parentList.cur;
                 this_obj.historyList = result.parentList.his;
                 this_obj.exactlyList = result.parentList.exactly;
+                this_obj.moreDisabled = false;
                 console.log(this_obj.itemList);
             }
         }, function(errorResult) {
+            this_obj.moreDisabled = false;
             console.log(errorResult);
             if (errorResult.status === 400) {
                 alert(errorResult.data);
@@ -855,7 +1001,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     }
 
     getTaglist = function(this_obj) {
+        console.log(this_obj);
         if (isValidString(this_obj.parentName, 'name')) {
+            this_obj.parentMoreDisabled = true;
             var Info = $resource('/api/parent/taglist/' + this_obj.parentName + '/' + this_obj.dirSort.sort + '/' + this_obj.parentPage, {}, {
                 'getTaglist': { method:'GET' }
             });
@@ -876,7 +1024,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 } else {
                     $scope.parentMore = false;
                 }
+                $scope.parentMoreDisabled = false;
             }, function(errorResult) {
+                $scope.parentMoreDisabled = false;
                 console.log(errorResult);
                 if (errorResult.status === 400) {
                     alert(errorResult.data);
@@ -1060,15 +1210,14 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                             if ($scope.bookmarkID) {
                                 $scope.latest = item.id;
                             }
-                            this_obj.$parent[type].show = true;
+                            this_obj.$parent.mediaToggle(type);
                             this_obj.$parent[type].list = clone(tempList);
                             this_obj.$parent[type].front = this_obj.$parent[type].list.length;
+                            this_obj.$parent[type].frontPage = this_obj.$parent[type].front;
                             var index = arrayObjectIndexOf(this_obj.$parent[type].list, item.id, 'id');
                             if (index !== -1) {
                                 this_obj.$parent[type].index = index;
                             }
-                            $location.hash(type + "Section");
-                            $anchorScroll();
                         }
                     }, function(errorResult) {
                         console.log(errorResult);
@@ -1097,15 +1246,14 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     if ($scope.bookmarkID) {
                         $scope.latest = item.id;
                     }
-                    this_obj.$parent[type].show = true;
+                    this_obj.$parent.mediaToggle(type)
                     this_obj.$parent[type].list = clone(tempList);
                     this_obj.$parent[type].front = this_obj.$parent[type].list.length;
+                    this_obj.$parent[type].frontPage = this_obj.$parent[type].front;
                     var index = arrayObjectIndexOf(this_obj.$parent[type].list, item.id, 'id');
                     if (index !== -1) {
                         this_obj.$parent[type].index = index;
                     }
-                    $location.hash(type + "Section");
-                    $anchorScroll();
                 }
             }
         }, function(errorResult) {
@@ -1164,6 +1312,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         var bookmarkapi = $resource('/api/bookmark/get/' + id, {}, {
             'getbookmark': { method:'GET' }
         });
+        this.$parent.moreDisabled = true;
         bookmarkapi.getbookmark({}, function(result) {
             console.log(result);
             if (result.loginOK) {
@@ -1180,8 +1329,10 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 this_obj.$parent.parentList = result.parentList.cur;
                 this_obj.$parent.historyList = result.parentList.his;
                 this_obj.$parent.exactlyList = result.parentList.exactly;
+                this_obj.$parent.moreDisabled = false;
             }
         }, function(errorResult) {
+            this_obj.$parent.moreDisabled = false;
             console.log(errorResult);
             if (errorResult.status === 400) {
                 alert(errorResult.data);
@@ -1279,11 +1430,70 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     }
 }
 
-app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location', '$route', '$window', '$cookies', '$timeout', '$filter', '$anchorScroll', 'FileUploader', function($scope, $http, $resource, $location, $route, $window, $cookies, $timeout, $filter, $anchorScroll, FileUploader) {
+app.controller('ModalInstanceCtrl', function ($scope, $modalInstance, msg) {
+    $scope.msg = msg;
+    $scope.ok = function () {
+        $modalInstance.close();
+    };
+    $scope.cancel = function () {
+        $modalInstance.dismiss();
+    };
+});
+
+app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location', '$route', '$window', '$cookies', '$timeout', '$filter', '$modal', 'FileUploader', function($scope, $http, $resource, $location, $route, $window, $cookies, $timeout, $filter, $modal, FileUploader) {
     $scope.newItem = "";
     $scope.username = '';
     $scope.password = '';
-    $scope.todoList = [{ label: "買牛奶",isFinish:false }, { label: "繳電話費",isFinish:false }];
+    $scope.collapse= {};
+    $scope.collapse.nav = true;
+    $scope.widget = {};
+    $scope.widget.uploader = false;
+    $scope.widget.feedback = false;
+    $scope.dropdown = {};
+    $scope.feedbackSelectTag = '';
+    $scope.mediaMoreDisabled = false;
+    $scope.isLogin = false;
+    $scope.isFull = false;
+    $scope.loginFocus = {user: true, pwd:false};
+    openModal = function (msg) {
+        var modalInstance = $modal.open({
+            templateUrl: 'myModalContent.html',
+            controller: 'ModalInstanceCtrl',
+            resolve: {
+                msg: function () {
+                    return msg;
+                }
+            }
+        });
+        return modalInstance.result;
+    };
+
+    $scope.selectFeedbackTag = function($event, tag) {
+        var pre = $scope.feedbackSelectTag;
+        $scope.feedbackSelectTag = tag;
+        console.log($scope.feedbackSelectTag);
+        if (!pre || tag === pre) {
+            this.toggleDropdown($event, 'feedback');
+        } else {
+            this.toggleDropdown($event, 'feedback', true);
+        }
+    }
+    $scope.toggleWidget = function (type) {
+        if (!this.widget[type]) {
+            this.widget[type] = true;
+        } else {
+            this.widget[type] = false;
+        }
+    }
+    $scope.toggleDropdown = function($event, type, action) {
+        $event.preventDefault();
+        $event.stopPropagation();
+        if (typeof action !== 'undefined') {
+            $scope.dropdown[type] = action;
+        } else {
+            $scope.dropdown[type] = !$scope.dropdown[type];
+        }
+    };
     var uploader = $scope.uploader = new FileUploader({
         url: 'upload/file'
     });
@@ -1294,6 +1504,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         console.info('onWhenAddingFileFailed', item, filter, options);
     };
     uploader.onAfterAddingFile = function(fileItem) {
+        $scope.widget.uploader = true;
         console.info('onAfterAddingFile', fileItem);
     };
     uploader.onAfterAddingAll = function(addedFileItems) {
@@ -1447,8 +1658,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     }
     $scope.addFeedback = function() {
         console.log(this.feedbackInput);
-        this.feedback.list.push({tag: this.feedbackInput, select: true});
-        this.feedbackInput = '';
+        if (this.feedbackInput) {
+            this.feedback.list.splice(0, 0, {tag: this.feedbackInput, select: true});
+            this.feedbackInput = '';
+        }
     }
     $scope.sendFeedback = function() {
         var this_obj = this;
@@ -1539,12 +1752,13 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         $scope.id = 'guest';
     }*/
     $scope.feedback = {uid: '', name: '', list: [], run: false, queue: [], history: [], other: []};
-    $scope.navList = [{title: "homepage", hash: "/" }, {title: "UserInfo", hash: "/UserInfo"}, {title: "Storage", hash: "/Storage"}];
-    $scope.image = {show: false, id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
-    $scope.video = {show: false, id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
-    $scope.music = {show: false, id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
-    $scope.doc = {show: false, id: "", src: "123.pdf", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
-    $scope.rawdoc = {show: false, id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.mediaShow = [];
+    $scope.navList = [{title: "homepage", hash: "/", css: "fa fa-fw fa-dashboard", active: true}, {title: "Storage", hash: "/Storage", css: "fa fa-fw fa-desktop", active: false}];
+    $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.doc = {id: "", src: "123.pdf", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.rawdoc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.dirList = [];
 
     indexInit();
@@ -1558,6 +1772,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
+                $scope.isLogin = true;
                 $scope.id = result.id;
                 var ws = new WebSocket(result.ws_url, result.ws);
                 ws.onopen = function(){
@@ -1709,7 +1924,12 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         if (this[type].index >= this[type].front) {
             if (!this[type].end) {
                 isLoad = true;
-                var mediaApi = $resource('/api/media/more/' + status + '/' + this[type].front, {}, {
+                if ($scope.mediaMoreDisabled) {
+                    this[type].index = +this[type].index - number;
+                    return false;
+                }
+                $scope.mediaMoreDisabled = true;
+                var mediaApi = $resource('/api/media/more/' + status + '/' + this[type].frontPage, {}, {
                     'more': { method:'GET' }
                 });
                 mediaApi.more({}, function (result) {
@@ -1736,9 +1956,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             this_obj[type].frontPage = this_obj[type].frontPage + result.itemList.length;
                             console.log(this_obj[type].list);
                         } else {
-                            this_obj[type].end = true;
+                            $scope[type].end = true;
+                            console.log($scope[type].end);
                             this_obj[type].index = -this_obj[type].back;
                         }
+                        $scope.mediaMoreDisabled = false;
                         console.log(this_obj[type].end);
                         if (type === 'video' || type === 'music') {
                             if (this_obj[type].id) {
@@ -1816,6 +2038,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                         }
                     }
                 }, function(errorResult) {
+                    $scope.mediaMoreDisabled = false;
                     console.log(errorResult);
                     if (errorResult.status === 400) {
                         alert(errorResult.data);
@@ -1831,10 +2054,15 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         } else if (this[type].index < -this[type].back) {
             if (!this[type].end) {
                 isLoad = true;
-                var mediaApi = $resource('/api/media/more/' + status + '/' + this[type].back + '/back', {}, {
+                var mediaApi = $resource('/api/media/more/' + status + '/' + this[type].backPage + '/back', {}, {
                     'more': { method:'GET' }
                 });
                 var this_obj = this;
+                if ($scope.mediaMoreDisabled) {
+                    this[type].index = +this[type].index - number;
+                    return false;
+                }
+                $scope.mediaMoreDisabled = true;
                 mediaApi.more({}, function (result) {
                     console.log(result);
                     if (result.loginOK) {
@@ -1863,6 +2091,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             this_obj[type].end = true;
                         }
                         console.log(this_obj[type].end);
+                        $scope.mediaMoreDisabled = false;
                         if (type === 'video' || type === 'music') {
                             if (this_obj[type].id) {
                                this_obj.mediaRecord(type, end);
@@ -1939,6 +2168,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                         }
                     }
                 }, function(errorResult) {
+                    $scope.mediaMoreDisabled = false;
                     console.log(errorResult);
                     if (errorResult.status === 400) {
                         alert(errorResult.data);
@@ -2030,13 +2260,30 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         }
     }
     $scope.mediaToggle = function(type) {
-        if (this[type].list.length === 0 || this[type].show) {
-            this[type].show = false;
+        switch (type) {
+            case 'image':
+            case 'video':
+            case 'music':
+            case 'doc':
+            case 'rawdoc':
+                break;
+            default:
+                alert('unknown type');
+                return false;
+        }
+        if (this.mediaShow[0] === type) {
+            this.mediaShow.splice(0,1);
             if (type === 'video') {
                 video.pause();
             }
         } else {
-            this[type].show = true;
+            var index = this.mediaShow.indexOf(type);
+            if (index === -1) {
+                this.mediaShow.splice(0,0, type);
+            } else {
+                this.mediaShow.splice(index, 1);
+                this.mediaShow.splice(0,0, type);
+            }
         }
     }
     getParentlist = function() {
@@ -2061,15 +2308,15 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             }
         });
     }
-    $scope.feedbackAdd2Parent = function() {
-        console.log(this.feedbackSelectTag);
-        console.log(this.feedbackAddDir);
-        if (isValidString(this.feedbackAddDir, 'name') && isValidString(this.feedbackSelectTag, 'name')) {
+    $scope.feedbackAdd2Parent = function(name) {
+        console.log(name);
+        console.log($scope.feedbackSelectTag);
+        if (isValidString(name, 'name') && isValidString($scope.feedbackSelectTag, 'name')) {
             var Info = $resource('/api/parent/add', {}, {
                 'addDir': { method:'POST' }
             });
             var this_obj = this;
-            Info.addDir({ name: this.feedbackAddDir, tag: this.feedbackSelectTag}, function (result) {
+            Info.addDir({ name: name, tag: $scope.feedbackSelectTag}, function (result) {
                 console.log(result);
                 if (result.id) {
                     this_obj.$broadcast('dirTaglist', JSON.stringify({id: result.id, name: result.name}));

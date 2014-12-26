@@ -162,7 +162,7 @@ module.exports = function(collection) {
                     }
                     if (item.adultonly === tagType.tag.adultonly) {
                         setTimeout(function(){
-                            callback(null, {id: item._id, adultonly: item.adultonly});
+                            callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.name});
                         }, 0);
                     } else {
                         var time = Math.round(new Date().getTime() / 1000);
@@ -172,7 +172,7 @@ module.exports = function(collection) {
                                 util.handleError(err, next, callback, null);
                             }
                             setTimeout(function(){
-                                callback(null, {id: item._id, adultonly: item.adultonly});
+                                callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.name});
                             }, 0);
                         });
                     }
@@ -193,12 +193,12 @@ module.exports = function(collection) {
                                 util.handleError(err, next, callback, null);
                             }
                             setTimeout(function(){
-                                callback(null, {id: item._id, adultonly: item.adultonly});
+                                callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.tag.tags});
                             }, 0);
                         });
                     } else {
                         setTimeout(function(){
-                            callback(null, {id: item._id, adultonly: item.adultonly});
+                            callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.tag.tags});
                         }, 0);
                     }
                 });
@@ -235,7 +235,7 @@ module.exports = function(collection) {
                         }
                         console.log(item1);
                         setTimeout(function(){
-                            callback(null, {id: item._id, adultonly: item.adultonly});
+                            callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.name});
                         }, 0);
                     });
                 } else if (tagType.type === 1) {
@@ -255,7 +255,7 @@ module.exports = function(collection) {
                                     }
                                     console.log(item2);
                                     setTimeout(function(){
-                                        callback(null, {id: item._id, adultonly: item.adultonly});
+                                        callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.tag.tags});
                                     }, 0);
                                 });
                             }
@@ -269,7 +269,7 @@ module.exports = function(collection) {
                                     util.handleError(err, next, callback, null);
                                 }
                                 setTimeout(function(){
-                                    callback(null, {id: item._id, adultonly: item.adultonly});
+                                    callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.tag.tags});
                                 }, 0);
                             });
                         } else {
@@ -313,14 +313,20 @@ module.exports = function(collection) {
                                     util.handleError(err, next, callback, null);
                                 }
                                 console.log(item);
-                                setTimeout(function(){
-                                    callback(null, {history: history, id: result.id, adultonly: result.adultonly});
-                                }, 0);
+                                mongo.orig("findOne", "storage", { _id: id }, function(err, item1){
+                                    if(err) {
+                                        util.handleError(err, next, callback, null);
+                                    }
+                                    setTimeout(function(){
+                                        callback(null, {history: history, id: item1.id, adultonly: item1.adultonly});
+                                    }, 0);
+                                });
                             });
                         }
                     });
                 } else {
                     this_obj.delTag(uid, tags[index].tag, user, next, function (err, result) {
+                        console.log(result);
                         if (err) {
                             util.handleError(err, next);
                         } else {
@@ -341,9 +347,14 @@ module.exports = function(collection) {
                                     util.handleError(err, next, callback, null);
                                 }
                                 console.log(item);
-                                setTimeout(function(){
-                                    callback(null, {history: history, id: result.id, adultonly: result.adultonly});
-                                }, 0);
+                                mongo.orig("findOne", "storage", { _id: id }, function(err, item1){
+                                    if(err) {
+                                        util.handleError(err, next, callback, null);
+                                    }
+                                    setTimeout(function(){
+                                        callback(null, {history: history, id: item1.id, adultonly: item1.adultonly});
+                                    }, 0);
+                                });
                             });
                         }
                     });
@@ -580,7 +591,7 @@ module.exports = function(collection) {
             }
             var nosql = getQuerySql(user, save.tags, save.exactly);
             if (!nosql.hasOwnProperty('$and')) {
-                nosql.$and = {};
+                nosql.$and = [];
             }
             if (back === 'back') {
                 if (save.sortType === 'desc') {

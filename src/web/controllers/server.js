@@ -145,83 +145,98 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
                         util.handleError(err, next, res);
                     }
                     console.log(user2);
-                    res.json({apiOK: true});
+                    descEdit();
                 });
             });
-        } else if (req.body.desc) {
-            if (!util.checkAdmin(1, req.user)) {
-                util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
-            }
-            var desc = util.isValidString(req.body.desc, 'desc'),
-                id = util.isValidString(req.params.uid, 'uid');
-            if (desc === false) {
-                util.handleError({hoerror: 2, msg: "desc is not vaild"}, next, res);
-            }
-            if (id === false) {
-                util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
-            }
-            var data = {};
-            data['desc'] = desc;
-            mongo.orig("update", "user", {_id: id}, {$set: data}, function(err,user){
-                if(err) {
-                    util.handleError(err, next, res);
+        } else {
+            descEdit();
+        }
+        function descEdit() {
+            if (req.body.desc === '' || req.body.desc) {
+                if (!util.checkAdmin(1, req.user)) {
+                    util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
                 }
-                console.log(user);
-                res.json({apiOK: true});
-            });
-        } else if (req.body.perm) {
-            if (!util.checkAdmin(1, req.user)) {
-                util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
-            }
-            var perm = util.isValidString(perm, 'perm'),
-                id = util.isValidString(req.params.uid, 'uid');
-            if (perm === false) {
-                util.handleError({hoerror: 2, msg: "perm is not vaild"}, next, res);
-            }
-            if (id === false) {
-                util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
-            }
-            var data = {};
-            data['perm'] = perm;
-            mongo.orig("update", "user", {_id: id}, {$set: data}, function(err,user){
-                if(err) {
-                    util.handleError(err, next, res);
+                var desc = util.isValidString(req.body.desc, 'desc'),
+                    id = util.isValidString(req.params.uid, 'uid');
+                if (desc === false) {
+                    util.handleError({hoerror: 2, msg: "desc is not vaild"}, next, res);
                 }
-                console.log(user);
-                res.json({apiOK: true});
-            });
-        } else if (req.body.newPwd && req.body.conPwd) {
-            var newPwd = util.isValidString(req.body.newPwd, 'passwd'),
-                conPwd = util.isValidString(req.body.conPwd, 'passwd'),
-                id;
-            if (newPwd === false) {
-                util.handleError({hoerror: 2, msg: "new passwd is not vaild"}, next, res);
-            }
-            if (conPwd === false) {
-                util.handleError({hoerror: 2, msg: "con passwd is not vaild"}, next, res);
-            }
-            if (newPwd !== conPwd) {
-                util.handleError({hoerror: 2, msg: 'confirm password must equal!!!'}, next, res);
-            }
-            if (util.checkAdmin(1, req.user)) {
-                id = util.isValidString(req.params.uid, 'uid');
                 if (id === false) {
                     util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
                 }
+                var data = {};
+                data['desc'] = desc;
+                mongo.orig("update", "user", {_id: id}, {$set: data}, function(err,user){
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
+                    console.log(user);
+                    permEdit();
+                });
             } else {
-                id = req.user._id;
+                permEdit();
             }
-            var data = {};
-            data['password'] = crypto.createHash('md5').update(newPwd).digest('hex');
-            mongo.orig("update", "user", {_id: id}, {$set: data}, function(err,user){
-                if(err) {
-                    util.handleError(err, next, res);
+        }
+        function permEdit() {
+            if (req.body.perm === '' || req.body.perm) {
+                if (!util.checkAdmin(1, req.user)) {
+                    util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
                 }
-                console.log(user);
+                var perm = util.isValidString(req.body.perm, 'perm'),
+                    id = util.isValidString(req.params.uid, 'uid');
+                if (perm === false) {
+                    util.handleError({hoerror: 2, msg: "perm is not vaild"}, next, res);
+                }
+                if (id === false) {
+                    util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+                }
+                var data = {};
+                data['perm'] = perm;
+                mongo.orig("update", "user", {_id: id}, {$set: data}, function(err,user){
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
+                    console.log(user);
+                    pwdEdit();
+                });
+            } else {
+                pwdEdit();
+            }
+        }
+        function pwdEdit() {
+            if (req.body.newPwd && req.body.conPwd) {
+                var newPwd = util.isValidString(req.body.newPwd, 'passwd'),
+                    conPwd = util.isValidString(req.body.conPwd, 'passwd'),
+                    id;
+                if (newPwd === false) {
+                    util.handleError({hoerror: 2, msg: "new passwd is not vaild"}, next, res);
+                }
+                if (conPwd === false) {
+                    util.handleError({hoerror: 2, msg: "con passwd is not vaild"}, next, res);
+                }
+                if (newPwd !== conPwd) {
+                    util.handleError({hoerror: 2, msg: 'confirm password must equal!!!'}, next, res);
+                }
+                if (util.checkAdmin(1, req.user)) {
+                    id = util.isValidString(req.params.uid, 'uid');
+                    if (id === false) {
+                        util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+                    }
+                } else {
+                    id = req.user._id;
+                }
+                var data = {};
+                data['password'] = crypto.createHash('md5').update(newPwd).digest('hex');
+                mongo.orig("update", "user", {_id: id}, {$set: data}, function(err,user){
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
+                    console.log(user);
+                    res.json({apiOK: true});
+                });
+            } else {
                 res.json({apiOK: true});
-            });
-        } else {
-            util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
+            }
         }
     });
 });
@@ -1825,6 +1840,7 @@ app.all('/api*', function(req, res, next) {
     "use strict";
     console.log('auth fail!!!');
     console.log(req.path);
+    console.log(req.user);
     res.send('auth fail!!!', 401);
 });
 

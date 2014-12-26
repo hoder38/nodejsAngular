@@ -26,7 +26,7 @@
             <span ng-click="dirItemlist(item.id)">{{item.name}}</span>
             <button ng-if="dirTaglist.isDel" type="button" confirmed-click="del2Parent(item.id)" ng-confirm-click="Would you sure to delete this tag?">Delete</button>
         </li>
-        <button id="parentMore" ng-show="parentMore" ng-click="moreDirtaglist()">More</button>
+        <button id="parentMore" ng-show="parentMore" ng-click="moreDirtaglist()" ng-disabled="parentMoreDisabled">More</button>
     </ul>
 </section>
 <section id="tag-input">
@@ -109,4 +109,4 @@
         <button ng-if="item.media" id="deleteMedia" confirmed-click="handleMedia(item, 'del')" ng-confirm-click="Would you sure to delete this Media?">Delete Media</button>
     </li>
 </ul>
-<button id="more" ng-show="more" ng-click="moreStorage()">More</button>
+<button id="more" ng-show="more" ng-click="moreStorage()" ng-disabled="moreDisabled">More</button>
