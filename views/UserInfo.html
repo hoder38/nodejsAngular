@@ -1,17 +1,75 @@
 <span id="initial" ng-init="init()"></span>
 <div class="container" id="user-section">
     <div class="well col-xs-12 col-sm-12 col-md-12 col-lg-12">
-        <div class="row user-row" ng-click="userCollapse.owner = !userCollapse.owner">
-            <div class="col-xs-3 col-sm-2 col-md-1 col-lg-1">
-                <img class="img-circle" src="https://lh5.googleusercontent.com/-b0-k99FZlyE/AAAAAAAAAAI/AAAAAAAAAAA/eu7opA4byxI/photo.jpg?sz=50" alt="User Pic">
+        <div class="row user-infos user3">
+            <div class="col-xs-12 col-sm-12 col-md-10 col-lg-10 col-xs-offset-0 col-sm-offset-0 col-md-offset-1 col-lg-offset-1" ng-repeat="user in uInfo | filter:{newable: true}:true">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">User profile</h3>
+                    </div>
+                    <form ng-submit="addUser(user)">
+                        <div class="panel-body">
+                            <div class="input-group">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-success" type="submit"><i class="glyphicon glyphicon-ok"></i></button>
+                                </span>
+                                <input type="password" class="form-control" placeholder="Password" ng-model="user.password" focus-me="user.passwordFocus" ng-enter="addUser(user)" />
+                            </div>
+                        </div>
+                        <div class="panel-footer">
+                            <div class="row">
+                                <div class="col-md-3 col-lg-3 hidden-xs hidden-sm">
+                                    <img class="img-circle" src="https://lh5.googleusercontent.com/-b0-k99FZlyE/AAAAAAAAAAI/AAAAAAAAAAA/eu7opA4byxI/photo.jpg?sz=100" alt="User Pic">
+                                </div>
+                                <div class="col-xs-2 col-sm-2 hidden-md hidden-lg">
+                                    <img class="img-circle" src="https://lh5.googleusercontent.com/-b0-k99FZlyE/AAAAAAAAAAI/AAAAAAAAAAA/eu7opA4byxI/photo.jpg?sz=50" alt="User Pic">
+                                </div>
+                                <div class="col-xs-10 col-sm-10 hidden-md hidden-lg">
+                                    <strong><input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" ng-enter="user.permFocus = true" placeholder="Username" /></strong><br>
+                                    <dl>
+                                        <dt>User level:</dt>
+                                        <dd><input type="text" class="form-control" value="{{user.perm}}" ng-model="user.perm" focus-me="user.permFocus" ng-enter="user.descFocus = true" placeholder="Level" /></dd>
+                                        <dt>Description:</dt>
+                                        <dd><input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.newPwdFocus = true" placeholder="Description" /></dd>
+                                        <dt>New Password:</dt>
+                                        <dd><input type="password" class="form-control" ng-model="user.newPwd" focus-me="user.newPwdFocus" placeholder="6~20個英數、!、@、#、$、%" ng-enter="user.conPwdFocus = true" /></dd>
+                                        <dt>Confirm Password:</dt>
+                                        <dd><input type="password" class="form-control" ng-model="user.conPwd" focus-me="user.conPwdFocus" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" /></dd>
+                                    </dl>
+                                </div>
+                                <div class=" col-md-9 col-lg-9 hidden-xs hidden-sm">
+                                    <span>
+                                        <strong><input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" placeholder="Username" ng-enter="user.permFocus = true" /></strong><br>
+                                    </span>
+                                    <table class="table table-user-information">
+                                        <tbody>
+                                        <tr>
+                                            <td>User level:</td>
+                                            <td><input type="text" class="form-control" value="{{user.perm}}" ng-model="user.perm" placeholder="Level" focus-me="user.permFocus" ng-enter="user.descFocus = true" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Description:</td>
+                                            <td><input type="text" class="form-control" value="{{user.desc}}" placeholder="Description" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.newPwdFocus = true" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td>New Password:</td>
+                                            <td><input class="form-control" type="password" name="passwd" placeholder="6~20個英數、!、@、#、$、%" focus-me="user.newPwdFocus" ng-enter="user.conPwdFocus = true" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Confirm Password:</td>
+                                            <td><input class="form-control" focus-me="user.conPwdFocus" type="password" name="passwd" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" /></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="col-xs-8 col-sm-9 col-md-10 col-lg-10">
-                <strong>User level: Administrator</strong><br>
-            </div>
-            <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1"><i class="glyphicon glyphicon-chevron-down text-muted"></i></div>
         </div>
-        <div class="row user-infos cyruxx" collapse="userCollapse.owner">
-            <div class="col-xs-12 col-sm-12 col-md-10 col-lg-10 col-xs-offset-0 col-sm-offset-0 col-md-offset-1 col-lg-offset-1" ng-repeat="user in uInfo | filter:{isDel:false, perm:'1'}:true">
+        <div class="row user-infos">
+            <div class="col-xs-12 col-sm-12 col-md-10 col-lg-10 col-xs-offset-0 col-sm-offset-0 col-md-offset-1 col-lg-offset-1" ng-repeat="user in uInfo | filter:{isDel:false, newable: false}:true">
                 <div class="panel panel-primary">
                     <div class="panel-heading">
                         <h3 class="panel-title">User profile</h3>
@@ -42,15 +100,19 @@
                                 <div class="col-xs-10 col-sm-10 hidden-md hidden-lg">
                                     <span ng-hide="user.edit"><strong>{{user.name}}</strong><br></span>
                                     <span ng-show="user.edit">
-                                        <strong><input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" ng-enter="user.permFocus = true" /></strong><br>
+                                        <strong><input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" ng-enter="user.hasPerm && (user.permFocus = true) || (user.newPwdFocus = true)" /></strong><br>
                                     </span>
                                     <dl>
-                                        <dt>User level:</dt>
-                                        <dd ng-hide="user.edit">{{user.perm}}</dd>
-                                        <dd ng-show="user.edit"><input type="text" class="form-control" value="{{user.perm}}" ng-model="user.perm" focus-me="user.permFocus" ng-enter="user.descFocus = true" /></dd>
-                                        <dt>Description:</dt>
-                                        <dd ng-hide="user.edit">{{user.desc}}</dd>
-                                        <dd ng-show="user.edit"><input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.newPwdFocus = true" /></dd>
+                                        <section ng-if="user.hasPerm">
+                                            <dt>User level:</dt>
+                                            <dd ng-hide="user.edit">{{user.perm}}</dd>
+                                            <dd ng-show="user.edit"><input type="text" class="form-control" value="{{user.perm}}" ng-model="user.perm" focus-me="user.permFocus" ng-enter="user.descFocus = true" /></dd>
+                                        </section>
+                                        <section ng-if="user.hasDesc">
+                                            <dt>Description:</dt>
+                                            <dd ng-hide="user.edit">{{user.desc}}</dd>
+                                            <dd ng-show="user.edit"><input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.newPwdFocus = true" /></dd>
+                                        </section>
                                         <dt>New Password:</dt>
                                         <dd><input type="password" class="form-control" ng-model="user.newPwd" focus-me="user.newPwdFocus" placeholder="6~20個英數、!、@、#、$、%" ng-enter="user.conPwdFocus = true" /></dd>
                                         <dt>Confirm Password:</dt>
@@ -60,207 +122,27 @@
                                 <div class=" col-md-9 col-lg-9 hidden-xs hidden-sm">
                                     <span ng-hide="user.edit"><strong>{{user.name}}</strong><br></span>
                                     <span ng-show="user.edit">
-                                        <strong><input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" /></strong><br>
+                                        <strong><input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" ng-enter="user.hasPerm && (user.permFocus = true) || (user.newPwdFocus = true)" /></strong><br>
                                     </span>
                                     <table class="table table-user-information">
                                         <tbody>
-                                        <tr>
+                                        <tr ng-if="user.hasPerm">
                                             <td>User level:</td>
                                             <td ng-hide="user.edit">{{user.perm}}</td>
-                                            <td ng-show="user.edit"><input type="text" class="form-control" value="{{user.perm}}" ng-model="user.perm" focus-me="user.permFocus" /></td>
+                                            <td ng-show="user.edit"><input type="text" class="form-control" value="{{user.perm}}" ng-model="user.perm" focus-me="user.permFocus" ng-enter="user.descFocus = true" /></td>
                                         </tr>
-                                        <tr>
+                                        <tr ng-if="user.hasDesc">
                                             <td>Description:</td>
                                             <td ng-hide="user.edit">{{user.desc}}</td>
-                                            <td ng-show="user.edit"><input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" /></td>
+                                            <td ng-show="user.edit"><input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.newPwdFocus = true" /></td>
                                         </tr>
                                         <tr>
                                             <td>New Password:</td>
-                                            <td><input class="form-control" type="password" name="passwd" placeholder="New Password"/></td>
+                                            <td><input class="form-control" type="password" name="passwd" placeholder="6~20個英數、!、@、#、$、%" ng-enter="user.conPwdFocus = true" /></td>
                                         </tr>
                                         <tr>
                                             <td>Confirm Password:</td>
-                                            <td><input class="form-control" type="password" name="passwd" placeholder="Confirm Password"/></td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="row user-row" ng-click="userCollapse.priority = !userCollapse.priority">
-            <div class="col-xs-3 col-sm-2 col-md-1 col-lg-1">
-                <img class="img-circle" src="https://lh5.googleusercontent.com/-b0-k99FZlyE/AAAAAAAAAAI/AAAAAAAAAAA/eu7opA4byxI/photo.jpg?sz=50" alt="User Pic">
-            </div>
-            <div class="col-xs-8 col-sm-9 col-md-10 col-lg-10">
-                <strong>User level: Priority</strong><br>
-            </div>
-            <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1 dropdown-user" data-for=".user2"><i class="glyphicon glyphicon-chevron-down text-muted"></i></div>
-        </div>
-        <div class="row user-infos user2" collapse="userCollapse.priority">
-            <div class="col-xs-12 col-sm-12 col-md-10 col-lg-10 col-xs-offset-0 col-sm-offset-0 col-md-offset-1 col-lg-offset-1" ng-repeat="user in uInfo | gtFilter:'perm':1:{isDel: false}">
-                <div class="panel panel-success">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">User profile</h3>
-                    </div>
-                    <form ng-submit="saveAll(user)">
-                        <div class="panel-body">
-                            <div class="input-group">
-                                <span class="input-group-btn">
-                                    <button class="btn btn-success" type="submit"><i class="glyphicon glyphicon-ok"></i></button>
-                                </span>
-                                <input type="password" class="form-control" placeholder="Password" ng-model="user.password" focus-me="user.passwordFocus" ng-enter="saveAll(user)" />
-                                <span class="input-group-btn" ng-click="editAll(user)">
-                                    <button class="btn btn-warning" type="button"><i class="glyphicon {{user.edit && 'glyphicon-check' || 'glyphicon-edit'}}"></i></button>
-                                </span>
-                                <span ng-show="user.delable" confirmed-click="delUser(user)" ng-confirm-click="Would you sure to delete this user?" class="input-group-btn">
-                                    <button class="btn btn-danger" type="button"><i class="glyphicon glyphicon-remove"></i></button>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="panel-footer">
-                            <div class="row">
-                                <div class="col-md-3 col-lg-3 hidden-xs hidden-sm">
-                                    <img class="img-circle" src="https://lh5.googleusercontent.com/-b0-k99FZlyE/AAAAAAAAAAI/AAAAAAAAAAA/eu7opA4byxI/photo.jpg?sz=100" alt="User Pic">
-                                </div>
-                                <div class="col-xs-2 col-sm-2 hidden-md hidden-lg">
-                                    <img class="img-circle" src="https://lh5.googleusercontent.com/-b0-k99FZlyE/AAAAAAAAAAI/AAAAAAAAAAA/eu7opA4byxI/photo.jpg?sz=50" alt="User Pic">
-                                </div>
-                                <div class="col-xs-10 col-sm-10 hidden-md hidden-lg">
-                                    <span ng-hide="user.edit"><strong>{{user.name}}</strong><br></span>
-                                    <span ng-show="user.edit">
-                                        <strong><input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" ng-enter="user.permFocus = true" /></strong><br>
-                                    </span>
-                                    <dl>
-                                        <dt>User level:</dt>
-                                        <dd ng-hide="user.edit">{{user.perm}}</dd>
-                                        <dd ng-show="user.edit"><input type="text" class="form-control" value="{{user.perm}}" ng-model="user.perm" focus-me="user.permFocus" ng-enter="user.descFocus = true" /></dd>
-                                        <dt>Description:</dt>
-                                        <dd ng-hide="user.edit">{{user.desc}}</dd>
-                                        <dd ng-show="user.edit"><input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.newPwdFocus = true" /></dd>
-                                        <dt>New Password:</dt>
-                                        <dd><input type="password" class="form-control" ng-model="user.newPwd" focus-me="user.newPwdFocus" placeholder="6~20個英數、!、@、#、$、%" ng-enter="user.conPwdFocus = true" /></dd>
-                                        <dt>Confirm Password:</dt>
-                                        <dd><input type="password" class="form-control" ng-model="user.conPwd" focus-me="user.conPwdFocus" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" /></dd>
-                                    </dl>
-                                </div>
-                                <div class=" col-md-9 col-lg-9 hidden-xs hidden-sm">
-                                    <span ng-hide="user.edit"><strong>{{user.name}}</strong><br></span>
-                                    <span ng-show="user.edit">
-                                        <strong><input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" /></strong><br>
-                                    </span>
-                                    <table class="table table-user-information">
-                                        <tbody>
-                                        <tr>
-                                            <td>User level:</td>
-                                            <td ng-hide="user.edit">{{user.perm}}</td>
-                                            <td ng-show="user.edit"><input type="text" class="form-control" value="{{user.perm}}" ng-model="user.perm" focus-me="user.permFocus" /></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Description:</td>
-                                            <td ng-hide="user.edit">{{user.desc}}</td>
-                                            <td ng-show="user.edit"><input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" /></td>
-                                        </tr>
-                                        <tr>
-                                            <td>New Password:</td>
-                                            <td><input class="form-control" type="password" name="passwd" placeholder="New Password"/></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Confirm Password:</td>
-                                            <td><input class="form-control" type="password" name="passwd" placeholder="Confirm Password"/></td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="row user-row" ng-click="userCollapse.normal = !userCollapse.normal">
-            <div class="col-xs-3 col-sm-2 col-md-1 col-lg-1">
-                <img class="img-circle" src="https://lh5.googleusercontent.com/-b0-k99FZlyE/AAAAAAAAAAI/AAAAAAAAAAA/eu7opA4byxI/photo.jpg?sz=50" alt="User Pic">
-            </div>
-            <div class="col-xs-8 col-sm-9 col-md-10 col-lg-10">
-                <strong>User level: Normal</strong><br>
-            </div>
-            <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1 dropdown-user" data-for=".user3"><i class="glyphicon glyphicon-chevron-down text-muted"></i></div>
-        </div>
-        <div class="row user-infos user3" collapse="userCollapse.normal">
-            <div class="col-xs-12 col-sm-12 col-md-10 col-lg-10 col-xs-offset-0 col-sm-offset-0 col-md-offset-1 col-lg-offset-1" ng-repeat="user in uInfo | filter:{isDel:false, perm:'0'}:true">
-                <div class="panel panel-warning">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">User profile</h3>
-                    </div>
-                    <form ng-submit="saveAll(user)">
-                        <div class="panel-body">
-                            <div class="input-group">
-                                <span class="input-group-btn">
-                                    <button class="btn btn-success" type="submit"><i class="glyphicon glyphicon-ok"></i></button>
-                                </span>
-                                <input type="password" class="form-control" placeholder="Password" ng-model="user.password" focus-me="user.passwordFocus" ng-enter="saveAll(user)" />
-                                <span class="input-group-btn" ng-click="editAll(user)">
-                                    <button class="btn btn-warning" type="button"><i class="glyphicon {{user.edit && 'glyphicon-check' || 'glyphicon-edit'}}"></i></button>
-                                </span>
-                                <span ng-show="user.delable" confirmed-click="delUser(user)" ng-confirm-click="Would you sure to delete this user?" class="input-group-btn">
-                                    <button class="btn btn-danger" type="button"><i class="glyphicon glyphicon-remove"></i></button>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="panel-footer">
-                            <div class="row">
-                                <div class="col-md-3 col-lg-3 hidden-xs hidden-sm">
-                                    <img class="img-circle" src="https://lh5.googleusercontent.com/-b0-k99FZlyE/AAAAAAAAAAI/AAAAAAAAAAA/eu7opA4byxI/photo.jpg?sz=100" alt="User Pic">
-                                </div>
-                                <div class="col-xs-2 col-sm-2 hidden-md hidden-lg">
-                                    <img class="img-circle" src="https://lh5.googleusercontent.com/-b0-k99FZlyE/AAAAAAAAAAI/AAAAAAAAAAA/eu7opA4byxI/photo.jpg?sz=50" alt="User Pic">
-                                </div>
-                                <div class="col-xs-10 col-sm-10 hidden-md hidden-lg">
-                                    <span ng-hide="user.edit"><strong>{{user.name}}</strong><br></span>
-                                    <span ng-show="user.edit">
-                                        <strong><input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" ng-enter="user.permFocus = true" /></strong><br>
-                                    </span>
-                                    <dl>
-                                        <dt>User level:</dt>
-                                        <dd ng-hide="user.edit">{{user.perm}}</dd>
-                                        <dd ng-show="user.edit"><input type="text" class="form-control" value="{{user.perm}}" ng-model="user.perm" focus-me="user.permFocus" ng-enter="user.descFocus = true" /></dd>
-                                        <dt>Description:</dt>
-                                        <dd ng-hide="user.edit">{{user.desc}}</dd>
-                                        <dd ng-show="user.edit"><input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.newPwdFocus = true" /></dd>
-                                        <dt>New Password:</dt>
-                                        <dd><input type="password" class="form-control" ng-model="user.newPwd" focus-me="user.newPwdFocus" placeholder="6~20個英數、!、@、#、$、%" ng-enter="user.conPwdFocus = true" /></dd>
-                                        <dt>Confirm Password:</dt>
-                                        <dd><input type="password" class="form-control" ng-model="user.conPwd" focus-me="user.conPwdFocus" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" /></dd>
-                                    </dl>
-                                </div>
-                                <div class=" col-md-9 col-lg-9 hidden-xs hidden-sm">
-                                    <span ng-hide="user.edit"><strong>{{user.name}}</strong><br></span>
-                                    <span ng-show="user.edit">
-                                        <strong><input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" /></strong><br>
-                                    </span>
-                                    <table class="table table-user-information">
-                                        <tbody>
-                                        <tr>
-                                            <td>User level:</td>
-                                            <td ng-hide="user.edit">{{user.perm}}</td>
-                                            <td ng-show="user.edit"><input type="text" class="form-control" value="{{user.perm}}" ng-model="user.perm" focus-me="user.permFocus" /></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Description:</td>
-                                            <td ng-hide="user.edit">{{user.desc}}</td>
-                                            <td ng-show="user.edit"><input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" /></td>
-                                        </tr>
-                                        <tr>
-                                            <td>New Password:</td>
-                                            <td><input class="form-control" type="password" name="passwd" placeholder="New Password"/></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Confirm Password:</td>
-                                            <td><input class="form-control" type="password" name="passwd" placeholder="Confirm Password"/></td>
+                                            <td><input class="form-control" type="password" name="passwd" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" /></td>
                                         </tr>
                                         </tbody>
                                     </table>

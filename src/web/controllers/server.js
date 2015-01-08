@@ -84,7 +84,7 @@ app.get('/api/userinfo', function (req, res, next) {
                     util.handleError(err, next, res);
                 }
                 console.log(user);
-                user_info.push({name: user.username});
+                user_info.push({name: user.username, newable: false});
                 res.json({user_info: user_info});
             });
         } else {
@@ -94,10 +94,10 @@ app.get('/api/userinfo', function (req, res, next) {
                 }
                 console.log(users);
                 for (var i in users) {
-                    if (req.user._id.equals(users[i]._id)) {
-                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id});
+                    if (users[i].perm === '1') {
+                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, newable: false});
                     } else {
-                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, delable: true});
+                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, delable: true, newable: false});
                     }
                 }
                 user_info.push({name: '', perm: '', desc: '', newable: true});
@@ -118,18 +118,64 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
         if (req.user.password !== crypto.createHash('md5').update(pwd).digest('hex')) {
             util.handleError({hoerror: 2, msg: "password error"}, next, res);
         }
-        if (req.body.name) {
-            var name = util.isValidString(req.body.name, 'name'), id;
-            if (name === false) {
-                util.handleError({hoerror: 2, msg: "name is not vaild"}, next, res);
+        var ret = {};
+        var data = {};
+        var needPerm = false;
+        var id;
+        if (req.body.desc === '' || req.body.desc) {
+            if (!util.checkAdmin(1, req.user)) {
+                util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
             }
-            if (util.checkAdmin(1, req.user)) {
-                id = util.isValidString(req.params.uid, 'uid');
-                if (id === false) {
-                    util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
-                }
+            var desc = util.isValidString(req.body.desc, 'desc');
+            if (desc === false) {
+                util.handleError({hoerror: 2, msg: "desc is not vaild"}, next, res);
+            }
+            data['desc'] = desc;
+            ret['desc'] = desc;
+            needPerm = true;
+        }
+        if (req.body.perm === '' || req.body.perm) {
+            if (!util.checkAdmin(1, req.user)) {
+                util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
+            }
+            var perm = util.isValidString(req.body.perm, 'perm');
+            if (perm === false) {
+                util.handleError({hoerror: 2, msg: "perm is not vaild"}, next, res);
+            }
+            data['perm'] = perm;
+            ret['perm'] = perm;
+            needPerm = true;
+        }
+        if (req.body.newPwd && req.body.conPwd) {
+            var newPwd = util.isValidString(req.body.newPwd, 'passwd'),
+                conPwd = util.isValidString(req.body.conPwd, 'passwd');
+            if (newPwd === false) {
+                util.handleError({hoerror: 2, msg: "new passwd is not vaild"}, next, res);
+            }
+            if (conPwd === false) {
+                util.handleError({hoerror: 2, msg: "con passwd is not vaild"}, next, res);
+            }
+            if (newPwd !== conPwd) {
+                util.handleError({hoerror: 2, msg: 'confirm password must equal!!!'}, next, res);
+            }
+            data['password'] = crypto.createHash('md5').update(newPwd).digest('hex');
+        }
+        if (util.checkAdmin(1, req.user)) {
+            id = util.isValidString(req.params.uid, 'uid');
+            if (id === false) {
+                util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            }
+        } else {
+            if (needPerm) {
+                util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
             } else {
                 id = req.user._id;
+            }
+        }
+        if (req.body.name) {
+            var name = util.isValidString(req.body.name, 'name');
+            if (name === false) {
+                util.handleError({hoerror: 2, msg: "name is not vaild"}, next, res);
             }
             mongo.orig("findOne", "user", {username: name}, function(err, user){
                 if(err) {
@@ -138,105 +184,37 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
                 if (user) {
                     util.handleError({hoerror: 2, msg: 'already has one!!!'}, next, res);
                 }
-                var data = {};
                 data['username'] = name;
+                ret['name'] = name;
+                if (req.user._id.equals(id)) {
+                    ret.owner = name;
+                }
+                console.log(data);
                 mongo.orig("update", "user", {_id: id}, {$set: data}, function(err,user2){
                     if(err) {
                         util.handleError(err, next, res);
                     }
                     console.log(user2);
-                    descEdit();
+                    res.json(ret);
                 });
             });
         } else {
-            descEdit();
-        }
-        function descEdit() {
-            if (req.body.desc === '' || req.body.desc) {
-                if (!util.checkAdmin(1, req.user)) {
-                    util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
-                }
-                var desc = util.isValidString(req.body.desc, 'desc'),
-                    id = util.isValidString(req.params.uid, 'uid');
-                if (desc === false) {
-                    util.handleError({hoerror: 2, msg: "desc is not vaild"}, next, res);
-                }
-                if (id === false) {
-                    util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
-                }
-                var data = {};
-                data['desc'] = desc;
-                mongo.orig("update", "user", {_id: id}, {$set: data}, function(err,user){
-                    if(err) {
-                        util.handleError(err, next, res);
-                    }
-                    console.log(user);
-                    permEdit();
-                });
-            } else {
-                permEdit();
+            if (Object.getOwnPropertyNames(data).length === 0) {
+                util.handleError({hoerror: 2, msg: 'nothing to change!!!'}, next, res);
             }
-        }
-        function permEdit() {
-            if (req.body.perm === '' || req.body.perm) {
-                if (!util.checkAdmin(1, req.user)) {
-                    util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
+            console.log(data);
+            console.log(id);
+            mongo.orig("update", "user", {_id: id}, {$set: data}, function(err,user){
+                if(err) {
+                    util.handleError(err, next, res);
                 }
-                var perm = util.isValidString(req.body.perm, 'perm'),
-                    id = util.isValidString(req.params.uid, 'uid');
-                if (perm === false) {
-                    util.handleError({hoerror: 2, msg: "perm is not vaild"}, next, res);
-                }
-                if (id === false) {
-                    util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
-                }
-                var data = {};
-                data['perm'] = perm;
-                mongo.orig("update", "user", {_id: id}, {$set: data}, function(err,user){
-                    if(err) {
-                        util.handleError(err, next, res);
-                    }
-                    console.log(user);
-                    pwdEdit();
-                });
-            } else {
-                pwdEdit();
-            }
-        }
-        function pwdEdit() {
-            if (req.body.newPwd && req.body.conPwd) {
-                var newPwd = util.isValidString(req.body.newPwd, 'passwd'),
-                    conPwd = util.isValidString(req.body.conPwd, 'passwd'),
-                    id;
-                if (newPwd === false) {
-                    util.handleError({hoerror: 2, msg: "new passwd is not vaild"}, next, res);
-                }
-                if (conPwd === false) {
-                    util.handleError({hoerror: 2, msg: "con passwd is not vaild"}, next, res);
-                }
-                if (newPwd !== conPwd) {
-                    util.handleError({hoerror: 2, msg: 'confirm password must equal!!!'}, next, res);
-                }
-                if (util.checkAdmin(1, req.user)) {
-                    id = util.isValidString(req.params.uid, 'uid');
-                    if (id === false) {
-                        util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
-                    }
-                } else {
-                    id = req.user._id;
-                }
-                var data = {};
-                data['password'] = crypto.createHash('md5').update(newPwd).digest('hex');
-                mongo.orig("update", "user", {_id: id}, {$set: data}, function(err,user){
-                    if(err) {
-                        util.handleError(err, next, res);
-                    }
-                    console.log(user);
+                console.log(user);
+                if (Object.getOwnPropertyNames(ret).length === 0) {
                     res.json({apiOK: true});
-                });
-            } else {
-                res.json({apiOK: true});
-            }
+                } else {
+                    res.json(ret);
+                }
+            });
         }
     });
 });
@@ -253,9 +231,9 @@ app.post('/api/adduser', function(req, res, next){
             if (req.user.password !== crypto.createHash('md5').update(pwd).digest('hex')) {
                 util.handleError({hoerror: 2, msg: "password error"}, next, res);
             }
-            var name = util.isValidString(name, 'name'),
+            var name = util.isValidString(req.body.name, 'name'),
                 desc = util.isValidString(req.body.desc, 'desc'),
-                perm = util.isValidString(perm, 'perm'),
+                perm = util.isValidString(req.body.perm, 'perm'),
                 newPwd = util.isValidString(req.body.newPwd, 'passwd'),
                 conPwd = util.isValidString(req.body.conPwd, 'passwd');
             if (name === false) {
@@ -285,6 +263,10 @@ app.post('/api/adduser', function(req, res, next){
                     util.handleError({hoerror: 2, msg: 'password must equal!!!'}, next, res);
                 }
                 var data = {};
+                var item = {newable: false, delable: true};
+                item['name'] = name;
+                item['desc'] = desc;
+                item['perm'] = perm;
                 data['username'] = name;
                 data['desc'] = desc;
                 data['perm'] = perm;
@@ -294,7 +276,7 @@ app.post('/api/adduser', function(req, res, next){
                         util.handleError(err, next, res);
                     }
                     console.log(user);
-                    var ret = {item: {newable: false, delable: true}, newItem: {name: '', perm: '', desc: '', newable: true}};
+                    var ret = {item: item, newItem: {name: '', perm: '', desc: '', newable: true}};
                     res.json(ret);
                 });
             });
@@ -555,6 +537,39 @@ function editFile(uid, newName, user, next, callback) {
     });
 }
 
+app.put('/api/recoverFile/:uid', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("recoverFile");
+        if (!util.checkAdmin(1, req.user)) {
+            util.handleError({hoerror: 2, msg: "permission denied"}, next, res);
+        }
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+        }
+        mongo.orig("findOne", "storage", {_id: id}, function(err, item){
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (!item) {
+                util.handleError({hoerror: 2, msg: 'file can not be fund!!!'}, next, res);
+            }
+            if (item.recycle !== 1) {
+                util.handleError({hoerror: 2, msg: 'recycle file first!!!'}, next, res);
+            }
+            var time = Math.round(new Date().getTime() / 1000);
+            mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 0, mtime: time}}, function(err, item2){
+                if(err) {
+                    util.handleError(err, next, res);
+                }
+                console.log(item2);
+                sendWs({type: 'file', data: item._id}, item.adultonly);
+                res.json({apiOK: true});
+            });
+        });
+    });
+});
+
 app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("delFile");
@@ -589,6 +604,9 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                 }
                 if (fs.existsSync(filePath + '.srt')) {
                     del_arr.push(filePath + '.srt');
+                }
+                if (fs.existsSync(filePath + '.srt1')) {
+                    del_arr.push(filePath + '.srt1');
                 }
                 if (fs.existsSync(filePath + '.vtt')) {
                     del_arr.push(filePath + '.vtt');
@@ -733,6 +751,9 @@ app.post('/upload/subtitle/:uid', function(req, res, next) {
                         if(err) {
                             util.handleError(err, next, res);
                         }
+                        if (fs.existsSync(filePath + '.' + ext)) {
+                            fs.renameSync(filePath + '.' + ext, filePath + '.' + ext + '1');
+                        }
                         var stream = fs.createReadStream(req.files.file.path);
                         stream.on('error', function(err){
                             console.log('save file error!!!');
@@ -742,6 +763,9 @@ app.post('/upload/subtitle/:uid', function(req, res, next) {
                         stream.pipe(fs.createWriteStream(filePath + '.' + ext));
                     });
                 } else {
+                    if (fs.existsSync(filePath + '.' + ext)) {
+                        fs.renameSync(filePath + '.' + ext, filePath + '.' + ext + '1');
+                    }
                     var stream = fs.createReadStream(req.files.file.path);
                     stream.on('error', function(err){
                         console.log('save file error!!!');
@@ -1182,7 +1206,11 @@ app.get('/api/parent/list/:lang?', function(req, res, next) {
         var ret = [];
         for (var i in list) {
             ret.push({'name':list[i].name, 'show':list[i][lang]});
-            res.json({parentList: ret});
+        }
+        if (util.checkAdmin(1, req.user)) {
+            res.json({parentList: ret, isEdit: true});
+        } else {
+            res.json({parentList: ret, isEdit: false});
         }
     });
 });
@@ -1193,8 +1221,8 @@ app.get('/api/parent/taglist/:name/:sortName(name|mtime)/:sortType(desc|asc)/:pa
         console.log(req.params.page);
         console.log(req.params.name);
         var page = Number(req.params.page);
-        res.cookie('bookmarkSortName', req.params.sortName);
-        res.cookie('bookmarkSortType', req.params.sortType);
+        res.cookie('dir' + req.params.name + 'SortName', req.params.sortName);
+        res.cookie('dir' + req.params.name + 'SortType', req.params.sortType);
         tagTool.parentQuery(req.params.name, req.params.sortName, req.params.sortType, page, req.user, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
@@ -1257,18 +1285,38 @@ app.get('/api/parent/query/:id', function(req, res, next) {
     });
 });
 
-app.get('/api/feedback/:scope?', function (req, res, next) {
+app.get('/api/feedback', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("feedback");
-        if (req.params.scope === 'all') {
-            if (!util.checkAdmin(1, req.user)) {
-                util.handleError({hoerror: 2, msg: "permission denied"}, next, res);
+        mongo.orig("find", "storage", {untag: 1, owner: req.user._id}, {sort: ["mtime",'desc'], limit: 20}, function(err, items){
+            if(err) {
+                util.handleError(err, next, res);
             }
-            mongo.orig("find", "storage", {untag: 1}, {sort: "mtime", limit: 20}, function(err, items){
-                if(err) {
-                    util.handleError(err, next, res);
-                }
-                console.log(items);
+            console.log(items);
+            if (items.length === 0 && util.checkAdmin(1, req.user)) {
+                mongo.orig("find", "storage", {untag: 1}, {sort: "mtime", limit: 20}, function(err, items2){
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
+                    console.log(items2);
+                    var feedback_arr = [];
+                    recur_feedback(0);
+                    function recur_feedback(index) {
+                        getFeedback(items2[index], function(err, feedback) {
+                            if(err) {
+                                util.handleError(err, next, res);
+                            }
+                            feedback_arr.push(feedback);
+                            index++;
+                            if (index < items2.length) {
+                                recur_feedback(index);
+                            } else {
+                                res.json({feedbacks: feedback_arr});
+                            }
+                        }, req.user);
+                    }
+                });
+            } else {
                 var feedback_arr = [];
                 recur_feedback(0);
                 function recur_feedback(index) {
@@ -1283,39 +1331,16 @@ app.get('/api/feedback/:scope?', function (req, res, next) {
                         } else {
                             res.json({feedbacks: feedback_arr});
                         }
-                    });
+                    }, req.user);
                 }
-            });
-        } else {
-            mongo.orig("find", "storage", {untag: 1, owner: req.user._id}, {sort: ["mtime",'desc'], limit: 20}, function(err, items){
-                if(err) {
-                    util.handleError(err, next, res);
-                }
-                console.log(items);
-                var feedback_arr = [];
-                recur_feedback(0);
-                function recur_feedback(index) {
-                    getFeedback(items[index], function(err, feedback) {
-                        if(err) {
-                            util.handleError(err, next, res);
-                        }
-                        feedback_arr.push(feedback);
-                        index++;
-                        if (index < items.length) {
-                            recur_feedback(index);
-                        } else {
-                            res.json({feedbacks: feedback_arr});
-                        }
-                    });
-                }
-            });
-        }
+            }
+        });
     });
 });
 
-function getFeedback(item, callback, user_id) {
+//user_id是改不是owner的時候用
+function getFeedback(item, callback, user) {
     var filePath = util.getFileLocation(item.owner, item._id);
-    var owner_id = typeof user_id !== 'undefined' ? user_id : item.owner;
     handleTag(filePath, {}, item.name, '', 0, function(err, mediaType, mediaTag, DBdata) {
         if (err) {
             util.handleError(err, callback, callback);
@@ -1326,16 +1351,22 @@ function getFeedback(item, callback, user_id) {
                 temp_tag.push(mediaTag.opt[i]);
             }
         }
-        var index_tag = 0;
-        for (var i in item[owner_id.toString()]) {
-            index_tag = item.tags.indexOf(item[owner_id.toString()][i]);
-            if (index_tag !== -1) {
-                item.tags.splice(index_tag, 1);
+        if (!util.checkAdmin(1, user)) {
+            var index_tag = 0;
+            for (var i in item[user._id.toString()]) {
+                index_tag = item.tags.indexOf(item[user._id.toString()][i]);
+                if (index_tag !== -1) {
+                    item.tags.splice(index_tag, 1);
+                }
             }
+            setTimeout(function(){
+                callback(null, {id: item._id, name: item.name, select: item[user._id.toString()], option: temp_tag, other: item.tags});
+            }, 0);
+        } else {
+            setTimeout(function(){
+                callback(null, {id: item._id, name: item.name, select: item.tags, option: temp_tag, other: []});
+            }, 0);
         }
-        setTimeout(function(){
-            callback(null, {id: item._id, name: item.name, select: item[owner_id.toString()], option: temp_tag, other: item.tags});
-        }, 0);
     });
 }
 
@@ -1917,9 +1948,9 @@ function getStorageItem(user, items, mediaHandle) {
                 items[i].tags.push('18禁');
             }
             if (mediaHandle === 1) {
-                itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, media: items[i].mediaType});
+                itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, mtime: items[i].mtime, media: items[i].mediaType});
             } else {
-                itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status});
+                itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, mtime: items[i].mtime});
             }
         }
     } else {
@@ -1929,15 +1960,15 @@ function getStorageItem(user, items, mediaHandle) {
             }
             if (user._id.equals(items[i].owner)) {
                 if (mediaHandle === 1) {
-                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, media: items[i].mediaType});
+                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, mtime: items[i].mtime, media: items[i].mediaType});
                 } else {
-                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status});
+                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, mtime: items[i].mtime});
                 }
             } else {
                 if (mediaHandle === 1) {
-                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, media: items[i].mediaType});
+                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, mtime: items[i].mtime, media: items[i].mediaType});
                 } else {
-                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status});
+                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, mtime: items[i].mtime});
                 }
             }
         }

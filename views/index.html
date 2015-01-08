@@ -31,22 +31,31 @@
         </div>
     </script>
     <body ng-controller="TodoCrtlRemovable" nv-file-drop="" uploader="uploader">
-        <div id="wrapper">
+        <div id="wrapper" class="{{(currentPage===1) && 'storage-wrapper' || ''}}">
+            <div id="alert-section">
+                <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
+            </div>
             <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
                 <div class="navbar-header">
-                    <button type="button" class="navbar-toggle" ng-click="collapse.nav = !collapse.nav">
+                    <button type="button" class="navbar-toggle" id="inverse-toggle" ng-click="collapse.nav = !collapse.nav">
                         <span class="sr-only">Toggle navigation</span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
                     <a class="navbar-brand" href="/">The Life of Ho</a>
+                    <button ng-show="currentPage===1" type="button" class="navbar-toggle" ng-click="collapse.storage = !collapse.storage">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
                 </div>
                 <!-- Top Menu Items -->
                 <ul class="nav navbar-right top-nav">
                     <li class="dropdown" dropdown="">
                         <a href="#" class="dropdown-toggle" dropdown-toggle=""><i class="fa fa-user"></i> {{id}} <b class="caret"></b></a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu" id="profile-section">
                             <li>
                                 <a href="/UserInfo"><i class="fa fa-fw fa-user"></i> Profile</a>
                             </li>
@@ -60,7 +69,7 @@
                 <div class="navbar-collapse">
                     <div collapse="collapse.nav">
                         <ul class="nav navbar-nav side-nav">
-                            <li ng-repeat="item in navList" class="{{item.active && 'active' || ''}}">
+                            <li ng-repeat="item in navList" class="{{(currentPage===$index) && 'active' || ''}}">
                                 <a href="{{item.hash}}"><i class="{{item.css}}"></i>{{item.title}}</a>
                             </li>
                         </ul>
@@ -69,11 +78,10 @@
             </nav>
             <section id="page-wrapper">
                 <section ng-view>
-
                 </section>
                 <div class="btn-group-vertical" role="group" aria-label="Vertical button group" id="widget-section">
                     <button type="button" ng-show="isLogin" class="btn btn-info" ng-click="toggleWidget('uploader')" >Uploader <span class="badge">{{uploader.progress}}%</span></button>
-                    <button type="button" ng-show="feedback.queue.length" class="btn btn-default" ng-click="toggleWidget('feedback')">Feedback <span class="badge">{{feedback.queue.length}}</span></button>
+                    <button type="button" ng-show="feedback.run" class="btn btn-default" ng-click="toggleWidget('feedback')">Feedback <span class="badge">{{feedback.queue.length+1}}</span></button>
                     <button type="button" ng-show="image.list.length" class="btn btn-warning" ng-click="mediaToggle('image')">Image <span class="badge">{{image.end && ' ' || '>'}}{{image.list.length}}</span></button>
                     <button type="button" ng-show="video.list.length" class="btn btn-success" ng-click="mediaToggle('video')">Video <span class="badge">{{video.end && ' ' || '>'}}{{video.list.length}}</span></button>
                     <button type="button" ng-show="music.list.length" class="btn btn-primary" ng-click="mediaToggle('music')">Music <span class="badge">{{music.end && ' ' || '>'}}{{music.list.length}}</span></button>
@@ -83,7 +91,7 @@
                 <sectio id="left-bottom-section">
                     <section class="panel panel-info" id="uploader-section" ng-show="widget.uploader&&isLogin" >
                         <div class="panel-heading" ng-click="toggleWidget('uploader')">
-                            <h4 class="panel-title">Uploader</h4>
+                            <h4 class="panel-title">Uploader<i class="pull-right glyphicon glyphicon-remove"></i></h4>
                         </div>
                         <div class="uploader-word" ng-repeat="item in uploader.queue">
                             {{ item.file.name }}<span class="badge">{{ item.progress }}%</span>
@@ -99,13 +107,13 @@
                             <button class="btn btn-danger btn-s" ng-click="uploader.clearQueue()" ng-disabled="!uploader.queue.length" disabled="disabled"><span class="glyphicon glyphicon-trash"></span>Remove all</button>
                         </div>
                     </section>
-                    <section class="panel panel-default feedback-list" id="feedback-section" ng-show="widget.feedback && feedback.queue.length">
+                    <section class="panel panel-default feedback-list" id="feedback-section" ng-show="widget.feedback && feedback.run">
                         <div class="panel-heading" ng-click="toggleWidget('feedback')">
-                            <h4 class="panel-title">{{feedback.name}}</h4>
+                            <h4 class="panel-title">{{feedback.name}}<i class="pull-right glyphicon glyphicon-remove"></i></h4>
                         </div>
                         <div class="dropdown" dropdown="" is-open="dropdown.feedback">
                             <ul class="dropdown-menu">
-                                <li ><a ng-confirm-click="'Would you sure to add tag to Dir?'" ng-repeat="item in dirList" confirmed-click="feedbackAdd2Parent(item.name)">{{item.show}}</a></li>
+                                <li ng-repeat="item in dirList"><a ng-confirm-click="'Would you sure to add this tag to Dir?'" confirmed-click="feedbackAdd2Parent(item.name)">{{item.show}}</a></li>
                             </ul>
                         </div>
                         <div id="feedback-inner-section" class="panel-body">
@@ -131,24 +139,19 @@
                         </div>
                         <div class="input-group">
                             <span class="input-group-btn">
-                                <button type="button" class="btn btn-default" ng-click="sendFeedback()">confirm</button>
+                                <button type="button" class="btn btn-default" ng-click="sendFeedback()"><i class="glyphicon glyphicon-thumbs-up"></i></button>
                             </span>
                             <input type="text" class="form-control" ng-model="feedbackInput" ng-enter="addFeedback()">
                             <span class="input-group-btn">
-                                <button class="btn btn-default" ng-click="addFeedback()" type="button">Add</button>
+                                <button class="btn btn-default" ng-click="addFeedback()" type="button"><i class="glyphicon glyphicon-plus"></i></button>
                             </span>
                         </div>
                     </section>
                 </section>
-                <section ng-show="miscUploader.open" id="misc-uploader-section" nv-file-drop="" uploader="miscUploader" style="width:400px; height:200px; background:red">
-                    <input type="file" nv-file-select uploader="miscUploader"/>
-                    <span ng-show="miscUploader.progress !== 100">Total progress: {{ miscUploader.progress }}</span>
-                    <span ng-show="miscUploader.progress === 100">上傳完成，後端處理中</span>
-                </section>
                 <section id="{{isFull && 'full-section'||'center-section'}}">
                     <section class="panel panel-warning media-section" ng-show="mediaShow[0] === 'image'">
                         <div class="panel-heading" ng-click="mediaToggle('image')">
-                            <h4 class="panel-title">{{image.index}} : {{image.name}}</h4>
+                            <h4 class="panel-title">{{image.index}} : {{image.name}}<i class="pull-right glyphicon glyphicon-remove"></i></h4>
                         </div>
                         <div class="panel-body media-trim">
                             <nav>
@@ -163,7 +166,7 @@
                     </section>
                     <section class="panel panel-success" ng-show="mediaShow[0] === 'video'">
                         <div class="panel-heading" ng-click="mediaToggle('video')">
-                            <h4 class="panel-title">{{video.index}} : {{video.name}}</h4>
+                            <h4 class="panel-title">{{video.index}} : {{video.name}}<i class="pull-right glyphicon glyphicon-remove"></i></h4>
                         </div>
                         <div class="panel-body media-trim">
                             <nav>
@@ -180,7 +183,7 @@
                     </section>
                     <section class="panel panel-primary" ng-show="mediaShow[0] === 'music'">
                         <div class="panel-heading" ng-click="mediaToggle('music')">
-                            <h4 class="panel-title">{{music.index}} : {{music.name}}</h4>
+                            <h4 class="panel-title">{{music.index}} : {{music.name}}<i class="pull-right glyphicon glyphicon-remove"></i></h4>
                         </div>
                         <div class="panel-body media-trim">
                             <nav>
@@ -198,7 +201,7 @@
                 <section id="{{isFull && 'full-doc-section'||'doc-section'}}">
                     <section class="panel panel-danger" ng-show="mediaShow[0] === 'doc'">
                         <div class="panel-heading" ng-click="mediaToggle('doc')">
-                            <h4 class="panel-title">{{doc.index}} : {{doc.name}}</h4>
+                            <h4 class="panel-title">{{doc.index}} : {{doc.name}}<i class="pull-right glyphicon glyphicon-remove"></i></h4>
                         </div>
                         <div class="panel-body">
                             <nav>
@@ -215,7 +218,7 @@
                     </section>
                     <section class="panel panel-info" ng-show="mediaShow[0] === 'rawdoc'">
                         <div class="panel-heading" ng-click="mediaToggle('rawdoc')">
-                            <h4 class="panel-title">{{rawdoc.index}} : {{rawdoc.name}}</h4>
+                            <h4 class="panel-title">{{rawdoc.index}} : {{rawdoc.name}}<i class="pull-right glyphicon glyphicon-remove"></i></h4>
                         </div>
                         <div class="panel-body">
                             <nav>

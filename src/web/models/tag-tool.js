@@ -3,7 +3,7 @@ var mongo = require("../models/mongo-tool.js");
 
 var default_tags = ['18禁', 'handlemedia'];
 
-var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}];
+var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'author', 'tw': '作者'}];
 
 var queryLimit = 20;
 
@@ -240,6 +240,9 @@ module.exports = function(collection) {
                     });
                 } else if (tagType.type === 1) {
                     console.log(tagType);
+                    if (tagType.tag.tags === normalize(item.name)) {
+                        util.handleError({hoerror: 2, msg: 'can not delete file name!!!'}, next, callback, null);
+                    }
                     if (util.checkAdmin(1, user)) {
                         console.log('authority del tag');
                         if (item.tags.indexOf(tagType.tag.tags) === -1) {
@@ -631,12 +634,8 @@ module.exports = function(collection) {
                 for (var i in taglist) {
                     list.push({id: taglist[i]._id, name: taglist[i].name});
                 }
-                var isDel = false;
-                if (util.checkAdmin(1, user)) {
-                    isDel = true;
-                }
                 setTimeout(function(){
-                    callback(null, {isDel: isDel, taglist: list});
+                    callback(null, {taglist: list});
                 }, 0);
             });
         },
@@ -669,7 +668,7 @@ module.exports = function(collection) {
                     });
                 } else {
                     setTimeout(function(){
-                        callback(null, {apiOK: true});
+                        callback(null, {name: parent.name, id: parent._id});
                     }, 0);
                 }
             });
@@ -925,7 +924,7 @@ function getQuerySql(user, tagList, exactly) {
 
 function getQueryTag(user, tag, del) {
     del = typeof del !== 'undefined' ? del : 1;
-    var ori = del === 1 ? 0 : 1;
+    //var ori = del === 1 ? 0 : 1;
     var normal = normalize(tag);
     var index = default_tags.indexOf(normal);
     if (index === 0) {

@@ -134,7 +134,7 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
 });
 
 function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $timeout) {
-    $scope.userCollapse = {owner: false, priority: true, normal: true};
+    $scope.$parent.currentPage = -1;
     $scope.uInfo = [];
     $scope.password = "";
     $scope.timer = false;
@@ -142,7 +142,7 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
         var Info = $resource('/api/userinfo', {}, {
             'userinfo': { method:'GET' }
         });
-        var this_uInfo = this.uInfo;
+        var this_obj = this;
         Info.userinfo({}, function(result) {
             if (result.loginOK) {
                 $window.location.href = $location.path();
@@ -155,21 +155,86 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                         result.user_info[i].hasPerm = true;
                     }
                     result.user_info[i].isDel = false;
-                    this_uInfo.push(result.user_info[i]);
+                    this_obj.uInfo.push(result.user_info[i]);
                 }
-                console.log(this_uInfo);
+                console.log(this_obj.uInfo);
             }
         }, function(errorResult) {
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
         });
     }
-
+    $scope.addUser = function(item) {
+        if (!isValidString(item.password, 'passwd')) {
+            addAlert('password error!!!');
+        } else {
+            if (item.newable) {
+                if (!isValidString(item.name, 'name')) {
+                    addAlert('name not vaild!!!');
+                } else if (!isValidString(item.desc, 'desc')) {
+                    addAlert('desc not vaild!!!');
+                } else if (!isValidString(item.perm, 'perm')) {
+                    addAlert('perm not vaild!!!');
+                } else if (!isValidString(item.newPwd, 'passwd') || !isValidString(item.conPwd, 'passwd')) {
+                    addAlert('new password is not valid!!!');
+                    item.newPwd = '';
+                    item.conPwd = '';
+                } else if (item.newPwd !== item.conPwd) {
+                    addAlert('confirm password must equal!!!');
+                    item.newPwd = '';
+                    item.conPwd = '';
+                } else {
+                    var addInfo = $resource('/api/adduser', {}, {
+                        'addinfo': { method:'POST' }
+                    });
+                    console.log({name: item.name, desc: item.desc, perm: item.perm, newPwd: item.newPwd, conPwd: item.conPwd, pwd: item.password});
+                    var this_uInfo = this.uInfo;
+                    addInfo.addinfo({name: item.name, desc: item.desc, perm: item.perm, newPwd: item.newPwd, conPwd: item.conPwd, pwd: item.password}, function (result) {
+                        console.log(result);
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        } else {
+                            if (result.item) {
+                                for (var i in result.item) {
+                                    item[i] = result.item[i];
+                                }
+                                item.newPwd = '';
+                                item.conPwd = '';
+                                item["password"] = '';
+                            }
+                            if (result.newItem) {
+                                if (result.newItem.hasOwnProperty('desc')) {
+                                    result.newItem.hasDesc = true;
+                                }
+                                if (result.newItem.hasOwnProperty('perm')) {
+                                    result.newItem.hasPerm = true;
+                                }
+                                result.newItem.isDel = false;
+                                this_uInfo.push(result.newItem);
+                                console.log(this_uInfo);
+                            }
+                        }
+                    }, function(errorResult) {
+                        console.log(errorResult);
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
+                }
+            }
+        }
+        item.password = '';
+        return false;
+    }
     $scope.editAll = function(item) {
         if (item.edit) {
             item["name"] = item['nameOrig'];
@@ -189,22 +254,22 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
     }
     $scope.saveAll = function(item) {
         if (!isValidString(item.password, 'passwd')) {
-            alert('password error!!!');
+            addAlert('password error!!!');
         } else {
             if (!isValidString(item.name, 'name') && item.edit) {
-                alert('name not vaild!!!');
-            } else if (!isValidString(item.desc, 'desc') && item.edit) {
-                alert('desc not vaild!!!');
-            } else if (!isValidString(item.perm, 'perm') && item.edit) {
-                alert('perm not vaild!!!');
+                addAlert('name not vaild!!!');
+            } else if (!isValidString(item.desc, 'desc') && item.edit && item.hasDesc) {
+                addAlert('desc not vaild!!!');
+            } else if (!isValidString(item.perm, 'perm') && item.edit && item.hasPerm) {
+                addAlert('perm not vaild!!!');
             } else if ((item.newPwd || item.conPwd) && (!isValidString(item.newPwd, 'passwd') || !isValidString(item.conPwd, 'passwd'))) {
                 item.newPwd = '';
                 item.conPwd = '';
-                alert('new password is not valid!!!');
+                addAlert('new password is not vaild!!!');
             } else if (item.newPwd !== item.conPwd) {
                 item.newPwd = '';
                 item.conPwd = '';
-                alert('confirm password must equal!!!');
+                addAlert('confirm password is not vaild!!!');
             } else {
                 if (item.key) {
                     var editInfo = $resource('/api/edituser/' + item.key, {}, {
@@ -236,9 +301,19 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                     if (result.loginOK) {
                         $window.location.href = $location.path();
                     } else {
-                        alert('edit complete');
-                        if (item.perm === '') {
-                            item.perm = 0;
+                        console.log(result);
+                        addAlert('edit complete');
+                        if (result.hasOwnProperty('name')) {
+                            item.name = result.name;
+                        }
+                        if (result.hasOwnProperty('desc')) {
+                            item.desc = result.desc;
+                        }
+                        if (result.hasOwnProperty('perm')) {
+                            item.perm = result.perm;
+                        }
+                        if (result.hasOwnProperty('owner')) {
+                            this_obj.$parent.$parent.id = result.owner;
                         }
                         item.edit = false;
                         item["newPwd"] = '';
@@ -250,9 +325,9 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                     item.conPwd = '';
                     console.log(errorResult);
                     if (errorResult.status === 400) {
-                        alert(errorResult.data);
+                        addAlert(errorResult.data);
                     } else if (errorResult.status === 403) {
-                        alert('unknown API!!!');
+                        addAlert('unknown API!!!');
                     } else if (errorResult.status === 401) {
                         $window.location.href = $location.path();
                     }
@@ -262,172 +337,9 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
         item.password = '';
         return false;
     }
-    $scope.edit = function(item, type){
-        item[type+"orig"] = item[type];
-        item[type+"Edit"] = true;
-        item[type+"Focus"] = true;
-    }
-    $scope.save = function(item, type){
-        console.log(type);
-        if (!isValidString(this.password, 'passwd')) {
-            alert('password error!!!');
-        } else {
-            if (isValidString(item[type], type)) {
-                if (item.key) {
-                    var editInfo = $resource('/api/edituser/' + item.key, {}, {
-                        'editinfo': { method:'PUT' }
-                    });
-                } else {
-                    var editInfo = $resource('/api/edituser', {}, {
-                        'editinfo': { method:'PUT' }
-                    });
-                }
-                var this_obj = this;
-                var set_obj = {pwd: this.password};
-                set_obj[type] = item[type];
-                console.log(set_obj);
-                editInfo.editinfo(set_obj, function(result) {
-                    if (result.loginOK) {
-                        $window.location.href = $location.path();
-                    } else {
-                        this_obj.cleanPwd();
-                        delete item[type+"Edit"];
-                    }
-                }, function(errorResult) {
-                    console.log(errorResult);
-                    if (errorResult.status === 400) {
-                        alert(errorResult.data);
-                    } else if (errorResult.status === 403) {
-                        alert('unknown API!!!');
-                    } else if (errorResult.status === 401) {
-                        $window.location.href = $location.path();
-                    }
-                });
-            } else {
-                alert(type + ' not vaild!!!');
-            }
-        }
-        return false;
-    }
-    $scope.esc = function(item, type) {
-        //recover
-        item[type] = item[type+"orig"];
-        delete item[type+"Edit"];
-    }
-    $scope.focusPwd = function(item, type) {
-        item[type+"FocusPwd"] = true;
-    }
-    $scope.cleanPwd = function() {
-        var this_obj = this;
-        if (this.timer) {
-            $timeout.cancel(this.timer);
-        }
-        this.timer = $timeout(function() {
-            this_obj.password = '';
-        }, 60000);
-    }
-    $scope.saveClean = function(item) {
-        if (!isValidString(this.password, 'passwd')) {
-            alert('password error!!!');
-        } else {
-            if (item.newable) {
-                if (!isValidString(item.name, 'name')) {
-                    alert('name not vaild!!!');
-                } else if (!isValidString(item.desc, 'desc')) {
-                    alert('desc not vaild!!!');
-                } else if (!isValidString(item.perm, 'perm')) {
-                    alert('perm not vaild!!!');
-                } else if (!isValidString(item.newPwd, 'passwd') || !isValidString(item.conPwd, 'passwd')) {
-                    alert('new password is not valid!!!');
-                } else if (item.newPwd !== item.conPwd) {
-                    alert('confirm password must equal!!!');
-                } else {
-                    var addInfo = $resource('/api/adduser', {}, {
-                        'addinfo': { method:'POST' }
-                    });
-                    console.log({name: item.name, desc: item.desc, perm: item.perm, newPwd: item.newPwd, conPwd: item.conPwd, pwd: this.password});
-                    var this_uInfo = this.uInfo;
-                    addInfo.addinfo({name: item.name, desc: item.desc, perm: item.perm, newPwd: item.newPwd, conPwd: item.conPwd, pwd: this.password}, function (result) {
-                        console.log(result);
-                        if (result.loginOK) {
-                            $window.location.href = $location.path();
-                        } else {
-                            if (result.item) {
-                                for (var i in result.item) {
-                                    item[i] = result.item[i];
-                                }
-                                item.newPwd = '';
-                                item.conPwd = '';
-                            }
-                            if (result.newItem) {
-                                if (result.newItem.hasOwnProperty('desc')) {
-                                    result.newItem.hasDesc = true;
-                                }
-                                if (result.newItem.hasOwnProperty('perm')) {
-                                    result.newItem.hasPerm = true;
-                                }
-                                result.newItem.isDel = false;
-                                this_uInfo.push(result.newItem);
-                                console.log(this_uInfo);
-                            }
-                        }
-                    }, function(errorResult) {
-                        console.log(errorResult);
-                        if (errorResult.status === 400) {
-                            alert(errorResult.data);
-                        } else if (errorResult.status === 403) {
-                            alert('unknown API!!!');
-                        } else if (errorResult.status === 401) {
-                            $window.location.href = $location.path();
-                        }
-                    });
-                }
-            } else {
-                if (isValidString(item.newPwd, 'passwd') && isValidString(item.conPwd, 'passwd')) {
-                    if (item.newPwd === item.conPwd) {
-                        if (item.key) {
-                            var editInfo = $resource('/api/edituser/' + item.key, {}, {
-                                'editinfo': { method:'PUT' }
-                            });
-                        } else {
-                            var editInfo = $resource('/api/edituser', {}, {
-                                'editinfo': { method:'PUT' }
-                            });
-                        }
-                        console.log({newPwd: item.newPwd, conPwd: item.conPwd, pwd: this.password});
-                        var this_obj = this;
-                        editInfo.editinfo({newPwd: item.newPwd, conPwd: item.conPwd, pwd: this.password}, function (result) {
-                            if (result.loginOK) {
-                                $window.location.href = $location.path();
-                            } else {
-                                alert("password is changed successfully!");
-                            }
-                        }, function(errorResult) {
-                            console.log(errorResult);
-                            if (errorResult.status === 400) {
-                                alert(errorResult.data);
-                            } else if (errorResult.status === 403) {
-                                alert('unknown API!!!');
-                            } else if (errorResult.status === 401) {
-                                $window.location.href = $location.path();
-                            }
-                        });
-                    } else {
-                        alert('confirm password must equal!!!');
-                    }
-                } else {
-                    alert('new password is not valid!!!');
-                }
-                item.newPwd = '';
-                item.conPwd = '';
-            }
-        }
-        this.cleanPwd();
-        return false;
-    }
     $scope.delUser = function(item) {
         if (!isValidString(item.password, 'passwd')) {
-            alert('password error!!!');
+            addAlert('password error!!!');
         } else {
             var delInfo = $resource('/api/deluser/' + item.key, {}, {
                 'delinfo': { method:'PUT' }
@@ -437,15 +349,15 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    alert("user deleted successfully!");
+                    addAlert("user deleted successfully!");
                     item.isDel = true;
                 }
             }, function(errorResult) {
                 console.log(errorResult);
                 if (errorResult.status === 400) {
-                    alert(errorResult.data);
+                    addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
-                    alert('unknown API!!!');
+                    addAlert('unknown API!!!');
                 } else if (errorResult.status === 401) {
                     $window.location.href = $location.path();
                 }
@@ -458,6 +370,7 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
 }
 
 function LoginCntl($route, $routeParams, $location, $resource, $scope, $location) {
+    $scope.$parent.currentPage = 0;
 }
 
 function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $cookies, $filter, FileUploader) {
@@ -467,19 +380,25 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.itemList = [];
     $scope.selectList = [];
     $scope.tagList = [];
-    $scope.dirTaglist = {isDel: false, list: [], show: false};
     $scope.page = 0;
     $scope.more = true;
     $scope.moreDisabled = false;
     $scope.exactlyMatch = false;
-    $scope.parentPage = 0;
-    $scope.parentName = '';
-    $scope.parentMore = true;
-    $scope.parentMoreDisabled = false;
+    $scope.bookmarkCollpase = false;
+    $scope.bookmarkNew = false;
+    $scope.bookmarkNewFocus = false;
+    $scope.itemNameNew = false;
+    $scope.itemNameNewFocus = false;
+    $scope.tagNew = false;
+    $scope.uploadSub = false;
     $scope.bookmarkList = [];
     $scope.bookmarkName = '';
     $scope.bookmarkID = '';
+    $scope.bookmarkEdit = false;
     $scope.latest = '';
+    $scope.dropdown.item = false;
+    $scope.toolList = {download: false, edit: false, upload:false, del: false, item: null};
+    $scope.$parent.currentPage = 1;
     $scope.fileSort = {name:'', mtime: '', sort: 'name/asc'};
     $scope.dirSort = {name:'', mtime: '', sort: 'name/asc'};
     $scope.bookmarkSort = {name:'', mtime: '', sort: 'name/asc'};
@@ -491,6 +410,53 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     });
     //$scope.navList.splice(0,1);
     //console.log($routeParams);
+    var miscUploader = $scope.miscUploader = new FileUploader({
+        url: 'upload/subtitle'
+    });
+
+    miscUploader.onWhenAddingFileFailed = function(item /*{File|FileLikeObject}*/, filter, options) {
+        console.info('onWhenAddingFileFailed', item, filter, options);
+    };
+    miscUploader.onAfterAddingFile = function(fileItem) {
+        console.info('onAfterAddingFile', fileItem);
+        if ($scope.toolList.item) {
+            fileItem.url = 'upload/subtitle/' + $scope.toolList.item.id;
+            this.uploadAll();
+        } else {
+            addAlert('Select item first!!!');
+        }
+    };
+    miscUploader.onAfterAddingAll = function(addedFileItems) {
+        console.info('onAfterAddingAll', addedFileItems);
+    };
+    miscUploader.onBeforeUploadItem = function(item) {
+        console.info('onBeforeUploadItem', item);
+    };
+    miscUploader.onProgressItem = function(fileItem, progress) {
+        console.info('onProgressItem', fileItem, progress);
+    };
+    miscUploader.onProgressAll = function(progress) {
+        console.info('onProgressAll', progress);
+    };
+    miscUploader.onSuccessItem = function(fileItem, response, status, headers) {
+        console.info('onSuccessItem', fileItem, response, status, headers);
+        $scope.uploadSub = false;
+        this.clearQueue();
+    };
+    miscUploader.onErrorItem = function(fileItem, response, status, headers) {
+        console.info('onErrorItem', fileItem, response, status, headers);
+        addAlert(response);
+        this.clearQueue();
+    };
+    miscUploader.onCancelItem = function(fileItem, response, status, headers) {
+        console.info('onCancelItem', fileItem, response, status, headers);
+    };
+    miscUploader.onCompleteItem = function(fileItem, response, status, headers) {
+        console.info('onCompleteItem', fileItem, response, status, headers);
+    };
+    miscUploader.onCompleteAll = function() {
+        console.info('onCompleteAll');
+    };
 
     window.onbeforeunload = function (event) {
         /*var mediaApi = $resource('/api/media/record', {}, {
@@ -518,19 +484,25 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         }
     };
 
-    $scope.$on('dirTaglist', function(e, d) {
+    $scope.$on('dir', function(e, d) {
         var result = JSON.parse(d);
-        $scope.dirTaglist.list.push({name: result.name, id: result.id});
+        console.log(result);
+        for (var i in $scope.dirList) {
+            if ($scope.dirList[i].name === result.parent) {
+                $scope.dirList[i].list.push({name: result.name, id: result.id});
+                break;
+            }
+        }
     });
     $scope.$on('latest', function(e, d) {
         var result = JSON.parse(d);
-        console.log($scope);
         if ($scope.bookmarkID && $scope.bookmarkID === result.id) {
             $scope.latest = result.latest;
         }
     });
     $scope.$on('file', function(e, d) {
         var id = JSON.parse(d);
+        console.log(id);
         var index = arrayObjectIndexOf($scope.itemList, id, 'id');
         var storageApi = $resource('/api/storage/single/' + id, {}, {
             'single': { method:'get' }
@@ -553,7 +525,10 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                         result.item.select = $scope.itemList[index].select;
                         $scope.itemList.splice(index, 1, result.item);
                     } else {
+                        var date;
                         result.item.select = false;
+                        date = new Date(result.itemList[i].mtime*1000);
+                        result.itemList[i].mtime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                         $scope.itemList.push(result.item);
                     }
                 }
@@ -561,9 +536,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         }, function(errorResult) {
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
@@ -580,57 +555,38 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             this.fileSort.sort = 'mtime/';
             if ($cookies.fileSortType === 'desc') {
                 this.fileSort.sort = this.fileSort.sort + 'desc';
-                this.fileSort.mtime = 'v';
+                this.fileSort.mtime = 'desc';
             } else {
                 this.fileSort.sort = this.fileSort.sort + 'asc';
-                this.fileSort.mtime = '^';
+                this.fileSort.mtime = 'asc';
             }
         } else {
             this.fileSort.sort = 'name/';
             if ($cookies.fileSortType === 'desc') {
                 this.fileSort.sort = this.fileSort.sort + 'desc';
-                this.fileSort.name = 'v';
+                this.fileSort.name = 'desc';
             } else {
                 this.fileSort.sort = this.fileSort.sort + 'asc';
-                this.fileSort.name = '^';
-            }
-        }
-        if ($cookies.dirSortName === 'mtime') {
-            this.dirSort.sort = 'mtime/';
-            if ($cookies.dirSortType === 'desc') {
-                this.dirSort.sort = this.dirSort.sort + 'desc';
-                this.dirSort.mtime = 'v';
-            } else {
-                this.dirSort.sort = this.dirSort.sort + 'asc';
-                this.dirSort.mtime = '^';
-            }
-        } else {
-            this.dirSort.sort = 'name/';
-            if ($cookies.dirSortType === 'desc') {
-                this.dirSort.sort = this.dirSort.sort + 'desc';
-                this.dirSort.name = 'v';
-            } else {
-                this.dirSort.sort = this.dirSort.sort + 'asc';
-                this.dirSort.name = '^';
+                this.fileSort.name = 'asc';
             }
         }
         if ($cookies.bookmarkSortName === 'mtime') {
             this.bookmarkSort.sort = 'mtime/';
             if ($cookies.bookmarkSortType === 'desc') {
                 this.bookmarkSort.sort = this.bookmarkSort.sort + 'desc';
-                this.bookmarkSort.mtime = 'v';
+                this.bookmarkSort.mtime = 'desc';
             } else {
                 this.bookmarkSort.sort = this.bookmarkSort.sort + 'asc';
-                this.bookmarkSort.mtime = '^';
+                this.bookmarkSort.mtime = 'asc';
             }
         } else {
             this.bookmarkSort.sort = 'name/';
             if ($cookies.bookmarkSortType === 'desc') {
                 this.bookmarkSort.sort = this.bookmarkSort.sort + 'desc';
-                this.bookmarkSort.name = 'v';
+                this.bookmarkSort.name = 'desc';
             } else {
                 this.bookmarkSort.sort = this.bookmarkSort.sort + 'asc';
-                this.bookmarkSort.name = '^';
+                this.bookmarkSort.name = 'asc';
             }
         }
         getItemlist(this);
@@ -646,21 +602,21 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         if (this[sort]) {
             if (name === 'name') {
                 this[sort].sort = 'name/';
-                if (this[sort].name === '^') {
-                    this[sort].name = 'v';
+                if (this[sort].name === 'asc') {
+                    this[sort].name = 'desc';
                     this[sort].sort = this[sort].sort + 'desc';
                 } else {
-                    this[sort].name = '^';
+                    this[sort].name = 'asc';
                     this[sort].sort = this[sort].sort + 'asc';
                 }
                 this[sort].mtime = '';
             } else if (name === 'mtime') {
                 this[sort].sort = 'mtime/';
-                if (this[sort].mtime === '^') {
-                    this[sort].mtime = 'v';
+                if (this[sort].mtime === 'asc') {
+                    this[sort].mtime = 'desc';
                     this[sort].sort = this[sort].sort + 'desc';
                 } else {
-                    this[sort].mtime = '^';
+                    this[sort].mtime = 'asc';
                     this[sort].sort = this[sort].sort + 'asc';
                 }
                 this[sort].name = '';
@@ -668,16 +624,43 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             console.log(sort);
             if (sort === 'fileSort') {
                 this.page = 0;
-                getItemlist(this);
                 this.more = true;
+                getItemlist(this);
             } else if (sort === 'bookmarkSort') {
                 getBookmarklist();
-            } else if (sort === 'dirSort') {
-                this.parentPage = 0;
-                this.parentMore = true;
-                getTaglist(this);
+            /*} else if (sort === 'dirSort') {
+                //this.parentPage = 0;
+                //this.parentMore = true;
+                getTaglist(this);*/
             }
         }
+    }
+
+    $scope.changeDirSort = function(item, name) {
+        if (name === 'name') {
+            item.sort = 'name/';
+            if (item.sortName === 'asc') {
+                item.sortName = 'desc';
+                item.sort = item.sort + 'desc';
+            } else {
+                item.sortName = 'asc';
+                item.sort = item.sort + 'asc';
+            }
+            item.sortMtime = '';
+        } else if (name === 'mtime') {
+            item.sort = 'mtime/';
+            if (item.sortMtime === 'asc') {
+                item.sortMtime = 'desc';
+                item.sort = item.sort + 'desc';
+            } else {
+                item.sortMtime = 'asc';
+                item.sort = item.sort + 'asc';
+            }
+            item.sortName = '';
+        }
+        item.page = 0;
+        item.more = true;
+        getTaglist(this, item);
     }
 
     $scope.submitText = function() {
@@ -687,6 +670,12 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         this.more = true;
         getItemlist(this_obj, this.inputText);
         this.inputText = '';
+    }
+
+    $scope.exactlyStorage = function(this_obj, item) {
+        this_obj.page = 0;
+        this_obj.more = true;
+        getItemlist(this_obj, item, 0, true);
     }
 
     $scope.gotoStorage = function(this_obj, item, index) {
@@ -705,48 +694,53 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         var parentApi = $resource('/api/parent/query/' + id, {}, {
             'query': { method:'get' }
         });
-        var this_obj = this;
-        this.$parent.page = 0;
-        this.$parent.more = true;
-        this.$parent.moreDisabled = true;
+        var this_obj = this.$parent.$parent;
+        this_obj.page = 0;
+        this_obj.more = true;
+        this_obj.moreDisabled = true;
         parentApi.query({}, function (result) {
             console.log(result);
-            this_obj.$parent.itemList = [];
+            this_obj.itemList = [];
             if (result.itemList.length > 0) {
+                var date;
                 for (var i in result.itemList) {
-                    if (arrayObjectIndexOf(this_obj.$parent.itemList, result.itemList[i].id, 'id') === -1) {
+                    if (arrayObjectIndexOf(this_obj.itemList, result.itemList[i].id, 'id') === -1) {
                         result.itemList[i].select = false;
-                        this_obj.$parent.itemList.push(result.itemList[i]);
+                        date = new Date(result.itemList[i].mtime*1000);
+                        result.itemList[i].mtime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                        this_obj.itemList.push(result.itemList[i]);
                     }
                 }
             } else {
-                $scope.more = false;
+                this_obj.more = false;
             }
-            this_obj.$parent.page = result.itemList.length;
-            this_obj.$parent.parentList = result.parentList.cur;
-            this_obj.$parent.historyList = result.parentList.his;
-            this_obj.$parent.exactlyList = result.parentList.exactly;
-            this_obj.$parent.moreDisabled = false;
-            console.log(this_obj.$parent.itemList);
+            this_obj.page = result.itemList.length;
+            this_obj.parentList = result.parentList.cur;
+            this_obj.historyList = result.parentList.his;
+            this_obj.exactlyList = result.parentList.exactly;
+            this_obj.moreDisabled = false;
+            console.log(this_obj.itemList);
         }, function(errorResult) {
-            this_obj.$parent.moreDisabled = false;
+            this_obj.moreDisabled = false;
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
         });
     }
 
-    getItemlist = function (this_obj, name, index) {
+    getItemlist = function (this_obj, name, index, isExactly) {
         console.log(this_obj.page);
         name = typeof name !== 'undefined' ? name : null;
         index = typeof index !== 'undefined' ? index : 0;
         var Info, exactly = 'false';
-        if (index) {
+        if (isExactly) {
+            exactly = 'true';
+        } else if (index) {
             if (this_obj.exactlyList[index-1]) {
                 exactly = 'true';
             }
@@ -764,11 +758,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 });
             } else {
                 console.log(name);
-                alert('search tag is not vaild!!!');
+                addAlert('search tag is not vaild!!!');
                 return false;
             }
         } else if (!name && index) {
-            alert("not enough parameter");
+            addAlert("not enough parameter");
             return false;
         } else {
             if (isValidString(name, 'name') && isValidString(index, 'parentIndex')) {
@@ -776,7 +770,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     'storage': { method:'GET' }
                 });
             } else {
-                alert('search tag is not vaild!!!');
+                addAlert('search tag is not vaild!!!');
                 return false;
             }
         }
@@ -790,9 +784,12 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     this_obj.itemList = [];
                 }
                 if (result.itemList.length > 0) {
+                    var date;
                     for (var i in result.itemList) {
                         if (arrayObjectIndexOf(this_obj.itemList, result.itemList[i].id, 'id') === -1) {
                             result.itemList[i].select = false;
+                            date = new Date(result.itemList[i].mtime*1000);
+                            result.itemList[i].mtime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                             this_obj.itemList.push(result.itemList[i]);
                         }
                     }
@@ -812,9 +809,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             this_obj.moreDisabled = false;
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
@@ -835,8 +832,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             } else {
                 console.log(result);
                 this_obj.itemList = [];
+                var date;
                 for (var i in result.itemList) {
                     result.itemList[i].select = false;
+                    date = new Date(result.itemList[i].mtime*1000);
+                    result.itemList[i].mtime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                     this_obj.itemList.push(result.itemList[i]);
                 }
                 this_obj.latest = '';
@@ -852,9 +852,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             this_obj.moreDisabled = false;
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
@@ -876,42 +876,43 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     }, true);
 
     $scope.submitTag = function() {
-        console.log(this.inputTag);
-        if (this.inputTag) {
-            if (isValidString(this.inputTag, 'name')) {
+        console.log(this.newTagName);
+        if (this.newTagName) {
+            if (isValidString(this.newTagName, 'name')) {
                 console.log(this.selectList);
-                var this_itemList = this.itemList;
-                var this_inputTag = this.inputTag;
                 if (this.selectList.length > 0) {
+                    var this_obj = this;
                     for (var i in this.selectList) {
                         var Info = $resource('/api/addTag/' + this.selectList[i].id, {}, {
                             'addTag': { method:'PUT' }
                         });
-                        Info.addTag({tag: this.inputTag}, function (result) {
+                        Info.addTag({tag: this.newTagName}, function (result) {
                             console.log(result);
                             if (result.loginOK) {
                                 $window.location.href = $location.path();
                             }
+                            if (Number(i) === this_obj.selectList.length -1) {
+                                this_obj.tagNew = false;
+                            }
                         }, function(errorResult) {
                             console.log(errorResult);
                             if (errorResult.status === 400) {
-                                alert(errorResult.data);
+                                addAlert(errorResult.data);
                             } else if (errorResult.status === 403) {
-                                alert('unknown API!!!');
+                                addAlert('unknown API!!!');
                             } else if (errorResult.status === 401) {
                                 $window.location.href = $location.path();
                             }
                         });
                     }
                 } else {
-                    alert('Please selects item!!!');
+                    addAlert('Please selects item!!!');
                 }
             } else {
-                alert('New tag is not vaild!!!');
+                addAlert('New tag is not vaild!!!');
             }
-            this.inputTag = '';
         } else {
-            alert('Please inputs new tag!!!');
+            addAlert('Please inputs new tag!!!');
         }
     }
 
@@ -932,48 +933,54 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     }, function(errorResult) {
                         console.log(errorResult);
                         if (errorResult.status === 400) {
-                            alert(errorResult.data);
+                            addAlert(errorResult.data);
                         } else if (errorResult.status === 403) {
-                            alert('unknown API!!!');
+                            addAlert('unknown API!!!');
                         } else if (errorResult.status === 401) {
                             $window.location.href = $location.path();
                         }
                     });
                 }
             } else {
-                alert('Please selects item!!!');
+                addAlert('Please selects item!!!');
             }
         } else {
-            alert('Tag is not vaild!!!');
+            addAlert('Tag is not vaild!!!');
         }
     }
 
-    $scope.add2Parent = function() {
-        console.log(this.selectTag);
-        console.log(this.addDir);
-        var Info = $resource('/api/parent/add', {}, {
-            'addDir': { method:'POST' }
-        });
-        var this_obj = this;
-        Info.addDir({ name: this.addDir, tag: this.selectTag}, function (result) {
-            console.log(result);
-            if (result.id) {
-                this_obj.dirTaglist.list.push({name: result.name, id: result.id});
-                console.log(this_obj.dirTaglist);
-            }
-        }, function(errorResult) {
-            console.log(errorResult);
-            if (errorResult.status === 400) {
-                alert(errorResult.data);
-            } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
-            } else if (errorResult.status === 401) {
-                $window.location.href = $location.path();
-            }
-        });
+    $scope.add2Parent = function(item) {
+        if (typeof this.toolList.item === 'string') {
+            var Info = $resource('/api/parent/add', {}, {
+                'addDir': { method:'POST' }
+            });
+            var this_obj = this;
+            Info.addDir({ name: item.name, tag: this.toolList.item}, function (result) {
+                console.log(result);
+                if (result.id) {
+                    for (var i in this_obj.dirList) {
+                        if (this_obj.dirList[i].name === item.name) {
+                            this_obj.dirList[i].list.push({name: result.name, id: result.id});
+                            break;
+                        }
+                    }
+                }
+            }, function(errorResult) {
+                console.log(errorResult);
+                if (errorResult.status === 400) {
+                    addAlert(errorResult.data);
+                } else if (errorResult.status === 403) {
+                    addAlert('unknown API!!!');
+                } else if (errorResult.status === 401) {
+                    $window.location.href = $location.path();
+                }
+            });
+        } else {
+            addAlert('select a tag!!!');
+        }
     }
 
-    $scope.del2Parent = function(id) {
+    $scope.del2Parent = function(id, dir) {
         console.log(id);
         var this_obj = this;
         var Info = $resource('/api/parent/del/' + id, {}, {
@@ -982,78 +989,123 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         Info.delDir({}, function (result) {
             console.log(result);
             if (result.id) {
-                index = arrayObjectIndexOf(this_obj.$parent.dirTaglist.list, result.id, "id");
+                index = arrayObjectIndexOf(dir.list, result.id, "id");
                 if (index !== -1) {
-                    this_obj.$parent.dirTaglist.list.splice(index, 1);
-                    this_obj.parentPage--;
+                    dir.list.splice(index, 1);
+                    dir.page--;
                 }
             }
         }, function(errorResult) {
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
         });
     }
 
-    getTaglist = function(this_obj) {
-        console.log(this_obj);
-        if (isValidString(this_obj.parentName, 'name')) {
-            this_obj.parentMoreDisabled = true;
-            var Info = $resource('/api/parent/taglist/' + this_obj.parentName + '/' + this_obj.dirSort.sort + '/' + this_obj.parentPage, {}, {
+    getTaglist = function(this_obj, item) {
+        if (isValidString(item.name, 'name')) {
+            item.moreDisabled = true;
+            var Info = $resource('/api/parent/taglist/' + item.name + '/' + item.sort + '/' + item.page, {}, {
                 'getTaglist': { method:'GET' }
             });
             Info.getTaglist({}, function (result) {
                 console.log(result);
-                if (this_obj.parentPage === 0) {
-                    this_obj.dirTaglist.list = [];
+                if (item.page === 0) {
+                    item.list = [];
                 }
                 if (result.taglist.length > 0) {
                     for (var i in result.taglist) {
-                        if (arrayObjectIndexOf(this_obj.dirTaglist.list, result.taglist[i].id, 'id') === -1) {
-                            this_obj.dirTaglist.list.push(result.taglist[i]);
+                        if (arrayObjectIndexOf(item.list, result.taglist[i].id, 'id') === -1) {
+                            item.list.push(result.taglist[i]);
                         }
                     }
-                    this_obj.parentPage = this_obj.parentPage + result.taglist.length;
-                    this_obj.dirTaglist.isDel = result.isDel;
-                    this_obj.dirTaglist.show = true;
+                    item.page = item.page + result.taglist.length;
                 } else {
-                    $scope.parentMore = false;
+                    item.more = false;
                 }
-                $scope.parentMoreDisabled = false;
+                item.moreDisabled = false;
             }, function(errorResult) {
-                $scope.parentMoreDisabled = false;
+                item.moreDisabled = false;
                 console.log(errorResult);
                 if (errorResult.status === 400) {
-                    alert(errorResult.data);
+                    addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
-                    alert('unknown API!!!');
+                    addAlert('unknown API!!!');
                 } else if (errorResult.status === 401) {
                     $window.location.href = $location.path();
                 }
             });
         } else {
-            alert('Parent name is not vaild!!!');
+            addAlert('Parent name is not vaild!!!');
         }
     }
 
-    $scope.showTaglist = function(name) {
-        console.log(name);
-        this.$parent.parentName = name;
-        this.$parent.parentPage = 0;
-        this.$parent.parentMore = true;
-        getTaglist(this.$parent);
+    $scope.showTaglist = function(item) {
+        console.log(item);
+        item.collpase = !item.collpase;
+        if (item.list.length === 0) {
+            if ($cookies['dir' + item.name + 'SortName'] === 'mtime') {
+                item.sort = 'mtime/';
+                if ($cookies['dir' + item.name + 'SortType'] === 'desc') {
+                    item.sort = item.sort + 'desc';
+                    item.sortMtime = 'desc';
+                } else {
+                    item.sort = item.sort + 'asc';
+                    item.sortMtime = 'asc';
+                }
+            } else {
+                item.sort = 'name/';
+                if ($cookies['dir' + item.name + 'SortType'] === 'desc') {
+                    item.sort = item.sort + 'desc';
+                    item.sortName = 'desc';
+                } else {
+                    item.sort = item.sort + 'asc';
+                    item.sortName = 'asc';
+                }
+            }
+            getTaglist(this.$parent, item);
+        }
     }
 
-    $scope.moreDirtaglist = function() {
-        getTaglist(this);
+    $scope.moreDirtaglist = function(item) {
+        getTaglist(this, item);
+    }
+
+    $scope.fileRecover = function(item) {
+        if (!item) {
+            item = this.toolList.item;
+        }
+        var this_itemList = this.itemList;
+        var Info = $resource('/api/recoverFile/' + item.id, {}, {
+            'recoverFile': { method:'PUT' }
+        });
+        Info.recoverFile({}, function (result) {
+            console.log(result);
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            }
+        }, function(errorResult) {
+            console.log(errorResult);
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
+        return false;
     }
 
     $scope.fileDel = function(item) {
+        if (!item) {
+            item = this.toolList.item;
+        }
         var this_itemList = this.itemList;
         var Info = $resource('/api/delFile/' + item.id + '/' + item.recycle, {}, {
             'delFile': { method:'DELETE' }
@@ -1077,9 +1129,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         }, function(errorResult) {
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
@@ -1089,36 +1141,41 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
 
     $scope.fileEdit = function(item) {
         console.log('edit');
-        if (isValidString(item.name, 'name')) {
+        if (!item) {
+            item = this.toolList.item;
+        }
+        if (isValidString(this.newItemName, 'name')) {
             var editFile = $resource('/api/editFile/' + item.id, {}, {
                 'editfile': { method:'PUT' }
             });
             var this_obj = this;
-            editFile.editfile({name: item.name}, function(result) {
+            editFile.editfile({name: this.newItemName}, function(result) {
                 console.log(result);
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    if (this_obj.$parent.feedback.run) {
-                        this_obj.$parent.feedback.queue.push(result);
+                    item.name = result.name;
+                    this_obj.itemNameNew = false;
+                    if (this_obj.feedback.run) {
+                        this_obj.feedback.queue.push(result);
                     } else {
-                        this_obj.$parent.feedback.run = true;
+                        this_obj.feedback.run = true;
                         showFeedback(result);
                     }
-                    delete item["Edit"];
+                    //delete item["Edit"];
                 }
             }, function(errorResult) {
                 console.log(errorResult);
                 if (errorResult.status === 400) {
-                    alert(errorResult.data);
+                    addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
-                    alert('unknown API!!!');
+                    addAlert('unknown API!!!');
                 } else if (errorResult.status === 401) {
                     $window.location.href = $location.path();
                 }
             });
         } else {
-            alert('name not vaild!!!');
+            addAlert('name not vaild!!!');
         }
         return false;
     }
@@ -1163,7 +1220,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 status = 6;
                 break;
             default:
-                alert('unknown type');
+                addAlert('unknown type');
                 return false;
         }
         var this_obj = this;
@@ -1210,7 +1267,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                             if ($scope.bookmarkID) {
                                 $scope.latest = item.id;
                             }
-                            this_obj.$parent.mediaToggle(type);
+                            this_obj.$parent.mediaToggle(type, true);
                             this_obj.$parent[type].list = clone(tempList);
                             this_obj.$parent[type].front = this_obj.$parent[type].list.length;
                             this_obj.$parent[type].frontPage = this_obj.$parent[type].front;
@@ -1222,9 +1279,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     }, function(errorResult) {
                         console.log(errorResult);
                         if (errorResult.status === 400) {
-                            alert(errorResult.data);
+                            addAlert(errorResult.data);
                         } else if (errorResult.status === 403) {
-                            alert('unknown API!!!');
+                            addAlert('unknown API!!!');
                         } else if (errorResult.status === 401) {
                             $window.location.href = $location.path();
                         }
@@ -1246,7 +1303,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     if ($scope.bookmarkID) {
                         $scope.latest = item.id;
                     }
-                    this_obj.$parent.mediaToggle(type)
+                    this_obj.$parent.mediaToggle(type, true)
                     this_obj.$parent[type].list = clone(tempList);
                     this_obj.$parent[type].front = this_obj.$parent[type].list.length;
                     this_obj.$parent[type].frontPage = this_obj.$parent[type].front;
@@ -1259,9 +1316,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         }, function(errorResult) {
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
@@ -1269,6 +1326,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     }
 
     $scope.downloadFile = function (id) {
+        if (!id) {
+            id = this.toolList.item.id;
+        }
         console.log('/download/' + id);
         $window.location.href = '/download/' + id;
     }
@@ -1288,23 +1348,68 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             }, function(errorResult) {
                 console.log(errorResult);
                 if (errorResult.status === 400) {
-                    alert(errorResult.data);
+                    addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
-                    alert('unknown API!!!');
+                    addAlert('unknown API!!!');
                 } else if (errorResult.status === 401) {
                     $window.location.href = $location.path();
                 }
             });
         } else {
-            alert('handle action not vaild!!!');
+            addAlert('handle action not vaild!!!');
         }
         return false;
     }
 
-    $scope.uploaderSub = function(id) {
-        this.miscUploader.url = 'upload/subtitle/' + id;
-        this.miscUploader.open = true;
-        console.log(this.miscUploader);
+    $scope.selectItem = function($event, item) {
+        if (typeof item === 'string') {
+            this.$parent.toolList.dir = true;
+            this.$parent.toolList.download = false;
+            this.$parent.toolList.edit = false;
+            this.$parent.toolList.del = false;
+            this.$parent.toolList.recover = false;
+            this.$parent.toolList.upload = false;
+        } else {
+            this.$parent.toolList.download = true;
+            this.$parent.toolList.dir = false;
+            if (item.isOwn) {
+                this.$parent.toolList.edit = true;
+                this.$parent.toolList.del = true;
+            } else {
+                this.$parent.toolList.edit = false;
+                this.$parent.toolList.del = false;
+            }
+            if (item.recycle === 1) {
+                this.$parent.toolList.recover = true;
+            } else {
+                this.$parent.toolList.recover = false;
+            }
+            if (item.status === 3) {
+                this.$parent.toolList.upload = true;
+            } else {
+                this.$parent.toolList.upload = false;
+            }
+        }
+        this.toggleDropdown($event, 'item');
+        this.$parent.toolList.item = item;
+    }
+
+    $scope.cancelSelect = function() {
+        if (this.selectList.length) {
+            for (var i in this.itemList) {
+                this.itemList[i].select = false;
+            }
+        }
+        return false;
+    }
+
+    $scope.openNewTag = function() {
+        if (this.selectList.length) {
+            this.newTagName = '';
+            this.tagNew = true;
+            this.tagNewFocus = true;
+        }
+        return false;
     }
 
     $scope.getBookmarkItem = function(id) {
@@ -1319,8 +1424,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 $window.location.href = $location.path();
             } else {
                 this_obj.$parent.itemList = [];
+                var date;
                 for (var i in result.itemList) {
                     result.itemList[i].select = false;
+                    date = new Date(result.itemList[i].mtime*1000);
+                    result.itemList[i].mtime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                     this_obj.$parent.itemList.push(result.itemList[i]);
                 }
                 this_obj.$parent.page = result.itemList.length;
@@ -1335,9 +1443,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             this_obj.$parent.moreDisabled = false;
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
@@ -1358,26 +1466,29 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         }, function(errorResult) {
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
         });
     }
 
-    $scope.addBookmark = function() {
+    $scope.addBookmark = function(bookmarkName) {
+        if (!bookmarkName) {
+            bookmarkName = this.bookmarkName;
+        }
         if (this.parentList.length <= 0) {
-            alert('Empty parent list!!!');
+            addAlert('Empty parent list!!!');
             return false;
         }
-        if (isValidString(this.bookmarkName, 'name')) {
+        if (isValidString(bookmarkName, 'name')) {
             var this_obj = this;
             var bookmarkapi = $resource('/api/bookmark/add', {}, {
                 'addbookmark': { method:'POST' }
             });
-            bookmarkapi.addbookmark({name: this.bookmarkName}, function(result) {
+            bookmarkapi.addbookmark({name: bookmarkName}, function(result) {
                 console.log(result);
                 if (result.loginOK) {
                     $window.location.href = $location.path();
@@ -1385,19 +1496,21 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     if (result.id) {
                         this_obj.bookmarkList.push(result);
                     }
+                    this_obj.bookmarkNew = false;
+                    this_obj.bookmarkName = '';
                 }
             }, function(errorResult) {
                 console.log(errorResult);
                 if (errorResult.status === 400) {
-                    alert(errorResult.data);
+                    addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
-                    alert('unknown API!!!');
+                    addAlert('unknown API!!!');
                 } else if (errorResult.status === 401) {
                     $window.location.href = $location.path();
                 }
             });
         } else {
-            alert('Bookmark name is not valid!!!');
+            addAlert('Bookmark name is not valid!!!');
         }
     }
 
@@ -1420,9 +1533,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         }, function(errorResult) {
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
@@ -1446,6 +1559,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.password = '';
     $scope.collapse= {};
     $scope.collapse.nav = true;
+    $scope.collapse.storage = true;
     $scope.widget = {};
     $scope.widget.uploader = false;
     $scope.widget.feedback = false;
@@ -1455,6 +1569,17 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.isLogin = false;
     $scope.isFull = false;
     $scope.loginFocus = {user: true, pwd:false};
+    $scope.alerts = [
+    ];
+    $scope.currentPage = 0;
+    $scope.alertTime;
+    addAlert = function(msg) {
+        $scope.alerts.splice(0,0,{type: 'danger', msg: msg});
+    };
+
+    $scope.closeAlert = function(index) {
+        $scope.alerts.splice(index, 1);
+    };
     openModal = function (msg) {
         var modalInstance = $modal.open({
             templateUrl: 'myModalContent.html',
@@ -1472,11 +1597,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         var pre = $scope.feedbackSelectTag;
         $scope.feedbackSelectTag = tag;
         console.log($scope.feedbackSelectTag);
-        if (!pre || tag === pre) {
-            this.toggleDropdown($event, 'feedback');
-        } else {
-            this.toggleDropdown($event, 'feedback', true);
-        }
+        this.toggleDropdown($event, 'feedback');
     }
     $scope.toggleWidget = function (type) {
         if (!this.widget[type]) {
@@ -1485,14 +1606,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             this.widget[type] = false;
         }
     }
-    $scope.toggleDropdown = function($event, type, action) {
+    $scope.toggleDropdown = function($event, type) {
         $event.preventDefault();
         $event.stopPropagation();
-        if (typeof action !== 'undefined') {
-            $scope.dropdown[type] = action;
-        } else {
-            $scope.dropdown[type] = !$scope.dropdown[type];
-        }
+        $scope.dropdown[type] = true;
     };
     var uploader = $scope.uploader = new FileUploader({
         url: 'upload/file'
@@ -1540,53 +1657,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     uploader.onCompleteAll = function() {
         console.info('onCompleteAll');
     };
-
-    var miscUploader = $scope.miscUploader = new FileUploader({
-        url: 'upload/subtitle'
-    });
     /*uploader.bind('beforeupload', function (event, item) {
         item.url = uploader.url;
     });*/
-    miscUploader.onWhenAddingFileFailed = function(item /*{File|FileLikeObject}*/, filter, options) {
-        console.info('onWhenAddingFileFailed', item, filter, options);
-    };
-    miscUploader.onAfterAddingFile = function(fileItem) {
-        console.info('onAfterAddingFile', fileItem);
-        this.uploadAll()
-    };
-    miscUploader.onAfterAddingAll = function(addedFileItems) {
-        console.info('onAfterAddingAll', addedFileItems);
-    };
-    miscUploader.onBeforeUploadItem = function(item) {
-        console.info('onBeforeUploadItem', item);
-    };
-    miscUploader.onProgressItem = function(fileItem, progress) {
-        console.info('onProgressItem', fileItem, progress);
-    };
-    miscUploader.onProgressAll = function(progress) {
-        console.info('onProgressAll', progress);
-    };
-    miscUploader.onSuccessItem = function(fileItem, response, status, headers) {
-        console.info('onSuccessItem', fileItem, response, status, headers);
-        alert('done');
-        this.open = false;
-        this.clearQueue();
-    };
-    miscUploader.onErrorItem = function(fileItem, response, status, headers) {
-        console.info('onErrorItem', fileItem, response, status, headers);
-        alert(response);
-        this.open = false;
-        this.clearQueue();
-    };
-    miscUploader.onCancelItem = function(fileItem, response, status, headers) {
-        console.info('onCancelItem', fileItem, response, status, headers);
-    };
-    miscUploader.onCompleteItem = function(fileItem, response, status, headers) {
-        console.info('onCompleteItem', fileItem, response, status, headers);
-    };
-    miscUploader.onCompleteAll = function() {
-        console.info('onCompleteAll');
-    };
 
     $scope.addItem = function() {
         if(this.newItem) {
@@ -1621,9 +1694,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         }, function(errorResult) {
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
@@ -1643,15 +1716,15 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             }, function (errorResult) {
                 console.log(errorResult);
                 if (errorResult.status === 400) {
-                    alert(errorResult.data);
+                    addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
-                    alert('unknown API!!!');
+                    addAlert('unknown API!!!');
                 } else if (errorResult.status === 401) {
                     $window.location.href = $location.path();
                 }
             });
         } else {
-            alert('user name or password is not vaild!!!');
+            addAlert('user name or password is not vaild!!!');
             this.username = '';
             this.password = '';
         }
@@ -1693,15 +1766,15 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             }, function(errorResult) {
                 console.log(errorResult);
                 if (errorResult.status === 400) {
-                    alert(errorResult.data);
+                    addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
-                    alert('unknown API!!!');
+                    addAlert('unknown API!!!');
                 } else if (errorResult.status === 401) {
                     $window.location.href = $location.path();
                 }
             });
         } else {
-            alert('feed back name is not valid!!!');
+            addAlert('feed back name is not valid!!!');
         }
         return false;
     }
@@ -1736,14 +1809,14 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         console.log($scope.feedback);
     };
 
-    var updateClock = function() {
+    /*var updateClock = function() {
         var date = new Date();
         $scope.clock = date.toString();
     };
     var timer = setInterval(function() {
         $scope.$apply(updateClock);
     }, 1000);
-    updateClock();
+    updateClock();*/
     console.log($cookies);
     $scope.id = 'guest';
     /*if ($cookies.id) {
@@ -1753,13 +1826,14 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     }*/
     $scope.feedback = {uid: '', name: '', list: [], run: false, queue: [], history: [], other: []};
     $scope.mediaShow = [];
-    $scope.navList = [{title: "homepage", hash: "/", css: "fa fa-fw fa-dashboard", active: true}, {title: "Storage", hash: "/Storage", css: "fa fa-fw fa-desktop", active: false}];
+    $scope.navList = [{title: "homepage", hash: "/", css: "fa fa-fw fa-dashboard"}, {title: "Storage", hash: "/Storage", css: "fa fa-fw fa-desktop"}];
     $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.doc = {id: "", src: "123.pdf", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.rawdoc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.dirList = [];
+    $scope.dirEdit = false;
 
     indexInit();
 
@@ -1796,9 +1870,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         }, function(errorResult) {
             console.log(errorResult);
             if (errorResult.status === 400) {
-                //alert(errorResult.data);
+                //addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             }
         });
         getFeedbacks(1);
@@ -1824,9 +1898,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         }, function(errorResult) {
             console.log(errorResult);
             if (errorResult.status === 400) {
-                //alert(errorResult.data);
+                //addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401 && !init) {
                 $window.location.href = $location.path();
             }
@@ -1860,9 +1934,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             }, function(errorResult) {
                 console.log(errorResult);
                 if (errorResult.status === 400) {
-                    alert(errorResult.data);
+                    addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
-                    alert('unknown API!!!');
+                    addAlert('unknown API!!!');
                 } else if (errorResult.status === 401) {
                     $window.location.href = $location.path();
                 }
@@ -1882,9 +1956,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         }, function(errorResult) {
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
@@ -1916,7 +1990,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 status = 6;
                 break;
             default:
-                alert('unknown type');
+                addAlert('unknown type');
                 return false;
         }
         var this_obj = this;
@@ -2006,9 +2080,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             }, function(errorResult) {
                                 console.log(errorResult);
                                 if (errorResult.status === 400) {
-                                    alert(errorResult.data);
+                                    addAlert(errorResult.data);
                                 } else if (errorResult.status === 403) {
-                                    alert('unknown API!!!');
+                                    addAlert('unknown API!!!');
                                 } else if (errorResult.status === 401) {
                                     $window.location.href = $location.path();
                                 }
@@ -2041,9 +2115,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     $scope.mediaMoreDisabled = false;
                     console.log(errorResult);
                     if (errorResult.status === 400) {
-                        alert(errorResult.data);
+                        addAlert(errorResult.data);
                     } else if (errorResult.status === 403) {
-                        alert('unknown API!!!');
+                        addAlert('unknown API!!!');
                     } else if (errorResult.status === 401) {
                         $window.location.href = $location.path();
                     }
@@ -2136,9 +2210,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             }, function(errorResult) {
                                 console.log(errorResult);
                                 if (errorResult.status === 400) {
-                                    alert(errorResult.data);
+                                    addAlert(errorResult.data);
                                 } else if (errorResult.status === 403) {
-                                    alert('unknown API!!!');
+                                    addAlert('unknown API!!!');
                                 } else if (errorResult.status === 401) {
                                     $window.location.href = $location.path();
                                 }
@@ -2171,9 +2245,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     $scope.mediaMoreDisabled = false;
                     console.log(errorResult);
                     if (errorResult.status === 400) {
-                        alert(errorResult.data);
+                        addAlert(errorResult.data);
                     } else if (errorResult.status === 403) {
-                        alert('unknown API!!!');
+                        addAlert('unknown API!!!');
                     } else if (errorResult.status === 401) {
                         $window.location.href = $location.path();
                     }
@@ -2227,9 +2301,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 }, function(errorResult) {
                     console.log(errorResult);
                     if (errorResult.status === 400) {
-                        alert(errorResult.data);
+                        addAlert(errorResult.data);
                     } else if (errorResult.status === 403) {
-                        alert('unknown API!!!');
+                        addAlert('unknown API!!!');
                     } else if (errorResult.status === 401) {
                         $window.location.href = $location.path();
                     }
@@ -2259,7 +2333,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             }
         }
     }
-    $scope.mediaToggle = function(type) {
+    $scope.mediaToggle = function(type, open) {
         switch (type) {
             case 'image':
             case 'video':
@@ -2268,13 +2342,15 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             case 'rawdoc':
                 break;
             default:
-                alert('unknown type');
+                addAlert('unknown type');
                 return false;
         }
         if (this.mediaShow[0] === type) {
-            this.mediaShow.splice(0,1);
-            if (type === 'video') {
-                video.pause();
+            if (!open) {
+                this.mediaShow.splice(0,1);
+                if (type === 'video') {
+                    video.pause();
+                }
             }
         } else {
             var index = this.mediaShow.indexOf(type);
@@ -2294,15 +2370,18 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
-                $scope.dirList = result.parentList;
+                $scope.dirEdit = result.isEdit;
+                for (var i in result.parentList) {
+                    $scope.dirList.push({name: result.parentList[i].name, show: result.parentList[i].show, collpase: true, edit: false, list: [], page: 0, more: true, moreDisabled: false, sortName: '', sortMtime: '', sort: 'name/asc'});
+                }
                 console.log($scope.dirList);
             }
         }, function(errorResult) {
             console.log(errorResult);
             if (errorResult.status === 400) {
-                alert(errorResult.data);
+                addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
-                alert('unknown API!!!');
+                addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
                 $window.location.href = $location.path();
             }
@@ -2315,24 +2394,24 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             var Info = $resource('/api/parent/add', {}, {
                 'addDir': { method:'POST' }
             });
-            var this_obj = this;
+            var this_obj = this.$parent;
             Info.addDir({ name: name, tag: $scope.feedbackSelectTag}, function (result) {
                 console.log(result);
                 if (result.id) {
-                    this_obj.$broadcast('dirTaglist', JSON.stringify({id: result.id, name: result.name}));
+                    this_obj.$broadcast('dir', JSON.stringify({id: result.id, name: result.name, parent: name}));
                 }
             }, function(errorResult) {
                 console.log(errorResult);
                 if (errorResult.status === 400) {
-                    alert(errorResult.data);
+                    addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
-                    alert('unknown API!!!');
+                    addAlert('unknown API!!!');
                 } else if (errorResult.status === 401) {
                     $window.location.href = $location.path();
                 }
             });
         } else {
-            alert('add parent is not valid!!');
+            addAlert('add parent is not valid!!');
         }
         return false;
     }
