@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>The Life of Ho</title>
+        <title>AnNoPiHo</title>
         <script type="text/javascript" src="script/angular.min.js"></script>
         <script type="text/javascript" src="script/angular-route.min.js"></script>
         <script type="text/javascript" src="script/angular-resource.min.js"></script>
@@ -43,7 +43,7 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" href="/">The Life of Ho</a>
+                    <a class="navbar-brand" href="/">AnNoPiHo</a>
                     <button ng-show="currentPage===1" type="button" class="navbar-toggle" ng-click="collapse.storage = !collapse.storage">
                         <span class="sr-only">Toggle navigation</span>
                         <span class="icon-bar"></span>
@@ -51,17 +51,26 @@
                         <span class="icon-bar"></span>
                     </button>
                 </div>
-                <!-- Top Menu Items -->
                 <ul class="nav navbar-right top-nav">
                     <li class="dropdown" dropdown="">
-                        <a href="#" class="dropdown-toggle" dropdown-toggle=""><i class="fa fa-user"></i> {{id}} <b class="caret"></b></a>
+                        <a href="#" class="dropdown-toggle" dropdown-toggle="">
+                            <i class="fa fa-user"></i>
+                            {{id}}
+                            <b class="caret"></b>
+                        </a>
                         <ul class="dropdown-menu" id="profile-section">
                             <li>
-                                <a href="/UserInfo"><i class="fa fa-fw fa-user"></i> Profile</a>
+                                <a href="/UserInfo">
+                                    <i class="fa fa-fw fa-user"></i>
+                                    Profile
+                                </a>
                             </li>
                             <li class="divider"></li>
                             <li>
-                                <a href="#" ng-click="doLogout()"><i class="fa fa-fw fa-power-off"></i> Log Out</a>
+                                <a href="#" ng-click="doLogout()">
+                                    <i class="fa fa-fw fa-power-off"></i>
+                                    Log Out
+                                </a>
                             </li>
                         </ul>
                     </li>
@@ -70,7 +79,10 @@
                     <div collapse="collapse.nav">
                         <ul class="nav navbar-nav side-nav">
                             <li ng-repeat="item in navList" class="{{(currentPage===$index) && 'active' || ''}}">
-                                <a href="{{item.hash}}"><i class="{{item.css}}"></i>{{item.title}}</a>
+                                <a href="{{item.hash}}">
+                                    <i class="{{item.css}}"></i>
+                                    {{item.title}}
+                                </a>
                             </li>
                         </ul>
                     </div>
@@ -80,21 +92,45 @@
                 <section ng-view>
                 </section>
                 <div class="btn-group-vertical" role="group" aria-label="Vertical button group" id="widget-section">
-                    <button type="button" ng-show="isLogin" class="btn btn-info" ng-click="toggleWidget('uploader')" >Uploader <span class="badge">{{uploader.progress}}%</span></button>
-                    <button type="button" ng-show="feedback.run" class="btn btn-default" ng-click="toggleWidget('feedback')">Feedback <span class="badge">{{feedback.queue.length+1}}</span></button>
-                    <button type="button" ng-show="image.list.length" class="btn btn-warning" ng-click="mediaToggle('image')">Image <span class="badge">{{image.end && ' ' || '>'}}{{image.list.length}}</span></button>
-                    <button type="button" ng-show="video.list.length" class="btn btn-success" ng-click="mediaToggle('video')">Video <span class="badge">{{video.end && ' ' || '>'}}{{video.list.length}}</span></button>
-                    <button type="button" ng-show="music.list.length" class="btn btn-primary" ng-click="mediaToggle('music')">Music <span class="badge">{{music.end && ' ' || '>'}}{{music.list.length}}</span></button>
-                    <button type="button" ng-show="doc.list.length" class="btn btn-danger" ng-click="mediaToggle('doc')">Doc <span class="badge">{{doc.end && ' ' || '>'}}{{doc.list.length}}</span></button>
-                    <button type="button" ng-show="rawdoc.list.length" class="btn btn-info" ng-click="mediaToggle('rawdoc')">Rawdoc <span class="badge">{{rawdoc.end && ' ' || '>'}}{{rawdoc.list.length}}</span></button>
+                    <button type="button" ng-show="isLogin" class="btn btn-info" ng-click="toggleWidget('uploader')" >
+                        Uploader
+                        <span class="badge">{{uploader.progress}}%</span>
+                    </button>
+                    <button type="button" ng-show="feedback.run" class="btn btn-default" ng-click="toggleWidget('feedback')">
+                        Feedback
+                        <span class="badge">{{feedback.queue.length+1}}</span>
+                    </button>
+                    <button type="button" ng-show="image.list.length" class="btn btn-warning" ng-click="mediaToggle('image')">
+                        Image
+                        <span class="badge">{{image.end && ' ' || '>'}}{{image.list.length}}</span>
+                    </button>
+                    <button type="button" ng-show="video.list.length" class="btn btn-success" ng-click="mediaToggle('video')">
+                        Video
+                        <span class="badge">{{video.end && ' ' || '>'}}{{video.list.length}}</span>
+                    </button>
+                    <button type="button" ng-show="music.list.length" class="btn btn-primary" ng-click="mediaToggle('music')">
+                        Music
+                        <span class="badge">{{music.end && ' ' || '>'}}{{music.list.length}}</span>
+                    </button>
+                    <button type="button" ng-show="doc.list.length" class="btn btn-danger" ng-click="mediaToggle('doc')">
+                        Doc
+                        <span class="badge">{{doc.end && ' ' || '>'}}{{doc.list.length}}</span>
+                    </button>
+                    <button type="button" ng-show="rawdoc.list.length" class="btn btn-info" ng-click="mediaToggle('rawdoc')">
+                        Rawdoc<span class="badge">{{rawdoc.end && ' ' || '>'}}{{rawdoc.list.length}}</span>
+                    </button>
                 </div>
                 <sectio id="left-bottom-section">
-                    <section class="panel panel-info" id="uploader-section" ng-show="widget.uploader&&isLogin" >
+                    <section class="panel panel-info" id="uploader-section" ng-show="widget.uploader&&isLogin">
                         <div class="panel-heading" ng-click="toggleWidget('uploader')">
-                            <h4 class="panel-title">Uploader<i class="pull-right glyphicon glyphicon-remove"></i></h4>
+                            <h4 class="panel-title">
+                                Uploader
+                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                            </h4>
                         </div>
                         <div class="uploader-word" ng-repeat="item in uploader.queue">
-                            {{ item.file.name }}<span class="badge">{{ item.progress }}%</span>
+                            {{item.file.name}}
+                            <span class="badge">{{ item.progress }}%</span>
                         </div>
                         <div class="progress">
                             <div class="progress-bar" role="progressbar" aria-valuenow="uploader.progress" aria-valuemin="0" aria-valuemax="100" style="width: {{ uploader.progress }}%;">
@@ -102,26 +138,41 @@
                             </div>
                         </div>
                         <div class="btn-group" role="group" aria-label="upload btn">
-                            <button class="btn btn-primary btn-file btn-s"><span class="glyphicon glyphicon-folder-open"></span>&nbsp;Choose<input type="file" nv-file-select uploader="uploader"/></button>
-                            <button class="btn btn-success btn-s" ng-click="uploader.uploadAll()" ng-disabled="!uploader.getNotUploadedItems().length" disabled="disabled"><span class="glyphicon glyphicon-upload"></span>Upload all</button>
-                            <button class="btn btn-danger btn-s" ng-click="uploader.clearQueue()" ng-disabled="!uploader.queue.length" disabled="disabled"><span class="glyphicon glyphicon-trash"></span>Remove all</button>
+                            <button class="btn btn-primary btn-file btn-s">
+                                <span class="glyphicon glyphicon-folder-open"></span>
+                                &nbsp;Choose
+                                <input type="file" nv-file-select uploader="uploader" />
+                            </button>
+                            <button class="btn btn-success btn-s" ng-click="uploader.uploadAll()" ng-disabled="!uploader.getNotUploadedItems().length" disabled="disabled">
+                                <span class="glyphicon glyphicon-upload"></span>
+                                Upload all
+                            </button>
+                            <button class="btn btn-danger btn-s" ng-click="uploader.clearQueue()" ng-disabled="!uploader.queue.length" disabled="disabled">
+                                <span class="glyphicon glyphicon-trash"></span>
+                                Remove all
+                            </button>
                         </div>
                     </section>
                     <section class="panel panel-default feedback-list" id="feedback-section" ng-show="widget.feedback && feedback.run">
                         <div class="panel-heading" ng-click="toggleWidget('feedback')">
-                            <h4 class="panel-title">{{feedback.name}}<i class="pull-right glyphicon glyphicon-remove"></i></h4>
+                            <h4 class="panel-title">
+                                {{feedback.name}}
+                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                            </h4>
                         </div>
                         <div class="dropdown" dropdown="" is-open="dropdown.feedback">
-                            <ul class="dropdown-menu">
-                                <li ng-repeat="item in dirList"><a ng-confirm-click="'Would you sure to add this tag to Dir?'" confirmed-click="feedbackAdd2Parent(item.name)">{{item.show}}</a></li>
+                            <ul class="dropdown-menu" id="dir-list">
+                                <li ng-repeat="item in dirList">
+                                    <a ng-confirm-click="'Would you sure to add this tag to Dir?'" confirmed-click="feedbackAdd2Parent(item.name)">{{item.show}}</a>
+                                </li>
                             </ul>
                         </div>
                         <div id="feedback-inner-section" class="panel-body">
                             <div class="input-group" ng-repeat="item in feedback.list">
                                 <span class="input-group-addon">
-                                    <input type="checkbox" ng-model="item.select">
+                                    <input type="checkbox" ng-model="item.select" />
                                 </span>
-                                <span class="form-control">{{item.tag}}</span>
+                                <span class="form-control feedback-tag">{{item.tag}}</span>
                                 <span class="input-group-btn">
                                     <button type="button" class="btn btn-default" ng-click="selectFeedbackTag($event, item.tag)" aria-expanded="false">
                                         <span class="caret"></span>
@@ -129,6 +180,9 @@
                                 </span>
                             </div>
                             <div class="input-group" ng-repeat="item in feedback.other">
+                                <span class="input-group-addon">
+                                    <input type="checkbox" checked ng-disabled="true">
+                                </span>
                                 <span class="form-control">{{item}}</span>
                                 <span class="input-group-btn">
                                     <button type="button" class="btn btn-default" ng-click="selectFeedbackTag($event, item)" aria-expanded="false">
@@ -137,43 +191,79 @@
                                 </span>
                             </div>
                         </div>
-                        <div class="input-group">
-                            <span class="input-group-btn">
-                                <button type="button" class="btn btn-default" ng-click="sendFeedback()"><i class="glyphicon glyphicon-thumbs-up"></i></button>
-                            </span>
-                            <input type="text" class="form-control" ng-model="feedbackInput" ng-enter="addFeedback()">
-                            <span class="input-group-btn">
-                                <button class="btn btn-default" ng-click="addFeedback()" type="button"><i class="glyphicon glyphicon-plus"></i></button>
-                            </span>
-                        </div>
+                        <form ng-submit="addFeedback()">
+                            <div class="input-group">
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default" ng-click="sendFeedback()">
+                                        <i class="glyphicon glyphicon-thumbs-up"></i>
+                                    </button>
+                                </span>
+                                <input type="text" class="form-control" ng-model="feedbackInput" blur-me="feedbackBlur" />
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default" type="submit">
+                                        <i class="glyphicon glyphicon-plus"></i>
+                                    </button>
+                                </span>
+                            </div>
+                        </form>
                     </section>
                 </section>
                 <section id="{{isFull && 'full-section'||'center-section'}}">
                     <section class="panel panel-warning media-section" ng-show="mediaShow[0] === 'image'">
                         <div class="panel-heading" ng-click="mediaToggle('image')">
-                            <h4 class="panel-title">{{image.index}} : {{image.name}}<i class="pull-right glyphicon glyphicon-remove"></i></h4>
+                            <h4 class="panel-title">
+                                {{(image.index) >= 0 && (image.index+1) || image.index}} : {{image.name}}
+                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                            </h4>
                         </div>
                         <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}"><a href="#" ng-click="mediaMove(-1, 'image')">Pre</a></li>
-                                    <li><a href="#" class='media-hide' ng-click="isFull = !isFull">{{isFull && 'Cen'||'Ful'}}</a></li>
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}"><a href="#" ng-click="mediaMove(1, 'image')">Nex</a></li>
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="mediaMove(-1, 'image')">
+                                            <span class="glyphicon glyphicon-chevron-left"></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class='media-hide' ng-click="isFull = !isFull">
+                                            <span class="glyphicon {{isFull && 'glyphicon-minus-sign'||'glyphicon-plus-sign'}}"></span>
+                                        </a>
+                                    </li>
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="mediaMove(1, 'image')">
+                                            <span class="glyphicon glyphicon-chevron-right"></span>
+                                        </a>
+                                    </li>
                                 </ul>
                             </nav>
-                            <img class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="mediaMove(1, 'image')">
+                            <img class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="mediaMove(1, 'image')" />
                         </div>
                     </section>
                     <section class="panel panel-success" ng-show="mediaShow[0] === 'video'">
                         <div class="panel-heading" ng-click="mediaToggle('video')">
-                            <h4 class="panel-title">{{video.index}} : {{video.name}}<i class="pull-right glyphicon glyphicon-remove"></i></h4>
+                            <h4 class="panel-title">
+                                {{(video.index) >= 0 && (video.index+1) || video.index}} : {{video.name}}
+                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                            </h4>
                         </div>
                         <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}"><a href="#" ng-click="mediaMove(-1, 'video')">Pre</a></li>
-                                    <li><a href="#" class='media-hide' ng-click="isFull = !isFull">{{isFull && 'Cen'||'Ful'}}</a></li>
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}"><a href="#" ng-click="mediaMove(1, 'video')">Nex</a></li>
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="mediaMove(-1, 'video')">
+                                            <span class="glyphicon glyphicon-chevron-left"></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class='media-hide' ng-click="isFull = !isFull">
+                                            <span class="glyphicon {{isFull && 'glyphicon-minus-sign'||'glyphicon-plus-sign'}}"></span>
+                                        </a>
+                                    </li>
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="mediaMove(1, 'video')">
+                                            <span class="glyphicon glyphicon-chevron-right"></span>
+                                        </a>
+                                    </li>
                                 </ul>
                             </nav>
                             <video class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{video.src}}" controls autoplay ng-video ng-ended="mediaMove(1, 'video', true)" ng-play="testLogin()" ng-pause="mediaRecord('video')">
@@ -183,14 +273,29 @@
                     </section>
                     <section class="panel panel-primary" ng-show="mediaShow[0] === 'music'">
                         <div class="panel-heading" ng-click="mediaToggle('music')">
-                            <h4 class="panel-title">{{music.index}} : {{music.name}}<i class="pull-right glyphicon glyphicon-remove"></i></h4>
+                            <h4 class="panel-title">
+                                {{(music.index) >= 0 && (music.index+1) || music.index}} : {{music.name}}
+                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                            </h4>
                         </div>
                         <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}"><a href="#" ng-click="mediaMove(-1, 'music')">Pre</a></li>
-                                    <li><a href="#" class='media-hide' ng-click="isFull = !isFull">{{isFull && 'Cen'||'Ful'}}</a></li>
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}"><a href="#" ng-click="mediaMove(1, 'music')">Nex</a></li>
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="mediaMove(-1, 'music')">
+                                            <span class="glyphicon glyphicon-chevron-left"></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class='media-hide' ng-click="isFull = !isFull">
+                                            <span class="glyphicon {{isFull && 'glyphicon-minus-sign'||'glyphicon-plus-sign'}}"></span>
+                                        </a>
+                                    </li>
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="mediaMove(1, 'music')">
+                                            <span class="glyphicon glyphicon-chevron-right"></span>
+                                        </a>
+                                    </li>
                                 </ul>
                             </nav>
                             <audio class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{music.src}}" controls autoplay ng-music ng-ended="mediaMove(1, 'music', true)" ng-play="testLogin()" ng-pause="mediaRecord('music')">
@@ -201,14 +306,29 @@
                 <section id="{{isFull && 'full-doc-section'||'doc-section'}}">
                     <section class="panel panel-danger" ng-show="mediaShow[0] === 'doc'">
                         <div class="panel-heading" ng-click="mediaToggle('doc')">
-                            <h4 class="panel-title">{{doc.index}} : {{doc.name}}<i class="pull-right glyphicon glyphicon-remove"></i></h4>
+                            <h4 class="panel-title">
+                                {{(doc.index) >= 0 && (doc.index+1) || doc.index}} : {{doc.name}}
+                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                            </h4>
                         </div>
                         <div class="panel-body">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}"><a href="#" ng-click="mediaMove(-1, 'doc')">Pre</a></li>
-                                    <li><a href="#" class='media-hide' ng-click="isFull = !isFull">{{isFull && 'Cen'||'Ful'}}</a></li>
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}"><a href="#" ng-click="mediaMove(1, 'doc')">Nex</a></li>
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="mediaMove(-1, 'doc')">
+                                            <span class="glyphicon glyphicon-chevron-left"></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class='media-hide' ng-click="isFull = !isFull">
+                                            <span class="glyphicon {{isFull && 'glyphicon-minus-sign'||'glyphicon-plus-sign'}}"></span>
+                                        </a>
+                                    </li>
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="mediaMove(1, 'doc')">
+                                            <span class="glyphicon glyphicon-chevron-right"></span>
+                                        </a>
+                                    </li>
                                 </ul>
                             </nav>
                             <object class="{{isFull && 'full-doc-screen'||'doc-screen'}}" data="{{doc.src}}" type="application/pdf">
@@ -218,14 +338,29 @@
                     </section>
                     <section class="panel panel-info" ng-show="mediaShow[0] === 'rawdoc'">
                         <div class="panel-heading" ng-click="mediaToggle('rawdoc')">
-                            <h4 class="panel-title">{{rawdoc.index}} : {{rawdoc.name}}<i class="pull-right glyphicon glyphicon-remove"></i></h4>
+                            <h4 class="panel-title">
+                                {{(rawdoc.index) >= 0 && (rawdoc.index+1) || rawdoc.index}} : {{rawdoc.name}}
+                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                            </h4>
                         </div>
                         <div class="panel-body">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}"><a href="#" ng-click="mediaMove(-1, 'rawdoc')">Pre</a></li>
-                                    <li><a href="#" class='media-hide' ng-click="isFull = !isFull">{{isFull && 'Cen'||'Ful'}}</a></li>
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}"><a href="#" ng-click="mediaMove(1, 'rawdoc')">Nex</a></li>
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="mediaMove(-1, 'rawdoc')">
+                                            <span class="glyphicon glyphicon-chevron-left"></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class='media-hide' ng-click="isFull = !isFull">
+                                            <span class="glyphicon {{isFull && 'glyphicon-minus-sign'||'glyphicon-plus-sign'}}"></span>
+                                        </a>
+                                    </li>
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="mediaMove(1, 'rawdoc')">
+                                            <span class="glyphicon glyphicon-chevron-right"></span>
+                                        </a>
+                                    </li>
                                 </ul>
                             </nav>
                             <iframe class="{{isFull && 'full-doc-screen'||'doc-screen'}}" ng-src="{{rawdoc.src}}" style="border: 0;"></iframe>

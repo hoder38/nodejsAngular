@@ -25,6 +25,18 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
             });
         }
     };
+}).directive('blurMe', function() {
+    return {
+        scope: { trigger: '=blurMe' },
+        link: function(scope, element) {
+            scope.$watch('trigger', function(value) {
+                if(value === true) {
+                    element[0].blur();
+                    scope.trigger = false;
+                }
+            });
+        }
+    };
 }).directive('ngEnter', function () {
     return function (scope, element, attrs) {
         element.bind("keydown keypress", function (event) {
@@ -371,9 +383,11 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
 
 function LoginCntl($route, $routeParams, $location, $resource, $scope, $location) {
     $scope.$parent.currentPage = 0;
+    $scope.$parent.collapse.nav = true;
 }
 
 function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $cookies, $filter, FileUploader) {
+    $scope.$parent.collapse.nav = true;
     $scope.parentList = [];
     $scope.historyList = [];
     $scope.exactlyList = [];
@@ -397,6 +411,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.bookmarkEdit = false;
     $scope.latest = '';
     $scope.dropdown.item = false;
+    $scope.searchBlur = false;
+    $scope.feedbackBlur = false;
     $scope.toolList = {download: false, edit: false, upload:false, del: false, item: null};
     $scope.$parent.currentPage = 1;
     $scope.fileSort = {name:'', mtime: '', sort: 'name/asc'};
@@ -719,6 +735,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             this_obj.historyList = result.parentList.his;
             this_obj.exactlyList = result.parentList.exactly;
             this_obj.moreDisabled = false;
+            this_obj.$parent.collapse.storage = true;
             console.log(this_obj.itemList);
         }, function(errorResult) {
             this_obj.moreDisabled = false;
@@ -803,6 +820,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 this_obj.historyList = result.parentList.his;
                 this_obj.exactlyList = result.parentList.exactly;
                 this_obj.moreDisabled = false;
+                this_obj.searchBlur = true;
                 console.log(this_obj.itemList);
             }
         }, function(errorResult) {
@@ -1333,7 +1351,10 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         $window.location.href = '/download/' + id;
     }
 
-    $scope.handleMedia = function(item, action) {
+    $scope.handleMedia = function(action, item) {
+        if (!item) {
+            item = this.toolList.item;
+        }
         if (action == 'act' || action == 'del') {
             var handleMedia = $resource('/api/handleMedia/' + item.id + '/' + action, {}, {
                 'handlemedia': { method:'GET' }
@@ -1369,6 +1390,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             this.$parent.toolList.del = false;
             this.$parent.toolList.recover = false;
             this.$parent.toolList.upload = false;
+            this.$parent.toolList.delMedia = false;
         } else {
             this.$parent.toolList.download = true;
             this.$parent.toolList.dir = false;
@@ -1388,6 +1410,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 this.$parent.toolList.upload = true;
             } else {
                 this.$parent.toolList.upload = false;
+            }
+            if (item.media) {
+                this.$parent.toolList.delMedia = true;
+            } else {
+                this.$parent.toolList.delMedia = false;
             }
         }
         this.toggleDropdown($event, 'item');
@@ -1438,6 +1465,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 this_obj.$parent.historyList = result.parentList.his;
                 this_obj.$parent.exactlyList = result.parentList.exactly;
                 this_obj.$parent.moreDisabled = false;
+                this_obj.$parent.$parent.collapse.storage = true;
             }
         }, function(errorResult) {
             this_obj.$parent.moreDisabled = false;
@@ -1734,6 +1762,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         if (this.feedbackInput) {
             this.feedback.list.splice(0, 0, {tag: this.feedbackInput, select: true});
             this.feedbackInput = '';
+            this.feedbackBlur = true;
         }
     }
     $scope.sendFeedback = function() {
@@ -2371,6 +2400,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 $window.location.href = $location.path();
             } else {
                 $scope.dirEdit = result.isEdit;
+                $scope.dirList = [];
                 for (var i in result.parentList) {
                     $scope.dirList.push({name: result.parentList[i].name, show: result.parentList[i].show, collpase: true, edit: false, list: [], page: 0, more: true, moreDisabled: false, sortName: '', sortMtime: '', sort: 'name/asc'});
                 }

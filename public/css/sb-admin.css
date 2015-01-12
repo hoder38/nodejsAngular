@@ -347,10 +347,10 @@ audio.full-media-screen {
 #doc-section {
     float:left;
     position:fixed;
-    top:60px;
-    right:10px;
-    width: 50%;
-    z-index: 100;
+    top:0px;
+    left:0px;
+    width: 100%;
+    z-index: 1900;
     _position:absolute; /* position fixed for IE6 */
 }
 
@@ -428,6 +428,12 @@ audio.full-media-screen {
         right:10px;
         left: auto;
         max-width: 50%;
+    }
+    #doc-section {
+        left: auto;
+        top:60px;
+        right:10px;
+        width: 50%;
     }
     .media-screen {
         max-height: 100%;
@@ -532,10 +538,38 @@ audio.full-media-screen {
 
 .table-responsive>.table>tbody>tr>td.item-name {
     white-space: normal;
+    word-break: break-all;
+    word-wrap: break-word;
 }
 
 .item-icon {
     height: 42px;
     width: 42px;
     font-size: 35px;
+}
+
+.feedback-tag {
+    word-break: break-all;
+    word-wrap: break-word;
+}
+
+#tool-list {
+    max-height: 30vh;
+    overflow-y:auto;
+}
+
+#bookmark-list {
+    max-height: 50vh;
+    overflow-y:auto;
+}
+
+#dir-list {
+    max-height: 50vh;
+    left: 100px;
+    overflow-y:auto;
+}
+
+.item-image {
+    height: 42px;
+    width: 42px;
 }
