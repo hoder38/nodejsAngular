@@ -14,17 +14,24 @@ var util = require("../util/utility.js");
 var mime = require('../util/mime.js');
 
 var http = require('http'),
+    https = require('https'),
+    fs = require("fs"),
+    privateKey  = fs.readFileSync('/home/pi/app/privatekey.pem', 'utf8'),
+    certificate = fs.readFileSync('/home/pi/app/certification.pem', 'utf8'),
+    credentials = {key: privateKey, cert: certificate},
     express = require('express'),
     crypto = require('crypto'),
     passport = require('passport'),
     Transcoder = require('stream-transcoder'),
     LocalStrategy = require('passport-local').Strategy,
-    WebSocketServer = require('websocket').server;
+    WebSocketServer = require('ws').Server,
+    //WebSocketServer = require('websocket').server;
     app = express(),
+    //server = https.createServer(credentials, app);
+    //port = 443,
     server = http.createServer(app),
     port = 80,
     ip = '114.32.213.158',
-    fs = require("fs"),
     mkdirp = require('mkdirp'),
     encode = "utf8",
     path = require('path'),
@@ -661,6 +668,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
         console.log(mediaType);
         switch(mediaType['type']) {
             case 'video':
+            case 'vlog':
             case 'music':
                 new Transcoder(filePath)
                 .on('metadata', function(meta) {
@@ -671,15 +679,20 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                             if (meta.input.streams[i].size) {
                                 if (meta.input.streams[i].size.height >= 720) {
                                     mediaType['hd'] = 1;
+                                } else {
+                                    mediaType['hd'] = 0;
                                 }
                                 isVideo = true;
                             }
                         }
-                        if ((isVideo && mediaType['type'] === 'video') || (!isVideo && mediaType['type'] === 'music')) {
-                            DBdata['status'] = 1;
-                            mediaTag = mime.mediaTag(mediaType['type']);
+                        mediaTag = mime.mediaTag(mediaType['type']);
+                        if (!isVideo && mediaType['type'] === 'music') {
+                            DBdata['status'] = 4;
+                            mediaType = false;
+                            console.log(mediaTag);
+                        } else if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
                             mediaType['time'] = meta.input.duration;
-                            mediaType['hd'] = 0;
+                            DBdata['status'] = 1;
                             if (mediaType['time'] < 20 * 60 * 1000) {
                                 mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 1));
                             } else if (mediaType['time'] < 40 * 60 * 1000) {
@@ -860,7 +873,7 @@ app.post('/upload/file', function(req, res, next){
                 function save2DB(mediaType, mediaTag, DBdata) {
                     mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(req.user.username));
                     if (util.checkAdmin(2 ,req.user)) {
-                        mediaTag.opt.push('18禁');
+                        mediaTag.def.push('18禁');
                     }
                     var tags = tagTool.searchTags(req.session, 'parent');
                     if (tags) {
@@ -976,7 +989,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                 });
             });
         });
-    } else if (mediaType['type'] === 'video') {
+    } else if (mediaType['type'] === 'vlog') {
         if (!mediaType.hasOwnProperty('time') && !mediaType.hasOwnProperty('hd')) {
             util.handleError({hoerror: 2, msg: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback);
         }
@@ -1077,7 +1090,8 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                 });
             }
         });
-    } else if (mediaType['type'] === 'music') {
+    //不處理了
+    /*} else if (mediaType['type'] === 'music') {
         if (!mediaType.hasOwnProperty('time') && !mediaType.hasOwnProperty('hd')) {
             util.handleError({hoerror: 2, msg: 'music can not decode!!!'}, callback, errerMedia, fileID, callback);
         }
@@ -1099,7 +1113,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                     });
                 }
             });
-        });
+        });*/
     } else {
         api.xuiteApi("xuite.webhd.private.cloudbox.getMetadata", {key: key, type: 'file'}, function(err, metaResult) {
             if (err) {
@@ -1300,7 +1314,11 @@ app.get('/api/feedback', function (req, res, next) {
                     }
                     console.log(items2);
                     var feedback_arr = [];
-                    recur_feedback(0);
+                    if (items2.length === 0) {
+                        res.json({feedbacks: feedback_arr});
+                    } else {
+                        recur_feedback(0);
+                    }
                     function recur_feedback(index) {
                         getFeedback(items2[index], function(err, feedback) {
                             if(err) {
@@ -1318,7 +1336,11 @@ app.get('/api/feedback', function (req, res, next) {
                 });
             } else {
                 var feedback_arr = [];
-                recur_feedback(0);
+                if (items.length === 0) {
+                    res.json({feedbacks: feedback_arr});
+                } else {
+                    recur_feedback(0);
+                }
                 function recur_feedback(index) {
                     getFeedback(items[index], function(err, feedback) {
                         if(err) {
@@ -1601,16 +1623,13 @@ app.get('/api/media/setTime/:id', function(req, res, next){
 app.get('/api/getUser', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get user');
-        var ws = 'node-angular-junior';
-        var ws_url = 'ws://' + ip + ':1027';
+        var ws_url = 'ws://' + ip + ':8083';
         if (util.checkAdmin(1, req.user)) {
-            ws = 'node-angular-senior';
-            ws_url = 'ws://' + ip + ':1025';
+            ws_url = 'ws://' + ip + ':8081';
         } else if (util.checkAdmin(2, req.user)) {
-            ws = 'node-angular';
-            ws_url = 'ws://' + ip + ':1026';
+            ws_url = 'ws://' + ip + ':8082';
         }
-        res.json({id: req.user.username, ws: ws, ws_url: ws_url});
+        res.json({id: req.user.username, ws_url: ws_url});
     });
 });
 
@@ -2007,103 +2026,80 @@ process.on('uncaughtException', function(err) {
     }
 });
 
+//var server1 = https.createServer(credentials, function (req, res) {
 var server1 = http.createServer(function (req, res) {
     res.writeHead(200);
-    res.end("hello world\n");
-}).listen(1025);
+    res.end("hello world websocket1\n");
+}).listen(8081);
 
+//var server2 = https.createServer(credentials, function (req, res) {
 var server2 = http.createServer(function (req, res) {
     res.writeHead(200);
-    res.end("hello world\n");
-}).listen(1026);
+    res.end("hello world websocket2\n");
+}).listen(8082);
 
+//var server3 = https.createServer(credentials, function (req, res) {
 var server3 = http.createServer(function (req, res) {
     res.writeHead(200);
-    res.end("hello world\n");
-}).listen(1027);
+    res.end("hello world websocket3\n");
+}).listen(8083);
 
 var wssServer = new WebSocketServer({
-    httpServer: server1,
-    autoAcceptConnections: false
+    server: server1
 });
 
 var wsServer = new WebSocketServer({
-    httpServer: server2,
-    autoAcceptConnections: false
+    server: server2
 });
 
 var wsjServer = new WebSocketServer({
-    httpServer: server3,
-    autoAcceptConnections: false
+    server: server3
 });
 
 function onWsConnMessage(message) {
     console.log(message);
-    if (message.type == 'utf8') {
-        console.log('Received message: ' + message.utf8Data);
-    } else if (message.type == 'binary') {
-        console.log('Received binary data.');
-    }
+    var recvData = JSON.parse(message);
+    console.log(recvData);
+    //sendWs(sendData, 1, 1);
 }
 
 function onWsConnClose(reasonCode, description) {
     console.log(' Peer disconnected with reason: ' + reasonCode);
 }
 
-function onWsRequest(request) {
-    var connection = request.accept('node-angular', request.origin);
-    console.log("WebSocket connection accepted.");
-
-    clients.push(connection);
-
-    connection.on('message', onWsConnMessage);
-    connection.on('close', onWsConnClose);
-}
-
-function onWsjRequest(request) {
-    var connection = request.accept('node-angular-junior', request.origin);
-    console.log("WebSocket connection accepted.");
-
-    jclients.push(connection);
-
-    connection.on('message', onWsConnMessage);
-    connection.on('close', onWsConnClose);
-}
-
-function onWssRequest(request) {
-    var connection = request.accept('node-angular-senior', request.origin);
-    console.log("WebSocket connection accepted.");
-
-    sclients.push(connection);
-
-    connection.on('message', onWsConnMessage);
-    connection.on('close', onWsConnClose);
-}
-
 function sendWs(data, adultonly, auth) {
     var sendData = JSON.stringify(data);
-    for (var i = 0; i < sclients.length; i++) {
-        sclients[i].sendUTF(sendData);
-    }
+    wssServer.clients.forEach(function each(client) {
+        client.send(sendData);
+    });
     if (!auth) {
-        for (var i = 0; i < clients.length; i++) {
-            clients[i].sendUTF(sendData);
-        }
+        wsServer.clients.forEach(function each(client) {
+            client.send(sendData);
+        });
         if (!adultonly) {
-            for (var i = 0; i < jclients.length; i++) {
-                jclients[i].sendUTF(sendData);
-            }
+            wsjServer.clients.forEach(function each(client) {
+                client.send(sendData);
+            });
         }
     }
 }
 
 server.listen(port, ip);
 
-wssServer.on('request', onWssRequest);
+wssServer.on('connection', function(ws) {
+    ws.on('message', onWsConnMessage);
+    ws.on('close', onWsConnClose);
+});
 
-wsServer.on('request', onWsRequest);
+wsServer.on('connection', function(ws) {
+    ws.on('message', onWsConnMessage);
+    ws.on('close', onWsConnClose);
+});
 
-wsjServer.on('request', onWsjRequest);
+wsjServer.on('connection', function(ws) {
+    ws.on('message', onWsConnMessage);
+    ws.on('close', onWsConnClose);
+});
 
 console.log('start express server\n');
 

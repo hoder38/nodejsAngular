@@ -72,13 +72,13 @@
                                         <tr>
                                             <td>New Password:</td>
                                             <td>
-                                                <input class="form-control" type="password" name="passwd" placeholder="6~20個英數、!、@、#、$、%" focus-me="user.newPwdFocus" ng-enter="user.conPwdFocus = true" />
+                                                <input class="form-control" type="password" ng-model="user.newPwd" name="passwd" placeholder="6~20個英數、!、@、#、$、%" focus-me="user.newPwdFocus" ng-enter="user.conPwdFocus = true" />
                                             </td>
                                         </tr>
                                         <tr>
                                             <td>Confirm Password:</td>
                                             <td>
-                                                <input class="form-control" focus-me="user.conPwdFocus" type="password" name="passwd" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" />
+                                                <input class="form-control" focus-me="user.conPwdFocus" ng-model="user.conPwd" type="password" name="passwd" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" />
                                             </td>
                                         </tr>
                                         </tbody>
@@ -191,13 +191,13 @@
                                         <tr>
                                             <td>New Password:</td>
                                             <td>
-                                                <input class="form-control" type="password" name="passwd" placeholder="6~20個英數、!、@、#、$、%" ng-enter="user.conPwdFocus = true" />
+                                                <input class="form-control" type="password" ng-model="user.newPwd" name="passwd" focus-me="user.newPwdFocus" placeholder="6~20個英數、!、@、#、$、%" ng-enter="user.conPwdFocus = true" />
                                             </td>
                                         </tr>
                                         <tr>
                                             <td>Confirm Password:</td>
                                             <td>
-                                                <input class="form-control" type="password" name="passwd" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" />
+                                                <input class="form-control" type="password" ng-model="user.conPwd" focus-me="user.conPwdFocus" name="passwd" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" />
                                             </td>
                                         </tr>
                                         </tbody>

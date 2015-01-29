@@ -5,7 +5,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>AnNoPiHo</title>
-        <script type="text/javascript" src="script/angular.min.js"></script>
+        <!--script type="text/javascript" src="script/angular.min.js"></script>
         <script type="text/javascript" src="script/angular-route.min.js"></script>
         <script type="text/javascript" src="script/angular-resource.min.js"></script>
         <script type="text/javascript" src="script/angular-cookies.min.js"></script>
@@ -13,7 +13,7 @@
         <script type="text/javascript" src="script/controllers.js"></script>
         <script type="text/javascript" src="script/frontend.js"></script>
         <script type="text/javascript" src="script/ui-bootstrap-tpls-0.12.0.min.js"></script>
-        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/bootstrap.min.css"-->
         <link rel="stylesheet" href="css/bootstrap-theme.min.css">
         <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
         <link href="css/sb-admin.css" rel="stylesheet">
@@ -54,22 +54,18 @@
                 <ul class="nav navbar-right top-nav">
                     <li class="dropdown" dropdown="">
                         <a href="#" class="dropdown-toggle" dropdown-toggle="">
-                            <i class="fa fa-user"></i>
-                            {{id}}
-                            <b class="caret"></b>
+                            <i class="fa fa-user"></i>{{id}}<b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu" id="profile-section">
                             <li>
                                 <a href="/UserInfo">
-                                    <i class="fa fa-fw fa-user"></i>
-                                    Profile
+                                    <i class="fa fa-fw fa-user"></i>Profile
                                 </a>
                             </li>
                             <li class="divider"></li>
                             <li>
                                 <a href="#" ng-click="doLogout()">
-                                    <i class="fa fa-fw fa-power-off"></i>
-                                    Log Out
+                                    <i class="fa fa-fw fa-power-off"></i>Log Out
                                 </a>
                             </li>
                         </ul>
@@ -80,8 +76,7 @@
                         <ul class="nav navbar-nav side-nav">
                             <li ng-repeat="item in navList" class="{{(currentPage===$index) && 'active' || ''}}">
                                 <a href="{{item.hash}}">
-                                    <i class="{{item.css}}"></i>
-                                    {{item.title}}
+                                    <i class="{{item.css}}"></i>{{item.title}}
                                 </a>
                             </li>
                         </ul>
@@ -93,28 +88,22 @@
                 </section>
                 <div class="btn-group-vertical" role="group" aria-label="Vertical button group" id="widget-section">
                     <button type="button" ng-show="isLogin" class="btn btn-info" ng-click="toggleWidget('uploader')" >
-                        Uploader
-                        <span class="badge">{{uploader.progress}}%</span>
+                        Uploader<span class="badge">{{uploader.progress}}%</span>
                     </button>
                     <button type="button" ng-show="feedback.run" class="btn btn-default" ng-click="toggleWidget('feedback')">
-                        Feedback
-                        <span class="badge">{{feedback.queue.length+1}}</span>
+                        Feedback<span class="badge">{{feedback.queue.length+1}}</span>
                     </button>
                     <button type="button" ng-show="image.list.length" class="btn btn-warning" ng-click="mediaToggle('image')">
-                        Image
-                        <span class="badge">{{image.end && ' ' || '>'}}{{image.list.length}}</span>
+                        Image<span class="badge">{{image.end && ' ' || '>'}}{{image.list.length}}</span>
                     </button>
                     <button type="button" ng-show="video.list.length" class="btn btn-success" ng-click="mediaToggle('video')">
-                        Video
-                        <span class="badge">{{video.end && ' ' || '>'}}{{video.list.length}}</span>
+                        Video<span class="badge">{{video.end && ' ' || '>'}}{{video.list.length}}</span>
                     </button>
                     <button type="button" ng-show="music.list.length" class="btn btn-primary" ng-click="mediaToggle('music')">
-                        Music
-                        <span class="badge">{{music.end && ' ' || '>'}}{{music.list.length}}</span>
+                        Music<span class="badge">{{music.end && ' ' || '>'}}{{music.list.length}}</span>
                     </button>
                     <button type="button" ng-show="doc.list.length" class="btn btn-danger" ng-click="mediaToggle('doc')">
-                        Doc
-                        <span class="badge">{{doc.end && ' ' || '>'}}{{doc.list.length}}</span>
+                        Doc<span class="badge">{{doc.end && ' ' || '>'}}{{doc.list.length}}</span>
                     </button>
                     <button type="button" ng-show="rawdoc.list.length" class="btn btn-info" ng-click="mediaToggle('rawdoc')">
                         Rawdoc<span class="badge">{{rawdoc.end && ' ' || '>'}}{{rawdoc.list.length}}</span>
@@ -124,13 +113,11 @@
                     <section class="panel panel-info" id="uploader-section" ng-show="widget.uploader&&isLogin">
                         <div class="panel-heading" ng-click="toggleWidget('uploader')">
                             <h4 class="panel-title">
-                                Uploader
-                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                                Uploader<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="uploader-word" ng-repeat="item in uploader.queue">
-                            {{item.file.name}}
-                            <span class="badge">{{ item.progress }}%</span>
+                            {{item.file.name}}<span class="badge">{{ item.progress }}%</span>
                         </div>
                         <div class="progress">
                             <div class="progress-bar" role="progressbar" aria-valuenow="uploader.progress" aria-valuemin="0" aria-valuemax="100" style="width: {{ uploader.progress }}%;">
@@ -139,25 +126,21 @@
                         </div>
                         <div class="btn-group" role="group" aria-label="upload btn">
                             <button class="btn btn-primary btn-file btn-s">
-                                <span class="glyphicon glyphicon-folder-open"></span>
-                                &nbsp;Choose
+                                <span class="glyphicon glyphicon-folder-open"></span>&nbsp;Choose
                                 <input type="file" nv-file-select uploader="uploader" />
                             </button>
                             <button class="btn btn-success btn-s" ng-click="uploader.uploadAll()" ng-disabled="!uploader.getNotUploadedItems().length" disabled="disabled">
-                                <span class="glyphicon glyphicon-upload"></span>
-                                Upload all
+                                <span class="glyphicon glyphicon-upload"></span>Upload all
                             </button>
                             <button class="btn btn-danger btn-s" ng-click="uploader.clearQueue()" ng-disabled="!uploader.queue.length" disabled="disabled">
-                                <span class="glyphicon glyphicon-trash"></span>
-                                Remove all
+                                <span class="glyphicon glyphicon-trash"></span>Remove all
                             </button>
                         </div>
                     </section>
                     <section class="panel panel-default feedback-list" id="feedback-section" ng-show="widget.feedback && feedback.run">
                         <div class="panel-heading" ng-click="toggleWidget('feedback')">
                             <h4 class="panel-title">
-                                {{feedback.name}}
-                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                                {{feedback.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="dropdown" dropdown="" is-open="dropdown.feedback">
@@ -212,8 +195,7 @@
                     <section class="panel panel-warning media-section" ng-show="mediaShow[0] === 'image'">
                         <div class="panel-heading" ng-click="mediaToggle('image')">
                             <h4 class="panel-title">
-                                {{(image.index) >= 0 && (image.index+1) || image.index}} : {{image.name}}
-                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                                {{(image.index) >= 0 && (image.index+1) || image.index}} : {{image.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="panel-body media-trim">
@@ -242,8 +224,7 @@
                     <section class="panel panel-success" ng-show="mediaShow[0] === 'video'">
                         <div class="panel-heading" ng-click="mediaToggle('video')">
                             <h4 class="panel-title">
-                                {{(video.index) >= 0 && (video.index+1) || video.index}} : {{video.name}}
-                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                                {{(video.index) >= 0 && (video.index+1) || video.index}} : {{video.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="panel-body media-trim">
@@ -274,8 +255,7 @@
                     <section class="panel panel-primary" ng-show="mediaShow[0] === 'music'">
                         <div class="panel-heading" ng-click="mediaToggle('music')">
                             <h4 class="panel-title">
-                                {{(music.index) >= 0 && (music.index+1) || music.index}} : {{music.name}}
-                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                                {{(music.index) >= 0 && (music.index+1) || music.index}} : {{music.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="panel-body media-trim">
@@ -307,8 +287,7 @@
                     <section class="panel panel-danger" ng-show="mediaShow[0] === 'doc'">
                         <div class="panel-heading" ng-click="mediaToggle('doc')">
                             <h4 class="panel-title">
-                                {{(doc.index) >= 0 && (doc.index+1) || doc.index}} : {{doc.name}}
-                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                                {{(doc.index) >= 0 && (doc.index+1) || doc.index}} : {{doc.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="panel-body">
@@ -339,8 +318,7 @@
                     <section class="panel panel-info" ng-show="mediaShow[0] === 'rawdoc'">
                         <div class="panel-heading" ng-click="mediaToggle('rawdoc')">
                             <h4 class="panel-title">
-                                {{(rawdoc.index) >= 0 && (rawdoc.index+1) || rawdoc.index}} : {{rawdoc.name}}
-                                <i class="pull-right glyphicon glyphicon-remove"></i>
+                                {{(rawdoc.index) >= 0 && (rawdoc.index+1) || rawdoc.index}} : {{rawdoc.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="panel-body">

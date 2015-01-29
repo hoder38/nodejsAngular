@@ -9,6 +9,30 @@ var ObjectID = mongodb.ObjectID;
 db.open(function(err, con){
     if (!err) {
         console.log('database connected');
+        db.collection('user', function(err, collection) {
+            if (err) {
+                throw new Error('user collection error');
+            }
+            collection.count(function(err, count) {
+                if (err) {
+                    throw new Error('count user collection error');
+                }
+                if (count === 0) {
+                    var crypto = require('crypto');
+                    var data = {};
+                    data['username'] = 'hoder';
+                    data['desc'] = 'owner';
+                    data['perm'] = 1;
+                    data['password'] = crypto.createHash('md5').update('test123').digest('hex');
+                    collection.insert(data, function(err,user){
+                        if(err) {
+                            throw new Error('creat owner error');
+                        }
+                        console.log(user);
+                    });
+                }
+            });
+        });
     } else {
         console.log('database connection error', err);
     }

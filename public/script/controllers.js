@@ -543,8 +543,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     } else {
                         var date;
                         result.item.select = false;
-                        date = new Date(result.itemList[i].mtime*1000);
-                        result.itemList[i].mtime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                        date = new Date(result.item.mtime*1000);
+                        result.item.mtime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                         $scope.itemList.push(result.item);
                     }
                 }
@@ -1877,9 +1877,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             } else {
                 $scope.isLogin = true;
                 $scope.id = result.id;
-                var ws = new WebSocket(result.ws_url, result.ws);
+                var ws = new WebSocket(result.ws_url);
                 ws.onopen = function(){
-                    console.log(result.ws + ": Socket has been opened!");
+                    console.log(result.ws_url + ": Socket has been opened!");
                     //var obj = {type:'test', data: '12345'};
                     //ws.send(JSON.stringify(obj));
                 };

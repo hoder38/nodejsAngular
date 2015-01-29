@@ -320,8 +320,9 @@ module.exports = function(collection) {
                                     if(err) {
                                         util.handleError(err, next, callback, null);
                                     }
+                                    console.log(item1);
                                     setTimeout(function(){
-                                        callback(null, {history: history, id: item1.id, adultonly: item1.adultonly});
+                                        callback(null, {history: history, id: item1._id, adultonly: item1.adultonly});
                                     }, 0);
                                 });
                             });
@@ -354,8 +355,9 @@ module.exports = function(collection) {
                                     if(err) {
                                         util.handleError(err, next, callback, null);
                                     }
+                                    console.log(item1);
                                     setTimeout(function(){
-                                        callback(null, {history: history, id: item1.id, adultonly: item1.adultonly});
+                                        callback(null, {history: history, id: item1._id, adultonly: item1.adultonly});
                                     }, 0);
                                 });
                             });

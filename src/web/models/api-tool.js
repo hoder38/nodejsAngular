@@ -1,3 +1,4 @@
+//xuite get access_token url: http://my.xuite.net/service/account/authorize.php?response_type=code_and_token&client_id=e4a4666f807878269c1501529b6ab98d&redirect_uri=http://devbox.example.com/oauth2callback
 var api_key = "e4a4666f807878269c1501529b6ab98d";
 
 var api_secret = "1747608019";
@@ -8,7 +9,7 @@ var expire_in = '';
 
 var mongo = require("../models/mongo-tool.js");
 
-var chunk = 10000000;
+var chunk = 200000000;
 
 var querystring = require('querystring');
 

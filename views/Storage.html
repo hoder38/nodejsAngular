@@ -5,20 +5,17 @@
             <ul class="nav navbar-nav side-nav" id="inverse-nav">
                 <li class="{{!bookmarkCollpase && 'active' || ''}}">
                     <a href="#" aria-expanded="true" ng-click="bookmarkCollpase = !bookmarkCollpase">
-                        Bookmark&nbsp;
-                        <i class="glyphicon {{bookmarkCollpase && 'glyphicon-chevron-down' || 'glyphicon-chevron-up'}}"></i>
+                        Bookmark&nbsp;<i class="glyphicon {{bookmarkCollpase && 'glyphicon-chevron-down' || 'glyphicon-chevron-up'}}"></i>
                     </a>
                     <ul class="nav nav-pills" aria-expanded="true" collapse="bookmarkCollpase">
                         <li ng-click="changeSort('bookmarkSort', 'name')">
                             <a class="nav-pills-trim" href="#">
-                                name
-                                <i ng-show="bookmarkSort.name" class="{{(bookmarkSort.name === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
+                                name<i ng-show="bookmarkSort.name" class="{{(bookmarkSort.name === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
                             </a>
                         </li>
                         <li ng-click="changeSort('bookmarkSort', 'mtime')">
                             <a class="nav-pills-trim" href="#">
-                                mtime
-                                <i ng-show="bookmarkSort.mtime" class="{{(bookmarkSort.mtime === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
+                                mtime<i ng-show="bookmarkSort.mtime" class="{{(bookmarkSort.mtime === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
                             </a>
                         </li>
                         <li class="{{bookmarkEdit && 'active' || ''}}">
@@ -27,32 +24,26 @@
                     </ul>
                     <ul aria-expanded="true" collapse="bookmarkCollpase">
                         <li ng-repeat="item in bookmarkList">
-                            <a ng-hide="bookmarkEdit" ng-click="getBookmarkItem(item.id)">
-                                {{item.name}}
-                            </a>
+                            <a ng-hide="bookmarkEdit" ng-click="getBookmarkItem(item.id)">{{item.name}}</a>
                             <a ng-show="bookmarkEdit" confirmed-click="delBookmark(item.id)" ng-confirm-click="Would you sure to delete this bookmark?">
-                                <i class="glyphicon glyphicon-remove"></i>
-                                {{item.name}}
+                                <i class="glyphicon glyphicon-remove"></i>{{item.name}}
                             </a>
                         </li>
                     </ul>
                 </li>
                 <li ng-repeat="dir in dirList" class="{{!dir.collpase && 'active' || ''}}">
                     <a href="#" aria-expanded="true" ng-click="showTaglist(dir)">
-                        {{dir.show}}&nbsp;
-                        <i class="glyphicon {{dir.collpase && 'glyphicon-chevron-down' || 'glyphicon-chevron-up'}}"></i>
+                        {{dir.show}}&nbsp;<i class="glyphicon {{dir.collpase && 'glyphicon-chevron-down' || 'glyphicon-chevron-up'}}"></i>
                     </a>
                     <ul class="nav nav-pills" aria-expanded="true" collapse="dir.collpase">
                         <li ng-click="changeDirSort(dir, 'name')">
                             <a class="nav-pills-trim" href="#">
-                                name
-                                <i ng-show="dir.sortName" class="{{(dir.sortName === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
+                                name<i ng-show="dir.sortName" class="{{(dir.sortName === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
                             </a>
                         </li>
                         <li ng-click="changeDirSort(dir, 'mtime')">
                             <a class="nav-pills-trim" href="#">
-                                mtime
-                                <i ng-show="dir.sortMtime" class="{{(dir.sortMtime === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
+                                mtime<i ng-show="dir.sortMtime" class="{{(dir.sortMtime === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
                             </a>
                         </li>
                         <li ng-show="dirEdit" class="{{dir.edit && 'active' || ''}}">
@@ -61,12 +52,9 @@
                     </ul>
                     <ul aria-expanded="true" collapse="dir.collpase">
                         <li ng-repeat="item in dir.list">
-                            <a ng-hide="dir.edit" ng-click="dirItemlist(item.id)">
-                                {{item.name}}
-                            </a>
+                            <a ng-hide="dir.edit" ng-click="dirItemlist(item.id)">{{item.name}}</a>
                             <a ng-show="dir.edit" confirmed-click="del2Parent(item.id, dir)" ng-confirm-click="Would you sure to delete this tag?">
-                                <i class="glyphicon glyphicon-remove"></i>
-                                {{item.name}}
+                                <i class="glyphicon glyphicon-remove"></i>{{item.name}}
                             </a>
                         </li>
                         <li ng-show="dir.more">
@@ -152,9 +140,7 @@
         </span>
         <span class="input-group-btn">
             <button class="btn btn-warning btn-file">
-                <span class="glyphicon glyphicon-folder-open"></span>
-                &nbsp;Choose
-                <input type="file" nv-file-select uploader="miscUploader" />
+                <span class="glyphicon glyphicon-folder-open"></span>&nbsp;Choose<input type="file" nv-file-select uploader="miscUploader" />
             </button>
         </span>
     </div>
@@ -167,19 +153,16 @@
         <li ng-repeat="item in parentList" ng-click="gotoStorage($parent.this, item, $index)">
             <a>
                 <i ng-hide="exactlyList[$index]" class="glyphicon glyphicon-eye-close"></i>
-                <i ng-show="exactlyList[$index]" class="glyphicon glyphicon-eye-open"></i>
-                &nbsp;{{item}}
+                <i ng-show="exactlyList[$index]" class="glyphicon glyphicon-eye-open"></i>&nbsp;{{item}}
             </a>
         </li>
         <li class="active" ng-repeat="item in historyList" ng-click="gotoStorage($parent.this, item, $index+parentList.length)">
             <i ng-hide="exactlyList[$index+parentList.length]" class="glyphicon glyphicon-eye-close"></i>
-            <i ng-show="exactlyList[$index+parentList.length]" class="glyphicon glyphicon-eye-open"></i>
-            &nbsp;{{item}}
+            <i ng-show="exactlyList[$index+parentList.length]" class="glyphicon glyphicon-eye-open"></i>&nbsp;{{item}}
         </li>
         <li ng-show="parentList.length > 0" class="dropdown" dropdown="">
             <span class="dropdown-toggle" dropdown-toggle="">
-                <i class="glyphicon glyphicon-floppy-disk"></i>
-                &nbsp;SAVE
+                <i class="glyphicon glyphicon-floppy-disk"></i>&nbsp;SAVE
             </span>
             <ul class="dropdown-menu" id="bookmark-list">
                 <li>
@@ -266,37 +249,25 @@
                 <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{item.recycle === 1 && 'danger' || ''}}">
                     <td class="item-check text-center"><input type="checkbox" ng-model="item.select"></td>
                     <td class="item-name" ng-if="item.media" confirmed-click="handleMedia('act', item)" ng-confirm-click="Would you sure to handle this media?">
-                        {{item.name}}
-                        <br />
-                        type: {{item.media.type}}
-                        <br />
-                        key: {{item.media.key}}
-                        <br />
-                        err: {{item.media.err}}
+                        {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}}
                     </td>
                     <td class="item-name" ng-if="item.status < 2 && !item.media" confirmed-click="downloadFile(item.id)" ng-confirm-click="Would you sure to download this file?">
-                        <i class="glyphicon glyphicon-question-sign item-icon"></i>
-                        {{item.name}}
+                        <i class="glyphicon glyphicon-question-sign item-icon"></i>{{item.name}}
                     </td>
                     <td class="item-name" ng-if="item.status === 2 && !item.media" ng-click="showMedia(item, 'image')">
-                        <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" class="item-image" />
-                        {{item.name}}
+                        <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" class="item-image" />{{item.name}}
                     </td>
                     <td class="item-name" ng-if="item.status === 3 && !item.media" ng-click="showMedia(item, 'video')">
-                        <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" class="item-image" />
-                        {{item.name}}
+                        <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" class="item-image" />{{item.name}}
                     </td>
                     <td class="item-name" ng-if="item.status === 4 && !item.media" ng-click="showMedia(item, 'music')">
-                        <i class="glyphicon glyphicon-headphones item-icon"></i>
-                        {{item.name}}
+                        <i class="glyphicon glyphicon-headphones item-icon"></i>{{item.name}}
                     </td>
                     <td class="item-name" ng-if="item.status === 5 && !item.media" ng-click="showMedia(item, 'doc')">
-                        <i class="glyphicon glyphicon-file item-icon"></i>
-                        {{item.name}}
+                        <i class="glyphicon glyphicon-file item-icon"></i>{{item.name}}
                     </td>
                     <td class="item-name" ng-if="item.status === 6 && !item.media" ng-click="showMedia(item, 'rawdoc')">
-                        <i class="glyphicon glyphicon-list-alt item-icon"></i>
-                        {{item.name}}
+                        <i class="glyphicon glyphicon-list-alt item-icon"></i>{{item.name}}
                     </td>
                     <td class="item-mtime">{{item.mtime}}</td>
                     <td class="item-tool">
