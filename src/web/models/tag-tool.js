@@ -1,13 +1,15 @@
 var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 
-var default_tags = ['18禁', 'handlemedia'];
+var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle'];
 
 var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'author', 'tw': '作者'}];
 
 var queryLimit = 20;
 
-var handleTime = 21600;
+var handleTime = 21600,
+    unactive_day = 5,
+    unactive_hit = 10;
 
 var bookmarkLimit = 50;
 
@@ -152,6 +154,7 @@ module.exports = function(collection) {
             if (!tagType.type) {
                 util.handleError({hoerror: 2, msg: 'not authority set default tag!!!'}, next, callback, null);
             }
+            console.log(tagType);
             if (tagType.type === 2) {
                 mongo.orig("findOne", collection, {_id: id}, function(err, item){
                     if(err) {
@@ -160,13 +163,12 @@ module.exports = function(collection) {
                     if (!item) {
                         util.handleError({hoerror: 2, msg: 'can not find object!!!'}, next, callback, null);
                     }
+                    console.log(item);
                     if (item.adultonly === tagType.tag.adultonly) {
                         setTimeout(function(){
                             callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.name});
                         }, 0);
                     } else {
-                        var time = Math.round(new Date().getTime() / 1000);
-                        tagType.tag['mtime'] = time;
                         mongo.orig("update", collection, {_id: id}, {$set: tagType.tag}, function(err, item2){
                             if(err) {
                                 util.handleError(err, next, callback, null);
@@ -185,10 +187,10 @@ module.exports = function(collection) {
                     if (!item) {
                         util.handleError({hoerror: 2, msg: 'can not find object!!!'}, next, callback, null);
                     }
+                    console.log(item);
                     if (item.tags.indexOf(tagType.tag.tags) === -1) {
                         tagType.tag[user._id.toString()] = tagType.tag.tags;
-                        var time = Math.round(new Date().getTime() / 1000);
-                        mongo.orig("update", collection, { _id: id }, {$addToSet: tagType.tag, $set: {mtime: time}}, {upsert: true}, function(err, item2){
+                        mongo.orig("update", collection, { _id: id }, {$addToSet: tagType.tag}, {upsert: true}, function(err, item2){
                             if(err) {
                                 util.handleError(err, next, callback, null);
                             }
@@ -227,8 +229,6 @@ module.exports = function(collection) {
                     util.handleError({hoerror: 2, msg: 'can not find object!!!'}, next, callback, null);
                 }
                 if (tagType.type === 2) {
-                    var time = Math.round(new Date().getTime() / 1000);
-                    tagType.tag['mtime'] = time;
                     mongo.orig("update", collection, { _id: id }, {$set: tagType.tag}, function(err, item1){
                         if(err) {
                             util.handleError(err, next, callback, null);
@@ -251,8 +251,7 @@ module.exports = function(collection) {
                         for (var i in item) {
                             if (util.isValidString(i, 'uid')) {
                                 tagType.tag[i] = tagType.tag.tags;
-                                var time = Math.round(new Date().getTime() / 1000);
-                                mongo.orig("update", collection, {_id: id}, {$pull: tagType.tag, $set: {mtime: time}}, function(err, item2){
+                                mongo.orig("update", collection, {_id: id}, {$pull: tagType.tag}, function(err, item2){
                                     if(err) {
                                         util.handleError(err, next, callback, null);
                                     }
@@ -266,8 +265,7 @@ module.exports = function(collection) {
                     } else {
                         if (item[user._id.toString()].indexOf(tagType.tag.tags) === -1) {
                             tagType.tag[user._id.toString()] = tagType.tag.tags;
-                            var time = Math.round(new Date().getTime() / 1000);
-                            mongo.orig("update", collection, { _id: id }, {$pull: tagType.tag, $set: {mtime: time}}, function(err, item2){
+                            mongo.orig("update", collection, { _id: id }, {$pull: tagType.tag}, function(err, item2){
                                 if(err) {
                                     util.handleError(err, next, callback, null);
                                 }
@@ -389,6 +387,9 @@ module.exports = function(collection) {
         },
         tagQuery: function(page, tagName, exactly, index, sortName, sortType, user, session, next, callback) {
             var this_obj = this;
+            if (sortName === 'mtime') {
+                sortName = 'utime';
+            }
             var options = {"limit": queryLimit, "skip" : page, "sort": [[sortName, sortType]]};
             console.log(options);
             if (!tagName) {
@@ -400,9 +401,9 @@ module.exports = function(collection) {
                 var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
                 console.log(nosql);
                 delete tags;
-                if (nosql.mediaType) {
+                /*if (nosql.mediaType) {
                     options = {"limit": queryLimit, "skip" : page, "sort": [["utime", sortType]]};
-                }
+                }*/
                 mongo.orig("find", collection, nosql, options, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback);
@@ -445,9 +446,9 @@ module.exports = function(collection) {
                 var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
                 console.log(nosql);
                 delete tags;
-                if (nosql.mediaType) {
+                /*if (nosql.mediaType) {
                     options = {"limit": queryLimit, "skip" : page, "sort": ["utime", sortType]};
-                }
+                }*/
                 mongo.orig("find", collection, nosql, options, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback);
@@ -494,9 +495,9 @@ module.exports = function(collection) {
                 var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
                 console.log(nosql);
                 delete tags;
-                if (nosql.mediaType) {
+                /*if (nosql.mediaType) {
                     options = {"limit": queryLimit, "skip" : page, "sort": ["utime", sortType]};
-                }
+                }*/
                 mongo.orig("find", collection, nosql, options, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback);
@@ -756,11 +757,16 @@ module.exports = function(collection) {
                     if(err) {
                         util.handleError(err, next, callback);
                     }
+                    console.log('latest file: ' + latest);
                     console.log(item);
                     setTimeout(function(){
                         callback(null);
                     }, 0);
                 });
+            } else {
+                setTimeout(function(){
+                    callback(null);
+                }, 0);
             }
         },
         getBookmarkList: function(sortName, sortType, user, next, callback) {
@@ -866,6 +872,15 @@ module.exports = function(collection) {
                     });
                 }
             });
+        },
+        getUnactive: function(type) {
+            if (type === 'day') {
+                return unactive_day;
+            } else if (type === 'hit') {
+                return unactive_hit;
+            } else {
+                return 0;
+            }
         }
     };
 };
@@ -898,10 +913,22 @@ function getQuerySql(user, tagList, exactly) {
                 if (util.checkAdmin(2, user)) {
                     isAdult = true;
                 }
-            } else if (index === 1){
+            } else if (index === 1) {
                 if (util.checkAdmin(1, user)) {
                     var time = Math.round(new Date().getTime() / 1000) - handleTime;
                     return {mediaType: {$exists: true}, utime: {$lt: time}};
+                }
+            } else if (index === 2) {
+                if (util.checkAdmin(1, user)) {
+                    var unDay = user.unDay? user.unDay: unactive_day;
+                    var unHit = user.unHit? user.unHit: unactive_hit;
+                    var time = Math.round(new Date().getTime() / 1000) - unDay * 86400;
+                    return {count: {$lt: unHit}, utime: {$lt: time}};
+                }
+            } else if (index === 3) {
+                if (util.checkAdmin(1, user)) {
+                    var time = Math.round(new Date().getTime() / 1000) - handleTime;
+                    return {recycle: {$ne: 0}, utime: {$lt: time}};
                 }
             } else {
                 if (exactly[i]) {
@@ -935,7 +962,7 @@ function getQueryTag(user, tag, del) {
         } else {
             return {type: 0};
         }
-    } else if (index === 1) {
+    } else if (index === 1 || index === 2 || index === 3) {
         return {type: 0};
     } else {
         return {tag: {tags: normal}, type: 1};

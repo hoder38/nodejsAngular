@@ -22,7 +22,7 @@ db.open(function(err, con){
                     var data = {};
                     data['username'] = 'hoder';
                     data['desc'] = 'owner';
-                    data['perm'] = 1;
+                    data['perm'] = '1';
                     data['password'] = crypto.createHash('md5').update('test123').digest('hex');
                     collection.insert(data, function(err,user){
                         if(err) {

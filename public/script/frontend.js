@@ -29,6 +29,13 @@ function isValidString(str, type)
         }
     }
 
+    if (type === 'int')
+    {
+        if (Number(str) && Number(str) > 0) {
+            return true;
+        }
+    }
+
     if (type === 'parentIndex')
     {
         if (Number(str) && Number(str) <= 10 && Number(str) > 0) {

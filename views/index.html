@@ -5,7 +5,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>AnNoPiHo</title>
-        <!--script type="text/javascript" src="script/angular.min.js"></script>
+        <script type="text/javascript" src="script/angular.min.js"></script>
         <script type="text/javascript" src="script/angular-route.min.js"></script>
         <script type="text/javascript" src="script/angular-resource.min.js"></script>
         <script type="text/javascript" src="script/angular-cookies.min.js"></script>
@@ -13,7 +13,7 @@
         <script type="text/javascript" src="script/controllers.js"></script>
         <script type="text/javascript" src="script/frontend.js"></script>
         <script type="text/javascript" src="script/ui-bootstrap-tpls-0.12.0.min.js"></script>
-        <link rel="stylesheet" href="css/bootstrap.min.css"-->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
         <link rel="stylesheet" href="css/bootstrap-theme.min.css">
         <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
         <link href="css/sb-admin.css" rel="stylesheet">
@@ -105,8 +105,8 @@
                     <button type="button" ng-show="doc.list.length" class="btn btn-danger" ng-click="mediaToggle('doc')">
                         Doc<span class="badge">{{doc.end && ' ' || '>'}}{{doc.list.length}}</span>
                     </button>
-                    <button type="button" ng-show="rawdoc.list.length" class="btn btn-info" ng-click="mediaToggle('rawdoc')">
-                        Rawdoc<span class="badge">{{rawdoc.end && ' ' || '>'}}{{rawdoc.list.length}}</span>
+                    <button type="button" ng-show="present.list.length" class="btn btn-info" ng-click="mediaToggle('present')">
+                        Present<span class="badge">{{present.end && ' ' || '>'}}{{present.list.length}}</span>
                     </button>
                 </div>
                 <sectio id="left-bottom-section">
@@ -310,22 +310,34 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <object class="{{isFull && 'full-doc-screen'||'doc-screen'}}" data="{{doc.src}}" type="application/pdf">
+                            <iframe class="{{isFull && 'full-doc-screen'||'doc-screen'}}" ng-src="{{doc.src}}" style="border: 0;"></iframe>
+                            <!--object class="{{isFull && 'full-doc-screen'||'doc-screen'}}" data="{{doc.src}}" type="application/pdf">
                                 <embed ng-src="{{doc.src}}" type="application/pdf" />
-                            </object>
+                            </object-->
                         </div>
                     </section>
-                    <section class="panel panel-info" ng-show="mediaShow[0] === 'rawdoc'">
-                        <div class="panel-heading" ng-click="mediaToggle('rawdoc')">
+                    <section class="panel panel-info" ng-show="mediaShow[0] === 'present'">
+                        <div class="panel-heading" ng-click="mediaToggle('present')">
                             <h4 class="panel-title">
-                                {{(rawdoc.index) >= 0 && (rawdoc.index+1) || rawdoc.index}} : {{rawdoc.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
+                                {{(present.index) >= 0 && (present.index+1) || present.index}} : {{present.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="panel-body">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
-                                        <a href="#" ng-click="mediaMove(-1, 'rawdoc')">
+                                        <a href="#" ng-click="presentMove(-1)">
+                                            <span class="glyphicon glyphicon-chevron-up"></span>
+                                        </a>
+                                    </li>
+                                    <input id="presentID" type="text" ng-model="present.showId" ng-enter="presentMove(0)" />/{{present.maxId}}
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="presentMove(1)">
+                                            <span class="glyphicon glyphicon-chevron-down"></span>
+                                        </a>
+                                    </li>
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="mediaMove(-1, 'present')">
                                             <span class="glyphicon glyphicon-chevron-left"></span>
                                         </a>
                                     </li>
@@ -335,13 +347,13 @@
                                         </a>
                                     </li>
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
-                                        <a href="#" ng-click="mediaMove(1, 'rawdoc')">
+                                        <a href="#" ng-click="mediaMove(1, 'present')">
                                             <span class="glyphicon glyphicon-chevron-right"></span>
                                         </a>
                                     </li>
                                 </ul>
                             </nav>
-                            <iframe class="{{isFull && 'full-doc-screen'||'doc-screen'}}" ng-src="{{rawdoc.src}}" style="border: 0;"></iframe>
+                            <iframe class="{{isFull && 'full-doc-screen'||'doc-screen'}}" ng-src="{{present.src}}" style="border: 0;"></iframe>
                         </div>
                     </section>
                 </section>

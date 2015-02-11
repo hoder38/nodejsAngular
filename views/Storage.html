@@ -43,7 +43,7 @@
                         </li>
                         <li ng-click="changeDirSort(dir, 'mtime')">
                             <a class="nav-pills-trim" href="#">
-                                mtime<i ng-show="dir.sortMtime" class="{{(dir.sortMtime === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
+                                qtime<i ng-show="dir.sortMtime" class="{{(dir.sortMtime === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
                             </a>
                         </li>
                         <li ng-show="dirEdit" class="{{dir.edit && 'active' || ''}}">
@@ -192,9 +192,15 @@
                 <i class="glyphicon {{selectList.length && 'glyphicon-plus' || 'glyphicon-cog'}}"></i>
             </a>
         <li>
+        <li class="pull-right item-count">
+            <a href="#" ng-click="changeSort('fileSort', 'count')">
+                count
+                <i ng-show="fileSort.count" class="{{(fileSort.count === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
+            </a>
+        </li>
         <li class="pull-right item-mtime">
             <a href="#" ng-click="changeSort('fileSort', 'mtime')">
-                mtime
+                utime
                 <i ng-show="fileSort.mtime" class="{{(fileSort.mtime === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
             </a>
         </li>
@@ -240,13 +246,14 @@
                         {{tag}}
                     </td>
                     <td class="item-mtime"></td>
+                    <td class="item-count"></td>
                     <td class="item-tool">
                         <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false">
                             <span class="caret"></span>
                         </button>
                     </td>
                 </tr>
-                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{item.recycle === 1 && 'danger' || ''}}">
+                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'warning' || ''}} {{item.recycle === 4 && 'danger' || ''}}">
                     <td class="item-check text-center"><input type="checkbox" ng-model="item.select"></td>
                     <td class="item-name" ng-if="item.media" confirmed-click="handleMedia('act', item)" ng-confirm-click="Would you sure to handle this media?">
                         {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}}
@@ -266,10 +273,11 @@
                     <td class="item-name" ng-if="item.status === 5 && !item.media" ng-click="showMedia(item, 'doc')">
                         <i class="glyphicon glyphicon-file item-icon"></i>{{item.name}}
                     </td>
-                    <td class="item-name" ng-if="item.status === 6 && !item.media" ng-click="showMedia(item, 'rawdoc')">
+                    <td class="item-name" ng-if="item.status === 6 && !item.media" ng-click="showMedia(item, 'present')">
                         <i class="glyphicon glyphicon-list-alt item-icon"></i>{{item.name}}
                     </td>
-                    <td class="item-mtime">{{item.mtime}}</td>
+                    <td class="item-mtime">{{item.utime}}</td>
+                    <td class="item-count">{{item.count}}</td>
                     <td class="item-tool">
                         <button ng-click="selectItem($event, item)" type="button" class="btn btn-default" aria-expanded="false">
                             <span class="caret"></span>

@@ -166,6 +166,12 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                     if (result.user_info[i].hasOwnProperty('perm')) {
                         result.user_info[i].hasPerm = true;
                     }
+                    if (result.user_info[i].hasOwnProperty('unDay')) {
+                        result.user_info[i].hasUnDay = true;
+                    }
+                    if (result.user_info[i].hasOwnProperty('unHit')) {
+                        result.user_info[i].hasUnHit = true;
+                    }
                     result.user_info[i].isDel = false;
                     this_obj.uInfo.push(result.user_info[i]);
                 }
@@ -252,6 +258,8 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
             item["name"] = item['nameOrig'];
             item["desc"] = item['descOrig'];
             item["perm"] = item['permOrig'];
+            item["unDay"] = item['unDayOrig'];
+            item["unHit"] = item['unHitOrig'];
             item["newPwd"] = '';
             item["conPwd"] = '';
             item["password"] = '';
@@ -260,6 +268,8 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
             item["nameOrig"] = item['name'];
             item["descOrig"] = item['desc'];
             item["permOrig"] = item['perm'];
+            item["unDayOrig"] = item['unDay'];
+            item["unHitOrig"] = item['unHit'];
             item.edit = true;
             item.nameFocus = true;
         }
@@ -274,6 +284,10 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                 addAlert('desc not vaild!!!');
             } else if (!isValidString(item.perm, 'perm') && item.edit && item.hasPerm) {
                 addAlert('perm not vaild!!!');
+            } else if (!isValidString(item.unDay, 'int') && item.edit && item.hasUnDay) {
+                addAlert('unactive day not vaild!!!');
+            } else if (!isValidString(item.unHit, 'int') && item.edit && item.hasUnHit) {
+                addAlert('unactive hit not vaild!!!');
             } else if ((item.newPwd || item.conPwd) && (!isValidString(item.newPwd, 'passwd') || !isValidString(item.conPwd, 'passwd'))) {
                 item.newPwd = '';
                 item.conPwd = '';
@@ -303,6 +317,12 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                 if (item.desc !== item.descOrig && item.edit) {
                     set_obj['desc'] = item.desc;
                 }
+                if (item.unDay !== item.unDayOrig && item.edit) {
+                    set_obj['unDay'] = item.unDay;
+                }
+                if (item.unHit !== item.unHitOrig && item.edit) {
+                    set_obj['unHit'] = item.unHit;
+                }
                 if (item.newPwd) {
                     set_obj['newPwd'] = item.newPwd;
                 }
@@ -323,6 +343,12 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                         }
                         if (result.hasOwnProperty('perm')) {
                             item.perm = result.perm;
+                        }
+                        if (result.hasOwnProperty('unDay')) {
+                            item.unDay = result.unDay;
+                        }
+                        if (result.hasOwnProperty('unHit')) {
+                            item.unHit = result.unHit;
                         }
                         if (result.hasOwnProperty('owner')) {
                             this_obj.$parent.$parent.id = result.owner;
@@ -415,8 +441,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.feedbackBlur = false;
     $scope.toolList = {download: false, edit: false, upload:false, del: false, item: null};
     $scope.$parent.currentPage = 1;
-    $scope.fileSort = {name:'', mtime: '', sort: 'name/asc'};
-    $scope.dirSort = {name:'', mtime: '', sort: 'name/asc'};
+    $scope.fileSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
+    $scope.dirSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
     $scope.bookmarkSort = {name:'', mtime: '', sort: 'name/asc'};
     var lastRoute = $route.current;
     $scope.$on('$locationChangeSuccess', function(event) {
@@ -539,12 +565,14 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     $scope.bookmarkID = result.bookmarkID;
                     if (index !== -1) {
                         result.item.select = $scope.itemList[index].select;
+                        date = new Date(result.item.utime*1000);
+                        result.item.utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                         $scope.itemList.splice(index, 1, result.item);
                     } else {
                         var date;
                         result.item.select = false;
-                        date = new Date(result.item.mtime*1000);
-                        result.item.mtime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                        date = new Date(result.item.utime*1000);
+                        result.item.utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                         $scope.itemList.push(result.item);
                     }
                 }
@@ -575,6 +603,15 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             } else {
                 this.fileSort.sort = this.fileSort.sort + 'asc';
                 this.fileSort.mtime = 'asc';
+            }
+        } else if ($cookies.fileSortName === 'count') {
+            this.fileSort.sort = 'count/';
+            if ($cookies.fileSortType === 'desc') {
+                this.fileSort.sort = this.fileSort.sort + 'desc';
+                this.fileSort.count = 'desc';
+            } else {
+                this.fileSort.sort = this.fileSort.sort + 'asc';
+                this.fileSort.count = 'asc';
             }
         } else {
             this.fileSort.sort = 'name/';
@@ -626,6 +663,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     this[sort].sort = this[sort].sort + 'asc';
                 }
                 this[sort].mtime = '';
+                this[sort].count = '';
             } else if (name === 'mtime') {
                 this[sort].sort = 'mtime/';
                 if (this[sort].mtime === 'asc') {
@@ -636,6 +674,18 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     this[sort].sort = this[sort].sort + 'asc';
                 }
                 this[sort].name = '';
+                this[sort].count = '';
+            } else if (name === 'count') {
+                this[sort].sort = 'count/';
+                if (this[sort].count === 'asc') {
+                    this[sort].count = 'desc';
+                    this[sort].sort = this[sort].sort + 'desc';
+                } else {
+                    this[sort].count = 'asc';
+                    this[sort].sort = this[sort].sort + 'asc';
+                }
+                this[sort].name = '';
+                this[sort].mtime = '';
             }
             console.log(sort);
             if (sort === 'fileSort') {
@@ -722,8 +772,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 for (var i in result.itemList) {
                     if (arrayObjectIndexOf(this_obj.itemList, result.itemList[i].id, 'id') === -1) {
                         result.itemList[i].select = false;
-                        date = new Date(result.itemList[i].mtime*1000);
-                        result.itemList[i].mtime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                        date = new Date(result.itemList[i].utime*1000);
+                        result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                         this_obj.itemList.push(result.itemList[i]);
                     }
                 }
@@ -805,8 +855,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     for (var i in result.itemList) {
                         if (arrayObjectIndexOf(this_obj.itemList, result.itemList[i].id, 'id') === -1) {
                             result.itemList[i].select = false;
-                            date = new Date(result.itemList[i].mtime*1000);
-                            result.itemList[i].mtime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                            date = new Date(result.itemList[i].utime*1000);
+                            result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                             this_obj.itemList.push(result.itemList[i]);
                         }
                     }
@@ -853,8 +903,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 var date;
                 for (var i in result.itemList) {
                     result.itemList[i].select = false;
-                    date = new Date(result.itemList[i].mtime*1000);
-                    result.itemList[i].mtime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                    date = new Date(result.itemList[i].utime*1000);
+                    result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                     this_obj.itemList.push(result.itemList[i]);
                 }
                 this_obj.latest = '';
@@ -1233,7 +1283,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 preType = 'preview';
                 status = 5;
                 break;
-            case 'rawdoc':
+            case 'present':
+                this.present.showId = this.present.presentId = 1;
                 preType = 'preview';
                 status = 6;
                 break;
@@ -1269,7 +1320,14 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                                     musicStart = result.time;
                                 }
                             }
-                            this_obj.$parent[type].src = '/' + preType + '/' + item.id;
+                            if (type === 'doc') {
+                                this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
+                            } else if (type === 'present') {
+                                this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/1';
+                                this_obj.$parent[type].maxId = item.present;
+                            } else {
+                                this_obj.$parent[type].src = '/' + preType + '/' + item.id;
+                            }
                             if (type === 'video') {
                                 var track = video.textTracks[0];
                                 if (track.activeCues) {
@@ -1305,7 +1363,14 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                         }
                     });
                 } else {
-                    this_obj.$parent[type].src = '/' + preType + '/' + item.id;
+                    if (type === 'doc') {
+                        this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
+                    } else if (type === 'present') {
+                        this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/1';
+                        this_obj.$parent[type].maxId = item.present;
+                    } else {
+                        this_obj.$parent[type].src = '/' + preType + '/' + item.id;
+                    }
                     if (type === 'video') {
                         var track = video.textTracks[0];
                         if (track.activeCues) {
@@ -1321,7 +1386,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     if ($scope.bookmarkID) {
                         $scope.latest = item.id;
                     }
-                    this_obj.$parent.mediaToggle(type, true)
+                    this_obj.$parent.mediaToggle(type, true);
                     this_obj.$parent[type].list = clone(tempList);
                     this_obj.$parent[type].front = this_obj.$parent[type].list.length;
                     this_obj.$parent[type].frontPage = this_obj.$parent[type].front;
@@ -1454,8 +1519,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 var date;
                 for (var i in result.itemList) {
                     result.itemList[i].select = false;
-                    date = new Date(result.itemList[i].mtime*1000);
-                    result.itemList[i].mtime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                    date = new Date(result.itemList[i].utime*1000);
+                    result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                     this_obj.$parent.itemList.push(result.itemList[i]);
                 }
                 this_obj.$parent.page = result.itemList.length;
@@ -1859,8 +1924,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
-    $scope.doc = {id: "", src: "123.pdf", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
-    $scope.rawdoc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
     $scope.dirList = [];
     $scope.dirEdit = false;
 
@@ -1994,6 +2059,27 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         });
     }
 
+    $scope.presentMove = function(number) {
+        if (number === 0) {
+            if (this.present.showId >= 1 && this.present.showId <= this.present.maxId) {
+                this.present.presentId = this.present.showId;
+            } else {
+                this.present.showId = this.present.presentId;
+                return false;
+            }
+        } else {
+            var newIndex = +this.present.presentId + number;
+            if (newIndex >= 1 && newIndex <= this.present.maxId) {
+                this.present.presentId = newIndex;
+                this.present.showId = this.present.presentId;
+            } else {
+                this.present.showId = this.present.presentId;
+                return false;
+            }
+        }
+        this.present.src = '/preview/' + this.present.list[this.present.index + this.present.back].id + '/' + this.present.presentId;
+    }
+
     $scope.mediaMove = function(number, type, end) {
         console.log(this[type]);
         var preType = '', status = 0, isLoad = false;
@@ -2014,9 +2100,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 preType = 'preview';
                 status = 5;
                 break;
-            case 'rawdoc':
+            case 'present':
                 preType = 'preview';
                 status = 6;
+                this.present.showId = this.present.presentId = 1;
                 break;
             default:
                 addAlert('unknown type');
@@ -2091,7 +2178,14 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                         music.currentTime = 0;
                                         //music.play();
                                     } else {
-                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        if (type === 'doc') {
+                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                        } else if (type === 'present') {
+                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
+                                            this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                                        } else {
+                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        }
                                         if (type === 'video') {
                                             var track = video.textTracks[0];
                                             if (track.activeCues) {
@@ -2124,7 +2218,14 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 music.currentTime = 0;
                                 //music.play();
                             } else {
-                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                if (type === 'doc') {
+                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                } else if (type === 'present') {
+                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
+                                    this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                                } else {
+                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                }
                                 if (type === 'video') {
                                     var track = video.textTracks[0];
                                     if (track.activeCues) {
@@ -2221,7 +2322,14 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                         music.currentTime = 0;
                                         //music.play();
                                     } else {
-                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        if (type === 'doc') {
+                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                        } else if (type === 'present') {
+                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
+                                            this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                                        } else {
+                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        }
                                         if (type === 'video') {
                                             var track = video.textTracks[0];
                                             if (track.activeCues) {
@@ -2254,7 +2362,14 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 music.currentTime = 0;
                                 //music.play();
                             } else {
-                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                if (type === 'doc') {
+                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                } else if (type === 'present') {
+                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
+                                    this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                                } else {
+                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                }
                                 if (type === 'video') {
                                     var track = video.textTracks[0];
                                     if (track.activeCues) {
@@ -2312,7 +2427,14 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             music.currentTime = 0;
                             //music.play();
                         } else {
-                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                            if (type === 'doc') {
+                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                            } else if (type === 'present') {
+                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
+                                this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                            } else {
+                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                            }
                             if (type === 'video') {
                                 var track = video.textTracks[0];
                                 if (track.activeCues) {
@@ -2345,7 +2467,14 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     music.currentTime = 0;
                     //music.play();
                 } else {
-                    this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id;
+                    if (type === 'doc') {
+                        this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id + '/doc';
+                    } else if (type === 'present') {
+                        this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id + '/1';
+                        this[type].maxId = this[type].list[this[type].index + this[type].back].present;
+                    } else {
+                        this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id;
+                    }
                     if (type === 'video') {
                         var track = video.textTracks[0];
                         if (track.activeCues) {
@@ -2368,7 +2497,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             case 'video':
             case 'music':
             case 'doc':
-            case 'rawdoc':
+            case 'present':
                 break;
             default:
                 addAlert('unknown type');

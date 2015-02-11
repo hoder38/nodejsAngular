@@ -336,12 +336,12 @@ audio.full-media-screen {
 
 .doc-screen {
     width: 100%;
-    height: 70vh;
+    height: 68vh;
 }
 
 .full-doc-screen {
     width: 100%;
-    height: 70vh;
+    height: 68vh;
 }
 
 #doc-section {
@@ -532,8 +532,21 @@ audio.full-media-screen {
 }
 
 .item-mtime {
-    width: 20%;
-    min-width: 88px;
+    width: 15%;
+    min-width: 68px;
+}
+
+.item-count {
+    width: 10%;
+    min-width: 68px;
+}
+
+.nav>.item-count>a {
+    padding: 10px 5px;
+}
+
+.nav>.item-mtime>a {
+    padding: 10px 5px;
 }
 
 .table-responsive>.table>tbody>tr>td.item-name {
@@ -572,4 +585,8 @@ audio.full-media-screen {
 .item-image {
     height: 42px;
     width: 42px;
+}
+
+#presentID {
+    width: 45px;
 }

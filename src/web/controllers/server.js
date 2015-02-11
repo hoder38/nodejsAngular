@@ -7,14 +7,16 @@ var mongo = require("../models/mongo-tool.js");
 
 var api = require("../models/api-tool.js");
 
+var googleApi = require("../models/api-tool-google.js");
+
 var tagTool = require("../models/tag-tool.js")('storage');
 
 var util = require("../util/utility.js");
 
 var mime = require('../util/mime.js');
 
-var http = require('http'),
-    https = require('https'),
+//var http = require('http'),
+var https = require('https'),
     fs = require("fs"),
     privateKey  = fs.readFileSync('/home/pi/app/privatekey.pem', 'utf8'),
     certificate = fs.readFileSync('/home/pi/app/certification.pem', 'utf8'),
@@ -27,10 +29,10 @@ var http = require('http'),
     WebSocketServer = require('ws').Server,
     //WebSocketServer = require('websocket').server;
     app = express(),
-    //server = https.createServer(credentials, app);
-    //port = 443,
-    server = http.createServer(app),
-    port = 80,
+    server = https.createServer(credentials, app);
+    port = 443,
+    //server = http.createServer(app),
+    //port = 80,
     ip = '114.32.213.158',
     mkdirp = require('mkdirp'),
     encode = "utf8",
@@ -101,8 +103,10 @@ app.get('/api/userinfo', function (req, res, next) {
                 }
                 console.log(users);
                 for (var i in users) {
-                    if (users[i].perm === '1') {
-                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, newable: false});
+                    if (users[i].perm === 1) {
+                        users[i].unDay = users[i].unDay ? users[i].unDay : tagTool.getUnactive('day');
+                        users[i].unHit = users[i].unHit ? users[i].unHit : tagTool.getUnactive('hit');
+                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, newable: false, unDay: users[i].unDay, unHit: users[i].unHit});
                     } else {
                         user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, delable: true, newable: false});
                     }
@@ -149,8 +153,35 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
             if (perm === false) {
                 util.handleError({hoerror: 2, msg: "perm is not vaild"}, next, res);
             }
+            if (req.user._id.equals(util.isValidString(req.params.uid, 'uid'))) {
+                util.handleError({hoerror: 2, msg: "owner can not eidt self perm"}, next, res);
+            }
             data['perm'] = perm;
             ret['perm'] = perm;
+            needPerm = true;
+        }
+        if (req.body.unDay && req.body.unDay) {
+            if (!util.checkAdmin(1, req.user)) {
+                util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
+            }
+            var unDay = util.isValidString(req.body.unDay, 'int');
+            if (unDay === false) {
+                util.handleError({hoerror: 2, msg: "unactive day is not vaild"}, next, res);
+            }
+            data['unDay'] = unDay;
+            ret['unDay'] = unDay;
+            needPerm = true;
+        }
+        if (req.body.unHit && req.body.unHit) {
+            if (!util.checkAdmin(1, req.user)) {
+                util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
+            }
+            var unHit = util.isValidString(req.body.unHit, 'int');
+            if (unHit === false) {
+                util.handleError({hoerror: 2, msg: "unactive hit is not vaild"}, next, res);
+            }
+            data['unHit'] = unHit;
+            ret['unHit'] = unHit;
             needPerm = true;
         }
         if (req.body.newPwd && req.body.conPwd) {
@@ -334,7 +365,7 @@ app.put('/api/deluser/:uid', function(req, res, next){
     });
 });
 
-app.get('/api/storage/get/:sortName(name|mtime)/:sortType(desc|asc)/:page(\\d+)/:name?/:exactly(true|false)?/:index(\\d+)?', function(req, res, next){
+app.get('/api/storage/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(\\d+)/:name?/:exactly(true|false)?/:index(\\d+)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("storage");
         console.log(req.params.page);
@@ -486,7 +517,7 @@ function editFile(uid, newName, user, next, callback) {
                 }
                 var filePath = util.getFileLocation(item.owner, item._id);
                 var time = Math.round(new Date().getTime() / 1000);
-                handleTag(filePath, {utime: time, mtime: time, untag: 1}, newName, item.name, item.status, function(err, mediaType, mediaTag, DBdata) {
+                handleTag(filePath, {utime: time, untag: 1}, newName, item.name, item.status, function(err, mediaType, mediaTag, DBdata) {
                     if(err) {
                         util.handleError(err, next, callback);
                     }
@@ -525,6 +556,13 @@ function editFile(uid, newName, user, next, callback) {
                                 item.tags.splice(index_tag, 1);
                             }
                         }
+                        if (item.adultonly === 1) {
+                            result_tag.push('18禁');
+                        } else {
+                            if (util.checkAdmin(2, req.user)) {
+                                mediaTag.opt.push('18禁');
+                            }
+                        }
                         setTimeout(function(){
                             callback(null, {id: id, name: name, select: result_tag, option: mediaTag.opt, other: item.tags, adultonly: item.adultonly});
                         }, 0);
@@ -561,11 +599,10 @@ app.put('/api/recoverFile/:uid', function(req, res, next){
             if (!item) {
                 util.handleError({hoerror: 2, msg: 'file can not be fund!!!'}, next, res);
             }
-            if (item.recycle !== 1) {
+            if (item.recycle !== 1 || item.recycle !== 2 || item.recycle !== 3 || item.recycle !== 4) {
                 util.handleError({hoerror: 2, msg: 'recycle file first!!!'}, next, res);
             }
-            var time = Math.round(new Date().getTime() / 1000);
-            mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 0, mtime: time}}, function(err, item2){
+            mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 0}}, function(err, item2){
                 if(err) {
                     util.handleError(err, next, res);
                 }
@@ -576,6 +613,20 @@ app.put('/api/recoverFile/:uid', function(req, res, next){
         });
     });
 });
+
+function deleteFolderRecursive(path) {
+    if(fs.existsSync(path)) {
+        fs.readdirSync(path).forEach(function(file,index){
+            var curPath = path + "/" + file;
+            if(fs.lstatSync(curPath).isDirectory()) { // recurse
+                deleteFolderRecursive(curPath);
+            } else { // delete file
+                fs.unlinkSync(curPath);
+            }
+        });
+        fs.rmdirSync(path);
+    }
+};
 
 app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
@@ -591,21 +642,30 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
             if (!item) {
                 util.handleError({hoerror: 2, msg: 'file can not be fund!!!'}, next, res);
             }
-            if (req.params.recycle === '1' && util.checkAdmin(1, req.user)) {
-                if (item.recycle !== 1) {
+            var recycle = 1;
+            var filePath = util.getFileLocation(item.owner, item._id);
+            if (req.params.recycle === '4' && util.checkAdmin(1, req.user)) {
+                if (item.recycle !== 4) {
                     util.handleError({hoerror: 2, msg: 'recycle file first!!!'}, next, res);
                 }
-                var filePath = util.getFileLocation(item.owner, item._id);
                 var del_arr = [filePath];
                 if (fs.existsSync(filePath + '.jpg')) {
                     del_arr.push(filePath + '.jpg');
                 }
+                if (item.present) {
+                    for(var i = 1; i <= item.present; i++) {
+                        if (fs.existsSync(filePath + '.' + i + '.svg')) {
+                            del_arr.push(filePath + '.' + i + '.svg');
+                        }
+                    }
+                }
+                /*
                 if (fs.existsSync(filePath + '.htm')) {
                     del_arr.push(filePath + '.htm');
                 }
                 if (fs.existsSync(filePath + '.pdf')) {
                     del_arr.push(filePath + '.pdf');
-                }
+                }*/
                 if (fs.existsSync(filePath + '_s.jpg')) {
                     del_arr.push(filePath + '_s.jpg');
                 }
@@ -620,6 +680,7 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                 }
                 var index = 0;
                 console.log(del_arr);
+                deleteFolderRecursive(filePath + '_doc');
                 recur_del(del_arr[0]);
                 function recur_del(delPath) {
                     fs.unlink(delPath, function (err) {
@@ -641,18 +702,49 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                         }
                     });
                 }
-            } else {
+            } else if (req.params.recycle === '0'){
                 if (!util.checkAdmin(1, req.user) && !req.user._id.equals(item.owner)) {
                     util.handleError({hoerror: 2, msg: 'file is not yours!!!'}, next, res);
                 }
-                var time = Math.round(new Date().getTime() / 1000);
-                mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 1, mtime: time}}, function(err, item2){
+                mongo.orig("update", "storage", { _id: id }, {$set: {recycle: recycle, utime: Math.round(new Date().getTime() / 1000)}}, function(err, item2){
                     if(err) {
                         util.handleError(err, next, res);
                     }
                     console.log(item2);
                     sendWs({type: 'file', data: item._id}, item.adultonly);
                     res.json({apiOK: true});
+                    recur_backup();
+                });
+            } else {
+                if (!util.checkAdmin(1, req.user)) {
+                    util.handleError({hoerror: 2, msg: 'permission dined!!!'}, next, res);
+                }
+                recycle = item.recycle;
+                res.json({apiOK: true});
+                recur_backup();
+            }
+            function recur_backup() {
+                googleApi.googleBackup(item._id, item.name, filePath, item.tags, recycle, function(err) {
+                    if(err) {
+                        util.handleError(err, function(err) {
+                            console.log(err);
+                        });
+                    } else {
+                        recycle++;
+                        mongo.orig("update", "storage", { _id: id }, {$set: {recycle: recycle}}, function(err, item3){
+                            console.log(recycle);
+                            if(err) {
+                                util.handleError(err, function(err) {
+                                    console.log(err);
+                                });
+                            } else {
+                                sendWs({type: 'file', data: item._id}, item.adultonly);
+                                if (recycle < 4) {
+                                    recur_backup();
+                                }
+                            }
+                        });
+                    }
                 });
             }
         });
@@ -677,8 +769,18 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                         for (var i in meta.input.streams) {
                             console.log(meta.input.streams[i]);
                             if (meta.input.streams[i].size) {
-                                if (meta.input.streams[i].size.height >= 720) {
-                                    mediaType['hd'] = 1;
+                                if (meta.input.streams[i].size.height >= 1080) {
+                                    if (mediaType['type'] === 'vlog') {
+                                        mediaType['hd'] = 1;
+                                    } else {
+                                        mediaType['hd'] = 1080;
+                                    }
+                                } else if (meta.input.streams[i].size.height >= 720) {
+                                    if (mediaType['type'] === 'vlog') {
+                                        mediaType['hd'] = 1;
+                                    } else {
+                                        mediaType['hd'] = 720;
+                                    }
                                 } else {
                                     mediaType['hd'] = 0;
                                 }
@@ -718,6 +820,8 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
             case 'image':
             case 'doc':
             case 'rawdoc':
+            case 'sheet':
+            case 'present':
                 DBdata['status'] = 1;
                 mediaTag = mime.mediaTag(mediaType['type']);
                 DBdata['mediaType'] = mediaType;
@@ -758,24 +862,11 @@ app.post('/upload/subtitle/:uid', function(req, res, next) {
             }
             var filePath = util.getFileLocation(item.owner, item._id);
             var folderPath = path.dirname(filePath);
-            fs.exists(folderPath, function(exists) {
-                if (!exists) {
-                    mkdirp(folderPath, function(err) {
-                        if(err) {
-                            util.handleError(err, next, res);
-                        }
-                        if (fs.existsSync(filePath + '.' + ext)) {
-                            fs.renameSync(filePath + '.' + ext, filePath + '.' + ext + '1');
-                        }
-                        var stream = fs.createReadStream(req.files.file.path);
-                        stream.on('error', function(err){
-                            console.log('save file error!!!');
-                            util.handleError(err, next, res);
-                        });
-                        stream.on('close', SRT2VTT);
-                        stream.pipe(fs.createWriteStream(filePath + '.' + ext));
-                    });
-                } else {
+            if (!fs.existsSync(folderPath)) {
+                mkdirp(folderPath, function(err) {
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
                     if (fs.existsSync(filePath + '.' + ext)) {
                         fs.renameSync(filePath + '.' + ext, filePath + '.' + ext + '1');
                     }
@@ -786,8 +877,19 @@ app.post('/upload/subtitle/:uid', function(req, res, next) {
                     });
                     stream.on('close', SRT2VTT);
                     stream.pipe(fs.createWriteStream(filePath + '.' + ext));
+                });
+            } else {
+                if (fs.existsSync(filePath + '.' + ext)) {
+                    fs.renameSync(filePath + '.' + ext, filePath + '.' + ext + '1');
                 }
-            });
+                var stream = fs.createReadStream(req.files.file.path);
+                stream.on('error', function(err){
+                    console.log('save file error!!!');
+                    util.handleError(err, next, res);
+                });
+                stream.on('close', SRT2VTT);
+                stream.pipe(fs.createWriteStream(filePath + '.' + ext));
+            }
             function SRT2VTT() {
                 fs.readFile(req.files.file.path, function (err,data) {
                     if (err) {
@@ -818,21 +920,11 @@ app.post('/upload/file', function(req, res, next){
         var folderPath = path.dirname(filePath);
         console.log(filePath);
         console.log(folderPath);
-        fs.exists(folderPath, function(exists) {
-            if (!exists) {
-                mkdirp(folderPath, function(err) {
-                    if(err) {
-                        util.handleError(err, next, res);
-                    }
-                    var stream = fs.createReadStream(req.files.file.path);
-                    stream.on('error', function(err){
-                        console.log('save file error!!!');
-                        util.handleError(err, next, res);
-                    });
-                    stream.on('close', streamClose);
-                    stream.pipe(fs.createWriteStream(filePath));
-                });
-            } else {
+        if (!fs.existsSync(folderPath)) {
+            mkdirp(folderPath, function(err) {
+                if(err) {
+                    util.handleError(err, next, res);
+                }
                 var stream = fs.createReadStream(req.files.file.path);
                 stream.on('error', function(err){
                     console.log('save file error!!!');
@@ -840,8 +932,16 @@ app.post('/upload/file', function(req, res, next){
                 });
                 stream.on('close', streamClose);
                 stream.pipe(fs.createWriteStream(filePath));
-            }
-        });
+            });
+        } else {
+            var stream = fs.createReadStream(req.files.file.path);
+            stream.on('error', function(err){
+                console.log('save file error!!!');
+                util.handleError(err, next, res);
+            });
+            stream.on('close', streamClose);
+            stream.pipe(fs.createWriteStream(filePath));
+        }
         function streamClose(){
             console.log('close');
             fs.unlink(req.files.file.path, function(err) {
@@ -857,11 +957,15 @@ app.post('/upload/file', function(req, res, next){
                 data['name'] = name;
                 data['owner'] = oUser_id;
                 data['utime'] = utime;
-                data['mtime'] = utime;
+                //data['mtime'] = utime;
                 data['size'] = req.files.file.size;
                 data['count'] = 0;
                 data['recycle'] = 0;
-                data['adultonly'] = 0;
+                if (util.checkAdmin(2 ,req.user)) {
+                    data['adultonly'] = 1;
+                } else {
+                    data['adultonly'] = 0;
+                }
                 data['untag'] = 1;
                 data['status'] = 0;//media type
                 handleTag(filePath, data, name, '', 0, function(err, mediaType, mediaTag, DBdata) {
@@ -872,9 +976,6 @@ app.post('/upload/file', function(req, res, next){
                 });
                 function save2DB(mediaType, mediaTag, DBdata) {
                     mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(req.user.username));
-                    if (util.checkAdmin(2 ,req.user)) {
-                        mediaTag.def.push('18禁');
-                    }
                     var tags = tagTool.searchTags(req.session, 'parent');
                     if (tags) {
                         var parentList = tags.getArray();
@@ -904,6 +1005,9 @@ app.post('/upload/file', function(req, res, next){
                         console.log(item);
                         console.log('save end');
                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                        if (util.checkAdmin(2 ,req.user)) {
+                            mediaTag.def.push('18禁');
+                        }
                         res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
                         handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
                             sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
@@ -924,25 +1028,54 @@ app.post('/upload/file', function(req, res, next){
 
 function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user, callback) {
     if (mediaType) {
-        api.xuiteApi("xuite.webhd.prepare.cloudbox.postFile", {full_path: '/public/' + fileID.toString() + "." + mediaType['ext'], size: fileSize}, function(err, result) {
-            if (err) {
-                util.handleError(err, callback, errerMedia, fileID, callback);
-            }
-            console.log(result);
-            api.xuiteUpload(result.url, {auth_key: result.auth_key, checksum: result.checksum, api_otp: result.otp}, filePath, fileSize, function(err, uploadResult) {
+        if (mediaType['type'] === 'vlog') {
+            api.xuiteApi("xuite.webhd.prepare.cloudbox.postFile", {full_path: '/public/' + fileID.toString() + "." + mediaType['ext'], size: fileSize}, function(err, result) {
                 if (err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
-                console.log(uploadResult);
-                mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.key": uploadResult.key}}, function(err, item){
+                console.log(result);
+                api.xuiteUpload(result.url, {auth_key: result.auth_key, checksum: result.checksum, api_otp: result.otp}, filePath, fileSize, function(err, uploadResult) {
+                    if (err) {
+                        util.handleError(err, callback, errerMedia, fileID, callback);
+                    }
+                    console.log(uploadResult);
+                    mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.key": uploadResult.key}}, function(err, item){
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(item);
+                        handleMedia(mediaType, filePath, fileID, fileName, uploadResult.key, user, callback);
+                    });
+                });
+            });
+        } else {
+            if (mediaType['type'] === 'rawdoc') {
+                mediaType['ext'] = 'txt';
+            }
+            var data = {type: 'media', name: fileID.toString() + "." + mediaType['ext'], filePath: filePath};
+            if (mediaType['type'] === 'doc' || mediaType['type'] === 'rawdoc' || mediaType['type'] === 'sheet' || mediaType['type'] === 'present') {
+                data['convert'] = true;
+            }
+            googleApi.googleApi('upload', data, function(err, metadata) {
+                if (err) {
+                    util.handleError(err, callback, errerMedia, fileID, callback);
+                }
+                console.log(metadata);
+                if (!metadata.thumbnailLink && mediaType['type'] === 'video') {
+                    metadata.thumbnailLink = metadata.alternateLink;
+                } else if(!metadata.thumbnailLink) {
+                    metadata.thumbnailLink = metadata.exportLinks['application/pdf'];
+                }
+                mediaType['thumbnail'] = metadata.thumbnailLink;
+                mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.thumbnail": metadata.thumbnailLink, "mediaType.key": metadata.id}}, function(err, item){
                     if(err) {
                         util.handleError(err, callback, callback);
                     }
                     console.log(item);
-                    handleMedia(mediaType, filePath, fileID, fileName, uploadResult.key, user, callback);
+                    handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback);
                 });
             });
-        });
+        }
     }
 }
 
@@ -958,8 +1091,12 @@ function errerMedia(errMedia, fileID, callback) {
     });
 }
 
-function completeMedia(fileID, status, callback) {
-    mongo.orig("update", "storage", { _id: fileID }, {$unset: {mediaType: ""}, $set: {status: status}}, function(err, item){
+function completeMedia(fileID, status, callback, number) {
+    var data = {status: status};
+    if (number) {
+        data['present'] = number;
+    }
+    mongo.orig("update", "storage", { _id: fileID }, {$unset: {mediaType: ""}, $set: data}, function(err, item){
         if(err) {
             util.handleError(err, callback, callback);
         }
@@ -972,7 +1109,7 @@ function completeMedia(fileID, status, callback) {
 
 function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback) {
     if (mediaType['type'] === 'image') {
-        api.xuiteApi("xuite.webhd.private.cloudbox.gallery.getSingleImage", {key: key}, function(err, imageResult) {
+        /*api.xuiteApi("xuite.webhd.private.cloudbox.gallery.getSingleImage", {key: key}, function(err, imageResult) {
             if (err) {
                 util.handleError(err, callback, errerMedia, fileID, callback);
             }
@@ -987,6 +1124,18 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                     }
                     completeMedia(fileID, 2, callback);
                 });
+            });
+        });*/
+        googleApi.googleDownload(mediaType['thumbnail'], filePath + ".jpg", function(err) {
+            if (err) {
+                util.handleError(err, callback, errerMedia, fileID, callback);
+            }
+            var data = {fileId: key};
+            googleApi.googleApi('delete', data, function(err) {
+                if (err) {
+                    util.handleError(err, callback, errerMedia, fileID, callback);
+                }
+                completeMedia(fileID, 2, callback);
             });
         });
     } else if (mediaType['type'] === 'vlog') {
@@ -1090,6 +1239,61 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                 });
             }
         });
+    } else if (mediaType['type'] === 'video') {
+        if (!mediaType.hasOwnProperty('time') && !mediaType.hasOwnProperty('hd')) {
+            util.handleError({hoerror: 2, msg: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback);
+        }
+        googleApi.googleDownloadMedia(mediaType['time'], mediaType['thumbnail'], key, filePath, mediaType['hd'], function(err) {
+            if(err) {
+                util.handleError(err, callback, callback);
+            }
+            var data = {fileId: key};
+            googleApi.googleApi('delete', data, function(err) {
+                if (err) {
+                    util.handleError(err, callback, errerMedia, fileID, callback);
+                }
+                completeMedia(fileID, 3, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    } else {
+                        editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
+                            if(err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    }
+                });
+            });
+        });
+    } else if (mediaType['type'] === 'doc' || mediaType['type'] === 'rawdoc' || mediaType['type'] === 'sheet') {
+        googleApi.googleDownloadDoc(mediaType['thumbnail'], key, filePath, mediaType['ext'], function(err) {
+            if(err) {
+                util.handleError(err, callback, callback);
+            }
+            var data = {fileId: key};
+            googleApi.googleApi('delete', data, function(err) {
+                if (err) {
+                    util.handleError(err, callback, errerMedia, fileID, callback);
+                }
+                completeMedia(fileID, 5, callback);
+            });
+        });
+    } else if (mediaType['type'] === 'present') {
+        googleApi.googleDownloadPresent(mediaType['thumbnail'], key, filePath, mediaType['ext'], function(err, number) {
+            if(err) {
+                util.handleError(err, callback, callback);
+            }
+            var data = {fileId: key};
+            googleApi.googleApi('delete', data, function(err) {
+                if (err) {
+                    util.handleError(err, callback, errerMedia, fileID, callback);
+                }
+                completeMedia(fileID, 6, callback, number);
+            });
+        });
     //不處理了
     /*} else if (mediaType['type'] === 'music') {
         if (!mediaType.hasOwnProperty('time') && !mediaType.hasOwnProperty('hd')) {
@@ -1113,7 +1317,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                     });
                 }
             });
-        });*/
+        });
     } else {
         api.xuiteApi("xuite.webhd.private.cloudbox.getMetadata", {key: key, type: 'file'}, function(err, metaResult) {
             if (err) {
@@ -1149,7 +1353,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                     });
                 });
             }
-        });
+        });*/
     }
 }
 
@@ -1185,7 +1389,7 @@ app.get('/api/handleMedia/:uid/:action(act|del)', function(req, res, next) {
                             console.log('transcode done');
                         });
                     } else {
-                        handleMediaUpload(item.mediaType, filePath, item._id, item.name, item.size, item.mediaType.key, req.user, function (err) {
+                        handleMediaUpload(item.mediaType, filePath, item._id, item.name, item.size, req.user, function (err) {
                             sendWs({type: 'file', data: item._id}, item.adultonly);
                             util.handleError(err, function(err) {
                                 console.log(err);
@@ -1302,13 +1506,13 @@ app.get('/api/parent/query/:id', function(req, res, next) {
 app.get('/api/feedback', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("feedback");
-        mongo.orig("find", "storage", {untag: 1, owner: req.user._id}, {sort: ["mtime",'desc'], limit: 20}, function(err, items){
+        mongo.orig("find", "storage", {untag: 1, owner: req.user._id}, {sort: ["utime",'desc'], limit: 20}, function(err, items){
             if(err) {
                 util.handleError(err, next, res);
             }
             console.log(items);
             if (items.length === 0 && util.checkAdmin(1, req.user)) {
-                mongo.orig("find", "storage", {untag: 1}, {sort: "mtime", limit: 20}, function(err, items2){
+                mongo.orig("find", "storage", {untag: 1}, {sort: "utime", limit: 20}, function(err, items2){
                     if(err) {
                         util.handleError(err, next, res);
                     }
@@ -1371,6 +1575,13 @@ function getFeedback(item, callback, user) {
         for (var i in mediaTag.opt) {
             if (item.tags.indexOf(mediaTag.opt[i]) === -1) {
                 temp_tag.push(mediaTag.opt[i]);
+            }
+        }
+        if (item.adultonly === 1) {
+            item.tags.push('18禁');
+        } else {
+            if (util.checkAdmin(2, user)) {
+                temp_tag.push('18禁');
             }
         }
         if (!util.checkAdmin(1, user)) {
@@ -1486,7 +1697,7 @@ app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, re
                 saveName = 'doc';
                 break;
             case 6:
-                saveName = 'rawdoc';
+                saveName = 'present';
                 break;
             default:
                 util.handleError({hoerror: 2, msg: "unknown type"}, next, res);
@@ -1623,11 +1834,11 @@ app.get('/api/media/setTime/:id', function(req, res, next){
 app.get('/api/getUser', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get user');
-        var ws_url = 'ws://' + ip + ':8083';
+        var ws_url = 'wss://' + ip + ':8083';
         if (util.checkAdmin(1, req.user)) {
-            ws_url = 'ws://' + ip + ':8081';
+            ws_url = 'wss://' + ip + ':8081';
         } else if (util.checkAdmin(2, req.user)) {
-            ws_url = 'ws://' + ip + ':8082';
+            ws_url = 'wss://' + ip + ':8082';
         }
         res.json({id: req.user.username, ws_url: ws_url});
     });
@@ -1654,7 +1865,14 @@ app.get('/download/:uid', function(req, res, next){
                 if (err) {
                     util.handleError(err, next, res);
                 }
-                console.log('latest file: ' + item._id);
+                console.log('count file: ' + item._id);
+                mongo.orig("update", "storage", {_id: item._id}, {$set: {count: item.count+1}}, function(err, item2){
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
+                    sendWs({type: 'file', data: item._id}, item.adultonly);
+                    console.log(item2);
+                });
             });
             console.log(filePath);
             res.download(filePath, unescape(encodeURIComponent(item.name)));
@@ -1683,7 +1901,14 @@ app.get('/image/:uid', function(req, res, next){
                 if (err) {
                     util.handleError(err, next, res);
                 }
-                console.log('latest file: ' + item._id);
+                console.log("count file: " + item._id);
+                mongo.orig("update", "storage", {_id: item._id}, {$set: {count: item.count+1}}, function(err, item2){
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
+                    sendWs({type: 'file', data: item._id}, item.adultonly);
+                    console.log(item2);
+                });
             });
             console.log(filePath);
             res.download(filePath, unescape(encodeURIComponent(item.name)));
@@ -1691,7 +1916,8 @@ app.get('/image/:uid', function(req, res, next){
     });
 });
 
-app.get('/preview/:uid', function(req, res, next){
+app.get('/preview/:uid/:type(doc|images|\\d+)?/:imgName(image\\d+.png)?', function(req, res, next){
+    console.log(req.params);
     checkLogin(req, res, next, function(req, res, next) {
         console.log('preview');
         var id = util.isValidString(req.params.uid, 'uid');
@@ -1707,26 +1933,50 @@ app.get('/preview/:uid', function(req, res, next){
                 var type = 'image/jpeg', ext = '.jpg';
                 if (item.status === 3) {
                     ext = '_s.jpg';
-                } else if (item.status === 6) {
+                /*} else if (item.status === 6) {
                     type = 'text/html';
                     ext = '.htm';
                 } else if (item.status === 5) {
                     type = 'application/pdf';
-                    ext = '.pdf';
+                    ext = '.pdf';*/
+                } else if (item.status === 5) {
+                    if (req.params.type === 'doc') {
+                        type = 'text/html';
+                        ext = '_doc/doc.html';
+                    } else if (req.params.type === 'images' && req.params.imgName) {
+                        ext = '_doc/images/' + req.params.imgName;
+                    } else {
+                        util.handleError({hoerror: 2, msg: "cannot find doc!!!"}, next, res);
+                    }
+                } else if (item.status === 6) {
+                    if (Number(req.params.type) >= 1) {
+                        type = 'image/svg+xml';
+                        ext = '.' + Number(req.params.type) + '.svg';
+                    } else {
+                        util.handleError({hoerror: 2, msg: "cannot find present!!!"}, next, res);
+                    }
                 }
                 var filePath = util.getFileLocation(item.owner, item._id);
-                if (item.status === 6 || item.status === 5) {
+                if (item.status === 6 || (item.status === 5 && req.params.type === 'doc')) {
                     var saveType = 'doc';
                     if (item.status === 6) {
-                        saveType = 'rawdoc';
+                        saveType = 'present';
                     }
                     tagTool.setLatest(saveType, item._id, req.session, next, function(err) {
                         if (err) {
                             util.handleError(err, next, res);
                         }
-                        console.log('latest file: ' + item._id);
+                        console.log('count file: ' + item._id);
+                        mongo.orig("update", "storage", {_id: item._id}, {$set: {count: item.count+1}}, function(err, item2){
+                            if(err) {
+                                util.handleError(err, next, res);
+                            }
+                            sendWs({type: 'file', data: item._id}, item.adultonly);
+                            console.log(item2);
+                        });
                     });
                 }
+                console.log(filePath + ext);
                 fs.exists(filePath + ext, function (exists) {
                     if (!exists) {
                         util.handleError({hoerror: 2, msg: "cannot find file!!!"}, next, res);
@@ -1792,7 +2042,14 @@ app.get('/video/:uid', function (req, res, next) {
                     if (err) {
                         util.handleError(err, next, res);
                     }
-                    console.log('latest file: ' + item._id);
+                    console.log('count file: ' + item._id);
+                    mongo.orig("update", "storage", {_id: item._id}, {$set: {count: item.count+1}}, function(err, item2){
+                        if(err) {
+                            util.handleError(err, next, res);
+                        }
+                        sendWs({type: 'file', data: item._id}, item.adultonly);
+                        console.log(item2);
+                    });
                 });
                 console.log(videoPath);
                 fs.stat(videoPath, function(err, video) {
@@ -1961,34 +2218,58 @@ function checkLogin(req, res, next, callback) {
 
 function getStorageItem(user, items, mediaHandle) {
     var itemList = [];
-    if (util.checkAdmin(1, user)) {
-        for (var i in items) {
-            if (items[i].adultonly === 1) {
-                items[i].tags.push('18禁');
+    if (mediaHandle === 1) {
+        if (util.checkAdmin(1, user)) {
+            for (var i in items) {
+                if (items[i].adultonly === 1) {
+                    items[i].tags.push('18禁');
+                }
+                var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, utime: items[i].utime, count: items[i].count, media: items[i].mediaType};
+                if (items[i].present) {
+                    data.present = items[i].present;
+                }
+                itemList.push(data);
             }
-            if (mediaHandle === 1) {
-                itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, mtime: items[i].mtime, media: items[i].mediaType});
-            } else {
-                itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, mtime: items[i].mtime});
+        } else {
+            for (var i in items) {
+                if (items[i].adultonly === 1) {
+                    items[i].tags.push('18禁');
+                }
+                var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, utime: items[i].utime, count: items[i].count, media: items[i].mediaType};
+                if (items[i].present) {
+                    data.present = items[i].present;
+                }
+                if (user._id.equals(items[i].owner)) {
+                    data.isOwn = true;
+                }
+                itemList.push(data);
             }
         }
     } else {
-        for (var i in items) {
-            if (items[i].adultonly === 1) {
-                items[i].tags.push('18禁');
+        if (util.checkAdmin(1, user)) {
+            for (var i in items) {
+                if (items[i].adultonly === 1) {
+                    items[i].tags.push('18禁');
+                }
+                var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, utime: items[i].utime, count: items[i].count};
+                if (items[i].present) {
+                    data.present = items[i].present;
+                }
+                itemList.push(data);
             }
-            if (user._id.equals(items[i].owner)) {
-                if (mediaHandle === 1) {
-                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, mtime: items[i].mtime, media: items[i].mediaType});
-                } else {
-                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, mtime: items[i].mtime});
+        } else {
+            for (var i in items) {
+                if (items[i].adultonly === 1) {
+                    items[i].tags.push('18禁');
                 }
-            } else {
-                if (mediaHandle === 1) {
-                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, mtime: items[i].mtime, media: items[i].mediaType});
-                } else {
-                    itemList.push({name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, mtime: items[i].mtime});
+                var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, utime: items[i].utime, count: items[i].count};
+                if (items[i].present) {
+                    data.present = items[i].present;
                 }
+                if (user._id.equals(items[i].owner)) {
+                    data.isOwn = true;
+                }
+                itemList.push(data);
             }
         }
     }
@@ -2026,20 +2307,20 @@ process.on('uncaughtException', function(err) {
     }
 });
 
-//var server1 = https.createServer(credentials, function (req, res) {
-var server1 = http.createServer(function (req, res) {
+var server1 = https.createServer(credentials, function (req, res) {
+//var server1 = http.createServer(function (req, res) {
     res.writeHead(200);
     res.end("hello world websocket1\n");
 }).listen(8081);
 
-//var server2 = https.createServer(credentials, function (req, res) {
-var server2 = http.createServer(function (req, res) {
+var server2 = https.createServer(credentials, function (req, res) {
+//var server2 = http.createServer(function (req, res) {
     res.writeHead(200);
     res.end("hello world websocket2\n");
 }).listen(8082);
 
-//var server3 = https.createServer(credentials, function (req, res) {
-var server3 = http.createServer(function (req, res) {
+var server3 = https.createServer(credentials, function (req, res) {
+//var server3 = http.createServer(function (req, res) {
     res.writeHead(200);
     res.end("hello world websocket3\n");
 }).listen(8083);

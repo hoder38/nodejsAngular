@@ -14,6 +14,7 @@ var music_arr = ['mp3', 'wav', 'ogg', 'm4a'];
 var doc_arr = {doc: ["rtf", "txt", "doc", "docx", "pdf", "odt", 'htm', 'html', "conf"], present: ["ppt", "pps", "pptx", "odp"], sheet: ["xls", "xlsx", "xlsm", "csv", "ods"]};
 var rawdoc_arr = ["c", 'cc', 'cpp', 'cs', 'm', 'h', 'sh', 'csh', 'bash', "tcsh", "java", 'js', "mxml", "pl", "pm", "py", "sql", "php", "rb", "xhtml", "xml", "xsl", "json", "css", "ini", "patch", "vim", "eml"];
 var type_arr = {image: {def: ['圖片', 'image'], opt: ['相片', '漫畫', 'picture', 'comic', 'CG']}, video: {def:['影片', 'video'], opt: ['電影', 'movie', '動畫', 'anime', 'cartoon', 'OVA', '連續劇', '短片']}, music: {def: ['音樂', 'music'], opt: ['歌曲', 'song']}, doc: {def: ['文件', 'doc'], opt: ['書籍', 'book', '小說', 'novel']}, present: {def: ['簡報', 'presentation'], opt: ['投影片']}, sheet: {def: ['試算表', 'sheet'], opt: ['報表']}, rawdoc: {def: ['純文字', 'doc'], opt: ['書籍', 'book', '小說', 'novel', '程式碼', 'code', '網頁', 'web']}};
+var mime_arr = {jpg: 'image/jpeg', gif: 'image/gif', bmp: 'image/bmp', jpeg: 'image/jpeg', png: 'image/png', webm: 'video/webm', mp4: 'video/mp4', mts: 'model/vnd.mts', m2ts: 'video/MP2T', '3gp': 'video/3gpp', mov: 'video/quicktime', avi: 'video/x-msvideo', mpg: 'video/mpeg', wmv: 'video/x-ms-wmv', flv: 'video/x-flv', ogv: 'video/ogg', asf: 'video/x-ms-asf', mkv: 'video/x-matroska', m4v: 'video/x-m4v', rm: 'application/vnd.rn-realmedia', rmvb: 'application/vnd.rn-realmedia-vbr', rtf: 'application/rtf', txt: 'text/plain', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', pdf: 'application/pdf', odt: 'application/vnd.oasis.opendocument.text', htm: 'text/html', html: 'text/html', conf: 'text/plain', xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', xlsm: 'application/vnd.ms-excel.sheet.macroenabled.12', csv: 'text/csv', ods: 'application/vnd.oasis.opendocument.spreadsheet', ppt: 'application/vnd.ms-powerpoint', pps: 'application/vnd.ms-powerpoint', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', odp: 'application/vnd.oasis.opendocument.presentation'};
 type_arr.vlog = type_arr.video;
 var sub_arr = ['srt'];
 var util = require("../util/utility.js");
@@ -146,5 +147,18 @@ module.exports = {
         return str.replace(ext_filename, function (a) {
             return '.' + ext;
         });
+    },
+    mediaMIME: function(name) {
+        var result = name.match(ext_filename), extName = '';
+        if (result && result[1]) {
+            extName = result[1].toLowerCase();
+        } else {
+            return false;
+        }
+        if (mime_arr[extName]) {
+            return mime_arr[extName];
+        } else {
+            return false;
+        }
     }
 };

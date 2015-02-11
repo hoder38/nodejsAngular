@@ -45,6 +45,11 @@ module.exports = {
                         return Number(str);
                     }
                     break;
+                case 'int':
+                    if (Number(str) && Number(str) > 0) {
+                        return Number(str);
+                    }
+                    break;
                 case 'passwd':
                     if (str.match(/^(?=.*\d+)(?=.*[a-zA-Z])[0-9a-zA-Z!@#$%\!]{6,20}$/)) {
                         return str;

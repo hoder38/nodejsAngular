@@ -148,7 +148,21 @@
                                             <dt>Description:</dt>
                                             <dd ng-hide="user.edit">{{user.desc}}</dd>
                                             <dd ng-show="user.edit">
-                                                <input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.newPwdFocus = true" />
+                                                <input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.hasUnDay && (user.unDayFocus = true) || (user.newPwdFocus = true)" />
+                                            </dd>
+                                        </section>
+                                        <section ng-if="user.hasUnDay">
+                                            <dt>Unactive Day:</dt>
+                                            <dd ng-hide="user.edit">{{user.unDay}}</dd>
+                                            <dd ng-show="user.edit">
+                                                <input type="text" class="form-control" value="{{user.unDay}}" ng-model="user.unDay" focus-me="user.unDayFocus" ng-enter="user.unHitFocus = true" />
+                                            </dd>
+                                        </section>
+                                        <section ng-if="user.hasUnHit">
+                                            <dt>Unactive Hit:</dt>
+                                            <dd ng-hide="user.edit">{{user.unHit}}</dd>
+                                            <dd ng-show="user.edit">
+                                                <input type="text" class="form-control" value="{{user.unHit}}" ng-model="user.unHit" focus-me="user.unHitFocus" ng-enter="user.newPwdFocus = true" />
                                             </dd>
                                         </section>
                                         <dt>New Password:</dt>
@@ -185,7 +199,21 @@
                                             <td>Description:</td>
                                             <td ng-hide="user.edit">{{user.desc}}</td>
                                             <td ng-show="user.edit">
-                                                <input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.newPwdFocus = true" />
+                                                <input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.hasUnDay && (user.unDayFocus = true) || (user.newPwdFocus = true)" />
+                                            </td>
+                                        </tr>
+                                        <tr ng-if="user.hasUnDay">
+                                            <td>Unactive Day:</td>
+                                            <td ng-hide="user.edit">{{user.unDay}}</td>
+                                            <td ng-show="user.edit">
+                                                <input type="text" class="form-control" value="{{user.unDay}}" ng-model="user.unDay" focus-me="user.unDayFocus" ng-enter="user.unHitFocus = true" />
+                                            </td>
+                                        </tr>
+                                        <tr ng-if="user.hasUnHit">
+                                            <td>Unactive Hit:</td>
+                                            <td ng-hide="user.edit">{{user.unHit}}</td>
+                                            <td ng-show="user.edit">
+                                                <input type="text" class="form-control" value="{{user.unHit}}" ng-model="user.unHit" focus-me="user.unHitFocus" ng-enter="user.newPwdFocus = true" />
                                             </td>
                                         </tr>
                                         <tr>
