@@ -7,7 +7,7 @@ module.exports = {
     db_name: 'releasedb',
     db_ip: 'localhost',
     db_port: 27017,
-    session_name: 'releaseSessionStore',
+    session_name: 'mySessionStore',
     session_ip: 'localhost',
     session_port: 27017,
     xuite_parent_key: '777f8390c31dc934d2f6ee0d5af37afc',
