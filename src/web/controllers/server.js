@@ -568,7 +568,7 @@ function editFile(uid, newName, user, next, callback) {
                         if (item.adultonly === 1) {
                             result_tag.push('18禁');
                         } else {
-                            if (util.checkAdmin(2, req.user)) {
+                            if (util.checkAdmin(2, user)) {
                                 mediaTag.opt.push('18禁');
                             }
                         }
