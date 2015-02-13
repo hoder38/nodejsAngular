@@ -3,6 +3,17 @@
 /*global require, module,  __dirname */
 /*global console: false */
 
+var fs = require("fs"),
+    path = require('path');
+
+if(!fs.existsSync(path.join(__dirname, "../../../ver.js"))) {
+    throw new Error('can not find ver.js');
+}
+
+var config_type = require('../../../ver.js');
+
+var config_glb = require('../../../config/' + config_type.dev_type + '.js');
+
 var mongo = require("../models/mongo-tool.js");
 
 var api = require("../models/api-tool.js");
@@ -17,9 +28,8 @@ var mime = require('../util/mime.js');
 
 //var http = require('http'),
 var https = require('https'),
-    fs = require("fs"),
-    privateKey  = fs.readFileSync('/home/pi/app/privatekey.pem', 'utf8'),
-    certificate = fs.readFileSync('/home/pi/app/certification.pem', 'utf8'),
+    privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
+    certificate = fs.readFileSync(config_type.certificate, 'utf8'),
     credentials = {key: privateKey, cert: certificate},
     express = require('express'),
     crypto = require('crypto'),
@@ -30,25 +40,24 @@ var https = require('https'),
     //WebSocketServer = require('websocket').server;
     app = express(),
     server = https.createServer(credentials, app);
-    port = 443,
+    //port = 443,
     //server = http.createServer(app),
     //port = 80,
-    ip = '114.32.213.158',
     mkdirp = require('mkdirp'),
     encode = "utf8",
-    path = require('path'),
     viewsPath = path.join(__dirname, "../../../views"),
     staticPath = path.join(__dirname, "../../../public"),
     sessionStore = require("../models/session-tool.js")(express),
     sclients = [],
     jclients = [],
     clients = [];
+
 app.use(express.favicon());
 app.use(express.cookieParser());
 app.use(express.urlencoded());
 app.use(express.json());
 app.use(express.session(sessionStore.config));
-app.use(require('connect-multiparty')({ uploadDir: "/mnt/tmp" }));
+app.use(require('connect-multiparty')({ uploadDir: config_glb.nas_tmp }));
 //app.use(express.session({ secret: 'holyhoderhome' }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -1834,11 +1843,11 @@ app.get('/api/media/setTime/:id', function(req, res, next){
 app.get('/api/getUser', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get user');
-        var ws_url = 'wss://' + ip + ':8083';
+        var ws_url = 'wss://' + config_glb.ip + ':' + config_glb.wsj_port;
         if (util.checkAdmin(1, req.user)) {
-            ws_url = 'wss://' + ip + ':8081';
+            ws_url = 'wss://' + config_glb.ip + ':' + config_glb.wss_port;
         } else if (util.checkAdmin(2, req.user)) {
-            ws_url = 'wss://' + ip + ':8082';
+            ws_url = 'wss://' + config_glb.ip + ':' + config_glb.ws_port;
         }
         res.json({id: req.user.username, ws_url: ws_url});
     });
@@ -2311,19 +2320,19 @@ var server1 = https.createServer(credentials, function (req, res) {
 //var server1 = http.createServer(function (req, res) {
     res.writeHead(200);
     res.end("hello world websocket1\n");
-}).listen(8081);
+}).listen(config_glb.wss_port);
 
 var server2 = https.createServer(credentials, function (req, res) {
 //var server2 = http.createServer(function (req, res) {
     res.writeHead(200);
     res.end("hello world websocket2\n");
-}).listen(8082);
+}).listen(config_glb.ws_port);
 
 var server3 = https.createServer(credentials, function (req, res) {
 //var server3 = http.createServer(function (req, res) {
     res.writeHead(200);
     res.end("hello world websocket3\n");
-}).listen(8083);
+}).listen(config_glb.wsj_port);
 
 var wssServer = new WebSocketServer({
     server: server1
@@ -2365,7 +2374,7 @@ function sendWs(data, adultonly, auth) {
     }
 }
 
-server.listen(port, ip);
+server.listen(config_glb.port, config_glb.ip);
 
 wssServer.on('connection', function(ws) {
     ws.on('message', onWsConnMessage);
@@ -2384,4 +2393,4 @@ wsjServer.on('connection', function(ws) {
 
 console.log('start express server\n');
 
-console.log("Server running at http://" + ip + ":" + port + ' ' + new Date());
+console.log("Server running at https://" + config_glb.ip + ":" + config_glb.port + ' ' + new Date());

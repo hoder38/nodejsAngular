@@ -3,6 +3,9 @@ var crypto = require('crypto'),
     MobileDetect = require('mobile-detect');
 var mongo = require("../models/mongo-tool.js"),
     charsetDetector = require("node-icu-charset-detector");
+var config_type = require('../../../ver.js');
+
+var config_glb = require('../../../config/' + config_type.dev_type + '.js');
 module.exports = {
     toValidName: function(str) {
         var buf = new Buffer(str, 'utf-8');
@@ -124,7 +127,7 @@ module.exports = {
         var owner_md5 = crypto.createHash('md5').update(owner_S).digest('hex');
         var uid_S = uid.toString();
         var uid_md5 = crypto.createHash('md5').update(uid_S).digest('hex');
-        return path.join("/mnt/storage", owner_md5.substr(0, 2), owner_S, uid_md5.substr(0, 2), uid_S);
+        return path.join(config_glb.nas_prefix, owner_md5.substr(0, 2), owner_S, uid_md5.substr(0, 2), uid_S);
     },
     isMobile: function(agent) {
         var md = new MobileDetect(agent);

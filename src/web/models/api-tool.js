@@ -1,7 +1,12 @@
 //xuite get access_token url: http://my.xuite.net/service/account/authorize.php?response_type=code_and_token&client_id=e4a4666f807878269c1501529b6ab98d&redirect_uri=http://devbox.example.com/oauth2callback
-var api_key = "e4a4666f807878269c1501529b6ab98d";
 
-var api_secret = "1747608019";
+var config_type = require('../../../ver.js');
+
+var config_glb = require('../../../config/' + config_type.dev_type + '.js');
+
+var api_key = config_type.xuite_key;
+
+var api_secret = config_type.xuite_secret;
 
 var access_token = '';
 
@@ -13,7 +18,7 @@ var chunk = 200000000;
 
 var querystring = require('querystring');
 
-var parent_key = "777f8390c31dc934d2f6ee0d5af37afc";
+var parent_key = config_glb.xuite_parent_key;
 
 var util = require("../util/utility.js");
 

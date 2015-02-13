@@ -1,37 +1,47 @@
 var mongodb = require('mongodb');
 
-var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10});
+var config_type = require('../../../ver.js');
 
-var db = new mongodb.Db('mydb', mongodbServer, {safe: true});
+var config_glb = require('../../../config/' + config_type.dev_type + '.js');
+
+var mongodbServer = new mongodb.Server(config_glb.db_ip, config_glb.db_port, { auto_reconnect: true, poolSize: 10});
+
+var db = new mongodb.Db(config_glb.db_name, mongodbServer, {safe: true});
 
 var ObjectID = mongodb.ObjectID;
 
 db.open(function(err, con){
     if (!err) {
-        console.log('database connected');
-        db.collection('user', function(err, collection) {
-            if (err) {
-                throw new Error('user collection error');
-            }
-            collection.count(function(err, count) {
-                if (err) {
-                    throw new Error('count user collection error');
-                }
-                if (count === 0) {
-                    var crypto = require('crypto');
-                    var data = {};
-                    data['username'] = 'hoder';
-                    data['desc'] = 'owner';
-                    data['perm'] = '1';
-                    data['password'] = crypto.createHash('md5').update('test123').digest('hex');
-                    collection.insert(data, function(err,user){
-                        if(err) {
-                            throw new Error('creat owner error');
+        con.authenticate(config_type.db_username, config_type.db_pwd,function(err2,con2){
+            if (con2) {
+                console.log('database connected');
+                db.collection('user', function(err, collection) {
+                    if (err) {
+                        throw new Error('user collection error');
+                    }
+                    collection.count(function(err, count) {
+                        if (err) {
+                            throw new Error('count user collection error');
                         }
-                        console.log(user);
+                        if (count === 0) {
+                            var crypto = require('crypto');
+                            var data = {};
+                            data['username'] = 'hoder';
+                            data['desc'] = 'owner';
+                            data['perm'] = '1';
+                            data['password'] = crypto.createHash('md5').update('test123').digest('hex');
+                            collection.insert(data, function(err,user){
+                                if(err) {
+                                    throw new Error('creat owner error');
+                                }
+                                console.log(user);
+                            });
+                        }
                     });
-                }
-            });
+                });
+            } else {
+                console.log('database authentication error', err2);
+            }
         });
     } else {
         console.log('database connection error', err);

@@ -1,14 +1,24 @@
 var mongodb = require('mongodb');
 
-var mongodbServer = new mongodb.Server('localhost', 27017, { auto_reconnect: true, poolSize: 10});
+var config_type = require('../../../ver.js');
 
-var db = new mongodb.Db('mySessionStore', mongodbServer, {safe: true});
+var config_glb = require('../../../config/' + config_type.dev_type + '.js');
+
+var mongodbServer = new mongodb.Server(config_glb.session_ip, config_glb.session_port, { auto_reconnect: true, poolSize: 10});
+
+var db = new mongodb.Db(config_glb.session_name, mongodbServer, {safe: true});
 
 var ObjectID = mongodb.ObjectID;
 
 db.open(function(err, con){
     if (!err) {
-        console.log('session database connected');
+        con.authenticate(config_type.session_username, config_type.session_pwd,function(err2,con2){
+            if (con2) {
+                console.log('session database connected');
+            } else {
+                console.log('session database authentication error', err2);
+            }
+        });
     } else {
         console.log('session database connection error', err);
     }
@@ -18,12 +28,14 @@ module.exports = function(express) {
     var sessionsCollection = null;
     return {
         config: {
-            secret: 'holyhoderhome',
+            secret: config_type.session_secret,
             cookie: { maxAge: 86400 * 1000 },
             store: new mongoStore({
-                host: 'localhost',
-                port: 27017,
-                db: 'mySessionStore'
+                host: config_glb.session_ip,
+                port: config_glb.session_port,
+                db: config_glb.session_name,
+                username: config_type.session_username,
+                password: config_type.session_pwd,
             })
         },
         orig: function(functionName) {

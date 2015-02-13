@@ -6,22 +6,26 @@ var googleapis = require('googleapis'),
     mkdirp = require('mkdirp'),
     child_process = require('child_process');
 
+var config_type = require('../../../ver.js');
+
+var config_glb = require('../../../config/' + config_type.dev_type + '.js');
+
 var mongo = require("../models/mongo-tool.js");
 
 var util = require("../util/utility.js");
 
 var mime = require('../util/mime.js');
 
-var CLIENT_ID = '537839237466-r6ccblqrshrq21lrgqnkhs16t028hiuo.apps.googleusercontent.com',
-    CLIENT_SECRET = 'Ln7pV99aZMsBUxH4FknroVko',
-    REDIRECT_URL = 'http://devbox.example.com/oauth2callback';
+var CLIENT_ID = config_type.google_id,
+    CLIENT_SECRET = config_type.google_secret,
+    REDIRECT_URL = config_type.google_redirect;
 
 var OAuth2 = googleapis.auth.OAuth2;
 var oauth2Client = new OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
 var tokens = '';
 
-var media_folder = '0B_BstyDfOj4Rfk54SHNvU2ExV3RJTGlvWHljWTRHSXprcU0tM0o5QXR6c1dfWlNiVTV6VlE';
-var backup_folder = '0B_BstyDfOj4RfnU3RWRldjl0RGV4YUxxZlJTOEV1c1dDemRpa2c2cFphRDQ3bnI2M2RnblU';
+var media_folder = config_glb.google_media_folder;
+var backup_folder = config_glb.google_backup_folder;
 var upload_retry = 10;
 
 function sendAPI(method, data, callback) {
