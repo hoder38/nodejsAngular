@@ -13,6 +13,6 @@ module.exports = {
     xuite_parent_key: '777f8390c31dc934d2f6ee0d5af37afc',
     google_media_folder: '0B_BstyDfOj4Rfk54SHNvU2ExV3RJTGlvWHljWTRHSXprcU0tM0o5QXR6c1dfWlNiVTV6VlE',
     google_backup_folder: '0B_BstyDfOj4RfnU3RWRldjl0RGV4YUxxZlJTOEV1c1dDemRpa2c2cFphRDQ3bnI2M2RnblU',
-    nax_tmp: "/mnt/tmp",
-    nax_prefix: "/mnt/release/storage"
+    nas_tmp: "/mnt/tmp",
+    nas_prefix: "/mnt/release/storage"
 };
