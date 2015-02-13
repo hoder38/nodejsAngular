@@ -56,6 +56,7 @@ app.use(express.favicon());
 app.use(express.cookieParser());
 app.use(express.urlencoded());
 app.use(express.json());
+console.log(sessionStore.config.secret);
 app.use(express.session(sessionStore.config));
 app.use(require('connect-multiparty')({ uploadDir: config_glb.nas_tmp }));
 //app.use(express.session({ secret: 'holyhoderhome' }));
