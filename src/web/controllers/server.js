@@ -26,8 +26,8 @@ var util = require("../util/utility.js");
 
 var mime = require('../util/mime.js');
 
-//var http = require('http'),
-var https = require('https'),
+var http = require('http'),
+    https = require('https'),
     privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
     certificate = fs.readFileSync(config_type.certificate, 'utf8'),
     credentials = {key: privateKey, cert: certificate},
@@ -39,9 +39,9 @@ var https = require('https'),
     WebSocketServer = require('ws').Server,
     //WebSocketServer = require('websocket').server;
     app = express(),
-    server = https.createServer(credentials, app);
+    server = https.createServer(credentials, app),
     //port = 443,
-    //server = http.createServer(app),
+    serverHttp = http.createServer(app),
     //port = 80,
     mkdirp = require('mkdirp'),
     encode = "utf8",
@@ -765,7 +765,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
         oldType = mime.mediaType(oldName),
         mediaTag = {def:[], opt:[]};
     var isVideo = false;
-    if (mediaType && (status === 0 || status === 1 || status === 2 || status === 5) && (!oldType || (mediaType.ext !== oldType.ext))) {
+    if (mediaType && (status === 0 || status === 1 || status === 2 || status === 5 || status === 6) && (!oldType || (mediaType.ext !== oldType.ext))) {
         console.log(mediaType);
         switch(mediaType['type']) {
             case 'video':
@@ -2375,6 +2375,8 @@ function sendWs(data, adultonly, auth) {
 }
 
 server.listen(config_glb.port, config_glb.ip);
+
+serverHttp.listen(config_glb.http_port, config_glb.ip);
 
 wssServer.on('connection', function(ws) {
     ws.on('message', onWsConnMessage);

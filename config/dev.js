@@ -1,6 +1,7 @@
 module.exports = {
     ip: '114.32.213.158',
     port: 8080,
+    http_port: 8087,
     wss_port: 8084,
     ws_port: 8085,
     wsj_port: 8086,
