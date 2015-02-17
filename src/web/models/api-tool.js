@@ -14,7 +14,7 @@ var expire_in = '';
 
 var mongo = require("../models/mongo-tool.js");
 
-var chunk = 200000000;
+var chunk = 20000000;
 
 var querystring = require('querystring');
 
