@@ -592,9 +592,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.init = function(){
         this.page = 0;
         this.more = true;
-        if ($scope.dirList.length === 0){
-            getParentlist();
-        }
         if ($cookies.fileSortName === 'mtime') {
             this.fileSort.sort = 'mtime/';
             if ($cookies.fileSortType === 'desc') {
@@ -1225,7 +1222,16 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     item.name = result.name;
                     this_obj.itemNameNew = false;
                     if (this_obj.feedback.run) {
-                        this_obj.feedback.queue.push(result);
+                        if (this_obj.feedback.uid === result.id) {
+                            showFeedback(result);
+                        } else {
+                            var index = arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id');
+                            if (index === -1) {
+                                this_obj.feedback.queue.push(result);
+                            } else {
+                                this_obj.feedback.queue.splice(index, 1, result);
+                            }
+                        }
                     } else {
                         this_obj.feedback.run = true;
                         showFeedback(result);
@@ -1662,12 +1668,15 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.isLogin = false;
     $scope.isFull = false;
     $scope.loginFocus = {user: true, pwd:false};
-    $scope.alerts = [
-    ];
+    $scope.alerts = [];
     $scope.currentPage = 0;
-    $scope.alertTime;
+    var alertTime;
     addAlert = function(msg) {
         $scope.alerts.splice(0,0,{type: 'danger', msg: msg});
+        $timeout.cancel(alertTime);
+        alertTime = $timeout(function() {
+            $scope.alerts = [];
+        }, 5000);
     };
 
     $scope.closeAlert = function(index) {
@@ -1732,7 +1741,15 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     uploader.onSuccessItem = function(fileItem, response, status, headers) {
         console.info('onSuccessItem', fileItem, response, status, headers);
         if ($scope.feedback.run) {
-            $scope.feedback.queue.push(response);
+            if (this_obj.feedback.uid === response.id) {
+                showFeedback(result);
+            } else {
+                if (arrayObjectIndexOf(this_obj.feedback.queue, response.id, 'id') === -1) {
+                    this_obj.feedback.queue.push(response);
+                } else {
+                    this_obj.feedback.queue.splice(index, 1, response);
+                }
+            }
         } else {
             $scope.feedback.run = true;
             showFeedback(response);
@@ -1875,9 +1892,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
 
     showFeedback = function (response) {
         console.log(response);
-        if ($scope.dirList.length === 0){
-            getParentlist();
-        }
         $scope.feedback.name = response.name;
         $scope.feedback.uid = response.id;
         $scope.feedback.list = [];
@@ -1940,6 +1954,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
+                getParentlist();
+                getFeedbacks(1);
                 $scope.isLogin = true;
                 $scope.id = result.id;
                 var ws = new WebSocket(result.ws_url);
@@ -1969,7 +1985,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 addAlert('unknown API!!!');
             }
         });
-        getFeedbacks(1);
     }
 
     function getFeedbacks(init) {

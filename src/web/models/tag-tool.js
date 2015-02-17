@@ -263,7 +263,7 @@ module.exports = function(collection) {
                             }
                         }
                     } else {
-                        if (item[user._id.toString()].indexOf(tagType.tag.tags) === -1) {
+                        if (item[user._id.toString()].indexOf(tagType.tag.tags) !== -1) {
                             tagType.tag[user._id.toString()] = tagType.tag.tags;
                             mongo.orig("update", collection, { _id: id }, {$pull: tagType.tag}, function(err, item2){
                                 if(err) {
