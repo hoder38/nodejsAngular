@@ -276,6 +276,9 @@
                     <td class="item-name" ng-if="item.status === 6 && !item.media" ng-click="showMedia(item, 'present')">
                         <i class="glyphicon glyphicon-list-alt item-icon"></i>{{item.name}}
                     </td>
+                    <td class="item-name" ng-if="item.status === 7 && !item.media" ng-click="showUrl(item)">
+                        <i class="glyphicon glyphicon-bookmark item-icon"></i>{{item.name}}
+                    </td>
                     <td class="item-mtime">{{item.utime}}</td>
                     <td class="item-count">{{item.count}}</td>
                     <td class="item-tool">

@@ -282,9 +282,19 @@ module.exports = {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
-                            setTimeout(function(){
-                                callback(null);
-                            }, 0);
+                            var filename = null;
+                            if (res.headers['content-disposition']) {
+                                filename = res.headers['content-disposition'].match(/attachment; filename=(.*)/);
+                            }
+                            if (filename) {
+                                setTimeout(function(){
+                                    callback(null, urlParse.pathname, filename[1]);
+                                }, 0);
+                            } else {
+                                setTimeout(function(){
+                                    callback(null, urlParse.pathname);
+                                }, 0);
+                            }
                         }
                     });
                 });

@@ -564,6 +564,7 @@ audio.full-media-screen {
 .feedback-tag {
     word-break: break-all;
     word-wrap: break-word;
+    height: auto;
 }
 
 #tool-list {

@@ -1270,6 +1270,10 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         $window.location.href = '#image';
     }
 
+    $scope.showUrl = function(item) {
+        $window.open(decodeURIComponent(item.url));
+    }
+
     $scope.showMedia = function(item, type) {
         var preType = '', status = 0;
         switch (type) {
@@ -1741,13 +1745,13 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     uploader.onSuccessItem = function(fileItem, response, status, headers) {
         console.info('onSuccessItem', fileItem, response, status, headers);
         if ($scope.feedback.run) {
-            if (this_obj.feedback.uid === response.id) {
-                showFeedback(result);
+            if ($scope.feedback.uid === response.id) {
+                showFeedback(response);
             } else {
-                if (arrayObjectIndexOf(this_obj.feedback.queue, response.id, 'id') === -1) {
-                    this_obj.feedback.queue.push(response);
+                if (arrayObjectIndexOf($scope.feedback.queue, response.id, 'id') === -1) {
+                    $scope.feedback.queue.push(response);
                 } else {
-                    this_obj.feedback.queue.splice(index, 1, response);
+                    $scope.feedback.queue.splice(index, 1, response);
                 }
             }
         } else {
@@ -1942,6 +1946,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
     $scope.dirList = [];
     $scope.dirEdit = false;
+    $scope.inputUrl = '';
+    $scope.disableUrlUpload = false;
+    $scope.disableUrlSave = false;
 
     indexInit();
 
@@ -1985,6 +1992,101 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 addAlert('unknown API!!!');
             }
         });
+    }
+
+    $scope.urlUpload = function() {
+        console.log(this.inputUrl);
+        var url = this.inputUrl;
+        var this_obj = this;
+        this.inputUrl = '';
+        if (isValidString(url, 'url') && !this.disableUrlUpload) {
+            this.disableUrlUpload = true;
+            var api = $resource('/api/upload/url', {}, {
+                'uploadUrl': { method:'POST' }
+            });
+            api.uploadUrl({url: url}, function (result) {
+                this_obj.disableUrlUpload = false;
+                this_obj.inputUrl = '';
+                if (result.loginOK) {
+                    $window.location.href = $location.path();
+                } else {
+                    console.log(result);
+                    if (this_obj.feedback.run) {
+                        if (this_obj.feedback.uid === result.id) {
+                            showFeedback(result);
+                        } else {
+                            if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                this_obj.feedback.queue.push(result);
+                            } else {
+                                this_obj.feedback.queue.splice(index, 1, result);
+                            }
+                        }
+                    } else {
+                        this_obj.feedback.run = true;
+                        showFeedback(result);
+                    }
+                }
+            }, function(errorResult) {
+                this_obj.disableUrlUpload = false;
+                console.log(errorResult);
+                if (errorResult.status === 400) {
+                    addAlert(errorResult.data);
+                } else if (errorResult.status === 403) {
+                    addAlert('unknown API!!!');
+                } else if (errorResult.status === 401) {
+                    $window.location.href = $location.path();
+                }
+            });
+        } else {
+            addAlert("invalid url!!!");
+        }
+    }
+
+    $scope.urlSave = function() {
+        console.log(this.inputUrl);
+        var url = this.inputUrl;
+        this.inputUrl = '';
+        var this_obj = this;
+        if (isValidString(url, 'url') && !this.disableUrlSave) {
+            this.disableUrlSave = true;
+            var api = $resource('/api/addurl', {}, {
+                'addurl': { method:'POST' }
+            });
+            api.addurl({url: url}, function (result) {
+                this_obj.disableUrlSave = false;
+                if (result.loginOK) {
+                    $window.location.href = $location.path();
+                } else {
+                    console.log(result);
+                    if (this_obj.feedback.run) {
+                        if (this_obj.feedback.uid === result.id) {
+                            showFeedback(result);
+                        } else {
+                            if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                this_obj.feedback.queue.push(result);
+                            } else {
+                                this_obj.feedback.queue.splice(index, 1, result);
+                            }
+                        }
+                    } else {
+                        this_obj.feedback.run = true;
+                        showFeedback(result);
+                    }
+                }
+            }, function(errorResult) {
+                this_obj.disableUrlSave = false;
+                console.log(errorResult);
+                if (errorResult.status === 400) {
+                    addAlert(errorResult.data);
+                } else if (errorResult.status === 403) {
+                    addAlert('unknown API!!!');
+                } else if (errorResult.status === 401) {
+                    $window.location.href = $location.path();
+                }
+            });
+        } else {
+            addAlert("invalid url!!!");
+        }
     }
 
     function getFeedbacks(init) {
