@@ -1925,7 +1925,7 @@ app.post('/api/upload/url', function(req, res, next){
                     if (err) {
                         util.handleError(err, next, res);
                     }
-                    mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(req.user.username));
+                    mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(req.user.username), 'url upload');
                     var tags = tagTool.searchTags(req.session, 'parent');
                     if (tags) {
                         var parentList = tags.getArray();
