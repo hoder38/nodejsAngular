@@ -1467,7 +1467,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             this.$parent.toolList.upload = false;
             this.$parent.toolList.delMedia = false;
         } else {
-            this.$parent.toolList.download = true;
+            if (item.status === 7) {
+                this.$parent.toolList.download = false;
+            } else {
+                this.$parent.toolList.download = true;
+            }
             this.$parent.toolList.dir = false;
             if (item.isOwn) {
                 this.$parent.toolList.edit = true;

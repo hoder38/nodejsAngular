@@ -26,6 +26,7 @@ var tokens = '';
 
 var media_folder = config_glb.google_media_folder;
 var backup_folder = config_glb.google_backup_folder;
+var auto_folder = '0B_BstyDfOj4RfkU3aGpIRDVXcEwxSkdQeEJnTWM0cG0tNk9Md0VoZ21RTkxGcUNsQUVyaW8';
 var upload_retry = 10;
 
 function sendAPI(method, data, callback) {
@@ -112,6 +113,20 @@ function sendAPI(method, data, callback) {
                 }
             });
         }
+        break;
+        case 'list':
+        max = 100;
+        if (data['max']) {
+            max = data['max'];
+        }
+        drive.files.list({q: "'" + auto_folder + "' in parents", maxResults: 10}, function(err, metadata) {
+            if (err) {
+                util.handleError(err, callback, callback, null);
+            }
+            setTimeout(function(){
+                callback(null, metadata.items);
+            }, 0);
+        });
         break;
         case 'delete':
         if (!data['fileId']) {
@@ -441,6 +456,11 @@ module.exports = {
     },
     googleDownloadMedia: function(threshold, alternate, key, filePath, hd, callback) {
         var this_obj = this;
+        if (hd === 1080) {
+            threshold = 3*threshold;
+        } else if (hd === 720) {
+            threshold = 2*threshold;
+        }
         this.googleDownload("https://drive.google.com/thumbnail?id=" + key, filePath + "_s.jpg", function(err) {
             if (err) {
                 util.handleError(err, callback, callback);
@@ -456,7 +476,7 @@ module.exports = {
                 } else if(hd === 720) {
                     media_code = 22;
                 } else {
-                    media_code = 59;
+                    media_code = 18;
                 }
                 child_process.exec(cmdline, function (err, output) {
                     if (err) {

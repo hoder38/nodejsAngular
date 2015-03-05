@@ -518,8 +518,12 @@ module.exports = {
                     time = time * 2;
                     console.log(time);
                     var timeout = 600000;
-                    if (threshold > 600000) {
-                        timeout = threshold;
+                    var real_threshold = threshold;
+                    if (hd) {
+                        real_threshold = 2*threshold;
+                    }
+                    if (real_threshold > 600000) {
+                        timeout = real_threshold;
                     }
                     if (time < timeout) {
                         this_obj.xuiteDownloadMedia(time, threshold, key, filePath, is_thumb, is_hd, callback);

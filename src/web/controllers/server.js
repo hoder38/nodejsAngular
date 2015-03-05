@@ -26,8 +26,8 @@ var util = require("../util/utility.js");
 
 var mime = require('../util/mime.js');
 
-var http = require('http'),
-    https = require('https'),
+//var http = require('http'),
+var https = require('https'),
     privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
     certificate = fs.readFileSync(config_type.certificate, 'utf8'),
     credentials = {key: privateKey, cert: certificate},
@@ -39,9 +39,9 @@ var http = require('http'),
     WebSocketServer = require('ws').Server,
     //WebSocketServer = require('websocket').server;
     app = express(),
-    server = https.createServer(credentials, app),
+    server = https.createServer(credentials, app);
     //port = 443,
-    serverHttp = http.createServer(app),
+    //server = http.createServer(app),
     //port = 80,
     mkdirp = require('mkdirp'),
     encode = "utf8",
@@ -568,7 +568,7 @@ function editFile(uid, newName, user, next, callback) {
                         if (item.adultonly === 1) {
                             result_tag.push('18禁');
                         } else {
-                            if (util.checkAdmin(2, user)) {
+                            if (util.checkAdmin(2, req.user)) {
                                 mediaTag.opt.push('18禁');
                             }
                         }
@@ -657,70 +657,59 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                 if (item.recycle !== 4) {
                     util.handleError({hoerror: 2, msg: 'recycle file first!!!'}, next, res);
                 }
-                if (item.status === 7) {
-                    mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
-                        if(err) {
+                var del_arr = [filePath];
+                if (fs.existsSync(filePath + '.jpg')) {
+                    del_arr.push(filePath + '.jpg');
+                }
+                if (item.present) {
+                    for(var i = 1; i <= item.present; i++) {
+                        if (fs.existsSync(filePath + '.' + i + '.svg')) {
+                            del_arr.push(filePath + '.' + i + '.svg');
+                        }
+                    }
+                }
+                /*
+                if (fs.existsSync(filePath + '.htm')) {
+                    del_arr.push(filePath + '.htm');
+                }
+                if (fs.existsSync(filePath + '.pdf')) {
+                    del_arr.push(filePath + '.pdf');
+                }*/
+                if (fs.existsSync(filePath + '_s.jpg')) {
+                    del_arr.push(filePath + '_s.jpg');
+                }
+                if (fs.existsSync(filePath + '.srt')) {
+                    del_arr.push(filePath + '.srt');
+                }
+                if (fs.existsSync(filePath + '.srt1')) {
+                    del_arr.push(filePath + '.srt1');
+                }
+                if (fs.existsSync(filePath + '.vtt')) {
+                    del_arr.push(filePath + '.vtt');
+                }
+                var index = 0;
+                console.log(del_arr);
+                deleteFolderRecursive(filePath + '_doc');
+                recur_del(del_arr[0]);
+                function recur_del(delPath) {
+                    fs.unlink(delPath, function (err) {
+                        if (err) {
                             util.handleError(err, next, res);
                         }
-                        console.log('perm delete file');
-                        sendWs({type: 'file', data: item._id}, 1, 1);
-                        res.json({apiOK: true});
-                    });
-                } else {
-                    var del_arr = [filePath];
-                    if (fs.existsSync(filePath + '.jpg')) {
-                        del_arr.push(filePath + '.jpg');
-                    }
-                    if (item.present) {
-                        for(var i = 1; i <= item.present; i++) {
-                            if (fs.existsSync(filePath + '.' + i + '.svg')) {
-                                del_arr.push(filePath + '.' + i + '.svg');
-                            }
+                        index++;
+                        if (index < del_arr.length) {
+                            recur_del(del_arr[index]);
+                        } else {
+                            mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
+                                if(err) {
+                                    util.handleError(err, next, res);
+                                }
+                                console.log('perm delete file');
+                                sendWs({type: 'file', data: item._id}, 1, 1);
+                                res.json({apiOK: true});
+                            });
                         }
-                    }
-                    /*
-                    if (fs.existsSync(filePath + '.htm')) {
-                        del_arr.push(filePath + '.htm');
-                    }
-                    if (fs.existsSync(filePath + '.pdf')) {
-                        del_arr.push(filePath + '.pdf');
-                    }*/
-                    if (fs.existsSync(filePath + '_s.jpg')) {
-                        del_arr.push(filePath + '_s.jpg');
-                    }
-                    if (fs.existsSync(filePath + '.srt')) {
-                        del_arr.push(filePath + '.srt');
-                    }
-                    if (fs.existsSync(filePath + '.srt1')) {
-                        del_arr.push(filePath + '.srt1');
-                    }
-                    if (fs.existsSync(filePath + '.vtt')) {
-                        del_arr.push(filePath + '.vtt');
-                    }
-                    var index = 0;
-                    console.log(del_arr);
-                    deleteFolderRecursive(filePath + '_doc');
-                    recur_del(del_arr[0]);
-                    function recur_del(delPath) {
-                        fs.unlink(delPath, function (err) {
-                            if (err) {
-                                util.handleError(err, next, res);
-                            }
-                            index++;
-                            if (index < del_arr.length) {
-                                recur_del(del_arr[index]);
-                            } else {
-                                mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
-                                    if(err) {
-                                        util.handleError(err, next, res);
-                                    }
-                                    console.log('perm delete file');
-                                    sendWs({type: 'file', data: item._id}, 1, 1);
-                                    res.json({apiOK: true});
-                                });
-                            }
-                        });
-                    }
+                    });
                 }
             } else if (req.params.recycle === '0'){
                 if (!util.checkAdmin(1, req.user) && !req.user._id.equals(item.owner)) {
@@ -744,136 +733,118 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                 recur_backup();
             }
             function recur_backup() {
-                if (item.status === 7) {
-                    mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 4}}, function(err, item3){
-                        console.log(recycle);
-                        if(err) {
-                            util.handleError(err, function(err) {
-                                console.log(err);
-                            });
-                        }
-                        sendWs({type: 'file', data: item._id}, item.adultonly);
-                    });
-                } else {
-                    googleApi.googleBackup(item._id, item.name, filePath, item.tags, recycle, function(err) {
-                        if(err) {
-                            util.handleError(err, function(err) {
-                                console.log(err);
-                            });
-                        } else {
-                            recycle++;
-                            mongo.orig("update", "storage", { _id: id }, {$set: {recycle: recycle}}, function(err, item3){
-                                console.log(recycle);
-                                if(err) {
-                                    util.handleError(err, function(err) {
-                                        console.log(err);
-                                    });
-                                } else {
-                                    sendWs({type: 'file', data: item._id}, item.adultonly);
-                                    if (recycle < 4) {
-                                        recur_backup();
-                                    }
+                googleApi.googleBackup(item._id, item.name, filePath, item.tags, recycle, function(err) {
+                    if(err) {
+                        util.handleError(err, function(err) {
+                            console.log(err);
+                        });
+                    } else {
+                        recycle++;
+                        mongo.orig("update", "storage", { _id: id }, {$set: {recycle: recycle}}, function(err, item3){
+                            console.log(recycle);
+                            if(err) {
+                                util.handleError(err, function(err) {
+                                    console.log(err);
+                                });
+                            } else {
+                                sendWs({type: 'file', data: item._id}, item.adultonly);
+                                if (recycle < 4) {
+                                    recur_backup();
                                 }
-                            });
-                        }
-                    });
-                }
+                            }
+                        });
+                    }
+                });
             }
         });
     });
 });
 
 function handleTag(filePath, DBdata, newName, oldName, status, callback){
-    if (status === 7) {
-        setTimeout(function(){
-            callback(null, false, mime.mediaTag('url'), DBdata);
-        }, 0);
-    } else {
-        var mediaType = mime.mediaType(newName),
-            oldType = mime.mediaType(oldName),
-            mediaTag = {def:[], opt:[]};
-        var isVideo = false;
-        if (mediaType && (status === 0 || status === 1 || status === 2 || status === 5 || status === 6) && (!oldType || (mediaType.ext !== oldType.ext))) {
-            console.log(mediaType);
-            switch(mediaType['type']) {
-                case 'video':
-                case 'vlog':
-                case 'music':
-                    new Transcoder(filePath)
-                    .on('metadata', function(meta) {
-                        console.log(meta);
-                        if (meta.input.streams) {
-                            for (var i in meta.input.streams) {
-                                console.log(meta.input.streams[i]);
-                                if (meta.input.streams[i].size) {
-                                    if (meta.input.streams[i].size.height >= 1080) {
-                                        if (mediaType['type'] === 'vlog') {
-                                            mediaType['hd'] = 1;
-                                        } else {
-                                            mediaType['hd'] = 1080;
-                                        }
-                                    } else if (meta.input.streams[i].size.height >= 720) {
-                                        if (mediaType['type'] === 'vlog') {
-                                            mediaType['hd'] = 1;
-                                        } else {
-                                            mediaType['hd'] = 720;
-                                        }
+    var mediaType = mime.mediaType(newName),
+        oldType = mime.mediaType(oldName),
+        mediaTag = {def:[], opt:[]};
+    var isVideo = false;
+    if (mediaType && (status === 0 || status === 1 || status === 2 || status === 5) && (!oldType || (mediaType.ext !== oldType.ext))) {
+        console.log(mediaType);
+        switch(mediaType['type']) {
+            case 'video':
+            case 'vlog':
+            case 'music':
+                new Transcoder(filePath)
+                .on('metadata', function(meta) {
+                    console.log(meta);
+                    if (meta.input.streams) {
+                        for (var i in meta.input.streams) {
+                            console.log(meta.input.streams[i]);
+                            if (meta.input.streams[i].size) {
+                                if (meta.input.streams[i].size.height >= 1080) {
+                                    if (mediaType['type'] === 'vlog') {
+                                        mediaType['hd'] = 1;
                                     } else {
-                                        mediaType['hd'] = 0;
+                                        mediaType['hd'] = 1080;
                                     }
-                                    isVideo = true;
+                                } else if (meta.input.streams[i].size.height >= 720) {
+                                    if (mediaType['type'] === 'vlog') {
+                                        mediaType['hd'] = 1;
+                                    } else {
+                                        mediaType['hd'] = 720;
+                                    }
+                                } else {
+                                    mediaType['hd'] = 0;
                                 }
+                                isVideo = true;
                             }
-                            mediaTag = mime.mediaTag(mediaType['type']);
-                            if (!isVideo && mediaType['type'] === 'music') {
-                                DBdata['status'] = 4;
-                                mediaType = false;
-                                console.log(mediaTag);
-                            } else if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
-                                mediaType['time'] = meta.input.duration;
-                                DBdata['status'] = 1;
-                                if (mediaType['time'] < 20 * 60 * 1000) {
-                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 1));
-                                } else if (mediaType['time'] < 40 * 60 * 1000) {
-                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
-                                } else if (mediaType['time'] < 60 * 60 * 1000) {
-                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
-                                }
-                                console.log(mediaTag);
-                                DBdata['mediaType'] = mediaType;
-                            } else {
-                                mediaType = false;
+                        }
+                        mediaTag = mime.mediaTag(mediaType['type']);
+                        if (!isVideo && mediaType['type'] === 'music') {
+                            DBdata['status'] = 4;
+                            mediaType = false;
+                            console.log(mediaTag);
+                        } else if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
+                            mediaType['time'] = meta.input.duration;
+                            DBdata['status'] = 1;
+                            if (mediaType['time'] < 20 * 60 * 1000) {
+                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 1));
+                            } else if (mediaType['time'] < 40 * 60 * 1000) {
+                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
+                            } else if (mediaType['time'] < 60 * 60 * 1000) {
+                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
                             }
+                            console.log(mediaTag);
+                            DBdata['mediaType'] = mediaType;
                         } else {
                             mediaType = false;
                         }
-                        setTimeout(function(){
-                            callback(null, mediaType, mediaTag, DBdata);
-                        }, 0);
-                    }).on('error', function(err) {
-                        console.log(err);
-                    }).exec();
-                    return;
-                case 'image':
-                case 'doc':
-                case 'rawdoc':
-                case 'sheet':
-                case 'present':
-                    DBdata['status'] = 1;
-                    mediaTag = mime.mediaTag(mediaType['type']);
-                    DBdata['mediaType'] = mediaType;
-                    break;
-                default:
-                    util.handleError({hoerror: 2, msg: 'unknown media type!!!'}, callback, callback, null, null, null);
-            }
-            console.log(mediaTag);
-        } else {
-            mediaType = false;
+                    } else {
+                        mediaType = false;
+                    }
+                    setTimeout(function(){
+                        callback(null, mediaType, mediaTag, DBdata);
+                    }, 0);
+                }).on('error', function(err) {
+                    console.log(err);
+                }).exec();
+                return;
+            case 'image':
+            case 'doc':
+            case 'rawdoc':
+            case 'sheet':
+            case 'present':
+                DBdata['status'] = 1;
+                mediaTag = mime.mediaTag(mediaType['type']);
+                DBdata['mediaType'] = mediaType;
+                break;
+            default:
+                util.handleError({hoerror: 2, msg: 'unknown media type!!!'}, callback, callback, null, null, null);
         }
-        setTimeout(function(){
-            callback(null, mediaType, mediaTag, DBdata);
-        }, 0);
+        console.log(mediaTag);
+    } else {
+        mediaType = false;
     }
+    setTimeout(function(){
+        callback(null, mediaType, mediaTag, DBdata);
+    }, 0);
 }
 
 app.post('/upload/subtitle/:uid', function(req, res, next) {
@@ -1062,6 +1033,7 @@ app.post('/upload/file', function(req, res, next){
         };
     });
 });
+
 
 function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user, callback) {
     if (mediaType) {
@@ -1282,7 +1254,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
         }
         googleApi.googleDownloadMedia(mediaType['time'], mediaType['thumbnail'], key, filePath, mediaType['hd'], function(err) {
             if(err) {
-                util.handleError(err, callback, callback);
+                util.handleError(err, callback, errerMedia, fileID, callback);
             }
             var data = {fileId: key};
             googleApi.googleApi('delete', data, function(err) {
@@ -1308,7 +1280,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
     } else if (mediaType['type'] === 'doc' || mediaType['type'] === 'rawdoc' || mediaType['type'] === 'sheet') {
         googleApi.googleDownloadDoc(mediaType['thumbnail'], key, filePath, mediaType['ext'], function(err) {
             if(err) {
-                util.handleError(err, callback, callback);
+                util.handleError(err, callback, errerMedia, fileID, callback);
             }
             var data = {fileId: key};
             googleApi.googleApi('delete', data, function(err) {
@@ -1604,7 +1576,7 @@ app.get('/api/feedback', function (req, res, next) {
 //user_id是改不是owner的時候用
 function getFeedback(item, callback, user) {
     var filePath = util.getFileLocation(item.owner, item._id);
-    handleTag(filePath, {}, item.name, '', item.status, function(err, mediaType, mediaTag, DBdata) {
+    handleTag(filePath, {}, item.name, '', 0, function(err, mediaType, mediaTag, DBdata) {
         if (err) {
             util.handleError(err, callback, callback);
         }
@@ -1864,184 +1836,6 @@ app.get('/api/media/setTime/:id', function(req, res, next){
             } else {
                 res.json({time: item.recordTime});
             }
-        });
-    });
-});
-
-app.post('/api/upload/url', function(req, res, next){
-    checkLogin(req, res, next, function(req, res, next) {
-        console.log('upload url');
-        console.log(req.body);
-        var url = util.isValidString(req.body.url, 'url');
-        if (url === false) {
-            util.handleError({hoerror: 2, msg: "url is not vaild"}, next, res);
-        }
-        var oOID = mongo.objectID();
-        var filePath = util.getFileLocation(req.user._id, oOID);
-        var folderPath = path.dirname(filePath);
-        console.log(filePath);
-        console.log(folderPath);
-        if (!fs.existsSync(folderPath)) {
-            mkdirp(folderPath, function(err) {
-                if(err) {
-                    util.handleError(err, next, res);
-                }
-                streamClose();
-            });
-        } else {
-            streamClose();
-        }
-        function streamClose(){
-            api.xuiteDownload(decodeURIComponent(url), filePath, function(err, pathname, filename) {
-                if (err) {
-                    util.handleError(err, next, res);
-                }
-                console.log('close');
-                if (!filename) {
-                    filename = path.basename(pathname);
-                }
-                var name = util.toValidName(filename);
-                var utime = Math.round(new Date().getTime() / 1000);
-                var oUser_id = req.user._id;
-                var ownerTag = [];
-                var data = {};
-                data['_id'] = oOID;
-                data['name'] = name;
-                data['owner'] = oUser_id;
-                data['utime'] = utime;
-                //data['mtime'] = utime;
-                var stats = fs.statSync(filePath);
-                data['size'] = stats["size"];
-                data['count'] = 0;
-                data['recycle'] = 0;
-                if (util.checkAdmin(2 ,req.user)) {
-                    data['adultonly'] = 1;
-                } else {
-                    data['adultonly'] = 0;
-                }
-                data['untag'] = 1;
-                data['status'] = 0;//media type
-                handleTag(filePath, data, name, '', 0, function(err, mediaType, mediaTag, DBdata) {
-                    if (err) {
-                        util.handleError(err, next, res);
-                    }
-                    mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(req.user.username), 'url upload');
-                    var tags = tagTool.searchTags(req.session, 'parent');
-                    if (tags) {
-                        var parentList = tags.getArray();
-                        console.log(parentList);
-                        var normal = '';
-                        for (var i in parentList.cur) {
-                            normal = tagTool.normalizeTag(parentList.cur[i]);
-                            if (mediaTag.def.indexOf(normal) === -1) {
-                                mediaTag.def.push(normal);
-                            }
-                        }
-                        var temp_tag = [];
-                        for (var j in mediaTag.opt) {
-                            if (mediaTag.def.indexOf(mediaTag.opt[j]) === -1) {
-                                temp_tag.push(mediaTag.opt[j]);
-                                //mediaTag.opt.splice(j, 1);
-                            }
-                        }
-                        mediaTag.opt = temp_tag;
-                    }
-                    DBdata['tags'] = mediaTag.def;
-                    DBdata[oUser_id] = mediaTag.def;
-                    mongo.orig("insert", "storage", DBdata, function(err, item){
-                        if(err) {
-                            util.handleError(err, next, res);
-                        }
-                        console.log(item);
-                        console.log('save end');
-                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                        if (util.checkAdmin(2 ,req.user)) {
-                            mediaTag.def.push('18禁');
-                        }
-                        res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
-                        handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
-                            sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                            if(err) {
-                                util.handleError(err, function(err) {
-                                    console.log(err);
-                                });
-                            }
-                            console.log('transcode done');
-                        });
-                    });
-                });
-            });
-        }
-    });
-});
-
-app.post('/api/addurl', function(req, res, next){
-    checkLogin(req, res, next, function(req, res, next) {
-        console.log('add url');
-        console.log(req.body);
-        var url = util.isValidString(req.body.url, 'url');
-        if (url === false) {
-            util.handleError({hoerror: 2, msg: "url is not vaild"}, next, res);
-        }
-        var oOID = mongo.objectID();
-        var utime = Math.round(new Date().getTime() / 1000);
-        var oUser_id = req.user._id;
-        var ownerTag = [];
-        var data = {};
-        data['_id'] = oOID;
-        data['name'] = url;
-        data['owner'] = oUser_id;
-        data['utime'] = utime;
-        data['url'] = url;
-        data['size'] = 0;
-        data['count'] = 0;
-        data['recycle'] = 0;
-        if (util.checkAdmin(2 ,req.user)) {
-            data['adultonly'] = 1;
-        } else {
-            data['adultonly'] = 0;
-        }
-        data['untag'] = 1;
-        data['status'] = 7;//media type
-        handleTag('', data, url, '', 7, function(err, mediaType, mediaTag, DBdata) {
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            mediaTag.def.push(tagTool.normalizeTag(url), tagTool.normalizeTag(req.user.username));
-            var tags = tagTool.searchTags(req.session, 'parent');
-            if (tags) {
-                var parentList = tags.getArray();
-                console.log(parentList);
-                var normal = '';
-                for (var i in parentList.cur) {
-                    normal = tagTool.normalizeTag(parentList.cur[i]);
-                    if (mediaTag.def.indexOf(normal) === -1) {
-                        mediaTag.def.push(normal);
-                    }
-                }
-                var temp_tag = [];
-                for (var j in mediaTag.opt) {
-                    if (mediaTag.def.indexOf(mediaTag.opt[j]) === -1) {
-                        temp_tag.push(mediaTag.opt[j]);
-                        //mediaTag.opt.splice(j, 1);
-                    }
-                }
-                mediaTag.opt = temp_tag;
-            }
-            data['tags'] = mediaTag.def;
-            data[oUser_id] = mediaTag.def;
-            mongo.orig("insert", "storage", data, function(err, item){
-                if(err) {
-                    util.handleError(err, next, res);
-                }
-                console.log(item);
-                console.log('save end');
-                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                if (util.checkAdmin(2 ,req.user)) {
-                    mediaTag.def.push('18禁');
-                }
-                res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
-            });
         });
     });
 });
@@ -2443,9 +2237,6 @@ function getStorageItem(user, items, mediaHandle) {
                 if (items[i].present) {
                     data.present = items[i].present;
                 }
-                if (items[i].url) {
-                    data.url = items[i].url;
-                }
                 itemList.push(data);
             }
         } else {
@@ -2456,9 +2247,6 @@ function getStorageItem(user, items, mediaHandle) {
                 var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, utime: items[i].utime, count: items[i].count, media: items[i].mediaType};
                 if (items[i].present) {
                     data.present = items[i].present;
-                }
-                if (items[i].url) {
-                    data.url = items[i].url;
                 }
                 if (user._id.equals(items[i].owner)) {
                     data.isOwn = true;
@@ -2476,9 +2264,6 @@ function getStorageItem(user, items, mediaHandle) {
                 if (items[i].present) {
                     data.present = items[i].present;
                 }
-                if (items[i].url) {
-                    data.url = items[i].url;
-                }
                 itemList.push(data);
             }
         } else {
@@ -2489,9 +2274,6 @@ function getStorageItem(user, items, mediaHandle) {
                 var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, utime: items[i].utime, count: items[i].count};
                 if (items[i].present) {
                     data.present = items[i].present;
-                }
-                if (items[i].url) {
-                    data.url = items[i].url;
                 }
                 if (user._id.equals(items[i].owner)) {
                     data.isOwn = true;
@@ -2593,8 +2375,6 @@ function sendWs(data, adultonly, auth) {
 }
 
 server.listen(config_glb.port, config_glb.ip);
-
-serverHttp.listen(config_glb.http_port, config_glb.ip);
 
 wssServer.on('connection', function(ws) {
     ws.on('message', onWsConnMessage);
