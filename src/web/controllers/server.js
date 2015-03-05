@@ -608,7 +608,7 @@ app.put('/api/recoverFile/:uid', function(req, res, next){
             if (!item) {
                 util.handleError({hoerror: 2, msg: 'file can not be fund!!!'}, next, res);
             }
-            if (item.recycle !== 1 || item.recycle !== 2 || item.recycle !== 3 || item.recycle !== 4) {
+            if (item.recycle !== 1 && item.recycle !== 2 && item.recycle !== 3 && item.recycle !== 4) {
                 util.handleError({hoerror: 2, msg: 'recycle file first!!!'}, next, res);
             }
             mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 0}}, function(err, item2){
