@@ -781,6 +781,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                                 if (meta.input.streams[i].size.height >= 1080) {
                                     if (mediaType['type'] === 'vlog') {
                                         mediaType['hd'] = 1;
+<<<<<<< Updated upstream
                                     } else {
                                         mediaType['hd'] = 1080;
                                     }
@@ -790,6 +791,18 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                                     } else {
                                         mediaType['hd'] = 720;
                                     }
+
+=======
+                                    } else {
+                                        mediaType['hd'] = 1080;
+                                    }
+                                } else if (meta.input.streams[i].size.height >= 720) {
+                                    if (mediaType['type'] === 'vlog') {
+                                        mediaType['hd'] = 1;
+                                    } else {
+                                        mediaType['hd'] = 720;
+                                    }
+>>>>>>> Stashed changes
                                 } else {
                                     mediaType['hd'] = 0;
                                 }
