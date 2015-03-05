@@ -1480,7 +1480,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 this.$parent.toolList.edit = false;
                 this.$parent.toolList.del = false;
             }
-            if (item.recycle === 1) {
+            if (item.recycle === 1 || item.recycle === 2 || item.recycle === 3) {
                 this.$parent.toolList.recover = true;
             } else {
                 this.$parent.toolList.recover = false;
