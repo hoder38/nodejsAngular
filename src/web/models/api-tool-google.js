@@ -264,6 +264,7 @@ module.exports = {
                             var err = null;
                             var complete = false;
                             if (res.statusCode === 200) {
+                                console.log(res.headers);
                                 complete = true;
                                 res.pipe(fs.createWriteStream(filePath));
                             } else if (res.statusCode === 302){

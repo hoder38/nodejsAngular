@@ -519,7 +519,7 @@ module.exports = {
                     console.log(time);
                     var timeout = 600000;
                     var real_threshold = threshold;
-                    if (hd) {
+                    if (is_hd) {
                         real_threshold = 2*threshold;
                     }
                     if (real_threshold > 600000) {
