@@ -500,32 +500,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         console.info('onCompleteAll');
     };
 
-    window.onbeforeunload = function (event) {
-        /*var mediaApi = $resource('/api/media/record', {}, {
-            'record': { method:'get' }
-        });
-        mediaApi.record({}, function (result) {
-            console.log(result);
-        });
-        return 'window close';*/
-        var vId = $scope.video.id;
-        if (vId) {
-            var vTime = parseInt(video.currentTime);
-            var vXmlhttp = new XMLHttpRequest();
-            vXmlhttp.open("GET", "/api/media/record/" + vId + '/' + vTime, false);//the false is for making the call synchronous
-            vXmlhttp.setRequestHeader("Content-type", "application/json");
-            vXmlhttp.send('');
-        }
-        var mId = $scope.music.id;
-        if (mId) {
-            var mTime = parseInt(music.currentTime);
-            var mXmlhttp = new XMLHttpRequest();
-            mXmlhttp.open("GET", "/api/media/record/" + mId + '/' + mTime, false);//the false is for making the call synchronous
-            mXmlhttp.setRequestHeader("Content-type", "application/json");
-            mXmlhttp.send('');
-        }
-    };
-
     $scope.$on('dir', function(e, d) {
         var result = JSON.parse(d);
         console.log(result);
@@ -1685,6 +1659,35 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         alertTime = $timeout(function() {
             $scope.alerts = [];
         }, 5000);
+    };
+
+    window.onbeforeunload = function (event) {
+        /*var mediaApi = $resource('/api/media/record', {}, {
+            'record': { method:'get' }
+        });
+        mediaApi.record({}, function (result) {
+            console.log(result);
+        });
+        return 'window close';*/
+        var vId = $scope.video.id;
+        if (vId) {
+            var vTime = parseInt(video.currentTime);
+            var vXmlhttp = new XMLHttpRequest();
+            vXmlhttp.open("GET", "/api/media/record/" + vId + '/' + vTime, false);//the false is for making the call synchronous
+            vXmlhttp.setRequestHeader("Content-type", "application/json");
+            vXmlhttp.send('');
+        }
+        var mId = $scope.music.id;
+        if (mId) {
+            var mTime = parseInt(music.currentTime);
+            var mXmlhttp = new XMLHttpRequest();
+            mXmlhttp.open("GET", "/api/media/record/" + mId + '/' + mTime, false);//the false is for making the call synchronous
+            mXmlhttp.setRequestHeader("Content-type", "application/json");
+            mXmlhttp.send('');
+        }
+        if (uploader.isUploading) {
+            return "You have uploaded files. Are you sure you want to navigate away from this page?";
+        }
     };
 
     $scope.closeAlert = function(index) {

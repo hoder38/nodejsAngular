@@ -584,8 +584,14 @@ audio.full-media-screen {
 }
 
 .item-image {
+    position: absolute;
     height: 42px;
     width: 42px;
+    left: 0px;
+}
+
+.preload-img {
+    position: relative;
 }
 
 #presentID {

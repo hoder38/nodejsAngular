@@ -262,10 +262,18 @@
                         <i class="glyphicon glyphicon-question-sign item-icon"></i>{{item.name}}
                     </td>
                     <td class="item-name" ng-if="item.status === 2 && !item.media" ng-click="showMedia(item, 'image')">
-                        <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" class="item-image" />{{item.name}}
+                        <span class="preload-img">
+                            <i class="glyphicon glyphicon-picture item-icon"></i>
+                            <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" class="item-image" />
+                        </div>
+                        {{item.name}}
                     </td>
                     <td class="item-name" ng-if="item.status === 3 && !item.media" ng-click="showMedia(item, 'video')">
-                        <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" class="item-image" />{{item.name}}
+                        <span class="preload-img">
+                            <i class="glyphicon glyphicon-facetime-video item-icon"></i>
+                            <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" class="item-image" />
+                        </span>
+                        {{item.name}}
                     </td>
                     <td class="item-name" ng-if="item.status === 4 && !item.media" ng-click="showMedia(item, 'music')">
                         <i class="glyphicon glyphicon-headphones item-icon"></i>{{item.name}}
