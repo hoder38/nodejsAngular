@@ -303,7 +303,9 @@ module.exports = function(collection) {
                         }
                         index++;
                         if (index < tags.length) {
-                            recur_tag(index);
+                            setTimeout(function(){
+                                recur_tag(index);
+                            }, 0);
                         } else {
                             id = util.isValidString(uid, 'uid');
                             if (id === false) {
@@ -338,7 +340,9 @@ module.exports = function(collection) {
                         }
                         index++;
                         if (index < tags.length) {
-                            recur_tag(index);
+                            setTimeout(function(){
+                                recur_tag(index);
+                            }, 0);
                         } else {
                             id = util.isValidString(uid, 'uid');
                             if (id === false) {

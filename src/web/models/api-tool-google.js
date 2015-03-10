@@ -284,13 +284,17 @@ module.exports = {
                                 console.log(time);
                                 if (threshold) {
                                     if (time < threshold) {
-                                        recur_download(time);
+                                        setTimeout(function(){
+                                            recur_download(time);
+                                        }, 0);
                                     } else {
                                         util.handleError({hoerror: 2, msg: "timeout"}, callback, callback);
                                     }
                                 } else {
                                     if (time < 600000) {
-                                        recur_download(time);
+                                        setTimeout(function(){
+                                            recur_download(time);
+                                        }, 0);
                                     } else {
                                         util.handleError({hoerror: 2, msg: "timeout"}, callback, callback);
                                     }
@@ -317,7 +321,9 @@ module.exports = {
                                             if (retry === 0) {
                                                 util.handleError({hoerror: 2, msg: "download not complete"}, callback, callback);
                                             } else {
-                                                recur_download(0);
+                                                setTimeout(function(){
+                                                    recur_download(1000);
+                                                }, 0);
                                             }
                                         }
                                     }, 1000);
@@ -421,7 +427,9 @@ module.exports = {
                         pageid++;
                     }
                     number++;
-                    recur_present(true);
+                    setTimeout(function(){
+                        recur_present(true);
+                    }, 0);
                 }
             }, 10000, is_back);
         }
