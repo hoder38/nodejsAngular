@@ -27,14 +27,13 @@ var tokens = '';
 var media_folder = config_glb.google_media_folder;
 var backup_folder = config_glb.google_backup_folder;
 var auto_folder = '0B_BstyDfOj4RfkU3aGpIRDVXcEwxSkdQeEJnTWM0cG0tNk9Md0VoZ21RTkxGcUNsQUVyaW8';
-var upload_retry = 10;
+var max_retry = 10;
 
 function sendAPI(method, data, callback) {
     var drive = googleapis.drive({ version: 'v2', auth: oauth2Client });
     var param = {};
     switch(method) {
         case 'upload':
-        console.log(data);
         if (!data['type'] || !data['name'] || (!data['filePath'] && !data['body'])) {
             util.handleError({hoerror: 2, msg: 'upload parameter lost!!!'}, callback, callback);
         }
@@ -79,7 +78,7 @@ function sendAPI(method, data, callback) {
         if (data['convert'] && data['convert'] === true) {
             param['convert'] = true;
         }
-        var retry = upload_retry;
+        var retry = max_retry;
         uploadMul();
         function uploadMul() {
             console.log(param);
@@ -209,6 +208,8 @@ function checkOauth(callback) {
 module.exports = {
     googleApi: function (method, data, callback) {
         console.log('googleApi');
+        console.log(method);
+        console.log(data);
         checkOauth(function(err) {
             if (err) {
                 util.handleError(err, callback, callback, null);
@@ -242,6 +243,7 @@ module.exports = {
                 }
             };
             var time = 1000;
+            var retry = max_retry;
             recur_download(time);
             function recur_download(time) {
                 setTimeout(function(){
@@ -263,8 +265,12 @@ module.exports = {
                         var req = https.request(options, function(res) {
                             var err = null;
                             var complete = false;
+                            var length = 0;
                             if (res.statusCode === 200) {
                                 console.log(res.headers);
+                                if (res.headers['content-length']) {
+                                    length = Number(res.headers['content-length']);
+                                }
                                 complete = true;
                                 res.pipe(fs.createWriteStream(filePath));
                             } else if (res.statusCode === 302){
@@ -296,19 +302,32 @@ module.exports = {
                             res.on('end', function() {
                                 if (complete) {
                                     console.log(filePath);
-                                    if (err) {
-                                        util.handleError(err, callback, callback);
-                                    }
                                     setTimeout(function(){
-                                        callback(null);
-                                    }, 0);
+                                        var stats = fs.statSync(filePath);
+                                        console.log(stats);
+                                        if (!length || length === stats["size"]) {
+                                            if (err) {
+                                                util.handleError(err, callback, callback);
+                                            }
+                                            setTimeout(function(){
+                                                callback(null);
+                                            }, 0);
+                                        } else {
+                                            retry--;
+                                            if (retry === 0) {
+                                                util.handleError({hoerror: 2, msg: "download not complete"}, callback, callback);
+                                            } else {
+                                                recur_download(0);
+                                            }
+                                        }
+                                    }, 1000);
                                 }
                             });
                         });
                         req.on('error', function(e) {
-                            console.log(e);
-                            //util.handleError(e, callback, callback);
-                            time = time * 2;
+                            //console.log(req);
+                            util.handleError(e, callback, callback);
+                            /*time = time * 2;
                             console.log(time);
                             if (threshold) {
                                 if (time < threshold) {
@@ -322,7 +341,7 @@ module.exports = {
                                 } else {
                                     util.handleError({hoerror: 2, msg: "timeout"}, callback, callback);
                                 }
-                            }
+                            }*/
                         });
                         req.end();
                     });

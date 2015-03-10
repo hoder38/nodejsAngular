@@ -573,7 +573,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                         result.item.select = false;
                         date = new Date(result.item.utime*1000);
                         result.item.utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
-                        $scope.itemList.push(result.item);
+                        $scope.itemList.splice(0, 0, result.item);
                     }
                 }
             }

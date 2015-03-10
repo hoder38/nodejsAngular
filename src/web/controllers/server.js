@@ -793,8 +793,8 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
             oldType = mime.mediaType(oldName),
             mediaTag = {def:[], opt:[]};
         var isVideo = false;
+        console.log(mediaType);
         if (mediaType && (status === 0 || status === 1 || status === 2 || status === 5 || status === 6) && (!oldType || (mediaType.ext !== oldType.ext))) {
-            console.log(mediaType);
             switch(mediaType['type']) {
                 case 'video':
                 case 'vlog':
@@ -868,7 +868,43 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
             }
             console.log(mediaTag);
         } else {
-            mediaType = false;
+            if (mediaType) {
+                mediaTag = mime.mediaTag(mediaType['type']);
+                switch(mediaType['type']) {
+                    case 'video':
+                    case 'vlog':
+                        mediaType = false;
+                        new Transcoder(filePath)
+                        .on('metadata', function(meta) {
+                            console.log(meta);
+                            for (var i in meta.input.streams) {
+                                console.log(meta.input.streams[i]);
+                                if (meta.input.streams[i].size) {
+                                    isVideo = true;
+                                    break;
+                                }
+                            }
+                            if (meta.input.streams) {
+                                if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
+                                    if (meta.input.duration < 20 * 60 * 1000) {
+                                        mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 1));
+                                    } else if (meta.input.duration < 40 * 60 * 1000) {
+                                        mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
+                                    } else if (meta.input.duration < 60 * 60 * 1000) {
+                                        mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
+                                    }
+                                }
+                            }
+                            setTimeout(function(){
+                                callback(null, mediaType, mediaTag, DBdata);
+                            }, 0);
+                        }).on('error', function(err) {
+                            console.log(err);
+                        }).exec();
+                        return;
+                }
+                mediaType = false;
+            }
         }
         setTimeout(function(){
             callback(null, mediaType, mediaTag, DBdata);

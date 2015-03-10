@@ -1,5 +1,5 @@
 //xuite get access_token url: http://my.xuite.net/service/account/authorize.php?response_type=code_and_token&client_id=e4a4666f807878269c1501529b6ab98d&redirect_uri=http://devbox.example.com/oauth2callback
-
+//再到https://my.xuite.net/service/account/token.php?grant_type=authorization_code&client_id=deb95e99de75da3104e70db4dc1e0a3e&client_secret=9582964790&code=754eb508c1aa9d00bf9e35643ddeae42&redirect_uri=http://devbox.example.com:8080/oauth2callback
 var config_type = require('../../../ver.js');
 
 var config_glb = require('../../../config/' + config_type.dev_type + '.js');
@@ -14,7 +14,9 @@ var expire_in = '';
 
 var mongo = require("../models/mongo-tool.js");
 
-var chunk = 20000000;
+var chunk = 10000000;
+
+var max_retry = 10;
 
 var querystring = require('querystring');
 
@@ -247,8 +249,10 @@ module.exports = {
                 var req = http.request(options, function(res) {
                     var err = null;
                     var complete = false;
+                    var length = 0;
                     if (res.statusCode === 200) {
                         if (res.headers['content-length']) {
+                            length = Number(res.headers['content-length']);
                             complete = true;
                             res.pipe(fs.createWriteStream(filePath));
                         } else {
@@ -279,22 +283,34 @@ module.exports = {
                     res.on('end', function() {
                         if (complete) {
                             console.log(filePath);
-                            if (err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            var filename = null;
-                            if (res.headers['content-disposition']) {
-                                filename = res.headers['content-disposition'].match(/attachment; filename=(.*)/);
-                            }
-                            if (filename) {
-                                setTimeout(function(){
-                                    callback(null, urlParse.pathname, filename[1]);
-                                }, 0);
-                            } else {
-                                setTimeout(function(){
-                                    callback(null, urlParse.pathname);
-                                }, 0);
-                            }
+                            setTimeout(function(){
+                                var stats = fs.statSync(filePath);
+                                if (length === stats["size"]) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    var filename = null;
+                                    if (res.headers['content-disposition']) {
+                                        filename = res.headers['content-disposition'].match(/attachment; filename=(.*)/);
+                                    }
+                                    if (filename) {
+                                        setTimeout(function(){
+                                            callback(null, urlParse.pathname, filename[1]);
+                                        }, 0);
+                                    } else {
+                                        setTimeout(function(){
+                                            callback(null, urlParse.pathname);
+                                        }, 0);
+                                    }
+                                } else {
+                                    retry--;
+                                    if (retry === 0) {
+                                        util.handleError({hoerror: 2, msg: "download not complete"}, callback, callback);
+                                    } else {
+                                        recur_download(0);
+                                    }
+                                }
+                            }, 1000);
                         }
                     });
                 });

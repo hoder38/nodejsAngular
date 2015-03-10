@@ -7,7 +7,7 @@ var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'author
 
 var queryLimit = 20;
 
-var handleTime = 21600,
+var handleTime = 7200,
     unactive_day = 5,
     unactive_hit = 10;
 
