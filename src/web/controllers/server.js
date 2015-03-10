@@ -628,7 +628,9 @@ function deleteFolderRecursive(path) {
         fs.readdirSync(path).forEach(function(file,index){
             var curPath = path + "/" + file;
             if(fs.lstatSync(curPath).isDirectory()) { // recurse
-                deleteFolderRecursive(curPath);
+                setTimeout(function(){
+                    deleteFolderRecursive(curPath);
+                }, 0);
             } else { // delete file
                 fs.unlinkSync(curPath);
             }
@@ -708,7 +710,9 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                             }
                             index++;
                             if (index < del_arr.length) {
-                                recur_del(del_arr[index]);
+                                setTimeout(function(){
+                                    recur_del(del_arr[index]);
+                                }, 0);
                             } else {
                                 mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
                                     if(err) {
@@ -771,7 +775,9 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                                 } else {
                                     sendWs({type: 'file', data: item._id}, item.adultonly);
                                     if (recycle < 4) {
-                                        recur_backup();
+                                        setTimeout(function(){
+                                            recur_backup();
+                                        }, 0);
                                     }
                                 }
                             });
@@ -1608,7 +1614,9 @@ app.get('/api/feedback', function (req, res, next) {
                             feedback_arr.push(feedback);
                             index++;
                             if (index < items2.length) {
-                                recur_feedback(index);
+                                setTimeout(function(){
+                                    recur_feedback(index);
+                                }, 0);
                             } else {
                                 res.json({feedbacks: feedback_arr});
                             }
@@ -1630,7 +1638,9 @@ app.get('/api/feedback', function (req, res, next) {
                         feedback_arr.push(feedback);
                         index++;
                         if (index < items.length) {
-                            recur_feedback(index);
+                            setTimeout(function(){
+                                recur_feedback(index);
+                            }, 0);
                         } else {
                             res.json({feedbacks: feedback_arr});
                         }
@@ -2658,8 +2668,8 @@ wsjServer.on('connection', function(ws) {
         y++;
         console.log(y);
     }, 60000);
-})(1);
-
+})(1);*/
+/*
 (function() {
     setTimeout(function() {
         mongo.orig("findOne", "user", {username: 'hoder'}, function(err, user){
@@ -2675,23 +2685,11 @@ wsjServer.on('connection', function(ws) {
                 if (metadataList.length > 0) {
                     singleDrive(metadataList, 0, user);
                 }
-                /*if (!metadata.thumbnailLink && mediaType['type'] === 'video') {
-                    metadata.thumbnailLink = metadata.alternateLink;
-                } else if(!metadata.thumbnailLink) {
-                    metadata.thumbnailLink = metadata.exportLinks['application/pdf'];
-                }
-                        mediaType['thumbnail'] = metadata.thumbnailLink;
-                        mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.thumbnail": metadata.thumbnailLink, "mediaType.key": metadata.id}}, function(err, item){
-                            if(err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            console.log(item);
-                            handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback);
-                        });
             });
         });
     }, 60000);
     function singleDrive(metadatalist, index, user) {
+        console.log('singleDrive');
         var metadata = metadatalist[index];
         var oOID = mongo.objectID();
         var filePath = util.getFileLocation(user._id, oOID);
@@ -2738,85 +2736,52 @@ wsjServer.on('connection', function(ws) {
                         hd = 720;
                     }
                     googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err) {
+                        if(err) {
+                            console.log(err);
+                        }
+                        console.log('media download');
                         data['status'] = 3;//media type
-                        var mediaTag = mime.mediaTag('video');
-                        mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(user.username), 'drive upload');
-                        data['tags'] = mediaTag.def;
-                        data[oUser_id] = mediaTag.def;
-                        mongo.orig("insert", "storage", data, function(err, item){
+                        handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
                             if(err) {
                                 console.log(err);
                             }
-                            console.log(item);
-                            console.log('save end');
-                            sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                            index++;
-                            if (index < metadatalist.length) {
-                                singleDrive(metadatalist, index, user);
-                            }
+                            mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(user.username), 'drive upload');
+                            DBdata['tags'] = mediaTag.def;
+                            DBdata[oUser_id] = mediaTag.def;
+                            mongo.orig("insert", "storage", DBdata, function(err, item){
+                                if(err) {
+                                    console.log(err);
+                                }
+                                console.log(item);
+                                console.log('save end');
+                                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                index++;
+                                if (index < metadatalist.length) {
+                                    setTimeout(function(){
+                                        singleDrive(metadatalist, index, user);
+                                    }, 0);
+                                }
+                            });
                         });
                     });
+                } else {
+                    index++;
+                    setTimeout(function(){
+                        singleDrive(metadatalist, index, user);
+                    }, 0);
                 }
             } else {
                 index++;
                 if (index < metadatalist.length) {
-                    singleDrive(metadatalist, index, user);
+                    setTimeout(function(){
+                        singleDrive(metadatalist, index, user);
+                    }, 0);
                 }
             }
-
-            handleTag(filePath, data, name, '', 0, function(err, mediaType, mediaTag, DBdata) {
-                //if (err) {
-                //    util.handleError(err, next, res);
-                //}
-                mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(req.user.username), 'drive upload');
-                var tags = tagTool.searchTags(req.session, 'parent');
-                if (tags) {
-                    var parentList = tags.getArray();
-                    console.log(parentList);
-                    var normal = '';
-                    for (var i in parentList.cur) {
-                        normal = tagTool.normalizeTag(parentList.cur[i]);
-                        if (mediaTag.def.indexOf(normal) === -1) {
-                            mediaTag.def.push(normal);
-                        }
-                    }
-                    var temp_tag = [];
-                    for (var j in mediaTag.opt) {
-                        if (mediaTag.def.indexOf(mediaTag.opt[j]) === -1) {
-                            temp_tag.push(mediaTag.opt[j]);
-                            //mediaTag.opt.splice(j, 1);
-                        }
-                    }
-                    mediaTag.opt = temp_tag;
-                }
-                DBdata['tags'] = mediaTag.def;
-                DBdata[oUser_id] = mediaTag.def;
-                mongo.orig("insert", "storage", DBdata, function(err, item){
-                    if(err) {
-                        //util.handleError(err, next, res);
-                    }
-                    console.log(item);
-                    console.log('save end');
-                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                    if (util.checkAdmin(2 ,req.user)) {
-                        mediaTag.def.push('18禁');
-                    }
-                    //res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
-                    handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
-                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                        if(err) {
-                            //util.handleError(err, function(err) {
-                            //    console.log(err);
-                            //});
-                        }
-                        console.log('transcode done');
-                    });
-                });
-            });
         }
     }
-})();
-*/
+})();*/
+
 console.log('start express server\n');
 
 console.log("Server running at https://" + config_glb.ip + ":" + config_glb.port + ' ' + new Date());

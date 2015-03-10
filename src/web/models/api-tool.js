@@ -247,14 +247,41 @@ module.exports = {
         function recur_download(time) {
             setTimeout(function(){
                 var req = http.request(options, function(res) {
-                    var err = null;
-                    var complete = false;
                     var length = 0;
                     if (res.statusCode === 200) {
                         if (res.headers['content-length']) {
                             length = Number(res.headers['content-length']);
-                            complete = true;
-                            res.pipe(fs.createWriteStream(filePath));
+                            //complete = true;
+                            var file_write =  fs.createWriteStream(filePath);
+                            res.pipe(file_write);
+                            file_write.on('finish', function(){
+                                console.log(filePath);
+                                var stats = fs.statSync(filePath);
+                                if (length === stats["size"]) {
+                                    var filename = null;
+                                    if (res.headers['content-disposition']) {
+                                        filename = res.headers['content-disposition'].match(/attachment; filename=(.*)/);
+                                    }
+                                    if (filename) {
+                                        setTimeout(function(){
+                                            callback(null, urlParse.pathname, filename[1]);
+                                        }, 0);
+                                    } else {
+                                        setTimeout(function(){
+                                            callback(null, urlParse.pathname);
+                                        }, 0);
+                                    }
+                                } else {
+                                    retry--;
+                                    if (retry === 0) {
+                                        util.handleError({hoerror: 2, msg: "download not complete"}, callback, callback);
+                                    } else {
+                                        setTimeout(function(){
+                                            recur_download(1000);
+                                        }, 0);
+                                    }
+                                }
+                            });
                         } else {
                             time = time * 2;
                             console.log(time);
@@ -285,7 +312,8 @@ module.exports = {
                         util.handleError({hoerror: 1, msg: res.statusCode + ': download do not complete'}, callback, callback);
                     }
                     res.on('end', function() {
-                        if (complete) {
+                        console.log('res end');
+                        /*if (complete) {
                             console.log(filePath);
                             setTimeout(function(){
                                 var stats = fs.statSync(filePath);
@@ -312,16 +340,17 @@ module.exports = {
                                         util.handleError({hoerror: 2, msg: "download not complete"}, callback, callback);
                                     } else {
                                         setTimeout(function(){
-                                            recur_download(0);
-                                        }, 1000);
+                                            recur_download(1000);
+                                        }, 0);
                                     }
                                 }
                             }, 1000);
-                        }
+                        }*/
                     });
                 });
                 req.on('error', function(e) {
-                    util.handleError(e, callback, callback);
+                    console.log(e);
+                    //util.handleError(e, callback, callback);
                 });
                 req.end();
             }, time);

@@ -263,16 +263,34 @@ module.exports = {
                         };
                         console.log(options);
                         var req = https.request(options, function(res) {
-                            var err = null;
-                            var complete = false;
                             var length = 0;
                             if (res.statusCode === 200) {
                                 console.log(res.headers);
                                 if (res.headers['content-length']) {
                                     length = Number(res.headers['content-length']);
                                 }
-                                complete = true;
-                                res.pipe(fs.createWriteStream(filePath));
+                                //complete = true;
+                                var file_write =  fs.createWriteStream(filePath);
+                                res.pipe(file_write);
+                                file_write.on('finish', function(){
+                                    console.log(filePath);
+                                    var stats = fs.statSync(filePath);
+                                    console.log(stats);
+                                    if (!length || length === stats["size"]) {
+                                        setTimeout(function(){
+                                            callback(null);
+                                        }, 0);
+                                    } else {
+                                        retry--;
+                                        if (retry === 0) {
+                                            util.handleError({hoerror: 2, msg: "download not complete"}, callback, callback);
+                                        } else {
+                                            setTimeout(function(){
+                                                recur_download(1000);
+                                            }, 0);
+                                        }
+                                    }
+                                });
                             } else if (res.statusCode === 302){
                                 if (!res.headers.location) {
                                     util.handleError({hoerror: 1, msg: res.statusCode + ': download do not complete'}, callback, callback);
@@ -304,7 +322,8 @@ module.exports = {
                                 util.handleError({hoerror: 1, msg: res.statusCode + ': download do not complete'}, callback, callback);
                             }
                             res.on('end', function() {
-                                if (complete) {
+                                console.log('res end');
+                                /*if (complete) {
                                     console.log(filePath);
                                     setTimeout(function(){
                                         var stats = fs.statSync(filePath);
@@ -327,12 +346,12 @@ module.exports = {
                                             }
                                         }
                                     }, 1000);
-                                }
+                                }*/
                             });
                         });
                         req.on('error', function(e) {
-                            //console.log(req);
-                            util.handleError(e, callback, callback);
+                            console.log(e);
+                            //util.handleError(e, callback, callback);
                             /*time = time * 2;
                             console.log(time);
                             if (threshold) {
