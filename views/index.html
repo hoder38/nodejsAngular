@@ -140,10 +140,10 @@
                             </div>
                         </div>
                         <div class="btn-group" role="group" aria-label="upload btn">
-                            <button class="btn btn-primary btn-file btn-s">
+                            <div class="btn btn-primary btn-file btn-s">
                                 <span class="glyphicon glyphicon-folder-open"></span>&nbsp;Choose
                                 <input type="file" nv-file-select uploader="uploader" />
-                            </button>
+                            </div>
                             <button class="btn btn-success btn-s" ng-click="uploader.uploadAll()" ng-disabled="!uploader.getNotUploadedItems().length" disabled="disabled">
                                 <span class="glyphicon glyphicon-upload"></span>Upload all
                             </button>
@@ -263,7 +263,7 @@
                                 </ul>
                             </nav>
                             <video class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{video.src}}" controls autoplay ng-video ng-ended="mediaMove(1, 'video', true)" ng-play="testLogin()" ng-pause="mediaRecord('video')">
-                                <track ng-src="{{video.sub}}" kind="subtitle" srclang="en-US" label="English" />
+                                <track label="English" kind="subtitle" srclang="en-US" ng-src="{{video.sub}}"  default="" />
                             </video>
                         </div>
                     </section>

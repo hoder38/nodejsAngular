@@ -1314,9 +1314,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                             }
                             if (type === 'video') {
                                 var track = video.textTracks[0];
-                                if (track.activeCues) {
-                                    var activeCue = track.activeCues[0];
-                                    track.removeCue(activeCue);
+                                if (track) {
+                                    if (track.activeCues) {
+                                        var activeCue = track.activeCues[0];
+                                        track.removeCue(activeCue);
+                                    }
                                 }
                                 this_obj.$parent[type].sub = '/subtitle/' + item.id;
                             }
@@ -1357,9 +1359,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     }
                     if (type === 'video') {
                         var track = video.textTracks[0];
-                        if (track.activeCues) {
-                            var activeCue = track.activeCues[0];
-                            track.removeCue(activeCue);
+                        if (track) {
+                            if (track.activeCues) {
+                                var activeCue = track.activeCues[0];
+                                track.removeCue(activeCue);
+                            }
                         }
                         this_obj.$parent[type].sub = '/subtitle/' + item.id;
                     }
@@ -1972,6 +1976,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 getFeedbacks(1);
                 $scope.isLogin = true;
                 $scope.id = result.id;
+                if (window.MozWebSocket) {
+                    window.WebSocket = window.MozWebSocket;
+                }
                 var ws = new WebSocket(result.ws_url);
                 ws.onopen = function(){
                     console.log(result.ws_url + ": Socket has been opened!");
@@ -2312,11 +2319,13 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                         }
                                         if (type === 'video') {
                                             var track = video.textTracks[0];
-                                            if (track.activeCues) {
-                                                var activeCue = track.activeCues[0];
-                                                track.removeCue(activeCue);
-                                                this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                            if (track) {
+                                                if (track.activeCues) {
+                                                    var activeCue = track.activeCues[0];
+                                                    track.removeCue(activeCue);
+                                                }
                                             }
+                                            this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                         }
                                     }
                                     console.log(this_obj[type].index);
@@ -2352,11 +2361,13 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 }
                                 if (type === 'video') {
                                     var track = video.textTracks[0];
-                                    if (track.activeCues) {
-                                        var activeCue = track.activeCues[0];
-                                        track.removeCue(activeCue);
-                                        this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                    if (track) {
+                                        if (track.activeCues) {
+                                            var activeCue = track.activeCues[0];
+                                            track.removeCue(activeCue);
+                                        }
                                     }
+                                    this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                 }
                             }
                             console.log(this_obj[type].index);
@@ -2456,11 +2467,13 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                         }
                                         if (type === 'video') {
                                             var track = video.textTracks[0];
-                                            if (track.activeCues) {
-                                                var activeCue = track.activeCues[0];
-                                                track.removeCue(activeCue);
-                                                this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                            if (track) {
+                                                if (track.activeCues) {
+                                                    var activeCue = track.activeCues[0];
+                                                    track.removeCue(activeCue);
+                                                }
                                             }
+                                            this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                         }
                                     }
                                     console.log(this_obj[type].index);
@@ -2496,11 +2509,13 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 }
                                 if (type === 'video') {
                                     var track = video.textTracks[0];
-                                    if (track.activeCues) {
-                                        var activeCue = track.activeCues[0];
-                                        track.removeCue(activeCue);
-                                        this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                    if (track) {
+                                        if (track.activeCues) {
+                                            var activeCue = track.activeCues[0];
+                                            track.removeCue(activeCue);
+                                        }
                                     }
+                                    this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                 }
                             }
                             console.log(this_obj[type].index);
@@ -2561,11 +2576,13 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             }
                             if (type === 'video') {
                                 var track = video.textTracks[0];
-                                if (track.activeCues) {
-                                    var activeCue = track.activeCues[0];
-                                    track.removeCue(activeCue);
-                                    this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                if (track) {
+                                    if (track.activeCues) {
+                                        var activeCue = track.activeCues[0];
+                                        track.removeCue(activeCue);
+                                    }
                                 }
+                                this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                             }
                         }
                         console.log(this_obj[type].index);
@@ -2601,11 +2618,13 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     }
                     if (type === 'video') {
                         var track = video.textTracks[0];
-                        if (track.activeCues) {
-                            var activeCue = track.activeCues[0];
-                            track.removeCue(activeCue);
-                            this[type].sub = '/subtitle/' + this[type].list[this[type].index + this[type].back].id;
+                        if (track) {
+                            if (track.activeCues) {
+                                var activeCue = track.activeCues[0];
+                                track.removeCue(activeCue);
+                            }
                         }
+                        this[type].sub = '/subtitle/' + this[type].list[this[type].index + this[type].back].id;
                     }
                 }
                 console.log(this[type].index);
