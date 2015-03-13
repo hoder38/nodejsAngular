@@ -170,7 +170,7 @@
                                 <span class="input-group-addon">
                                     <input type="checkbox" ng-model="item.select" />
                                 </span>
-                                <span class="form-control feedback-tag">{{item.tag}}</span>
+                                <span class="form-control feedback-tag {{(item.history) && 'list-group-item-danger' || ''}}">{{item.tag}}</span>
                                 <span class="input-group-btn">
                                     <button type="button" class="btn btn-default" ng-click="selectFeedbackTag($event, item.tag)" aria-expanded="false">
                                         <span class="caret"></span>
@@ -181,7 +181,7 @@
                                 <span class="input-group-addon">
                                     <input type="checkbox" checked ng-disabled="true">
                                 </span>
-                                <span class="form-control">{{item}}</span>
+                                <span class="form-control feedback-tag {{(item.history) && 'list-group-item-danger' || ''}}">{{item}}</span>
                                 <span class="input-group-btn">
                                     <button type="button" class="btn btn-default" ng-click="selectFeedbackTag($event, item)" aria-expanded="false">
                                         <span class="caret"></span>
@@ -308,6 +308,19 @@
                         <div class="panel-body">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
+                                    <span ng-show="doc.maxId && doc.maxId > 1">
+                                        <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                            <a href="#" ng-click="docMove(-1)">
+                                                <span class="glyphicon glyphicon-chevron-up"></span>
+                                            </a>
+                                        </li>
+                                        <input id="docID" type="text" ng-model="doc.showId" ng-enter="docMove(0)" />/{{doc.maxId}}
+                                        <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                            <a href="#" ng-click="docMove(1)">
+                                                <span class="glyphicon glyphicon-chevron-down"></span>
+                                            </a>
+                                        </li>
+                                    </span>
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(-1, 'doc')">
                                             <span class="glyphicon glyphicon-chevron-left"></span>
@@ -340,17 +353,19 @@
                         <div class="panel-body">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
-                                        <a href="#" ng-click="presentMove(-1)">
-                                            <span class="glyphicon glyphicon-chevron-up"></span>
-                                        </a>
-                                    </li>
-                                    <input id="presentID" type="text" ng-model="present.showId" ng-enter="presentMove(0)" />/{{present.maxId}}
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
-                                        <a href="#" ng-click="presentMove(1)">
-                                            <span class="glyphicon glyphicon-chevron-down"></span>
-                                        </a>
-                                    </li>
+                                    <span ng-show="present.maxId && present.maxId > 1">
+                                        <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                            <a href="#" ng-click="presentMove(-1)">
+                                                <span class="glyphicon glyphicon-chevron-up"></span>
+                                            </a>
+                                        </li>
+                                        <input id="presentID" type="text" ng-model="present.showId" ng-enter="presentMove(0)" />/{{present.maxId}}
+                                        <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                            <a href="#" ng-click="presentMove(1)">
+                                                <span class="glyphicon glyphicon-chevron-down"></span>
+                                            </a>
+                                        </li>
+                                    </span>
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(-1, 'present')">
                                             <span class="glyphicon glyphicon-chevron-left"></span>

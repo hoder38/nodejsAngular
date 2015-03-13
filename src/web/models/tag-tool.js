@@ -145,14 +145,14 @@ module.exports = function(collection) {
             var name = util.isValidString(tag, 'name'),
             id = util.isValidString(uid, 'uid');
             if (name === false) {
-                util.handleError({hoerror: 2, msg: "name is not vaild"}, next, callback, null);
+                util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback, null);
             }
             if (id === false) {
-                util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, callback, null);
+                util.handleError({hoerror: 2, message: "uid is not vaild"}, next, callback, null);
             }
             var tagType = getQueryTag(user, name);
             if (!tagType.type) {
-                util.handleError({hoerror: 2, msg: 'not authority set default tag!!!'}, next, callback, null);
+                util.handleError({hoerror: 2, message: 'not authority set default tag!!!'}, next, callback, null);
             }
             console.log(tagType);
             if (tagType.type === 2) {
@@ -161,7 +161,7 @@ module.exports = function(collection) {
                         util.handleError(err, next, callback, null);
                     }
                     if (!item) {
-                        util.handleError({hoerror: 2, msg: 'can not find object!!!'}, next, callback, null);
+                        util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, callback, null);
                     }
                     console.log(item);
                     if (item.adultonly === tagType.tag.adultonly) {
@@ -185,7 +185,7 @@ module.exports = function(collection) {
                         util.handleError(err, next, callback, null);
                     }
                     if (!item) {
-                        util.handleError({hoerror: 2, msg: 'can not find object!!!'}, next, callback, null);
+                        util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, callback, null);
                     }
                     console.log(item);
                     if (item.tags.indexOf(tagType.tag.tags) === -1) {
@@ -205,28 +205,28 @@ module.exports = function(collection) {
                     }
                 });
             } else {
-                util.handleError({hoerror: 1, msg: 'unknown add tag type!!!'}, next, callback, null);
+                util.handleError({hoerror: 1, message: 'unknown add tag type!!!'}, next, callback, null);
             }
         },
         delTag: function(uid, tag, user, next, callback) {
             var name = util.isValidString(tag, 'name'),
             id = util.isValidString(uid, 'uid');
             if (name === false) {
-                util.handleError({hoerror: 2, msg: "name is not vaild"}, next, callback, null);
+                util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback, null);
             }
             if (id === false) {
-                util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, callback, null);
+                util.handleError({hoerror: 2, message: "uid is not vaild"}, next, callback, null);
             }
             var tagType = getQueryTag(user, name, 0);
             if (!tagType.type) {
-                util.handleError({hoerror: 2, msg: 'not authority delete default tag!!!'}, next, callback, null);
+                util.handleError({hoerror: 2, message: 'not authority delete default tag!!!'}, next, callback, null);
             }
             mongo.orig("findOne", collection, {_id: id}, function(err, item){
                 if(err) {
                     util.handleError(err, next, callback, null);
                 }
                 if (!item) {
-                    util.handleError({hoerror: 2, msg: 'can not find object!!!'}, next, callback, null);
+                    util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, callback, null);
                 }
                 if (tagType.type === 2) {
                     mongo.orig("update", collection, { _id: id }, {$set: tagType.tag}, function(err, item1){
@@ -241,12 +241,12 @@ module.exports = function(collection) {
                 } else if (tagType.type === 1) {
                     console.log(tagType);
                     if (tagType.tag.tags === normalize(item.name)) {
-                        util.handleError({hoerror: 2, msg: 'can not delete file name!!!'}, next, callback, null);
+                        util.handleError({hoerror: 2, message: 'can not delete file name!!!'}, next, callback, null);
                     }
                     if (util.checkAdmin(1, user)) {
                         console.log('authority del tag');
                         if (item.tags.indexOf(tagType.tag.tags) === -1) {
-                            util.handleError({hoerror: 2, msg: 'do not has tag!!!'}, next, callback, null);
+                            util.handleError({hoerror: 2, message: 'do not has tag!!!'}, next, callback, null);
                         }
                         for (var i in item) {
                             if (util.isValidString(i, 'uid')) {
@@ -274,11 +274,11 @@ module.exports = function(collection) {
                                 }, 0);
                             });
                         } else {
-                            util.handleError({hoerror: 2, msg: 'do not has authority!!!'}, next, callback, null);
+                            util.handleError({hoerror: 2, message: 'do not has authority!!!'}, next, callback, null);
                         }
                     }
                 } else {
-                    util.handleError({hoerror: 1, msg: 'unknown del tag type!!!'}, next, callback, null);
+                    util.handleError({hoerror: 1, message: 'unknown del tag type!!!'}, next, callback, null);
                 }
             });
         },
@@ -287,7 +287,7 @@ module.exports = function(collection) {
             var history = [];
             var name = util.isValidString(objName, 'name');
             if (name === false) {
-                util.handleError({hoerror: 2, msg: "name is not vaild"}, next, callback);
+                util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
             }
             var normal = normalize(name);
             recur_tag(0);
@@ -309,7 +309,7 @@ module.exports = function(collection) {
                         } else {
                             id = util.isValidString(uid, 'uid');
                             if (id === false) {
-                                util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, callback, null);
+                                util.handleError({hoerror: 2, message: "uid is not vaild"}, next, callback, null);
                             }
                             mongo.orig("update", collection, {_id: id}, {$set: {untag: 0}}, function(err, item){
                                 if(err) {
@@ -346,7 +346,7 @@ module.exports = function(collection) {
                         } else {
                             id = util.isValidString(uid, 'uid');
                             if (id === false) {
-                                util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, callback, null);
+                                util.handleError({hoerror: 2, message: "uid is not vaild"}, next, callback, null);
                             }
                             mongo.orig("update", collection, {_id: id}, {$set: {untag: 0}}, function(err, item){
                                 if(err) {
@@ -374,7 +374,7 @@ module.exports = function(collection) {
                 sortName = 'utime';
             }
             if (!tags) {
-                util.handleError({hoerror: 2, msg: 'error search var!!!'}, next, callback);
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
             }
             var parentList = tags.resetArray();
             var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
@@ -402,7 +402,7 @@ module.exports = function(collection) {
             if (!tagName) {
                 var tags = this.searchTags(session, 'parent');
                 if (!tags) {
-                    util.handleError({hoerror: 2, msg: 'error search var!!!'}, next, callback);
+                    util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
                 var parentList = tags.getArray();
                 var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
@@ -443,11 +443,11 @@ module.exports = function(collection) {
             } else if (!index) {
                 var name = util.isValidString(tagName, 'name');
                 if (name === false) {
-                    util.handleError({hoerror: 2, msg: "name is not vaild"}, next, callback);
+                    util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
                 }
                 var tags = this_obj.searchTags(session, 'parent');
                 if (!tags) {
-                    util.handleError({hoerror: 2, msg: 'error search var!!!'}, next, callback);
+                    util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
                 var parentList = tags.getArray(name, exactly);
                 var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
@@ -489,14 +489,14 @@ module.exports = function(collection) {
                 var name = util.isValidString(tagName, 'name'),
                     Pindex = util.isValidString(index, 'parentIndex');
                 if (name === false) {
-                    util.handleError({hoerror: 2, msg: "name is not vaild"}, next, callback);
+                    util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
                 }
                 if (Pindex === false) {
-                    util.handleError({hoerror: 2, msg: "parentIndex is not vaild"}, next, callback);
+                    util.handleError({hoerror: 2, message: "parentIndex is not vaild"}, next, callback);
                 }
                 var tags = this_obj.searchTags(session, 'parent');
                 if (!tags) {
-                    util.handleError({hoerror: 2, msg: 'error search var!!!'}, next, callback);
+                    util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
                 var parentList = tags.getArray(name, exactly, Pindex);
                 var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
@@ -540,11 +540,11 @@ module.exports = function(collection) {
             var this_obj = this;
             var id = util.isValidString(uid, 'uid');
             if (id === false) {
-                util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, callback);
+                util.handleError({hoerror: 2, message: "uid is not vaild"}, next, callback);
             }
             var tags = this.searchTags(session, 'parent');
             if (!tags) {
-                util.handleError({hoerror: 2, msg: 'error search var!!!'}, next, callback);
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
             }
             var parentList = tags.getArray();
             var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
@@ -627,10 +627,10 @@ module.exports = function(collection) {
         parentQuery: function(tagName, sortName, sortType, page, user, next, callback) {
             var name = util.isValidString(tagName, 'name');
             if (name === false) {
-                util.handleError({hoerror: 2, msg: "name is not vaild"}, next, callback);
+                util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
             }
             if (!inParentArray(name)) {
-                util.handleError({hoerror: 2, msg: "name is not allow"}, next, callback);
+                util.handleError({hoerror: 2, message: "name is not allow"}, next, callback);
             }
             if (sortName === 'mtime') {
                 sortName = 'qtime';
@@ -652,14 +652,14 @@ module.exports = function(collection) {
         addParent: function(parentName, tagName, next, callback) {
             var name = util.isValidString(parentName, 'name');
             if (name === false) {
-                util.handleError({hoerror: 2, msg: "name is not vaild"}, next, callback);
+                util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
             }
             var tag = util.isValidString(tagName, 'name');
             if (tag === false) {
-                util.handleError({hoerror: 2, msg: "tag name is not vaild"}, next, callback);
+                util.handleError({hoerror: 2, message: "tag name is not vaild"}, next, callback);
             }
             if (!inParentArray(name)) {
-                util.handleError({hoerror: 2, msg: "name is not allow"}, next, callback);
+                util.handleError({hoerror: 2, message: "name is not allow"}, next, callback);
             }
             var normal = normalize(tag);
             mongo.orig("findOne", collection + "Dir" ,{parent: name, name: normal}, function(err,parent){
@@ -685,7 +685,7 @@ module.exports = function(collection) {
         },
         delParent: function(id, user, next, callback) {
             if (!util.checkAdmin(1, user)) {
-                util.handleError({hoerror: 2, msg: "permission denied"}, next, callback);
+                util.handleError({hoerror: 2, message: "permission denied"}, next, callback);
             }
             mongo.orig("remove", collection + "Dir", {_id: id, $isolated: 1}, function(err, parent){
                 if(err) {
@@ -709,7 +709,7 @@ module.exports = function(collection) {
                     util.handleError(err, next, callback);
                 }
                 if (!parent) {
-                    util.handleError({hoerror: 2, msg: "can not find dir"}, next, callback);
+                    util.handleError({hoerror: 2, message: "can not find dir"}, next, callback);
                 } else {
                     this_obj.tagQuery(0, parent.name, true, null, sortName, sortType, user, session, next, function(err, result) {
                         if (err) {
@@ -747,7 +747,7 @@ module.exports = function(collection) {
             console.log('setLatest');
             var tags = this.searchTags(session, 'parent');
             if (!tags) {
-                util.handleError({hoerror: 2, msg: 'error search var!!!'}, next, callback);
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
             }
             var bookmark = '';
             if (saveName) {
@@ -798,11 +798,11 @@ module.exports = function(collection) {
                     util.handleError(err, next, callback);
                 }
                 if (!item) {
-                    util.handleError({hoerror: 2, msg: "can not find bookmark!!!"}, next, callback);
+                    util.handleError({hoerror: 2, message: "can not find bookmark!!!"}, next, callback);
                 }
                 var tags = this_obj.searchTags(session, 'parent');
                 if (!tags) {
-                    util.handleError({hoerror: 2, msg: 'error search var!!!'}, next, callback);
+                    util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
                 tags.setArray(item._id, item.tag, item.exactly);
                 this_obj.tagQuery(0, null, null, null, sortName, sortType, user, session, next, function(err, result) {
@@ -828,11 +828,11 @@ module.exports = function(collection) {
         addBookmark: function(name, user, session, next, callback) {
             var tags = this.searchTags(session, 'parent');
             if (!tags) {
-                util.handleError({hoerror: 2, msg: 'error search var!!!'}, next, callback);
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
             }
             var parentList = tags.getArray();
             if (parentList.cur.length <= 0) {
-                util.handleError({hoerror: 2, msg: 'empty parent list!!!'}, next, callback);
+                util.handleError({hoerror: 2, message: 'empty parent list!!!'}, next, callback);
             }
             mongo.orig("findOne", collection + "User", {userId: user._id, name: name}, function(err, item){
                 if(err) {
@@ -857,7 +857,7 @@ module.exports = function(collection) {
                 } else {
                     mongo.orig("count", collection + "User", {userId: user._id}, function(err, count){
                         if (count >= bookmarkLimit) {
-                            util.handleError({hoerror: 2, msg: 'too much bookmark!!!'}, next, callback);
+                            util.handleError({hoerror: 2, message: 'too much bookmark!!!'}, next, callback);
                         }
                         var utime = Math.round(new Date().getTime() / 1000);
                         var data = {};

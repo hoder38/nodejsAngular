@@ -83,7 +83,7 @@ function sendAPI(data, method, callback) {
         res.on('end', function () {
             var result = JSON.parse(str);
             if (!result.ok) {
-                util.handleError({hoerror: 2, msg: result.msg}, callback, callback, 400, null);
+                util.handleError({hoerror: 2, message: result.message}, callback, callback, 400, null);
             }
             setTimeout(function(){
                 callback(null, result.rsp);
@@ -197,7 +197,7 @@ module.exports = {
                 util.handleError(err, callback, callback);
             }
             if (!token) {
-                util.handleError({hoerror: 1, msg: "can not find token"}, callback, callback);
+                util.handleError({hoerror: 1, message: "can not find token"}, callback, callback);
             }
             var options = {
                 host: "my.xuite.net",
@@ -274,7 +274,7 @@ module.exports = {
                                 } else {
                                     retry--;
                                     if (retry === 0) {
-                                        util.handleError({hoerror: 2, msg: "download not complete"}, callback, callback);
+                                        util.handleError({hoerror: 2, message: "download not complete"}, callback, callback);
                                     } else {
                                         setTimeout(function(){
                                             recur_download(1000);
@@ -291,7 +291,7 @@ module.exports = {
                                         recur_download(time);
                                     }, 0);
                                 } else {
-                                    util.handleError({hoerror: 2, msg: "timeout"}, callback, callback);
+                                    util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                 }
                             } else {
                                 if (time < 600000) {
@@ -299,17 +299,17 @@ module.exports = {
                                         recur_download(time);
                                     }, 0);
                                 } else {
-                                    util.handleError({hoerror: 2, msg: "timeout"}, callback, callback);
+                                    util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                 }
                             }
                         }
                     } else if (res.statusCode === 302){
                         if (!res.headers.location) {
-                            util.handleError({hoerror: 1, msg: res.statusCode + ': download do not complete'}, callback, callback);
+                            util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                         }
                         this_obj.xuiteDownload(res.headers.location, filePath, callback);
                     } else {
-                        util.handleError({hoerror: 1, msg: res.statusCode + ': download do not complete'}, callback, callback);
+                        util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                     }
                     res.on('end', function() {
                         console.log('res end');
@@ -337,7 +337,7 @@ module.exports = {
                                 } else {
                                     retry--;
                                     if (retry === 0) {
-                                        util.handleError({hoerror: 2, msg: "download not complete"}, callback, callback);
+                                        util.handleError({hoerror: 2, message: "download not complete"}, callback, callback);
                                     } else {
                                         setTimeout(function(){
                                             recur_download(1000);
@@ -349,7 +349,7 @@ module.exports = {
                     });
                 });
                 req.on('error', function(e) {
-                    console.log(e);
+                    util.handleError(e);
                     //util.handleError(e, callback, callback);
                 });
                 req.end();
@@ -381,7 +381,7 @@ module.exports = {
                 }
                 var result = JSON.parse(res.body);
                 if (!result.ok) {
-                    util.handleError({hoerror: 2, msg: result.msg}, callback, callback, null);
+                    util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
                 }
                 setTimeout(function(){
                     callback(null, result.rsp);
@@ -396,13 +396,13 @@ module.exports = {
                 util.handleError(err, callback, callback, null);
             }
             if (start !== 0 && !res) {
-                util.handleError({hoerror: 1, msg: "error stream"}, callback, callback, null);
+                util.handleError({hoerror: 1, message: "error stream"}, callback, callback, null);
             }
             if (res) {
                 var result = JSON.parse(res.body);
                 console.log(result);
                 if (!result.ok) {
-                    util.handleError({hoerror: 2, msg: result.msg}, callback, callback, null);
+                    util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
                 }
                 start = result.rsp.file_info.total_filesize;
             }
@@ -435,7 +435,7 @@ module.exports = {
                     }
                     var result = JSON.parse(res.body);
                     if (!result.ok) {
-                        util.handleError({hoerror: 2, msg: result.msg}, callback, callback, null);
+                        util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
                     }
                     setTimeout(function(){
                         callback(null, result.rsp);
@@ -452,7 +452,7 @@ module.exports = {
                     util.handleError(err, callback, callback, null);
                 }
                 if (!token) {
-                    util.handleError({hoerror: 2, msg: "can not find token"}, callback, callback, null);
+                    util.handleError({hoerror: 2, message: "can not find token"}, callback, callback, null);
                 }
                 access_token = token["access_token"];
                 expire_in = token["expire_in"];
@@ -579,10 +579,10 @@ module.exports = {
                     if (time < timeout) {
                         this_obj.xuiteDownloadMedia(time, threshold, key, filePath, is_thumb, is_hd, callback);
                     } else {
-                        util.handleError({hoerror: 2, msg: "timeout"}, callback, callback, null);
+                        util.handleError({hoerror: 2, message: "timeout"}, callback, callback, null);
                     }
                 } else {
-                    util.handleError({hoerror: 2, msg: statusResult.status + ": video upload fail"}, callback, callback);
+                    util.handleError({hoerror: 2, message: statusResult.status + ": video upload fail"}, callback, callback);
                 }
             });
         }, time);

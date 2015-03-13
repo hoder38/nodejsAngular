@@ -1265,6 +1265,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 break;
             case 'doc':
                 preType = 'preview';
+                this.doc.showId = this.doc.presentId = 1;
                 status = 5;
                 break;
             case 'present':
@@ -1306,6 +1307,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                             }
                             if (type === 'doc') {
                                 this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
+                                this_obj.$parent[type].maxId = item.present;
                             } else if (type === 'present') {
                                 this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/1';
                                 this_obj.$parent[type].maxId = item.present;
@@ -1351,6 +1353,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 } else {
                     if (type === 'doc') {
                         this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
+                        this_obj.$parent[type].maxId = item.present;
                     } else if (type === 'present') {
                         this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/1';
                         this_obj.$parent[type].maxId = item.present;
@@ -1922,10 +1925,12 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             searchTag = $scope.feedback.history[i].tag;
             index = arrayObjectIndexOf($scope.feedback.list, searchTag, "tag");
             if (index === -1) {
+                $scope.feedback.history[i].history = true;
                 if ($scope.feedback.history[i].select) {
-                    $scope.feedback.list.push($scope.feedback.history[i]);
+                    $scope.feedback.list.splice(0, 0, $scope.feedback.history[i]);
                 }
             } else {
+                $scope.feedback.list[index].history = true;
                 $scope.feedback.list[index].select = $scope.feedback.history[i].select;
             }
         }
@@ -1953,7 +1958,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
-    $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
     $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
     $scope.dirList = [];
     $scope.dirEdit = false;
@@ -2211,6 +2216,27 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         this.present.src = '/preview/' + this.present.list[this.present.index + this.present.back].id + '/' + this.present.presentId;
     }
 
+    $scope.docMove = function(number) {
+        if (number === 0) {
+            if (this.doc.showId >= 1 && this.doc.showId <= this.doc.maxId) {
+                this.doc.presentId = this.doc.showId;
+            } else {
+                this.doc.showId = this.doc.presentId;
+                return false;
+            }
+        } else {
+            var newIndex = +this.doc.presentId + number;
+            if (newIndex >= 1 && newIndex <= this.doc.maxId) {
+                this.doc.presentId = newIndex;
+                this.doc.showId = this.doc.presentId;
+            } else {
+                this.doc.showId = this.doc.presentId;
+                return false;
+            }
+        }
+        this.doc.src = '/preview/' + this.doc.list[this.doc.index + this.doc.back].id + '/' + this.doc.presentId;
+    }
+
     $scope.mediaMove = function(number, type, end) {
         console.log(this[type]);
         var preType = '', status = 0, isLoad = false;
@@ -2230,6 +2256,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             case 'doc':
                 preType = 'preview';
                 status = 5;
+                this.doc.showId = this.doc.presentId = 1;
                 break;
             case 'present':
                 preType = 'preview';
@@ -2311,6 +2338,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                     } else {
                                         if (type === 'doc') {
                                             this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                            this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                         } else if (type === 'present') {
                                             this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
                                             this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
@@ -2353,6 +2381,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             } else {
                                 if (type === 'doc') {
                                     this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                    this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                 } else if (type === 'present') {
                                     this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
                                     this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
@@ -2459,6 +2488,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                     } else {
                                         if (type === 'doc') {
                                             this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                            this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                         } else if (type === 'present') {
                                             this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
                                             this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
@@ -2501,6 +2531,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             } else {
                                 if (type === 'doc') {
                                     this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                    this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                 } else if (type === 'present') {
                                     this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
                                     this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
@@ -2568,6 +2599,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                         } else {
                             if (type === 'doc') {
                                 this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                             } else if (type === 'present') {
                                 this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
                                 this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
@@ -2610,6 +2642,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 } else {
                     if (type === 'doc') {
                         this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id + '/doc';
+                        this[type].maxId = this[type].list[this[type].index + this[type].back].present;
                     } else if (type === 'present') {
                         this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id + '/1';
                         this[type].maxId = this[type].list[this[type].index + this[type].back].present;

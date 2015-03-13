@@ -35,7 +35,7 @@ function sendAPI(method, data, callback) {
     switch(method) {
         case 'upload':
         if (!data['type'] || !data['name'] || (!data['filePath'] && !data['body'])) {
-            util.handleError({hoerror: 2, msg: 'upload parameter lost!!!'}, callback, callback);
+            util.handleError({hoerror: 2, message: 'upload parameter lost!!!'}, callback, callback);
         }
         var parent = {};
         var mimeType = '*/*';
@@ -44,14 +44,14 @@ function sendAPI(method, data, callback) {
                 parent = {id: media_folder};
                 mimeType = mime.mediaMIME(data['name']);
                 if (!mimeType) {
-                    util.handleError({hoerror: 2, msg: 'upload mime type unknown!!!'}, callback, callback);
+                    util.handleError({hoerror: 2, message: 'upload mime type unknown!!!'}, callback, callback);
                 }
                 break;
             case 'backup':
                 parent = {id: backup_folder};
                 break;
             default:
-                util.handleError({hoerror: 2, msg: 'upload type unknown!!!'}, callback, callback);
+                util.handleError({hoerror: 2, message: 'upload type unknown!!!'}, callback, callback);
         }
 
         if (data['filePath']) {
@@ -116,9 +116,10 @@ function sendAPI(method, data, callback) {
         case 'list':
         max = 100;
         if (data['max']) {
+            console.log(data);
             max = data['max'];
         }
-        drive.files.list({q: "'" + auto_folder + "' in parents", maxResults: 10}, function(err, metadata) {
+        drive.files.list({q: "'" + auto_folder + "' in parents", maxResults: max}, function(err, metadata) {
             if (err) {
                 util.handleError(err, callback, callback, null);
             }
@@ -129,7 +130,7 @@ function sendAPI(method, data, callback) {
         break;
         case 'delete':
         if (!data['fileId']) {
-            util.handleError({hoerror: 2, msg: 'delete parameter lost!!!'}, callback, callback);
+            util.handleError({hoerror: 2, message: 'delete parameter lost!!!'}, callback, callback);
         }
         param['fileId'] = data['fileId'];
         drive.files.trash(param, function(err) {
@@ -142,7 +143,7 @@ function sendAPI(method, data, callback) {
         });
         break;
         default:
-        util.handleError({hoerror: 2, msg: 'google api unknown!!!'}, callback, callback);
+        util.handleError({hoerror: 2, message: 'google api unknown!!!'}, callback, callback);
     }
 }
 
@@ -153,7 +154,7 @@ function checkOauth(callback) {
                 util.handleError(err, callback, callback, null);
             }
             if (!token) {
-                util.handleError({hoerror: 2, msg: "can not find token"}, callback, callback, null);
+                util.handleError({hoerror: 2, message: "can not find token"}, callback, callback, null);
             }
             tokens = token;
             if (tokens.expiry_date < (Date.now())) {
@@ -283,7 +284,7 @@ module.exports = {
                                     } else {
                                         retry--;
                                         if (retry === 0) {
-                                            util.handleError({hoerror: 2, msg: "download not complete"}, callback, callback);
+                                            util.handleError({hoerror: 2, message: "download not complete"}, callback, callback);
                                         } else {
                                             setTimeout(function(){
                                                 recur_download(1000);
@@ -293,7 +294,7 @@ module.exports = {
                                 });
                             } else if (res.statusCode === 302){
                                 if (!res.headers.location) {
-                                    util.handleError({hoerror: 1, msg: res.statusCode + ': download do not complete'}, callback, callback);
+                                    util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                                 }
                                 this_obj.googleDownload(res.headers.location, filePath, callback);
                             } else if (res.statusCode >= 400 && res.statusCode < 500) {
@@ -306,7 +307,7 @@ module.exports = {
                                             recur_download(time);
                                         }, 0);
                                     } else {
-                                        util.handleError({hoerror: 2, msg: "timeout"}, callback, callback);
+                                        util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                     }
                                 } else {
                                     if (time < 600000) {
@@ -314,12 +315,12 @@ module.exports = {
                                             recur_download(time);
                                         }, 0);
                                     } else {
-                                        util.handleError({hoerror: 2, msg: "timeout"}, callback, callback);
+                                        util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                     }
                                 }
                             } else {
                                 console.log(res);
-                                util.handleError({hoerror: 1, msg: res.statusCode + ': download do not complete'}, callback, callback);
+                                util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                             }
                             res.on('end', function() {
                                 console.log('res end');
@@ -338,7 +339,7 @@ module.exports = {
                                         } else {
                                             retry--;
                                             if (retry === 0) {
-                                                util.handleError({hoerror: 2, msg: "download not complete"}, callback, callback);
+                                                util.handleError({hoerror: 2, message: "download not complete"}, callback, callback);
                                             } else {
                                                 setTimeout(function(){
                                                     recur_download(1000);
@@ -350,7 +351,7 @@ module.exports = {
                             });
                         });
                         req.on('error', function(e) {
-                            console.log(e);
+                            util.handleError(e);
                             //util.handleError(e, callback, callback);
                             /*time = time * 2;
                             console.log(time);
@@ -358,13 +359,13 @@ module.exports = {
                                 if (time < threshold) {
                                     recur_download(time);
                                 } else {
-                                    util.handleError({hoerror: 2, msg: "timeout"}, callback, callback);
+                                    util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                 }
                             } else {
                                 if (time < 600000) {
                                     recur_download(time);
                                 } else {
-                                    util.handleError({hoerror: 2, msg: "timeout"}, callback, callback);
+                                    util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                 }
                             }*/
                         });
@@ -374,14 +375,14 @@ module.exports = {
             }
         });
     },
-    googleDownloadDoc: function(exportlink, key, filePath, ext, callback) {
+    googleDownloadDoc: function(exportlink, key, filePath, ext, callback, doc_name) {
         exportlink = exportlink.replace("=pdf", "=zip");
         this.googleDownload(exportlink, filePath + ".zip", function(err) {
             if (err) {
                 util.handleError(err, callback, callback);
             }
             if (!fs.existsSync(filePath + '.zip')) {
-                util.handleError({hoerror: 2, msg: 'cannot find zip'}, callback, callback);
+                util.handleError({hoerror: 2, message: 'cannot find zip'}, callback, callback);
             }
             var cmdline = 'unzip ' + filePath + '.zip -d ' + filePath + '_doc';
             console.log(cmdline);
@@ -405,18 +406,36 @@ module.exports = {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
-                            if (!fs.existsSync(filePath + '_doc/' + path.basename(filePath) + '.' + ext + '.html')) {
-                                util.handleError({hoerror: 2, msg: 'cannot find html'}, callback, callback);
+                            if (!doc_name) {
+                                doc_name = path.basename(filePath) + '.' + ext;
+                            }
+                            var doc_index = 1;
+                            if(fs.existsSync(filePath + '_doc')) {
+                                fs.readdirSync(filePath + '_doc').forEach(function(file,index){
+                                    var curPath = filePath + '_doc/' + file;
+                                    if(!fs.lstatSync(curPath).isDirectory()) { // recurse
+                                        for (doc_index;doc_index < 100;doc_index++) {
+                                            console.log(curPath);
+                                            console.log(filePath + '_doc/doc' + doc_index + '.html');
+                                            if (doc_index === 1) {
+                                                if (!fs.existsSync(filePath + '_doc/doc.html')) {
+                                                    fs.renameSync(curPath, filePath + '_doc/doc.html');
+                                                    break;
+                                                }
+                                            } else {
+                                                if (!fs.existsSync(filePath + '_doc/doc' + doc_index + '.html')) {
+                                                    fs.renameSync(curPath, filePath + '_doc/doc' + doc_index + '.html');
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
                             }
                             console.log(output);
-                            fs.rename(filePath + '_doc/' + path.basename(filePath) + '.' + ext + '.html', filePath + '_doc/doc.html', function (err) {
-                                if (err) {
-                                    util.handleError(err, callback, callback);
-                                }
-                                setTimeout(function(){
-                                    callback(null);
-                                }, 0);
-                            });
+                            setTimeout(function(){
+                                callback(null, doc_index);
+                            }, 0);
                         });
                     });
                 }, 5000);
@@ -435,7 +454,7 @@ module.exports = {
                     if (pageid === 3) {
                         util.handleError(err, callback, callback);
                     }
-                    console.log(err);
+                    util.handleError(err);
                     setTimeout(function(){
                         callback(null, number-1);
                     }, 0);
@@ -498,7 +517,7 @@ module.exports = {
                 });
                 break;
             default:
-                util.handleError({hoerror: 2, msg: 'recycle ' + recycle + ' denied!!!'}, callback, callback);
+                util.handleError({hoerror: 2, message: 'recycle ' + recycle + ' denied!!!'}, callback, callback);
         }
     },
     googleDownloadMedia: function(threshold, alternate, key, filePath, hd, callback) {
@@ -532,7 +551,7 @@ module.exports = {
                     var pattern = media_code + '\\|(https\:\/\/[^,"]+)';
                     var media_location = output.match(pattern);
                     if (!media_location) {
-                        util.handleError({hoerror: 2, msg: 'google media location unknown!!!'}, callback, callback);
+                        util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
                     }
                     media_location = media_location[1];
                     media_location = deUnicode(media_location);

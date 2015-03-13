@@ -133,10 +133,10 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
         console.log(req.body);
         var pwd = util.isValidString(req.body.pwd, 'passwd');
         if (pwd === false) {
-            util.handleError({hoerror: 2, msg: "passwd is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "passwd is not vaild"}, next, res);
         }
         if (req.user.password !== crypto.createHash('md5').update(pwd).digest('hex')) {
-            util.handleError({hoerror: 2, msg: "password error"}, next, res);
+            util.handleError({hoerror: 2, message: "password error"}, next, res);
         }
         var ret = {};
         var data = {};
@@ -144,11 +144,11 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
         var id;
         if (req.body.desc === '' || req.body.desc) {
             if (!util.checkAdmin(1, req.user)) {
-                util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
+                util.handleError({hoerror: 2, message: 'unknown type in edituser'}, next, res, 403);
             }
             var desc = util.isValidString(req.body.desc, 'desc');
             if (desc === false) {
-                util.handleError({hoerror: 2, msg: "desc is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "desc is not vaild"}, next, res);
             }
             data['desc'] = desc;
             ret['desc'] = desc;
@@ -156,14 +156,14 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
         }
         if (req.body.perm === '' || req.body.perm) {
             if (!util.checkAdmin(1, req.user)) {
-                util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
+                util.handleError({hoerror: 2, message: 'unknown type in edituser'}, next, res, 403);
             }
             var perm = util.isValidString(req.body.perm, 'perm');
             if (perm === false) {
-                util.handleError({hoerror: 2, msg: "perm is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "perm is not vaild"}, next, res);
             }
             if (req.user._id.equals(util.isValidString(req.params.uid, 'uid'))) {
-                util.handleError({hoerror: 2, msg: "owner can not eidt self perm"}, next, res);
+                util.handleError({hoerror: 2, message: "owner can not eidt self perm"}, next, res);
             }
             data['perm'] = perm;
             ret['perm'] = perm;
@@ -171,11 +171,11 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
         }
         if (req.body.unDay && req.body.unDay) {
             if (!util.checkAdmin(1, req.user)) {
-                util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
+                util.handleError({hoerror: 2, message: 'unknown type in edituser'}, next, res, 403);
             }
             var unDay = util.isValidString(req.body.unDay, 'int');
             if (unDay === false) {
-                util.handleError({hoerror: 2, msg: "unactive day is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "unactive day is not vaild"}, next, res);
             }
             data['unDay'] = unDay;
             ret['unDay'] = unDay;
@@ -183,11 +183,11 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
         }
         if (req.body.unHit && req.body.unHit) {
             if (!util.checkAdmin(1, req.user)) {
-                util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
+                util.handleError({hoerror: 2, message: 'unknown type in edituser'}, next, res, 403);
             }
             var unHit = util.isValidString(req.body.unHit, 'int');
             if (unHit === false) {
-                util.handleError({hoerror: 2, msg: "unactive hit is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "unactive hit is not vaild"}, next, res);
             }
             data['unHit'] = unHit;
             ret['unHit'] = unHit;
@@ -197,24 +197,24 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
             var newPwd = util.isValidString(req.body.newPwd, 'passwd'),
                 conPwd = util.isValidString(req.body.conPwd, 'passwd');
             if (newPwd === false) {
-                util.handleError({hoerror: 2, msg: "new passwd is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "new passwd is not vaild"}, next, res);
             }
             if (conPwd === false) {
-                util.handleError({hoerror: 2, msg: "con passwd is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "con passwd is not vaild"}, next, res);
             }
             if (newPwd !== conPwd) {
-                util.handleError({hoerror: 2, msg: 'confirm password must equal!!!'}, next, res);
+                util.handleError({hoerror: 2, message: 'confirm password must equal!!!'}, next, res);
             }
             data['password'] = crypto.createHash('md5').update(newPwd).digest('hex');
         }
         if (util.checkAdmin(1, req.user)) {
             id = util.isValidString(req.params.uid, 'uid');
             if (id === false) {
-                util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
             }
         } else {
             if (needPerm) {
-                util.handleError({hoerror: 2, msg: 'unknown type in edituser'}, next, res, 403);
+                util.handleError({hoerror: 2, message: 'unknown type in edituser'}, next, res, 403);
             } else {
                 id = req.user._id;
             }
@@ -222,14 +222,14 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
         if (req.body.name) {
             var name = util.isValidString(req.body.name, 'name');
             if (name === false) {
-                util.handleError({hoerror: 2, msg: "name is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
             }
             mongo.orig("findOne", "user", {username: name}, function(err, user){
                 if(err) {
                     util.handleError(err, next, res);
                 }
                 if (user) {
-                    util.handleError({hoerror: 2, msg: 'already has one!!!'}, next, res);
+                    util.handleError({hoerror: 2, message: 'already has one!!!'}, next, res);
                 }
                 data['username'] = name;
                 ret['name'] = name;
@@ -247,7 +247,7 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
             });
         } else {
             if (Object.getOwnPropertyNames(data).length === 0) {
-                util.handleError({hoerror: 2, msg: 'nothing to change!!!'}, next, res);
+                util.handleError({hoerror: 2, message: 'nothing to change!!!'}, next, res);
             }
             console.log(data);
             console.log(id);
@@ -273,10 +273,10 @@ app.post('/api/adduser', function(req, res, next){
             console.log(req.body);
             var pwd = util.isValidString(req.body.pwd, 'passwd');
             if (pwd === false) {
-                util.handleError({hoerror: 2, msg: "passwd is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "passwd is not vaild"}, next, res);
             }
             if (req.user.password !== crypto.createHash('md5').update(pwd).digest('hex')) {
-                util.handleError({hoerror: 2, msg: "password error"}, next, res);
+                util.handleError({hoerror: 2, message: "password error"}, next, res);
             }
             var name = util.isValidString(req.body.name, 'name'),
                 desc = util.isValidString(req.body.desc, 'desc'),
@@ -284,19 +284,19 @@ app.post('/api/adduser', function(req, res, next){
                 newPwd = util.isValidString(req.body.newPwd, 'passwd'),
                 conPwd = util.isValidString(req.body.conPwd, 'passwd');
             if (name === false) {
-                util.handleError({hoerror: 2, msg: "name is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
             }
             if (desc === false) {
-                util.handleError({hoerror: 2, msg: "desc is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "desc is not vaild"}, next, res);
             }
             if (perm === false) {
-                util.handleError({hoerror: 2, msg: "perm is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "perm is not vaild"}, next, res);
             }
             if (newPwd === false) {
-                util.handleError({hoerror: 2, msg: "new passwd is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "new passwd is not vaild"}, next, res);
             }
             if (conPwd === false) {
-                util.handleError({hoerror: 2, msg: "con passwd is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "con passwd is not vaild"}, next, res);
             }
             mongo.orig("count", "user" ,{username: name}, function(err,count){
                 if(err) {
@@ -304,10 +304,10 @@ app.post('/api/adduser', function(req, res, next){
                 }
                 if (count > 0) {
                     console.log(count);
-                    util.handleError({hoerror: 2, msg: 'already has one!!!'}, next, res);
+                    util.handleError({hoerror: 2, message: 'already has one!!!'}, next, res);
                 }
                 if (newPwd !== conPwd) {
-                    util.handleError({hoerror: 2, msg: 'password must equal!!!'}, next, res);
+                    util.handleError({hoerror: 2, message: 'password must equal!!!'}, next, res);
                 }
                 var data = {};
                 var item = {newable: false, delable: true};
@@ -328,7 +328,7 @@ app.post('/api/adduser', function(req, res, next){
                 });
             });
         } else {
-            util.handleError({hoerror: 2, msg: 'unknown type in adduser'}, next, res, 403);
+            util.handleError({hoerror: 2, message: 'unknown type in adduser'}, next, res, 403);
         }
     });
 });
@@ -336,7 +336,7 @@ app.post('/api/adduser', function(req, res, next){
 app.put('/api/deluser/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         if (!util.checkAdmin(1, req.user)) {
-            util.handleError({hoerror: 2, msg: 'unknown type in deluser'}, next, res, 403);
+            util.handleError({hoerror: 2, message: 'unknown type in deluser'}, next, res, 403);
         }
         console.log("deluser");
         console.log(req.body);
@@ -344,23 +344,23 @@ app.put('/api/deluser/:uid', function(req, res, next){
         var pwd = util.isValidString(req.body.pwd, 'passwd'),
             id = util.isValidString(req.params.uid, 'uid');
         if (pwd === false) {
-            util.handleError({hoerror: 2, msg: "passwd is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "passwd is not vaild"}, next, res);
         }
         if (req.user.password !== crypto.createHash('md5').update(pwd).digest('hex')) {
-            util.handleError({hoerror: 2, msg: "password error"}, next, res);
+            util.handleError({hoerror: 2, message: "password error"}, next, res);
         }
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         mongo.orig("findOne", "user" , {_id: id}, function(err,user){
             if(err) {
                 util.handleError(err, next, res);
             }
             if (!user) {
-                util.handleError({hoerror: 2, msg: 'user does not exist!!!'}, next, res);
+                util.handleError({hoerror: 2, message: 'user does not exist!!!'}, next, res);
             }
             if (util.checkAdmin(1, user)) {
-                util.handleError({hoerror: 2, msg: 'owner cannot be deleted!!!'}, next, res);
+                util.handleError({hoerror: 2, message: 'owner cannot be deleted!!!'}, next, res);
             }
             console.log(user);
             mongo.orig("remove", "user", {_id: id, $isolated: 1}, function(err,user){
@@ -494,20 +494,20 @@ function editFile(uid, newName, user, next, callback) {
     var name = util.isValidString(newName, 'name'),
         id = util.isValidString(uid, 'uid');
     if (name === false) {
-        util.handleError({hoerror: 2, msg: "name is not vaild"}, next, callback);
+        util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
     }
     if (id === false) {
-        util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, callback);
+        util.handleError({hoerror: 2, message: "uid is not vaild"}, next, callback);
     }
     mongo.orig("findOne", "storage", { _id: id }, function(err, item){
         if(err) {
             util.handleError(err, next, callback);
         }
         if (!item) {
-            util.handleError({hoerror: 2, msg: 'file not exist!!!'}, next, callback);
+            util.handleError({hoerror: 2, message: 'file not exist!!!'}, next, callback);
         }
         if (!util.checkAdmin(1, user) && !user._id.equals(item.owner)) {
-            util.handleError({hoerror: 2, msg: 'file is not yours!!!'}, next, callback);
+            util.handleError({hoerror: 2, message: 'file is not yours!!!'}, next, callback);
         }
         mongo.orig("update", "storage", { _id: id }, {$set: {name: name}}, function(err, item2){
             if(err) {
@@ -578,9 +578,7 @@ function editFile(uid, newName, user, next, callback) {
                         handleMediaUpload(mediaType, filePath, id, name, item.size, user, function(err) {
                             sendWs({type: 'file', data: item._id}, item.adultonly);
                             if(err) {
-                                util.handleError(err, function(err) {
-                                    console.log(err);
-                                });
+                                util.handleError(err);
                             }
                             console.log('transcode done');
                         });
@@ -595,21 +593,21 @@ app.put('/api/recoverFile/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("recoverFile");
         if (!util.checkAdmin(1, req.user)) {
-            util.handleError({hoerror: 2, msg: "permission denied"}, next, res);
+            util.handleError({hoerror: 2, message: "permission denied"}, next, res);
         }
         var id = util.isValidString(req.params.uid, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         mongo.orig("findOne", "storage", {_id: id}, function(err, item){
             if (err) {
                 util.handleError(err, next, res);
             }
             if (!item) {
-                util.handleError({hoerror: 2, msg: 'file can not be fund!!!'}, next, res);
+                util.handleError({hoerror: 2, message: 'file can not be fund!!!'}, next, res);
             }
             if (item.recycle !== 1 && item.recycle !== 2 && item.recycle !== 3 && item.recycle !== 4) {
-                util.handleError({hoerror: 2, msg: 'recycle file first!!!'}, next, res);
+                util.handleError({hoerror: 2, message: 'recycle file first!!!'}, next, res);
             }
             mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 0}}, function(err, item2){
                 if(err) {
@@ -644,20 +642,20 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
         console.log("delFile");
         var id = util.isValidString(req.params.uid, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         mongo.orig("findOne", "storage", {_id: id}, function(err, item){
             if (err) {
                 util.handleError(err, next, res);
             }
             if (!item) {
-                util.handleError({hoerror: 2, msg: 'file can not be fund!!!'}, next, res);
+                util.handleError({hoerror: 2, message: 'file can not be fund!!!'}, next, res);
             }
             var recycle = 1;
             var filePath = util.getFileLocation(item.owner, item._id);
             if (req.params.recycle === '4' && util.checkAdmin(1, req.user)) {
                 if (item.recycle !== 4) {
-                    util.handleError({hoerror: 2, msg: 'recycle file first!!!'}, next, res);
+                    util.handleError({hoerror: 2, message: 'recycle file first!!!'}, next, res);
                 }
                 if (item.status === 7) {
                     mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
@@ -728,7 +726,7 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                 }
             } else if (req.params.recycle === '0'){
                 if (!util.checkAdmin(1, req.user) && !req.user._id.equals(item.owner)) {
-                    util.handleError({hoerror: 2, msg: 'file is not yours!!!'}, next, res);
+                    util.handleError({hoerror: 2, message: 'file is not yours!!!'}, next, res);
                 }
                 mongo.orig("update", "storage", { _id: id }, {$set: {recycle: recycle, utime: Math.round(new Date().getTime() / 1000)}}, function(err, item2){
                     if(err) {
@@ -741,7 +739,7 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                 });
             } else {
                 if (!util.checkAdmin(1, req.user)) {
-                    util.handleError({hoerror: 2, msg: 'permission dined!!!'}, next, res);
+                    util.handleError({hoerror: 2, message: 'permission dined!!!'}, next, res);
                 }
                 recycle = item.recycle;
                 res.json({apiOK: true});
@@ -752,26 +750,20 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                     mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 4}}, function(err, item3){
                         console.log(recycle);
                         if(err) {
-                            util.handleError(err, function(err) {
-                                console.log(err);
-                            });
+                            util.handleError(err);
                         }
                         sendWs({type: 'file', data: item._id}, item.adultonly);
                     });
                 } else {
                     googleApi.googleBackup(item._id, item.name, filePath, item.tags, recycle, function(err) {
                         if(err) {
-                            util.handleError(err, function(err) {
-                                console.log(err);
-                            });
+                            util.handleError(err);
                         } else {
                             recycle++;
                             mongo.orig("update", "storage", { _id: id }, {$set: {recycle: recycle}}, function(err, item3){
                                 console.log(recycle);
                                 if(err) {
-                                    util.handleError(err, function(err) {
-                                        console.log(err);
-                                    });
+                                    util.handleError(err);
                                 } else {
                                     sendWs({type: 'file', data: item._id}, item.adultonly);
                                     if (recycle < 4) {
@@ -800,7 +792,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
             mediaTag = {def:[], opt:[]};
         var isVideo = false;
         console.log(mediaType);
-        if (mediaType && (status === 0 || status === 1 || status === 2 || status === 5 || status === 6) && (!oldType || (mediaType.ext !== oldType.ext))) {
+        if (mediaType && (status === 0 || status === 1 || status === 5) && (!oldType || (mediaType.ext !== oldType.ext))) {
             switch(mediaType['type']) {
                 case 'video':
                 case 'vlog':
@@ -857,7 +849,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                             callback(null, mediaType, mediaTag, DBdata);
                         }, 0);
                     }).on('error', function(err) {
-                        console.log(err);
+                        util.handleError(err);
                     }).exec();
                     return;
                 case 'image':
@@ -870,7 +862,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                     DBdata['mediaType'] = mediaType;
                     break;
                 default:
-                    util.handleError({hoerror: 2, msg: 'unknown media type!!!'}, callback, callback, null, null, null);
+                    util.handleError({hoerror: 2, message: 'unknown media type!!!'}, callback, callback, null, null, null);
             }
             console.log(mediaTag);
         } else {
@@ -879,7 +871,6 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                 switch(mediaType['type']) {
                     case 'video':
                     case 'vlog':
-                        mediaType = false;
                         new Transcoder(filePath)
                         .on('metadata', function(meta) {
                             console.log(meta);
@@ -901,11 +892,12 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                                     }
                                 }
                             }
+                            mediaType = false;
                             setTimeout(function(){
                                 callback(null, mediaType, mediaTag, DBdata);
                             }, 0);
                         }).on('error', function(err) {
-                            console.log(err);
+                            util.handleError(err);
                         }).exec();
                         return;
                 }
@@ -923,22 +915,22 @@ app.post('/upload/subtitle/:uid', function(req, res, next) {
         console.log('upload substitle');
         console.log(req.files);
         if (req.files.file.size > (10 * 1024 * 1024)) {
-            util.handleError({hoerror: 2, msg: "size too large!!!"}, next, res);
+            util.handleError({hoerror: 2, message: "size too large!!!"}, next, res);
         }
         var ext = mime.isSub(req.files.file.name);
         if (!ext) {
-            util.handleError({hoerror: 2, msg: "not valid subtitle!!!"}, next, res);
+            util.handleError({hoerror: 2, message: "not valid subtitle!!!"}, next, res);
         }
         var id = util.isValidString(req.params.uid, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         mongo.orig("findOne", "storage", { _id: id }, function(err, item){
             if(err) {
                 util.handleError(err, next, callback);
             }
             if (!item) {
-                util.handleError({hoerror: 2, msg: 'file not exist!!!'}, next, callback);
+                util.handleError({hoerror: 2, message: 'file not exist!!!'}, next, callback);
             }
             var filePath = util.getFileLocation(item.owner, item._id);
             var folderPath = path.dirname(filePath);
@@ -1092,9 +1084,7 @@ app.post('/upload/file', function(req, res, next){
                         handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
                             sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                             if(err) {
-                                util.handleError(err, function(err) {
-                                    console.log(err);
-                                });
+                                util.handleError(err);
                             }
                             console.log('transcode done');
                         });
@@ -1104,10 +1094,6 @@ app.post('/upload/file', function(req, res, next){
         };
     });
 });
-
-function handleDriveDownload(mediaType, filePath, fileID, fileName, fileSize, user, callback) {
-
-}
 
 function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user, callback) {
     if (mediaType) {
@@ -1124,7 +1110,7 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                     console.log(uploadResult);
                     mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.key": uploadResult.key}}, function(err, item){
                         if(err) {
-                            util.handleError(err, callback, callback);
+                            util.handleError(err, callback, errerMedia, fileID, callback);
                         }
                         console.log(item);
                         handleMedia(mediaType, filePath, fileID, fileName, uploadResult.key, user, callback);
@@ -1144,15 +1130,18 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
                 console.log(metadata);
-                if (!metadata.thumbnailLink && mediaType['type'] === 'video') {
-                    metadata.thumbnailLink = metadata.alternateLink;
-                } else if(!metadata.thumbnailLink) {
-                    metadata.thumbnailLink = metadata.exportLinks['application/pdf'];
+                if (metadata.thumbnailLink) {
+                    mediaType['thumbnail'] = metadata.thumbnailLink;
+                } else if (mediaType['type'] === 'video' && metadata.alternateLink) {
+                    mediaType['thumbnail'] = metadata.alternateLink;
+                } else if(metadata.exportLinks && metadata.exportLinks['application/pdf']) {
+                    mediaType['thumbnail'] = metadata.exportLinks['application/pdf'];
+                } else {
+                    util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
                 }
-                mediaType['thumbnail'] = metadata.thumbnailLink;
-                mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.thumbnail": metadata.thumbnailLink, "mediaType.key": metadata.id}}, function(err, item){
+                mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.thumbnail": mediaType['thumbnail'], "mediaType.key": metadata.id}}, function(err, item){
                     if(err) {
-                        util.handleError(err, callback, callback);
+                        util.handleError(err, callback, errerMedia, fileID, callback);
                     }
                     console.log(item);
                     handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback);
@@ -1163,7 +1152,7 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
 }
 
 function errerMedia(errMedia, fileID, callback) {
-    mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.err": errMedia.msg}}, function(err, item){
+    mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.err": errMedia}}, function(err, item){
         if(err) {
             util.handleError(err, callback, callback);
         }
@@ -1176,7 +1165,7 @@ function errerMedia(errMedia, fileID, callback) {
 
 function completeMedia(fileID, status, callback, number) {
     var data = {status: status};
-    if (number) {
+    if (number && number > 1) {
         data['present'] = number;
     }
     mongo.orig("update", "storage", { _id: fileID }, {$unset: {mediaType: ""}, $set: data}, function(err, item){
@@ -1223,7 +1212,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
         });
     } else if (mediaType['type'] === 'vlog') {
         if (!mediaType.hasOwnProperty('time') && !mediaType.hasOwnProperty('hd')) {
-            util.handleError({hoerror: 2, msg: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback);
+            util.handleError({hoerror: 2, message: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback);
         }
         api.xuiteDownloadMedia(1000, mediaType['time'], key, filePath, 1, mediaType['hd'], function(err, hd, video_url) {
             if(err) {
@@ -1232,7 +1221,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
             if (hd === 1) {
                 mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.hd": 2, status: 3}}, function(err, item){
                     if(err) {
-                        util.handleError(err, callback, callback);
+                        util.handleError(err, callback, errerMedia, fileID, callback);
                     }
                     console.log(item);
                     api.xuiteDownload(video_url, filePath, function(err) {
@@ -1245,11 +1234,11 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                             }
                             tagTool.addTag(fileID, 'hd', user, callback, function(err, result) {
                                 if (err) {
-                                    util.handleError(err, callback, callback);
+                                    util.handleError(err, callback, errerMedia, fileID, callback);
                                 }
                                 tagTool.addTag(fileID, '720p', user, callback, function(err, result) {
                                     if (err) {
-                                        util.handleError(err, callback, callback);
+                                        util.handleError(err, callback, errerMedia, fileID, callback);
                                     }
                                     completeMedia(fileID, 3, function(err) {
                                         if (err) {
@@ -1281,11 +1270,11 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                         }
                         tagTool.addTag(fileID, 'hd', user, callback, function(err, result) {
                             if (err) {
-                                util.handleError(err, callback, callback);
+                                util.handleError(err, callback, errerMedia, fileID, callback);
                             }
                             tagTool.addTag(fileID, '720p', user, callback, function(err, result) {
                                 if (err) {
-                                    util.handleError(err, callback, callback);
+                                    util.handleError(err, callback, errerMedia, fileID, callback);
                                 }
                                 completeMedia(fileID, 3, function(err) {
                                     if (err) {
@@ -1324,7 +1313,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
         });
     } else if (mediaType['type'] === 'video') {
         if (!mediaType.hasOwnProperty('time') && !mediaType.hasOwnProperty('hd')) {
-            util.handleError({hoerror: 2, msg: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback);
+            util.handleError({hoerror: 2, message: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback);
         }
         googleApi.googleDownloadMedia(mediaType['time'], mediaType['thumbnail'], key, filePath, mediaType['hd'], function(err) {
             if(err) {
@@ -1352,7 +1341,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
             });
         });
     } else if (mediaType['type'] === 'doc' || mediaType['type'] === 'rawdoc' || mediaType['type'] === 'sheet') {
-        googleApi.googleDownloadDoc(mediaType['thumbnail'], key, filePath, mediaType['ext'], function(err) {
+        googleApi.googleDownloadDoc(mediaType['thumbnail'], key, filePath, mediaType['ext'], function(err, number) {
             if(err) {
                 util.handleError(err, callback, errerMedia, fileID, callback);
             }
@@ -1361,13 +1350,13 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                 if (err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
-                completeMedia(fileID, 5, callback);
+                completeMedia(fileID, 5, callback, number);
             });
         });
     } else if (mediaType['type'] === 'present') {
         googleApi.googleDownloadPresent(mediaType['thumbnail'], key, filePath, mediaType['ext'], function(err, number) {
             if(err) {
-                util.handleError(err, callback, callback);
+                util.handleError(err, callback, errerMedia, fileID, callback);
             }
             var data = {fileId: key};
             googleApi.googleApi('delete', data, function(err) {
@@ -1380,7 +1369,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
     //不處理了
     /*} else if (mediaType['type'] === 'music') {
         if (!mediaType.hasOwnProperty('time') && !mediaType.hasOwnProperty('hd')) {
-            util.handleError({hoerror: 2, msg: 'music can not decode!!!'}, callback, errerMedia, fileID, callback);
+            util.handleError({hoerror: 2, message: 'music can not decode!!!'}, callback, errerMedia, fileID, callback);
         }
         api.xuiteDownloadMedia(1000, mediaType['time'], key, filePath, 0, 0, function(err) {
             if(err) {
@@ -1445,20 +1434,20 @@ app.get('/api/handleMedia/:uid/:action(act|del)', function(req, res, next) {
         console.log('handleMedia');
         var id = util.isValidString(req.params.uid, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         mongo.orig("findOne", "storage", {_id: id}, function(err,item){
             if (err) {
                 util.handleError(err, next, res);
             }
             if (!item) {
-                util.handleError({hoerror: 2, msg: "cannot find file!!!"}, next, res);
+                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
             console.log(item);
             switch(req.params.action) {
                 case 'act':
                     if (!item.mediaType) {
-                        util.handleError({hoerror: 2, msg: "this file is not media!!!"}, next, res);
+                        util.handleError({hoerror: 2, message: "this file is not media!!!"}, next, res);
                     }
                     var filePath = util.getFileLocation(item.owner, item._id);
                     console.log(filePath);
@@ -1466,17 +1455,13 @@ app.get('/api/handleMedia/:uid/:action(act|del)', function(req, res, next) {
                     if(item.mediaType.key) {
                         handleMedia(item.mediaType, filePath, item._id, item.name, item.mediaType.key, req.user, function (err) {
                             sendWs({type: 'file', data: item._id}, item.adultonly);
-                            util.handleError(err, function(err) {
-                                console.log(err);
-                            });
+                            util.handleError(err);
                             console.log('transcode done');
                         });
                     } else {
                         handleMediaUpload(item.mediaType, filePath, item._id, item.name, item.size, req.user, function (err) {
                             sendWs({type: 'file', data: item._id}, item.adultonly);
-                            util.handleError(err, function(err) {
-                                console.log(err);
-                            });
+                            util.handleError(err);
                             console.log('transcode done');
                         });
                     }
@@ -1485,14 +1470,12 @@ app.get('/api/handleMedia/:uid/:action(act|del)', function(req, res, next) {
                     res.json({apiOK: true});
                     completeMedia(item._id, 0, function (err) {
                         sendWs({type: 'file', data: item._id}, item.adultonly);
-                        util.handleError(err, function(err) {
-                            console.log(err);
-                        });
+                        util.handleError(err);
                         console.log('delete media done');
                     });
                     break;
                 default:
-                    util.handleError({hoerror: 2, msg: "unknown action"}, next, res);
+                    util.handleError({hoerror: 2, message: "unknown action"}, next, res);
                     break;
             }
         });
@@ -1550,7 +1533,7 @@ app.delete('/api/parent/del/:id', function(req, res, next) {
         console.log("parentDel");
         var id = util.isValidString(req.params.id, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         tagTool.delParent(id, req.user, next, function(err, result) {
             if (err) {
@@ -1566,7 +1549,7 @@ app.get('/api/parent/query/:id', function(req, res, next) {
         console.log("parent query");
         var id = util.isValidString(req.params.id, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         var sortName = 'name';
         var sortType = 'desc';
@@ -1709,7 +1692,7 @@ app.get('/api/bookmark/get/:id', function (req, res, next) {
         console.log("get bookmark");
         var id = util.isValidString(req.params.id, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "bookmark is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
         var sortName = 'name';
         var sortType = 'desc';
@@ -1734,7 +1717,7 @@ app.post('/api/bookmark/add', function (req, res, next) {
         console.log("addbookmark");
         var name = util.isValidString(req.body.name, 'name');
         if (name === false) {
-            util.handleError({hoerror: 2, msg: "name is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
         }
         tagTool.addBookmark(name, req.user, req.session, next, function(err, result){
             if(err) {
@@ -1750,7 +1733,7 @@ app.delete('/api/bookmark/del/:id', function (req, res, next) {
         console.log("del bookmark");
         var id = util.isValidString(req.params.id, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "bookmark is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
         tagTool.delBookmark(id, next, function(err, result){
             if(err) {
@@ -1765,7 +1748,7 @@ app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, re
     checkLogin(req, res, next, function(req, res, next) {
         console.log('more media');
         if (req.params.type < 2 || req.params.type > 6) {
-            util.handleError({hoerror: 2, msg: "media type error"}, next, res);
+            util.handleError({hoerror: 2, message: "media type error"}, next, res);
         }
         var saveName = '';
         var type = Number(req.params.type);
@@ -1787,11 +1770,11 @@ app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, re
                 saveName = 'present';
                 break;
             default:
-                util.handleError({hoerror: 2, msg: "unknown type"}, next, res);
+                util.handleError({hoerror: 2, message: "unknown type"}, next, res);
         }
         var sql = tagTool.saveSql(page, saveName, req.params.back, req.user, req.session);
         if (!sql) {
-            util.handleError({hoerror: 2, msg: "query error"}, next, res);
+            util.handleError({hoerror: 2, message: "query error"}, next, res);
         }
         sql.nosql.$and.push({status: type});
         console.log(sql.options);
@@ -1812,11 +1795,11 @@ app.post('/api/media/saveParent', function(req, res, next) {
         console.log('saveParent');
         var name = util.isValidString(req.body.name, 'name');
         if (name === false) {
-            util.handleError({hoerror: 2, msg: "name is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
         }
         var tags = tagTool.searchTags(req.session, 'parent');
         if (!tags) {
-            util.handleError({hoerror: 2, msg: 'error search var!!!'}, next, res);
+            util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
         }
         var sortName = 'name';
         var sortType = 'desc';
@@ -1837,7 +1820,7 @@ app.get('/api/media/record/:id/:time(\\d+)', function(req, res, next){
         console.log(req.params.time);
         var id = util.isValidString(req.params.id, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "file is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "file is not vaild"}, next, res);
         }
         if (req.params.time === '0') {
             mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: id, $isolated: 1}, function(err,user){
@@ -1902,7 +1885,7 @@ app.get('/api/media/setTime/:id', function(req, res, next){
         console.log('media setTime');
         var id = util.isValidString(req.params.id, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "file is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "file is not vaild"}, next, res);
         }
         mongo.orig("findOne", "storageRecord", {userId: req.user._id, fileId: id}, function(err, item){
             if (err) {
@@ -1924,7 +1907,7 @@ app.post('/api/upload/url', function(req, res, next){
         console.log(req.body);
         var url = util.isValidString(req.body.url, 'url');
         if (url === false) {
-            util.handleError({hoerror: 2, msg: "url is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
         }
         var oOID = mongo.objectID();
         var filePath = util.getFileLocation(req.user._id, oOID);
@@ -2012,9 +1995,7 @@ app.post('/api/upload/url', function(req, res, next){
                         handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
                             sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                             if(err) {
-                                util.handleError(err, function(err) {
-                                    console.log(err);
-                                });
+                                util.handleError(err);
                             }
                             console.log('transcode done');
                         });
@@ -2031,7 +2012,7 @@ app.post('/api/addurl', function(req, res, next){
         console.log(req.body);
         var url = util.isValidString(req.body.url, 'url');
         if (url === false) {
-            util.handleError({hoerror: 2, msg: "url is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
         }
         var oOID = mongo.objectID();
         var utime = Math.round(new Date().getTime() / 1000);
@@ -2115,14 +2096,14 @@ app.get('/download/:uid', function(req, res, next){
         console.log(req.params);
         var id = util.isValidString(req.params.uid, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         mongo.orig("findOne", "storage", {_id: id}, function(err,item){
             if (err) {
                 util.handleError(err, next, res);
             }
             if (!item) {
-                util.handleError({hoerror: 2, msg: "cannot find file!!!"}, next, res);
+                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
             console.log(item);
             var filePath = util.getFileLocation(item.owner, item._id);
@@ -2151,14 +2132,14 @@ app.get('/image/:uid', function(req, res, next){
         console.log(req.params);
         var id = util.isValidString(req.params.uid, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         mongo.orig("findOne", "storage", {_id: id}, function(err,item){
             if (err) {
                 util.handleError(err, next, res);
             }
             if (!item) {
-                util.handleError({hoerror: 2, msg: "cannot find file!!!"}, next, res);
+                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
             console.log(item);
             var filePath = util.getFileLocation(item.owner, item._id);
@@ -2187,7 +2168,7 @@ app.get('/preview/:uid/:type(doc|images|\\d+)?/:imgName(image\\d+.png)?', functi
         console.log('preview');
         var id = util.isValidString(req.params.uid, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         mongo.orig("findOne", "storage", {_id: id}, function(err,item){
             if (err) {
@@ -2210,15 +2191,22 @@ app.get('/preview/:uid/:type(doc|images|\\d+)?/:imgName(image\\d+.png)?', functi
                         ext = '_doc/doc.html';
                     } else if (req.params.type === 'images' && req.params.imgName) {
                         ext = '_doc/images/' + req.params.imgName;
+                    } else if (Number(req.params.type) >= 1){
+                        type = 'text/html';
+                        if (Number(req.params.type) === 1) {
+                            ext = '_doc/doc.html';
+                        } else {
+                            ext = '_doc/doc' + Number(req.params.type) + '.html';
+                        }
                     } else {
-                        util.handleError({hoerror: 2, msg: "cannot find doc!!!"}, next, res);
+                        util.handleError({hoerror: 2, message: "cannot find doc!!!"}, next, res);
                     }
                 } else if (item.status === 6) {
                     if (Number(req.params.type) >= 1) {
                         type = 'image/svg+xml';
                         ext = '.' + Number(req.params.type) + '.svg';
                     } else {
-                        util.handleError({hoerror: 2, msg: "cannot find present!!!"}, next, res);
+                        util.handleError({hoerror: 2, message: "cannot find present!!!"}, next, res);
                     }
                 }
                 var filePath = util.getFileLocation(item.owner, item._id);
@@ -2244,13 +2232,13 @@ app.get('/preview/:uid/:type(doc|images|\\d+)?/:imgName(image\\d+.png)?', functi
                 console.log(filePath + ext);
                 fs.exists(filePath + ext, function (exists) {
                     if (!exists) {
-                        util.handleError({hoerror: 2, msg: "cannot find file!!!"}, next, res);
+                        util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
                     }
                     res.writeHead(200, { 'Content-Type': type });
                     var stream = fs.createReadStream(filePath + ext).pipe(res);
                 });
             } else {
-                util.handleError({hoerror: 2, msg: "cannot find file!!!"}, next, res);
+                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
         });
     });
@@ -2261,7 +2249,7 @@ app.get('/subtitle/:uid', function(req, res, next){
         console.log('subtitle');
         var id = util.isValidString(req.params.uid, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         mongo.orig("findOne", "storage", {_id: id}, function(err,item){
             if (err) {
@@ -2279,7 +2267,7 @@ app.get('/subtitle/:uid', function(req, res, next){
                     }
                 });
             } else {
-                util.handleError({hoerror: 2, msg: "cannot find file!!!"}, next, res);
+                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
         });
     });
@@ -2290,7 +2278,7 @@ app.get('/video/:uid', function (req, res, next) {
         console.log("video");
         var id = util.isValidString(req.params.uid, 'uid');
         if (id === false) {
-            util.handleError({hoerror: 2, msg: "uid is not vaild"}, next, res);
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         mongo.orig("findOne", "storage", {_id: id}, function(err,item){
             if (err) {
@@ -2342,7 +2330,7 @@ app.get('/video/:uid', function (req, res, next) {
                     }
                 });
             } else {
-                util.handleError({hoerror: 2, msg: "cannot find video!!!"}, next, res);
+                util.handleError({hoerror: 2, message: "cannot find video!!!"}, next, res);
             }
         });
     });
@@ -2355,11 +2343,11 @@ passport.use(new LocalStrategy(function(username, password, done){
     var name = util.isValidString(username, 'name'),
         pwd = util.isValidString(password, 'passwd');
     if (name === false) {
-        util.handleError({hoerror: 2, msg: "username is not vaild"}, done);
+        util.handleError({hoerror: 2, message: "username is not vaild"}, done);
         done(null, false, { message: "username is not vaild" });
     } else {
         if (pwd === false) {
-            util.handleError({hoerror: 2, msg: "passwd is not vaild"}, done);
+            util.handleError({hoerror: 2, message: "passwd is not vaild"}, done);
             done(null, false, { message: "passwd is not vaild" });
         } else {
             mongo.orig("findOne", "user" ,{username: name}, function(err,user){
@@ -2573,12 +2561,12 @@ app.all('*', function(req, res, next) {
 //error handle
 app.use(function(err, req, res, next) {
     "use strict";
-    console.log(err);
+    util.handleError(err);
     res.send('server error occur', 500);
 });
 
 process.on('uncaughtException', function(err) {
-    console.log('Threw Exception: ', err);
+    console.log('Threw Exception: %s  %s', err.name, err.message);
     if (err.stack) {
         console.log(err.stack);
     }
@@ -2674,18 +2662,20 @@ wsjServer.on('connection', function(ws) {
     setTimeout(function() {
         mongo.orig("findOne", "user", {username: 'hoder'}, function(err, user){
             if(err) {
-                console.log(err);
+                util.handleError(err);
+            } else {
+                var data = {max: 15};
+                googleApi.googleApi('list', data, function(err, metadataList) {
+                    if (err) {
+                        util.handleError(err);
+                    } else {
+                        console.log(metadataList);
+                        if (metadataList.length > 0) {
+                            singleDrive(metadataList, 0, user);
+                        }
+                    }
+                });
             }
-            var data = {max: 5};
-            googleApi.googleApi('list', data, function(err, metadataList) {
-                if (err) {
-                    console.log(err);
-                }
-                console.log(metadataList);
-                if (metadataList.length > 0) {
-                    singleDrive(metadataList, 0, user);
-                }
-            });
         });
     }, 60000);
     function singleDrive(metadatalist, index, user) {
@@ -2699,14 +2689,31 @@ wsjServer.on('connection', function(ws) {
         if (!fs.existsSync(folderPath)) {
             mkdirp(folderPath, function(err) {
                 if(err) {
-                    console.log(err);
+                    util.handleError(err);
+                } else {
+                    streamClose(function(err) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                        index++;
+                        if (index < metadatalist.length) {
+                            singleDrive(metadatalist, index, user);
+                        }
+                    });
                 }
-                streamClose();
             });
         } else {
-            streamClose();
+            streamClose(function(err) {
+                if (err) {
+                    util.handleError(err);
+                }
+                index++;
+                if (index < metadatalist.length) {
+                    singleDrive(metadatalist, index, user);
+                }
+            });
         }
-        function streamClose(){
+        function streamClose(callback){
             var name = util.toValidName(metadata.title);
             var utime = Math.round(new Date().getTime() / 1000);
             var oUser_id = user._id;
@@ -2719,6 +2726,7 @@ wsjServer.on('connection', function(ws) {
             data['size'] = metadata.fileSize;
             data['count'] = 0;
             data['recycle'] = 0;
+            data['status'] = 0;
             if (util.checkAdmin(2 ,user)) {
                 data['adultonly'] = 1;
             } else {
@@ -2727,7 +2735,8 @@ wsjServer.on('connection', function(ws) {
             data['untag'] = 1;
             data['status'] = 0;//media type
             var mediaType = mime.mediaType(name);
-            if (mediaType['type'] === 'video') {
+            switch(mediaType['type']) {
+                case 'video':
                 if (metadata.videoMediaMetadata) {
                     var hd = 0;
                     if (metadata.videoMediaMetadata.height >= 1080) {
@@ -2737,46 +2746,185 @@ wsjServer.on('connection', function(ws) {
                     }
                     googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err) {
                         if(err) {
-                            console.log(err);
+                            util.handleError(err, callback, callback);
                         }
                         console.log('media download');
                         data['status'] = 3;//media type
                         handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
                             if(err) {
-                                console.log(err);
+                                util.handleError(err, callback, callback);
                             }
                             mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(user.username), 'drive upload');
                             DBdata['tags'] = mediaTag.def;
                             DBdata[oUser_id] = mediaTag.def;
                             mongo.orig("insert", "storage", DBdata, function(err, item){
                                 if(err) {
-                                    console.log(err);
+                                    util.handleError(err, callback, callback);
                                 }
                                 console.log(item);
                                 console.log('save end');
                                 sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                                index++;
-                                if (index < metadatalist.length) {
-                                    setTimeout(function(){
-                                        singleDrive(metadatalist, index, user);
-                                    }, 0);
-                                }
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
                             });
                         });
                     });
                 } else {
-                    index++;
                     setTimeout(function(){
-                        singleDrive(metadatalist, index, user);
+                        callback(null);
                     }, 0);
                 }
-            } else {
-                index++;
-                if (index < metadatalist.length) {
-                    setTimeout(function(){
-                        singleDrive(metadatalist, index, user);
-                    }, 0);
+                break;
+                case 'doc':
+                case 'sheet':
+                if (metadata.exportLinks) {
+                    var exportlink = metadata.exportLinks['application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                    var new_ext = 'docx';
+                    if (mediaType['type'] === 'sheet') {
+                        exportlink = metadata.exportLinks['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+                        new_ext = 'xlsx';
+                    }
+                    googleApi.googleDownload(exportlink, filePath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        googleApi.googleDownloadDoc(metadata.exportLinks['application/pdf'], metadata.id, filePath, mediaType['ext'], function(err, number) {
+                            if(err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            data['status'] = 5;
+                            if (number > 1) {
+                                data['present'] = number;
+                            }
+                            name = name.replace('/' + mediaType['ext'] + '$/i', new_ext);
+                            data['name'] = name;
+                            console.log(name);
+                            handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
+                                if(err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(user.username), 'drive upload');
+                                DBdata['tags'] = mediaTag.def;
+                                DBdata[oUser_id] = mediaTag.def;
+                                DBdata['status'] = 5;
+                                delete DBdata['mediaType'];
+                                    mongo.orig("insert", "storage", DBdata, function(err, item){
+                                    if(err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    console.log(item);
+                                    console.log('save end');
+                                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                });
+                            });
+                        }, metadata.title);
+                    });
+                    break;
                 }
+                case 'present':
+                if (metadata.exportLinks) {
+                    googleApi.googleDownload(metadata.exportLinks['application/vnd.openxmlformats-officedocument.presentationml.presentation'], filePath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        googleApi.googleDownloadPresent(metadata.exportLinks['application/pdf'], metadata.id, filePath, mediaType['ext'], function(err, number) {
+                            if(err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            if (number > 1) {
+                                data['present'] = number;
+                            }
+                            data['status'] = 6;
+                            name = name.replace('/' + mediaType['ext'] + '$/i', 'pptx');
+                            data['name'] = name;
+                            console.log(name);
+                            handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
+                                if(err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(user.username), 'drive upload');
+                                DBdata['tags'] = mediaTag.def;
+                                DBdata[oUser_id] = mediaTag.def;
+                                mongo.orig("insert", "storage", DBdata, function(err, item){
+                                    if(err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    console.log(item);
+                                    console.log('save end');
+                                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                });
+                            });
+                        });
+                    });
+                    break;
+                }
+                default:
+                googleApi.googleDownload(metadata.downloadUrl, filePath, function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    handleTag(filePath, data, name, '', 0, function(err, mediaType, mediaTag, DBdata) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(user.username), 'drive upload');
+                        DBdata['tags'] = mediaTag.def;
+                        DBdata[oUser_id] = mediaTag.def;
+                        mongo.orig("insert", "storage", DBdata, function(err, item){
+                            if(err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(item);
+                            console.log('save end');
+                            sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                            if (mediaType['type'] === 'image') {
+                                if (metadata.thumbnailLink) {
+                                    mongo.orig("update", "storage", { _id: item[0]._id }, {$set: {"mediaType.thumbnail": metadata.thumbnailLink, "mediaType.key": metadata.id}}, function(err, item1){
+                                        if(err) {
+                                            errerMedia(err, item[0]._id, function() {
+                                                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                                console.log('auto upload media error');
+                                            });
+                                        } else {
+                                            console.log(item1);
+                                            handleMedia(mediaType, filePath, DBdata['_id'], DBdata['name'], metadata.id, user, function(err) {
+                                                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                                if(err) {
+                                                    util.handleError(err);
+                                                }
+                                                console.log('transcode done');
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    errerMedia({hoerror: 2, message: "error type"}, item[0]._id, function() {
+                                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                        console.log('auto upload media error');
+                                    });
+                                }
+                            } else {
+                                handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], user, function(err) {
+                                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                    if(err) {
+                                        util.handleError(err);
+                                    }
+                                    console.log('transcode done');
+                                });
+                            }
+                        });
+                    });
+                });
+                break;
             }
         }
     }

@@ -118,44 +118,62 @@ module.exports = {
     handleError: function(err, next, callback, code) {
         callback = typeof callback !== 'undefined' ? callback : null;
         if (err) {
-            if (typeof err === 'object' && err.hoerror) {
-                if (err.hoerror === 1) {
-                    next(new Error('server error: ' + err.msg));
-                    throw new Error('terminal');
-                } else if (err.hoerror === 2) {
-                    if (!callback) {
-                        console.log("ignored error: " + err.msg);
-                    } else if (typeof callback === 'object') {
-                        code = typeof code !== 'undefined' ? code : 400;
-                        console.log("user error: " + err.msg);
-                        callback.send(err.msg, code);
+            if (!callback && !next) {
+                if (err.hoerror) {
+                    console.log("ignored error: %s", err.message);
+                    err = new Error("ignored error: " + err.message);
+                } else {
+                    console.log('ignored error: ');
+                    console.log("%s %s", err.name, err.message);
+                }
+                if (err.stack) {
+                    console.log(err.stack);
+                }
+            } else {
+                if (typeof err === 'object' && err.hoerror) {
+                    if (err.hoerror === 1) {
+                        next(new Error('server error: ' + err.message));
                         throw new Error('terminal');
-                    } else if (typeof callback === 'function') {
-                        console.log("delay error: " + err.msg);
-                        var this_obj = this;
-                        var args = Array.prototype.slice.call(arguments, 3);
-                        if (args.length > 0 ) {
-                            args.splice(0, 0, err);
-                            setTimeout(function(){
-                                callback.apply(this_obj, args);
-                            }, 0);
+                    } else if (err.hoerror === 2) {
+                        if (!callback) {
+                            console.log("ignored error: %s", err.message);
+                            var ig_err = new Error("ignored error: "+ err.message);
+                            if (ig_err.stack) {
+                                console.log(ig_err.stack);
+                            }
+                        } else if (typeof callback === 'object') {
+                            code = typeof code !== 'undefined' ? code : 400;
+                            console.log("user error: %s", err.message);
+                            callback.send(err.message, code);
+                            throw new Error('terminal');
+                        } else if (typeof callback === 'function') {
+                            console.log("delay error: %s", err.message);
+                            var this_obj = this;
+                            var args = Array.prototype.slice.call(arguments, 3);
+                            if (args.length > 0 ) {
+                                args.splice(0, 0, err);
+                                setTimeout(function(){
+                                    callback.apply(this_obj, args);
+                                }, 0);
+                            } else {
+                                setTimeout(function(){
+                                    callback(err);
+                                }, 0);
+                            }
+                            throw new Error('terminal');
                         } else {
-                            setTimeout(function(){
-                                callback(err);
-                            }, 0);
+                            console.log(callback);
+                            next(new Error("unknown callback error: " + err.message));
+                            throw new Error('terminal');
                         }
-                        throw new Error('terminal');
                     } else {
-                        next(new Error(err));
+                        next(new Error("hoerror " + err.hoerror + ": " + err.message));
                         throw new Error('terminal');
                     }
                 } else {
-                    next(new Error(err));
+                    next(err);
                     throw new Error('terminal');
                 }
-            } else {
-                next(new Error(err));
-                throw new Error('terminal');
             }
         }
     },
