@@ -119,7 +119,7 @@ function sendAPI(method, data, callback) {
             console.log(data);
             max = data['max'];
         }
-        drive.files.list({q: "'" + auto_folder + "' in parents", maxResults: max}, function(err, metadata) {
+        drive.files.list({q: "'" + auto_folder + "' in parents and trashed = false", maxResults: max}, function(err, metadata) {
             if (err) {
                 util.handleError(err, callback, callback, null);
             }
@@ -376,6 +376,7 @@ module.exports = {
         });
     },
     googleDownloadDoc: function(exportlink, key, filePath, ext, callback, doc_name) {
+        console.log(exportlink);
         exportlink = exportlink.replace("=pdf", "=zip");
         this.googleDownload(exportlink, filePath + ".zip", function(err) {
             if (err) {

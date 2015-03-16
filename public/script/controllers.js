@@ -1930,8 +1930,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     $scope.feedback.list.splice(0, 0, $scope.feedback.history[i]);
                 }
             } else {
-                $scope.feedback.list[index].history = true;
-                $scope.feedback.list[index].select = $scope.feedback.history[i].select;
+                if ($scope.feedback.list[index].select !== $scope.feedback.history[i].select) {
+                    $scope.feedback.list[index].history = true;
+                    $scope.feedback.list[index].select = $scope.feedback.history[i].select;
+                }
             }
         }
         console.log($scope.feedback);

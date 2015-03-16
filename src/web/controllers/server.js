@@ -26,6 +26,8 @@ var util = require("../util/utility.js");
 
 var mime = require('../util/mime.js');
 
+var drive_interval = 70000;
+
 var http = require('http'),
     https = require('https'),
     privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
@@ -1130,12 +1132,12 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
                 console.log(metadata);
-                if (metadata.thumbnailLink) {
-                    mediaType['thumbnail'] = metadata.thumbnailLink;
+                if(metadata.exportLinks && metadata.exportLinks['application/pdf']) {
+                    mediaType['thumbnail'] = metadata.exportLinks['application/pdf'];
                 } else if (mediaType['type'] === 'video' && metadata.alternateLink) {
                     mediaType['thumbnail'] = metadata.alternateLink;
-                } else if(metadata.exportLinks && metadata.exportLinks['application/pdf']) {
-                    mediaType['thumbnail'] = metadata.exportLinks['application/pdf'];
+                } else if (metadata.thumbnailLink) {
+                    mediaType['thumbnail'] = metadata.thumbnailLink;
                 } else {
                     util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
                 }
@@ -2649,107 +2651,252 @@ wsjServer.on('connection', function(ws) {
     ws.on('close', onWsConnClose);
 });
 
-/*(function(y)
-{
-    console.log(y);
-    setInterval(function() {
-        y++;
-        console.log(y);
-    }, 60000);
-})(1);*/
-/*
-(function() {
+/*(function loopDrive(countdown) {
+    if (!countdown) {
+        countdown = 60000;
+    }
+    console.log(countdown);
     setTimeout(function() {
-        mongo.orig("findOne", "user", {username: 'hoder'}, function(err, user){
+        mongo.orig("find", "user", {username: 'hoder'}, function(err, userlist){
             if(err) {
                 util.handleError(err);
+                loopDrive(drive_interval);
             } else {
-                var data = {max: 15};
-                googleApi.googleApi('list', data, function(err, metadataList) {
-                    if (err) {
-                        util.handleError(err);
-                    } else {
-                        console.log(metadataList);
-                        if (metadataList.length > 0) {
-                            singleDrive(metadataList, 0, user);
-                        }
-                    }
-                });
+                userDrive(userlist, 0, loopDrive);
             }
         });
-    }, 60000);
-    function singleDrive(metadatalist, index, user) {
-        console.log('singleDrive');
-        var metadata = metadatalist[index];
-        var oOID = mongo.objectID();
-        var filePath = util.getFileLocation(user._id, oOID);
-        var folderPath = path.dirname(filePath);
-        console.log(filePath);
-        console.log(folderPath);
-        if (!fs.existsSync(folderPath)) {
-            mkdirp(folderPath, function(err) {
-                if(err) {
+    }, countdown);
+})();*/
+
+function userDrive(userlist, index, callback) {
+    var data = {max: 5};
+    googleApi.googleApi('list', data, function(err, metadataList) {
+        if (err) {
+            util.handleError(err, callback, callback);
+        }
+        console.log(metadataList);
+        if (metadataList.length > 0) {
+            singleDrive(metadataList, 0, userlist[index], function(err) {
+                if (err) {
                     util.handleError(err);
+                }
+                index++;
+                if (index < userlist.length) {
+                    userDrive(userlist, index, callback);
                 } else {
-                    streamClose(function(err) {
+                    setTimeout(function(){
+                        callback(drive_interval);
+                    }, 0);
+                }
+            });
+        }
+    });
+}
+
+function singleDrive(metadatalist, index, user, next) {
+    console.log('singleDrive');
+    var metadata = metadatalist[index];
+    var oOID = mongo.objectID();
+    var filePath = util.getFileLocation(user._id, oOID);
+    var folderPath = path.dirname(filePath);
+    console.log(filePath);
+    console.log(folderPath);
+    if (!fs.existsSync(folderPath)) {
+        mkdirp(folderPath, function(err) {
+            if(err) {
+                util.handleError(err, next, next);
+            }
+            streamClose(function(err) {
+                if (err) {
+                    util.handleError(err);
+                    index++;
+                    if (index < metadatalist.length) {
+                        singleDrive(metadatalist, index, user, next);
+                    } else {
+                        setTimeout(function(){
+                            next(null);
+                        }, 0);
+                    }
+                } else {
+                    var data = {fileId: metadata.id};
+                    googleApi.googleApi('delete', data, function(err) {
                         if (err) {
                             util.handleError(err);
                         }
                         index++;
                         if (index < metadatalist.length) {
-                            singleDrive(metadatalist, index, user);
+                            singleDrive(metadatalist, index, user, next);
+                        } else {
+                            setTimeout(function(){
+                                next(null);
+                            }, 0);
                         }
                     });
                 }
             });
-        } else {
-            streamClose(function(err) {
-                if (err) {
-                    util.handleError(err);
-                }
+        });
+    } else {
+        streamClose(function(err) {
+            if (err) {
+                util.handleError(err);
                 index++;
                 if (index < metadatalist.length) {
-                    singleDrive(metadatalist, index, user);
+                    singleDrive(metadatalist, index, user, next);
+                } else {
+                    setTimeout(function(){
+                        next(null);
+                    }, 0);
                 }
-            });
-        }
-        function streamClose(callback){
-            var name = util.toValidName(metadata.title);
-            var utime = Math.round(new Date().getTime() / 1000);
-            var oUser_id = user._id;
-            var ownerTag = [];
-            var data = {};
-            data['_id'] = oOID;
-            data['name'] = name;
-            data['owner'] = oUser_id;
-            data['utime'] = utime;
-            data['size'] = metadata.fileSize;
-            data['count'] = 0;
-            data['recycle'] = 0;
-            data['status'] = 0;
-            if (util.checkAdmin(2 ,user)) {
-                data['adultonly'] = 1;
             } else {
-                data['adultonly'] = 0;
-            }
-            data['untag'] = 1;
-            data['status'] = 0;//media type
-            var mediaType = mime.mediaType(name);
-            switch(mediaType['type']) {
-                case 'video':
-                if (metadata.videoMediaMetadata) {
-                    var hd = 0;
-                    if (metadata.videoMediaMetadata.height >= 1080) {
-                        hd = 1080;
-                    } else if (metadata.videoMediaMetadata.height >= 720) {
-                        hd = 720;
+                var data = {fileId: metadata.id};
+                googleApi.googleApi('delete', data, function(err) {
+                    if (err) {
+                        util.handleError(err);
                     }
-                    googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err) {
+                    index++;
+                    if (index < metadatalist.length) {
+                        singleDrive(metadatalist, index, user, next);
+                    } else {
+                        setTimeout(function(){
+                            next(null);
+                        }, 0);
+                    }
+                });
+            }
+        });
+    }
+    function streamClose(callback){
+        var name = util.toValidName(metadata.title);
+        var utime = Math.round(new Date().getTime() / 1000);
+        var oUser_id = user._id;
+        var ownerTag = [];
+        var data = {};
+        data['_id'] = oOID;
+        data['name'] = name;
+        data['owner'] = oUser_id;
+        data['utime'] = utime;
+        data['size'] = metadata.fileSize;
+        data['count'] = 0;
+        data['recycle'] = 0;
+        data['status'] = 0;
+        if (util.checkAdmin(2 ,user)) {
+            data['adultonly'] = 1;
+        } else {
+            data['adultonly'] = 0;
+        }
+        data['untag'] = 1;
+        data['status'] = 0;//media type
+        var mediaType = mime.mediaType(name);
+        switch(mediaType['type']) {
+            case 'video':
+            if (metadata.videoMediaMetadata) {
+                var hd = 0;
+                if (metadata.videoMediaMetadata.height >= 1080) {
+                    hd = 1080;
+                } else if (metadata.videoMediaMetadata.height >= 720) {
+                    hd = 720;
+                }
+                googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log('media download');
+                    data['status'] = 3;//media type
+                    handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
                         if(err) {
                             util.handleError(err, callback, callback);
                         }
-                        console.log('media download');
-                        data['status'] = 3;//media type
+                        mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(user.username), 'drive upload');
+                        DBdata['tags'] = mediaTag.def;
+                        DBdata[oUser_id] = mediaTag.def;
+                        mongo.orig("insert", "storage", DBdata, function(err, item){
+                            if(err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(item);
+                            console.log('save end');
+                            sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                });
+            } else {
+                setTimeout(function(){
+                    callback(null);
+                }, 0);
+            }
+            break;
+            case 'doc':
+            case 'sheet':
+            if (metadata.exportLinks) {
+                console.log('docccc');
+                console.log(metadata);
+                var exportlink = metadata.exportLinks['application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                var new_ext = 'docx';
+                if (mediaType['type'] === 'sheet') {
+                    exportlink = metadata.exportLinks['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+                    new_ext = 'xlsx';
+                }
+                googleApi.googleDownload(exportlink, filePath, function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    googleApi.googleDownloadDoc(metadata.exportLinks['application/pdf'], metadata.id, filePath, mediaType['ext'], function(err, number) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        data['status'] = 5;
+                        if (number > 1) {
+                            data['present'] = number;
+                        }
+                        var reg = new RegExp(mediaType['ext'] + "$", "i");
+                        name = name.replace(reg, new_ext);
+                        data['name'] = name;
+                        handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
+                            if(err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(user.username), 'drive upload');
+                            DBdata['tags'] = mediaTag.def;
+                            DBdata[oUser_id] = mediaTag.def;
+                            DBdata['status'] = 5;
+                            delete DBdata['mediaType'];
+                            mongo.orig("insert", "storage", DBdata, function(err, item){
+                                if(err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(item);
+                                console.log('save end');
+                                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
+                    }, metadata.title);
+                });
+                break;
+            }
+            case 'present':
+            if (metadata.exportLinks) {
+                googleApi.googleDownload(metadata.exportLinks['application/vnd.openxmlformats-officedocument.presentationml.presentation'], filePath, function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    googleApi.googleDownloadPresent(metadata.exportLinks['application/pdf'], metadata.id, filePath, mediaType['ext'], function(err, number) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        if (number > 1) {
+                            data['present'] = number;
+                        }
+                        data['status'] = 6;
+                        var reg = new RegExp(mediaType['ext'] + "$", "i");
+                        name = name.replace(reg, 'pptx');
+                        data['name'] = name;
+                        console.log(name);
                         handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
                             if(err) {
                                 util.handleError(err, callback, callback);
@@ -2770,165 +2917,76 @@ wsjServer.on('connection', function(ws) {
                             });
                         });
                     });
-                } else {
-                    setTimeout(function(){
-                        callback(null);
-                    }, 0);
-                }
-                break;
-                case 'doc':
-                case 'sheet':
-                if (metadata.exportLinks) {
-                    var exportlink = metadata.exportLinks['application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-                    var new_ext = 'docx';
-                    if (mediaType['type'] === 'sheet') {
-                        exportlink = metadata.exportLinks['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
-                        new_ext = 'xlsx';
-                    }
-                    googleApi.googleDownload(exportlink, filePath, function(err) {
-                        if(err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        googleApi.googleDownloadDoc(metadata.exportLinks['application/pdf'], metadata.id, filePath, mediaType['ext'], function(err, number) {
-                            if(err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            data['status'] = 5;
-                            if (number > 1) {
-                                data['present'] = number;
-                            }
-                            name = name.replace('/' + mediaType['ext'] + '$/i', new_ext);
-                            data['name'] = name;
-                            console.log(name);
-                            handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
-                                if(err) {
-                                    util.handleError(err, callback, callback);
-                                }
-                                mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(user.username), 'drive upload');
-                                DBdata['tags'] = mediaTag.def;
-                                DBdata[oUser_id] = mediaTag.def;
-                                DBdata['status'] = 5;
-                                delete DBdata['mediaType'];
-                                    mongo.orig("insert", "storage", DBdata, function(err, item){
-                                    if(err) {
-                                        util.handleError(err, callback, callback);
-                                    }
-                                    console.log(item);
-                                    console.log('save end');
-                                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                                    setTimeout(function(){
-                                        callback(null);
-                                    }, 0);
-                                });
-                            });
-                        }, metadata.title);
-                    });
-                    break;
-                }
-                case 'present':
-                if (metadata.exportLinks) {
-                    googleApi.googleDownload(metadata.exportLinks['application/vnd.openxmlformats-officedocument.presentationml.presentation'], filePath, function(err) {
-                        if(err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        googleApi.googleDownloadPresent(metadata.exportLinks['application/pdf'], metadata.id, filePath, mediaType['ext'], function(err, number) {
-                            if(err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            if (number > 1) {
-                                data['present'] = number;
-                            }
-                            data['status'] = 6;
-                            name = name.replace('/' + mediaType['ext'] + '$/i', 'pptx');
-                            data['name'] = name;
-                            console.log(name);
-                            handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
-                                if(err) {
-                                    util.handleError(err, callback, callback);
-                                }
-                                mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(user.username), 'drive upload');
-                                DBdata['tags'] = mediaTag.def;
-                                DBdata[oUser_id] = mediaTag.def;
-                                mongo.orig("insert", "storage", DBdata, function(err, item){
-                                    if(err) {
-                                        util.handleError(err, callback, callback);
-                                    }
-                                    console.log(item);
-                                    console.log('save end');
-                                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                                    setTimeout(function(){
-                                        callback(null);
-                                    }, 0);
-                                });
-                            });
-                        });
-                    });
-                    break;
-                }
-                default:
-                googleApi.googleDownload(metadata.downloadUrl, filePath, function(err) {
-                    if(err) {
-                        util.handleError(err, callback, callback);
-                    }
-                    handleTag(filePath, data, name, '', 0, function(err, mediaType, mediaTag, DBdata) {
-                        if(err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(user.username), 'drive upload');
-                        DBdata['tags'] = mediaTag.def;
-                        DBdata[oUser_id] = mediaTag.def;
-                        mongo.orig("insert", "storage", DBdata, function(err, item){
-                            if(err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            console.log(item);
-                            console.log('save end');
-                            sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                            setTimeout(function(){
-                                callback(null);
-                            }, 0);
-                            if (mediaType['type'] === 'image') {
-                                if (metadata.thumbnailLink) {
-                                    mongo.orig("update", "storage", { _id: item[0]._id }, {$set: {"mediaType.thumbnail": metadata.thumbnailLink, "mediaType.key": metadata.id}}, function(err, item1){
-                                        if(err) {
-                                            errerMedia(err, item[0]._id, function() {
-                                                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                                                console.log('auto upload media error');
-                                            });
-                                        } else {
-                                            console.log(item1);
-                                            handleMedia(mediaType, filePath, DBdata['_id'], DBdata['name'], metadata.id, user, function(err) {
-                                                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                                                if(err) {
-                                                    util.handleError(err);
-                                                }
-                                                console.log('transcode done');
-                                            });
-                                        }
-                                    });
-                                } else {
-                                    errerMedia({hoerror: 2, message: "error type"}, item[0]._id, function() {
-                                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                                        console.log('auto upload media error');
-                                    });
-                                }
-                            } else {
-                                handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], user, function(err) {
-                                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                                    if(err) {
-                                        util.handleError(err);
-                                    }
-                                    console.log('transcode done');
-                                });
-                            }
-                        });
-                    });
                 });
                 break;
             }
+            default:
+            googleApi.googleDownload(metadata.downloadUrl, filePath, function(err) {
+                if(err) {
+                    util.handleError(err, callback, callback);
+                }
+                handleTag(filePath, data, name, '', 0, function(err, mediaType, mediaTag, DBdata) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    mediaTag.def.push(tagTool.normalizeTag(name), tagTool.normalizeTag(user.username), 'drive upload');
+                    DBdata['tags'] = mediaTag.def;
+                    DBdata[oUser_id] = mediaTag.def;
+                    mongo.orig("insert", "storage", DBdata, function(err, item){
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(item);
+                        console.log('save end');
+                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                        if (mediaType['type'] === 'image') {
+                            console.log('image');
+                            console.log(metadata);
+                            if (metadata.thumbnailLink) {
+                                mediaType.thumbnail = metadata.thumbnailLink;
+                                mediaType.key = metadata.id;
+                                mongo.orig("update", "storage", { _id: item[0]._id }, {$set: {"mediaType.thumbnail": mediaType.thumbnail, "mediaType.key": mediaType.key}}, function(err, item1){
+                                    if(err) {
+                                        errerMedia(err, item[0]._id, function() {
+                                            sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                            console.log('auto upload media error');
+                                        });
+                                    } else {
+                                        console.log(item1);
+                                        handleMedia(mediaType, filePath, DBdata['_id'], DBdata['name'], metadata.id, user, function(err) {
+                                            sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                            if(err) {
+                                                util.handleError(err);
+                                            }
+                                            console.log('transcode done');
+                                        });
+                                    }
+                                });
+                            } else {
+                                errerMedia({hoerror: 2, message: "error type"}, item[0]._id, function() {
+                                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                    console.log('auto upload media error');
+                                });
+                            }
+                        } else {
+                            handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], user, function(err) {
+                                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                if(err) {
+                                    util.handleError(err);
+                                }
+                                console.log('transcode done');
+                            });
+                        }
+                    });
+                });
+            });
+            break;
         }
     }
-})();*/
+}
 
 console.log('start express server\n');
 
