@@ -260,6 +260,7 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
             item["perm"] = item['permOrig'];
             item["unDay"] = item['unDayOrig'];
             item["unHit"] = item['unHitOrig'];
+            item["auto"] = item['autoOrig'];
             item["newPwd"] = '';
             item["conPwd"] = '';
             item["password"] = '';
@@ -270,6 +271,7 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
             item["permOrig"] = item['perm'];
             item["unDayOrig"] = item['unDay'];
             item["unHitOrig"] = item['unHit'];
+            item["autoOrig"] = item['auto'];
             item.edit = true;
             item.nameFocus = true;
         }
@@ -288,6 +290,8 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                 addAlert('unactive day not vaild!!!');
             } else if (!isValidString(item.unHit, 'int') && item.edit && item.hasUnHit) {
                 addAlert('unactive hit not vaild!!!');
+            } else if (!isValidString(item.auto, 'url') && item.edit && item.editAuto) {
+                addAlert('auto upload not vaild!!!');
             } else if ((item.newPwd || item.conPwd) && (!isValidString(item.newPwd, 'passwd') || !isValidString(item.conPwd, 'passwd'))) {
                 item.newPwd = '';
                 item.conPwd = '';
@@ -323,6 +327,9 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                 if (item.unHit !== item.unHitOrig && item.edit) {
                     set_obj['unHit'] = item.unHit;
                 }
+                if (item.auto !== item.autoOrig && item.edit) {
+                    set_obj['auto'] = item.auto;
+                }
                 if (item.newPwd) {
                     set_obj['newPwd'] = item.newPwd;
                 }
@@ -349,6 +356,9 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                         }
                         if (result.hasOwnProperty('unHit')) {
                             item.unHit = result.unHit;
+                        }
+                        if (result.hasOwnProperty('auto')) {
+                            item.auto = result.auto;
                         }
                         if (result.hasOwnProperty('owner')) {
                             this_obj.$parent.$parent.id = result.owner;
@@ -702,6 +712,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
 
     $scope.submitText = function() {
         console.log(this.inputText);
+        if (!this.inputText) {
+            return false;
+        }
         var this_obj = this;
         this.page = 0;
         this.more = true;

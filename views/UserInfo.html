@@ -132,11 +132,18 @@
                                     </span>
                                     <span ng-show="user.edit">
                                         <strong>
-                                            <input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" ng-enter="user.hasPerm && (user.permFocus = true) || (user.newPwdFocus = true)" />
+                                            <input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" ng-enter="user.autoFocus = true" />
                                         </strong>
                                         <br>
                                     </span>
                                     <dl>
+                                        <section>
+                                            <dt>Auto upload:</dt>
+                                            <dd ng-hide="user.edit">{{user.auto}}</dd>
+                                            <dd ng-show="user.edit && user.editAuto">
+                                                <input type="text" class="form-control" value="{{user.auto}}" ng-model="user.auto" focus-me="user.autoFocus" ng-enter="user.hasPerm && (user.permFocus = true) || (user.newPwdFocus = true)" />
+                                            </dd>
+                                        </section>
                                         <section ng-if="user.hasPerm">
                                             <dt>User level:</dt>
                                             <dd ng-hide="user.edit">{{user.perm}}</dd>
@@ -182,12 +189,19 @@
                                     </span>
                                     <span ng-show="user.edit">
                                         <strong>
-                                            <input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" ng-enter="user.hasPerm && (user.permFocus = true) || (user.newPwdFocus = true)" />
+                                            <input class="form-control" type="text" value="{{user.name}}" focus-me="user.nameFocus" ng-model="user.name" ng-enter="user.autoFocus = true" />
                                         </strong>
                                         <br>
                                     </span>
                                     <table class="table table-user-information">
                                         <tbody>
+                                        <tr>
+                                            <td>Auto upload:</td>
+                                            <td ng-hide="user.edit">{{user.auto}}</td>
+                                            <td ng-show="user.edit && user.editAuto">
+                                                <input type="text" class="form-control" value="{{user.auto}}" ng-model="user.auto" focus-me="user.autoFocus" ng-enter="user.hasPerm && (user.permFocus = true) || (user.newPwdFocus = true)" />
+                                            </td>
+                                        </tr>
                                         <tr ng-if="user.hasPerm">
                                             <td>User level:</td>
                                             <td ng-hide="user.edit">{{user.perm}}</td>

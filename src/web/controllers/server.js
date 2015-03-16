@@ -26,7 +26,7 @@ var util = require("../util/utility.js");
 
 var mime = require('../util/mime.js');
 
-var drive_interval = 70000;
+var drive_interval = 3600000;
 
 var http = require('http'),
     https = require('https'),
@@ -104,7 +104,10 @@ app.get('/api/userinfo', function (req, res, next) {
                     util.handleError(err, next, res);
                 }
                 console.log(user);
-                user_info.push({name: user.username, newable: false});
+                if (user.auto) {
+                    user.auto = 'https://drive.google.com/open?id=' + user.auto + '&authuser=0';
+                }
+                user_info.push({name: user.username, newable: false, auto: user.auto, editAuto: false});
                 res.json({user_info: user_info});
             });
         } else {
@@ -114,12 +117,15 @@ app.get('/api/userinfo', function (req, res, next) {
                 }
                 console.log(users);
                 for (var i in users) {
+                    if (users[i].auto) {
+                        users[i].auto = 'https://drive.google.com/open?id=' + users[i].auto + '&authuser=0';
+                    }
                     if (users[i].perm === 1) {
                         users[i].unDay = users[i].unDay ? users[i].unDay : tagTool.getUnactive('day');
                         users[i].unHit = users[i].unHit ? users[i].unHit : tagTool.getUnactive('hit');
-                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, newable: false, unDay: users[i].unDay, unHit: users[i].unHit});
+                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, newable: false, unDay: users[i].unDay, unHit: users[i].unHit, editAuto: true, auto: users[i].auto});
                     } else {
-                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, delable: true, newable: false});
+                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, delable: true, newable: false, editAuto: false, auto: users[i].auto});
                     }
                 }
                 user_info.push({name: '', perm: '', desc: '', newable: true});
@@ -144,6 +150,22 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
         var data = {};
         var needPerm = false;
         var id;
+        if (req.body.auto) {
+            if (!util.checkAdmin(1, req.user)) {
+                util.handleError({hoerror: 2, message: 'unknown type in edituser'}, next, res, 403);
+            }
+            var auto = util.isValidString(req.body.auto, 'url');
+            if (auto === false) {
+                util.handleError({hoerror: 2, message: "auto is not vaild"}, next, res);
+            }
+            var autoId = req.body.auto.match(/id=([^\&]*)/);
+            if (!autoId || !autoId[1]) {
+                util.handleError({hoerror: 2, message: "auto is not vaild"}, next, res);
+            }
+            data['auto'] = autoId[1];
+            ret['auto'] = 'https://drive.google.com/open?id=' + autoId[1] + '&authuser=0';
+            needPerm = true;
+        }
         if (req.body.desc === '' || req.body.desc) {
             if (!util.checkAdmin(1, req.user)) {
                 util.handleError({hoerror: 2, message: 'unknown type in edituser'}, next, res, 403);
@@ -1204,13 +1226,17 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
             if (err) {
                 util.handleError(err, callback, errerMedia, fileID, callback);
             }
-            var data = {fileId: key};
-            googleApi.googleApi('delete', data, function(err) {
-                if (err) {
-                    util.handleError(err, callback, errerMedia, fileID, callback);
-                }
+            if (!mediaType['notOwner']) {
+                var data = {fileId: key};
+                googleApi.googleApi('delete', data, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, errerMedia, fileID, callback);
+                    }
+                    completeMedia(fileID, 2, callback);
+                });
+            } else {
                 completeMedia(fileID, 2, callback);
-            });
+            }
         });
     } else if (mediaType['type'] === 'vlog') {
         if (!mediaType.hasOwnProperty('time') && !mediaType.hasOwnProperty('hd')) {
@@ -2651,49 +2677,56 @@ wsjServer.on('connection', function(ws) {
     ws.on('close', onWsConnClose);
 });
 
-/*(function loopDrive(countdown) {
+(function loopDrive(countdown) {
     if (!countdown) {
         countdown = 60000;
     }
     console.log(countdown);
     setTimeout(function() {
-        mongo.orig("find", "user", {username: 'hoder'}, function(err, userlist){
+        mongo.orig("find", "user", {auto: {$exists: true}}, function(err, userlist){
             if(err) {
                 util.handleError(err);
                 loopDrive(drive_interval);
             } else {
+                console.log(userlist);
                 userDrive(userlist, 0, loopDrive);
             }
         });
     }, countdown);
-})();*/
+})();
 
 function userDrive(userlist, index, callback) {
-    var data = {max: 5};
-    googleApi.googleApi('list', data, function(err, metadataList) {
+    var data = {folderId: userlist[index].auto};
+    googleApi.googleApi('list file', data, function(err, metadataList) {
         if (err) {
             util.handleError(err, callback, callback);
         }
         console.log(metadataList);
         if (metadataList.length > 0) {
-            singleDrive(metadataList, 0, userlist[index], function(err) {
+            var data = {folderId: userlist[index].auto, name: 'uploaded'};
+            googleApi.googleApi('list folder', data, function(err, folderList) {
                 if (err) {
-                    util.handleError(err);
+                    util.handleError(err, callback, callback);
                 }
-                index++;
-                if (index < userlist.length) {
-                    userDrive(userlist, index, callback);
-                } else {
-                    setTimeout(function(){
-                        callback(drive_interval);
-                    }, 0);
-                }
+                singleDrive(metadataList, 0, userlist[index], folderList[0].id, function(err) {
+                    if (err) {
+                        util.handleError(err);
+                    }
+                    index++;
+                    if (index < userlist.length) {
+                        userDrive(userlist, index, callback);
+                    } else {
+                        setTimeout(function(){
+                            callback(drive_interval);
+                        }, 0);
+                    }
+                });
             });
         }
     });
 }
 
-function singleDrive(metadatalist, index, user, next) {
+function singleDrive(metadatalist, index, user, uploaded, next) {
     console.log('singleDrive');
     var metadata = metadatalist[index];
     var oOID = mongo.objectID();
@@ -2711,21 +2744,21 @@ function singleDrive(metadatalist, index, user, next) {
                     util.handleError(err);
                     index++;
                     if (index < metadatalist.length) {
-                        singleDrive(metadatalist, index, user, next);
+                        singleDrive(metadatalist, index, user, uploaded, next);
                     } else {
                         setTimeout(function(){
                             next(null);
                         }, 0);
                     }
                 } else {
-                    var data = {fileId: metadata.id};
-                    googleApi.googleApi('delete', data, function(err) {
+                    var data = {fileId: metadata.id, rmFolderId: user.auto, addFolderId: uploaded};
+                    googleApi.googleApi('move parent', data, function(err) {
                         if (err) {
                             util.handleError(err);
                         }
                         index++;
                         if (index < metadatalist.length) {
-                            singleDrive(metadatalist, index, user, next);
+                            singleDrive(metadatalist, index, user, uploaded, next);
                         } else {
                             setTimeout(function(){
                                 next(null);
@@ -2741,21 +2774,21 @@ function singleDrive(metadatalist, index, user, next) {
                 util.handleError(err);
                 index++;
                 if (index < metadatalist.length) {
-                    singleDrive(metadatalist, index, user, next);
+                    singleDrive(metadatalist, index, user, uploaded, next);
                 } else {
                     setTimeout(function(){
                         next(null);
                     }, 0);
                 }
             } else {
-                var data = {fileId: metadata.id};
-                googleApi.googleApi('delete', data, function(err) {
+                var data = {fileId: metadata.id, rmFolderId: user.auto, addFolderId: uploaded};
+                googleApi.googleApi('move parent', data, function(err) {
                     if (err) {
                         util.handleError(err);
                     }
                     index++;
                     if (index < metadatalist.length) {
-                        singleDrive(metadatalist, index, user, next);
+                        singleDrive(metadatalist, index, user, uploaded, next);
                     } else {
                         setTimeout(function(){
                             next(null);
@@ -2948,7 +2981,8 @@ function singleDrive(metadatalist, index, user, next) {
                             if (metadata.thumbnailLink) {
                                 mediaType.thumbnail = metadata.thumbnailLink;
                                 mediaType.key = metadata.id;
-                                mongo.orig("update", "storage", { _id: item[0]._id }, {$set: {"mediaType.thumbnail": mediaType.thumbnail, "mediaType.key": mediaType.key}}, function(err, item1){
+                                mediaType.notOwner = true;
+                                mongo.orig("update", "storage", { _id: item[0]._id }, {$set: {"mediaType.thumbnail": mediaType.thumbnail, "mediaType.key": mediaType.key, "mediaType.notOwner": mediaType.notOwner}}, function(err, item1){
                                     if(err) {
                                         errerMedia(err, item[0]._id, function() {
                                             sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);

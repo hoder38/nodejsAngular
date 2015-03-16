@@ -26,7 +26,7 @@ var tokens = '';
 
 var media_folder = config_glb.google_media_folder;
 var backup_folder = config_glb.google_backup_folder;
-var auto_folder = '0B_BstyDfOj4RfkU3aGpIRDVXcEwxSkdQeEJnTWM0cG0tNk9Md0VoZ21RTkxGcUNsQUVyaW8';
+//var auto_folder = '0B_BstyDfOj4RfkU3aGpIRDVXcEwxSkdQeEJnTWM0cG0tNk9Md0VoZ21RTkxGcUNsQUVyaW8';
 var max_retry = 10;
 
 function sendAPI(method, data, callback) {
@@ -113,18 +113,59 @@ function sendAPI(method, data, callback) {
             });
         }
         break;
-        case 'list':
+        case 'list file':
         max = 100;
+        if (!data['folderId']) {
+            util.handleError({hoerror: 2, message: 'list parameter lost!!!'}, callback, callback);
+        }
         if (data['max']) {
             console.log(data);
             max = data['max'];
         }
-        drive.files.list({q: "'" + auto_folder + "' in parents and trashed = false", maxResults: max}, function(err, metadata) {
+        drive.files.list({q: "'" + data['folderId'] + "' in parents and trashed = false and mimeType != 'application/vnd.google-apps.folder'", maxResults: max}, function(err, metadata) {
             if (err) {
                 util.handleError(err, callback, callback, null);
             }
             setTimeout(function(){
                 callback(null, metadata.items);
+            }, 0);
+        });
+        break;
+        case 'list folder':
+        max = 100;
+        if (!data['folderId']) {
+            util.handleError({hoerror: 2, message: 'list parameter lost!!!'}, callback, callback);
+        }
+        var find_name = '';
+        if (data['name']) {
+            find_name = " and title = '" + data['name'] + "'";
+        }
+        if (data['max']) {
+            console.log(data);
+            max = data['max'];
+        }
+        drive.files.list({q: "'" + data['folderId'] + "' in parents and trashed = false and mimeType = 'application/vnd.google-apps.folder'" + find_name, maxResults: max}, function(err, metadata) {
+            if (err) {
+                util.handleError(err, callback, callback, null);
+            }
+            setTimeout(function(){
+                callback(null, metadata.items);
+            }, 0);
+        });
+        break;
+        case 'move parent':
+        if (!data['fileId'] || !data['rmFolderId'] || !data['addFolderId']) {
+            util.handleError({hoerror: 2, message: 'delete parent parameter lost!!!'}, callback, callback);
+        }
+        param['fileId'] = data['fileId'];
+        param['removeParents'] = data['rmFolderId'];
+        param['addParents'] = data['addFolderId'];
+        drive.files.patch(param, function(err) {
+            if (err) {
+                util.handleError(err, callback, callback, null);
+            }
+            setTimeout(function(){
+                callback(null);
             }, 0);
         });
         break;
