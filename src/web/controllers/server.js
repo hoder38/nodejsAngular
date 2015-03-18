@@ -131,7 +131,7 @@ app.get('/api/userinfo', function (req, res, next) {
                         users[i].unHit = users[i].unHit ? users[i].unHit : tagTool.getUnactive('hit');
                         user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, newable: false, unDay: users[i].unDay, unHit: users[i].unHit, editAuto: true, auto: users[i].auto});
                     } else {
-                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, delable: true, newable: false, editAuto: false, auto: users[i].auto});
+                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, delable: true, newable: false, editAuto: true, auto: users[i].auto});
                     }
                 }
                 user_info.push({name: '', perm: '', desc: '', newable: true});
