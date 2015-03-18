@@ -112,6 +112,7 @@ module.exports = {
                 return mongo.objectID(str);
             }
         }
+        console.log('invalid string');
         console.log(str);
         return false;
     },
@@ -200,7 +201,6 @@ module.exports = {
     },
     bufferToString: function(buffer) {
         var charset = charsetDetector.detectCharset(buffer).toString();
-        console.log(charset);
         try {
             return buffer.toString(charset);
         } catch (x) {

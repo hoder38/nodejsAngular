@@ -83,6 +83,7 @@ function sendAPI(data, method, callback) {
         res.on('end', function () {
             var result = JSON.parse(str);
             if (!result.ok) {
+                console.log(result);
                 util.handleError({hoerror: 2, message: result.message}, callback, callback, 400, null);
             }
             setTimeout(function(){
@@ -172,7 +173,6 @@ function postData(fields, files, options, headers, callback) {
         response.body = '';
         response.setEncoding(options.encoding);
         response.on('data', function(chunk){
-            //console.log(chunk);
             response.body += chunk;
         });
         response.on('end', function() {
@@ -274,6 +274,7 @@ module.exports = {
                                 } else {
                                     retry--;
                                     if (retry === 0) {
+                                        console.log(options);
                                         util.handleError({hoerror: 2, message: "download not complete"}, callback, callback);
                                     } else {
                                         setTimeout(function(){
@@ -291,6 +292,7 @@ module.exports = {
                                         recur_download(time);
                                     }, 0);
                                 } else {
+                                    console.log(options);
                                     util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                 }
                             } else {
@@ -299,58 +301,27 @@ module.exports = {
                                         recur_download(time);
                                     }, 0);
                                 } else {
+                                    console.log(options);
                                     util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                 }
                             }
                         }
                     } else if (res.statusCode === 302){
                         if (!res.headers.location) {
+                            console.log(res.headers);
                             util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                         }
                         this_obj.xuiteDownload(res.headers.location, filePath, callback);
                     } else {
+                        console.log(res);
                         util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                     }
                     res.on('end', function() {
                         console.log('res end');
-                        /*if (complete) {
-                            console.log(filePath);
-                            setTimeout(function(){
-                                var stats = fs.statSync(filePath);
-                                if (length === stats["size"]) {
-                                    if (err) {
-                                        util.handleError(err, callback, callback);
-                                    }
-                                    var filename = null;
-                                    if (res.headers['content-disposition']) {
-                                        filename = res.headers['content-disposition'].match(/attachment; filename=(.*)/);
-                                    }
-                                    if (filename) {
-                                        setTimeout(function(){
-                                            callback(null, urlParse.pathname, filename[1]);
-                                        }, 0);
-                                    } else {
-                                        setTimeout(function(){
-                                            callback(null, urlParse.pathname);
-                                        }, 0);
-                                    }
-                                } else {
-                                    retry--;
-                                    if (retry === 0) {
-                                        util.handleError({hoerror: 2, message: "download not complete"}, callback, callback);
-                                    } else {
-                                        setTimeout(function(){
-                                            recur_download(1000);
-                                        }, 0);
-                                    }
-                                }
-                            }, 1000);
-                        }*/
                     });
                 });
                 req.on('error', function(e) {
                     util.handleError(e);
-                    //util.handleError(e, callback, callback);
                 });
                 req.end();
             }, time);
@@ -372,24 +343,7 @@ module.exports = {
         var files = [{type: 'application/octet-stream', keyname: 'upload_file', valuename: 'temp'}];
 
         fields['api_key'] = api_key;
-
-        /*if (file_copied) {
-            fields['action'] = "commit";
-            postData(fields, null, options, {}, function(err, res) {
-                if (err) {
-                    util.handleError(err, callback, callback, null);
-                }
-                var result = JSON.parse(res.body);
-                if (!result.ok) {
-                    util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
-                }
-                setTimeout(function(){
-                    callback(null, result.rsp);
-                }, 0);
-            });
-        } else {*/
-            recur_read(null, null);
-        //}
+        recur_read(null, null);
 
         function recur_read(err, res) {
             if (err) {
@@ -400,8 +354,8 @@ module.exports = {
             }
             if (res) {
                 var result = JSON.parse(res.body);
-                console.log(result);
                 if (!result.ok) {
+                    console.log(result);
                     util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
                 }
                 start = result.rsp.file_info.total_filesize;
@@ -435,6 +389,7 @@ module.exports = {
                     }
                     var result = JSON.parse(res.body);
                     if (!result.ok) {
+                        console.log(result);
                         util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
                     }
                     setTimeout(function(){
@@ -479,7 +434,6 @@ module.exports = {
         }
     },
     xuiteDocurl: function(meta, type) {
-        console.log(meta);
         var secret = meta['sn'] + ':sync_1_' + meta['parent'] + '_' + meta['key'] + '_' + meta['version'] + meta['owner'] + ':20130516';
         var checksum = crypto.createHash('md5').update(secret).digest('hex');
         return 'http://f.sync.hamicloud.net/@docview/' + meta['sn'] + '/sync/pub/' + checksum + '/' + meta['parent'] + '/' + meta['key'] + '/' + meta['version'] + meta['owner'] + '.' + type;
@@ -501,7 +455,6 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                console.log(statusResult);
                 if (statusResult.status === '1') {
                     this_obj.xuiteApi("xuite.webhd.private.cloudbox.gallery.getSingleMedia", {key: key}, function(err, videoResult) {
                         if (err) {
@@ -582,6 +535,7 @@ module.exports = {
                         util.handleError({hoerror: 2, message: "timeout"}, callback, callback, null);
                     }
                 } else {
+                    console.log(statusResult);
                     util.handleError({hoerror: 2, message: statusResult.status + ": video upload fail"}, callback, callback);
                 }
             });

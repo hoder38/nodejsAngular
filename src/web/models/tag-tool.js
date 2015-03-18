@@ -131,7 +131,6 @@ module.exports = function(collection) {
                     search[name].save[saveName].bookmark = search[name].bookmark;
                     search[name].save[saveName].sortName = sortName;
                     search[name].save[saveName].sortType = sortType;
-                    console.log(search[name].save[saveName]);
                 },
                 loadArray: function(saveName) {
                     if(!search[name].save.hasOwnProperty(saveName)){
@@ -152,9 +151,9 @@ module.exports = function(collection) {
             }
             var tagType = getQueryTag(user, name);
             if (!tagType.type) {
+                console.log(tagType);
                 util.handleError({hoerror: 2, message: 'not authority set default tag!!!'}, next, callback, null);
             }
-            console.log(tagType);
             if (tagType.type === 2) {
                 mongo.orig("findOne", collection, {_id: id}, function(err, item){
                     if(err) {
@@ -163,7 +162,6 @@ module.exports = function(collection) {
                     if (!item) {
                         util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, callback, null);
                     }
-                    console.log(item);
                     if (item.adultonly === tagType.tag.adultonly) {
                         setTimeout(function(){
                             callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.name});
@@ -187,7 +185,6 @@ module.exports = function(collection) {
                     if (!item) {
                         util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, callback, null);
                     }
-                    console.log(item);
                     if (item.tags.indexOf(tagType.tag.tags) === -1) {
                         tagType.tag[user._id.toString()] = tagType.tag.tags;
                         mongo.orig("update", collection, { _id: id }, {$addToSet: tagType.tag}, {upsert: true}, function(err, item2){
@@ -205,6 +202,7 @@ module.exports = function(collection) {
                     }
                 });
             } else {
+                console.log(tagType);
                 util.handleError({hoerror: 1, message: 'unknown add tag type!!!'}, next, callback, null);
             }
         },
@@ -219,6 +217,7 @@ module.exports = function(collection) {
             }
             var tagType = getQueryTag(user, name, 0);
             if (!tagType.type) {
+                console.log(tagType);
                 util.handleError({hoerror: 2, message: 'not authority delete default tag!!!'}, next, callback, null);
             }
             mongo.orig("findOne", collection, {_id: id}, function(err, item){
@@ -233,14 +232,14 @@ module.exports = function(collection) {
                         if(err) {
                             util.handleError(err, next, callback, null);
                         }
-                        console.log(item1);
                         setTimeout(function(){
                             callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.name});
                         }, 0);
                     });
                 } else if (tagType.type === 1) {
-                    console.log(tagType);
                     if (tagType.tag.tags === normalize(item.name)) {
+                        console.log(tagType.tag.tags);
+                        console.log(normalize(item.name));
                         util.handleError({hoerror: 2, message: 'can not delete file name!!!'}, next, callback, null);
                     }
                     if (util.checkAdmin(1, user)) {
@@ -255,7 +254,6 @@ module.exports = function(collection) {
                                     if(err) {
                                         util.handleError(err, next, callback, null);
                                     }
-                                    console.log(item2);
                                     setTimeout(function(){
                                         callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.tag.tags});
                                     }, 0);
@@ -278,6 +276,7 @@ module.exports = function(collection) {
                         }
                     }
                 } else {
+                    console.log(tagType);
                     util.handleError({hoerror: 1, message: 'unknown del tag type!!!'}, next, callback, null);
                 }
             });
@@ -315,12 +314,10 @@ module.exports = function(collection) {
                                 if(err) {
                                     util.handleError(err, next, callback, null);
                                 }
-                                console.log(item);
                                 mongo.orig("findOne", "storage", { _id: id }, function(err, item1){
                                     if(err) {
                                         util.handleError(err, next, callback, null);
                                     }
-                                    console.log(item1);
                                     setTimeout(function(){
                                         callback(null, {history: history, id: item1._id, adultonly: item1.adultonly});
                                     }, 0);
@@ -330,7 +327,6 @@ module.exports = function(collection) {
                     });
                 } else {
                     this_obj.delTag(uid, tags[index].tag, user, next, function (err, result) {
-                        console.log(result);
                         if (err) {
                             util.handleError(err, next);
                         } else {
@@ -352,12 +348,10 @@ module.exports = function(collection) {
                                 if(err) {
                                     util.handleError(err, next, callback, null);
                                 }
-                                console.log(item);
                                 mongo.orig("findOne", "storage", { _id: id }, function(err, item1){
                                     if(err) {
                                         util.handleError(err, next, callback, null);
                                     }
-                                    console.log(item1);
                                     setTimeout(function(){
                                         callback(null, {history: history, id: item1._id, adultonly: item1.adultonly});
                                     }, 0);
@@ -378,15 +372,12 @@ module.exports = function(collection) {
             }
             var parentList = tags.resetArray();
             var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
-            console.log(nosql);
             var options = {"limit": queryLimit, "sort": [[sortName, sortType]]};
-            console.log(options);
             delete tags;
             mongo.orig("find", collection, nosql, options, function(err, items){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
-                console.log(items);
                 setTimeout(function(){
                     callback(null, {items: items, parentList: parentList});
                 }, 0);
@@ -398,7 +389,6 @@ module.exports = function(collection) {
                 sortName = 'utime';
             }
             var options = {"limit": queryLimit, "skip" : page, "sort": [[sortName, sortType]]};
-            console.log(options);
             if (!tagName) {
                 var tags = this.searchTags(session, 'parent');
                 if (!tags) {
@@ -406,16 +396,11 @@ module.exports = function(collection) {
                 }
                 var parentList = tags.getArray();
                 var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
-                console.log(nosql);
                 delete tags;
-                /*if (nosql.mediaType) {
-                    options = {"limit": queryLimit, "skip" : page, "sort": [["utime", sortType]]};
-                }*/
                 mongo.orig("find", collection, nosql, options, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback);
                     }
-                    console.log(items);
                     if (nosql.mediaType) {
                         setTimeout(function(){
                             callback(null, {items: items, parentList: parentList, mediaHadle: 1});
@@ -451,16 +436,11 @@ module.exports = function(collection) {
                 }
                 var parentList = tags.getArray(name, exactly);
                 var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
-                console.log(nosql);
                 delete tags;
-                /*if (nosql.mediaType) {
-                    options = {"limit": queryLimit, "skip" : page, "sort": ["utime", sortType]};
-                }*/
                 mongo.orig("find", collection, nosql, options, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback);
                     }
-                    console.log(items);
                     if (nosql.mediaType) {
                         setTimeout(function(){
                             callback(null, {items: items, parentList: parentList, mediaHadle: 1});
@@ -500,16 +480,11 @@ module.exports = function(collection) {
                 }
                 var parentList = tags.getArray(name, exactly, Pindex);
                 var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
-                console.log(nosql);
                 delete tags;
-                /*if (nosql.mediaType) {
-                    options = {"limit": queryLimit, "skip" : page, "sort": ["utime", sortType]};
-                }*/
                 mongo.orig("find", collection, nosql, options, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback);
                     }
-                    console.log(items);
                     if (nosql.mediaType) {
                         setTimeout(function(){
                             callback(null, {items: items, parentList: parentList, mediaHadle: 1});
@@ -553,13 +528,11 @@ module.exports = function(collection) {
             } else {
                 nosql.$and.push({_id: id});
             }
-            console.log(nosql);
             delete tags;
             mongo.orig("findOne", collection, nosql, function(err, item){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
-                console.log(item);
                 if (!item) {
                     setTimeout(function(){
                         callback(null, {empty: true});
@@ -598,7 +571,6 @@ module.exports = function(collection) {
                 return false;
             }
             var save = tags.loadArray(saveName);
-            console.log(save);
             if (!save) {
                 return false;
             }
@@ -614,7 +586,6 @@ module.exports = function(collection) {
                 }
             }
             var options = {"limit": queryLimit, "skip" : page, "sort": [[save.sortName, save.sortType]]};
-            console.log(nosql);
             delete tags;
             return {nosql: nosql, options: options};
         },
@@ -630,6 +601,7 @@ module.exports = function(collection) {
                 util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
             }
             if (!inParentArray(name)) {
+                console.log(name);
                 util.handleError({hoerror: 2, message: "name is not allow"}, next, callback);
             }
             if (sortName === 'mtime') {
@@ -659,6 +631,7 @@ module.exports = function(collection) {
                 util.handleError({hoerror: 2, message: "tag name is not vaild"}, next, callback);
             }
             if (!inParentArray(name)) {
+                console.log(name);
                 util.handleError({hoerror: 2, message: "name is not allow"}, next, callback);
             }
             var normal = normalize(tag);
@@ -671,7 +644,6 @@ module.exports = function(collection) {
                         if(err) {
                             util.handleError(err, next, callback);
                         }
-                        console.log(parent1);
                         setTimeout(function(){
                             callback(null, {name: parent1[0].name, id: parent1[0]._id});
                         }, 0);
@@ -685,6 +657,7 @@ module.exports = function(collection) {
         },
         delParent: function(id, user, next, callback) {
             if (!util.checkAdmin(1, user)) {
+                console.log(user);
                 util.handleError({hoerror: 2, message: "permission denied"}, next, callback);
             }
             mongo.orig("remove", collection + "Dir", {_id: id, $isolated: 1}, function(err, parent){
@@ -728,12 +701,10 @@ module.exports = function(collection) {
             });
         },
         getLatest: function(bookmark, next, callback) {
-            console.log('getLatest');
             mongo.orig("findOne", collection + "User" ,{_id: mongo.objectID(bookmark)}, function(err,item){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
-                console.log(item);
                 var latest = false;
                 if (item.latest) {
                     latest = item.latest;
@@ -744,7 +715,6 @@ module.exports = function(collection) {
             });
         },
         setLatest: function(saveName, latest, session, next, callback) {
-            console.log('setLatest');
             var tags = this.searchTags(session, 'parent');
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
@@ -752,7 +722,6 @@ module.exports = function(collection) {
             var bookmark = '';
             if (saveName) {
                 var save = tags.loadArray(saveName);
-                console.log(save);
                 if (save) {
                     bookmark = save.bookmark;
                 }
@@ -764,8 +733,6 @@ module.exports = function(collection) {
                     if(err) {
                         util.handleError(err, next, callback);
                     }
-                    console.log('latest file: ' + latest);
-                    console.log(item);
                     setTimeout(function(){
                         callback(null);
                     }, 0);
@@ -785,7 +752,6 @@ module.exports = function(collection) {
                 for (var i in items) {
                    bookmarklist.push({name: items[i].name, id: items[i]._id});
                 }
-                console.log(items);
                 setTimeout(function(){
                     callback(null, {bookmarkList: bookmarklist});
                 }, 0);
@@ -848,7 +814,6 @@ module.exports = function(collection) {
                         if(err) {
                             util.handleError(err, next, callback);
                         }
-                        console.log(item1);
                         tags.setArray(item._id);
                         setTimeout(function(){
                             callback(null, {apiOk: true});
@@ -857,6 +822,7 @@ module.exports = function(collection) {
                 } else {
                     mongo.orig("count", collection + "User", {userId: user._id}, function(err, count){
                         if (count >= bookmarkLimit) {
+                            console.log(count);
                             util.handleError({hoerror: 2, message: 'too much bookmark!!!'}, next, callback);
                         }
                         var utime = Math.round(new Date().getTime() / 1000);
@@ -870,7 +836,6 @@ module.exports = function(collection) {
                             if(err) {
                                 util.handleError(err, next, callback);
                             }
-                            console.log(item1);
                             tags.setArray(item1[0]._id);
                             setTimeout(function(){
                                 callback(null, {name: item1[0].name, id: item1[0]._id});
@@ -955,12 +920,12 @@ function getQuerySql(user, tagList, exactly) {
             nosql.$and.push({adultonly: 0});
         }
     }
+    console.log(nosql);
     return nosql;
 }
 
 function getQueryTag(user, tag, del) {
     del = typeof del !== 'undefined' ? del : 1;
-    //var ori = del === 1 ? 0 : 1;
     var normal = normalize(tag);
     var index = default_tags.indexOf(normal);
     if (index === 0) {

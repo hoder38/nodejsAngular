@@ -70,7 +70,6 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
                 musicStart = 0;
             }
         });
-        console.log(music);
     };
 }).directive('ngVideo', function() {
     return function (scope, element, attrs) {
@@ -81,7 +80,6 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
                 videoStart = 0;
             }
         });
-        console.log(video);
     };
 }).directive('ngEnded', function() {
     return function (scope, element, attrs) {
@@ -175,7 +173,6 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                     result.user_info[i].isDel = false;
                     this_obj.uInfo.push(result.user_info[i]);
                 }
-                console.log(this_obj.uInfo);
             }
         }, function(errorResult) {
             if (errorResult.status === 400) {
@@ -210,10 +207,8 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                     var addInfo = $resource('/api/adduser', {}, {
                         'addinfo': { method:'POST' }
                     });
-                    console.log({name: item.name, desc: item.desc, perm: item.perm, newPwd: item.newPwd, conPwd: item.conPwd, pwd: item.password});
                     var this_uInfo = this.uInfo;
                     addInfo.addinfo({name: item.name, desc: item.desc, perm: item.perm, newPwd: item.newPwd, conPwd: item.conPwd, pwd: item.password}, function (result) {
-                        console.log(result);
                         if (result.loginOK) {
                             $window.location.href = $location.path();
                         } else {
@@ -234,11 +229,9 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                                 }
                                 result.newItem.isDel = false;
                                 this_uInfo.push(result.newItem);
-                                console.log(this_uInfo);
                             }
                         }
                     }, function(errorResult) {
-                        console.log(errorResult);
                         if (errorResult.status === 400) {
                             addAlert(errorResult.data);
                         } else if (errorResult.status === 403) {
@@ -340,7 +333,6 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                     if (result.loginOK) {
                         $window.location.href = $location.path();
                     } else {
-                        console.log(result);
                         addAlert('edit complete');
                         if (result.hasOwnProperty('name')) {
                             item.name = result.name;
@@ -371,7 +363,6 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                 }, function(errorResult) {
                     item.newPwd = '';
                     item.conPwd = '';
-                    console.log(errorResult);
                     if (errorResult.status === 400) {
                         addAlert(errorResult.data);
                     } else if (errorResult.status === 403) {
@@ -401,7 +392,6 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                     item.isDel = true;
                 }
             }, function(errorResult) {
-                console.log(errorResult);
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -512,7 +502,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
 
     $scope.$on('dir', function(e, d) {
         var result = JSON.parse(d);
-        console.log(result);
         for (var i in $scope.dirList) {
             if ($scope.dirList[i].name === result.parent) {
                 $scope.dirList[i].list.push({name: result.name, id: result.id});
@@ -528,14 +517,12 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     });
     $scope.$on('file', function(e, d) {
         var id = JSON.parse(d);
-        console.log(id);
         var index = arrayObjectIndexOf($scope.itemList, id, 'id');
         var storageApi = $resource('/api/storage/single/' + id, {}, {
             'single': { method:'get' }
         });
         var this_obj = this;
         storageApi.single({}, function (result) {
-            console.log(result);
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
@@ -562,7 +549,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 }
             }
         }, function(errorResult) {
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -627,11 +613,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         getBookmarklist();
     }
 
-    /*console.log($scope.uploader);
-    $scope.uploader.onCompleteAll = function() {
-        console.info('storage');
-    };*/
-
     $scope.changeSort = function(sort, name) {
         if (this[sort]) {
             if (name === 'name') {
@@ -668,17 +649,12 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 this[sort].name = '';
                 this[sort].mtime = '';
             }
-            console.log(sort);
             if (sort === 'fileSort') {
                 this.page = 0;
                 this.more = true;
                 getItemlist(this);
             } else if (sort === 'bookmarkSort') {
                 getBookmarklist();
-            /*} else if (sort === 'dirSort') {
-                //this.parentPage = 0;
-                //this.parentMore = true;
-                getTaglist(this);*/
             }
         }
     }
@@ -711,7 +687,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     }
 
     $scope.submitText = function() {
-        console.log(this.inputText);
         if (!this.inputText) {
             return false;
         }
@@ -749,7 +724,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         this_obj.more = true;
         this_obj.moreDisabled = true;
         parentApi.query({}, function (result) {
-            console.log(result);
             this_obj.itemList = [];
             if (result.itemList.length > 0) {
                 var date;
@@ -770,10 +744,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             this_obj.exactlyList = result.parentList.exactly;
             this_obj.moreDisabled = false;
             this_obj.$parent.collapse.storage = true;
-            console.log(this_obj.itemList);
         }, function(errorResult) {
             this_obj.moreDisabled = false;
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -785,7 +757,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     }
 
     getItemlist = function (this_obj, name, index, isExactly) {
-        console.log(this_obj.page);
         name = typeof name !== 'undefined' ? name : null;
         index = typeof index !== 'undefined' ? index : 0;
         var Info, exactly = 'false';
@@ -808,7 +779,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     'storage': { method:'GET' }
                 });
             } else {
-                console.log(name);
                 addAlert('search tag is not vaild!!!');
                 return false;
             }
@@ -830,7 +800,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
-                console.log(result);
                 if (this_obj.page === 0) {
                     this_obj.itemList = [];
                 }
@@ -855,11 +824,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 this_obj.exactlyList = result.parentList.exactly;
                 this_obj.moreDisabled = false;
                 this_obj.searchBlur = true;
-                console.log(this_obj.itemList);
             }
         }, function(errorResult) {
             this_obj.moreDisabled = false;
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -882,7 +849,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
-                console.log(result);
                 this_obj.itemList = [];
                 var date;
                 for (var i in result.itemList) {
@@ -898,11 +864,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 this_obj.historyList = result.parentList.his;
                 this_obj.exactlyList = result.parentList.exactly;
                 this_obj.moreDisabled = false;
-                console.log(this_obj.itemList);
             }
         }, function(errorResult) {
             this_obj.moreDisabled = false;
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -923,15 +887,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         } else {
             $scope.tagList = [];
         }
-        console.log($scope.selectList);
-        console.log($scope.tagList);
     }, true);
 
     $scope.submitTag = function() {
-        console.log(this.newTagName);
         if (this.newTagName) {
             if (isValidString(this.newTagName, 'name')) {
-                console.log(this.selectList);
                 if (this.selectList.length > 0) {
                     var this_obj = this;
                     for (var i in this.selectList) {
@@ -939,7 +899,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                             'addTag': { method:'PUT' }
                         });
                         Info.addTag({tag: this.newTagName}, function (result) {
-                            console.log(result);
                             if (result.loginOK) {
                                 $window.location.href = $location.path();
                             }
@@ -947,7 +906,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                                 this_obj.tagNew = false;
                             }
                         }, function(errorResult) {
-                            console.log(errorResult);
                             if (errorResult.status === 400) {
                                 addAlert(errorResult.data);
                             } else if (errorResult.status === 403) {
@@ -970,7 +928,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
 
     $scope.delTag = function(tag) {
         if (isValidString(tag, 'name')) {
-            console.log(this.selectList);
             var this_itemList = this.itemList;
             if (this.selectList.length > 0) {
                 for (var i in this.selectList) {
@@ -978,12 +935,10 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                         'delTag': { method:'PUT' }
                     });
                     Info.delTag({tag: tag}, function (result) {
-                        console.log(result);
                         if (result.loginOK) {
                             $window.location.href = $location.path();
                         }
                     }, function(errorResult) {
-                        console.log(errorResult);
                         if (errorResult.status === 400) {
                             addAlert(errorResult.data);
                         } else if (errorResult.status === 403) {
@@ -1008,7 +963,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             });
             var this_obj = this;
             Info.addDir({ name: item.name, tag: this.toolList.item}, function (result) {
-                console.log(result);
                 if (result.id) {
                     for (var i in this_obj.dirList) {
                         if (this_obj.dirList[i].name === item.name) {
@@ -1018,7 +972,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     }
                 }
             }, function(errorResult) {
-                console.log(errorResult);
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -1033,13 +986,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     }
 
     $scope.del2Parent = function(id, dir) {
-        console.log(id);
         var this_obj = this;
         var Info = $resource('/api/parent/del/' + id, {}, {
             'delDir': { method:'DELETE' }
         });
         Info.delDir({}, function (result) {
-            console.log(result);
             if (result.id) {
                 index = arrayObjectIndexOf(dir.list, result.id, "id");
                 if (index !== -1) {
@@ -1048,7 +999,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 }
             }
         }, function(errorResult) {
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -1066,7 +1016,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 'getTaglist': { method:'GET' }
             });
             Info.getTaglist({}, function (result) {
-                console.log(result);
                 if (item.page === 0) {
                     item.list = [];
                 }
@@ -1083,7 +1032,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 item.moreDisabled = false;
             }, function(errorResult) {
                 item.moreDisabled = false;
-                console.log(errorResult);
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -1098,7 +1046,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     }
 
     $scope.showTaglist = function(item) {
-        console.log(item);
         item.collpase = !item.collpase;
         if (item.list.length === 0) {
             if ($cookies['dir' + item.name + 'SortName'] === 'mtime') {
@@ -1137,12 +1084,10 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             'recoverFile': { method:'PUT' }
         });
         Info.recoverFile({}, function (result) {
-            console.log(result);
             if (result.loginOK) {
                 $window.location.href = $location.path();
             }
         }, function(errorResult) {
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -1163,23 +1108,10 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             'delFile': { method:'DELETE' }
         });
         Info.delFile({}, function (result) {
-            console.log(result);
             if (result.loginOK) {
                 $window.location.href = $location.path();
-            /*} else {
-                if (result.del) {
-                    for (var i in this_itemList) {
-                        if (result.key === this_itemList[i].id) {
-                            this_itemList.splice(i, 1);
-                            break;
-                        }
-                    }
-                } else {
-                    item.recycle = 1;
-                }*/
             }
         }, function(errorResult) {
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -1192,7 +1124,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     }
 
     $scope.fileEdit = function(item) {
-        console.log('edit');
         if (!item) {
             item = this.toolList.item;
         }
@@ -1202,7 +1133,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             });
             var this_obj = this;
             editFile.editfile({name: this.newItemName}, function(result) {
-                console.log(result);
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
@@ -1223,10 +1153,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                         this_obj.feedback.run = true;
                         showFeedback(result);
                     }
-                    //delete item["Edit"];
                 }
             }, function(errorResult) {
-                console.log(errorResult);
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -1295,7 +1223,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             'saveParent': { method:'POST' }
         });
         apiMedia.saveParent({name: type}, function(result) {
-            console.log(result);
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
@@ -1307,7 +1234,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                         'setTime': { method:'GET' }
                     });
                     mediaApi.setTime({}, function (result) {
-                        console.log(result);
                         if (result.loginOK) {
                             $window.location.href = $location.path();
                         } else {
@@ -1354,7 +1280,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                             }
                         }
                     }, function(errorResult) {
-                        console.log(errorResult);
                         if (errorResult.status === 400) {
                             addAlert(errorResult.data);
                         } else if (errorResult.status === 403) {
@@ -1401,7 +1326,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 }
             }
         }, function(errorResult) {
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -1416,7 +1340,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         if (!id) {
             id = this.toolList.item.id;
         }
-        console.log('/download/' + id);
         $window.location.href = '/download/' + id;
     }
 
@@ -1429,14 +1352,12 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 'handlemedia': { method:'GET' }
             });
             handleMedia.handlemedia({}, function(result) {
-                console.log(result);
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
 
                 }
             }, function(errorResult) {
-                console.log(errorResult);
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -1519,7 +1440,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         });
         this.$parent.moreDisabled = true;
         bookmarkapi.getbookmark({}, function(result) {
-            console.log(result);
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
@@ -1542,7 +1462,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             }
         }, function(errorResult) {
             this_obj.$parent.moreDisabled = false;
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -1558,14 +1477,12 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             'getbookmarklist': { method:'GET' }
         });
         bookmarkapi.getbookmarklist({}, function(result) {
-            console.log(result);
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
                 $scope.bookmarkList = result.bookmarkList;
             }
         }, function(errorResult) {
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -1590,7 +1507,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 'addbookmark': { method:'POST' }
             });
             bookmarkapi.addbookmark({name: bookmarkName}, function(result) {
-                console.log(result);
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
@@ -1601,7 +1517,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     this_obj.bookmarkName = '';
                 }
             }, function(errorResult) {
-                console.log(errorResult);
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -1621,18 +1536,15 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             'delbookmark': { method:'DELETE' }
         });
         bookmarkapi.delbookmark({}, function(result) {
-            console.log(result);
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
                 var index = arrayObjectIndexOf(this_obj.$parent.bookmarkList, result.id, "id");
-                console.log(index);
                 if (index !== -1) {
                     this_obj.$parent.bookmarkList.splice(index, 1);
                 }
             }
         }, function(errorResult) {
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -1682,13 +1594,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     };
 
     window.onbeforeunload = function (event) {
-        /*var mediaApi = $resource('/api/media/record', {}, {
-            'record': { method:'get' }
-        });
-        mediaApi.record({}, function (result) {
-            console.log(result);
-        });
-        return 'window close';*/
         var vId = $scope.video.id;
         if (vId) {
             var vTime = parseInt(video.currentTime);
@@ -1729,7 +1634,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.selectFeedbackTag = function($event, tag) {
         var pre = $scope.feedbackSelectTag;
         $scope.feedbackSelectTag = tag;
-        console.log($scope.feedbackSelectTag);
         this.toggleDropdown($event, 'feedback');
     }
     $scope.toggleWidget = function (type) {
@@ -1798,9 +1702,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     uploader.onCompleteAll = function() {
         console.info('onCompleteAll');
     };
-    /*uploader.bind('beforeupload', function (event, item) {
-        item.url = uploader.url;
-    });*/
 
     $scope.addItem = function() {
         if(this.newItem) {
@@ -1813,12 +1714,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     }
     $scope.main_edit = function(item, type){
         item[type+"Edit"] = true;
-        console.log(item[type+"Edit"]);
     }
     $scope.main_save = function(item, type){
-        console.log(type);
         this.editType = type;
-        console.log(this.editType);
         delete item[type+"Edit"];
     }
 
@@ -1833,7 +1731,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 $window.location.href = $location.path();
             }
         }, function(errorResult) {
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -1850,12 +1747,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             });
 
             Users.login({ username: this.username, password: this.password}, function (user) {
-                console.log(user);
                 if (user.loginOK) {
                     $window.location.href = $location.path();
                 }
             }, function (errorResult) {
-                console.log(errorResult);
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -1871,7 +1766,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         }
     }
     $scope.addFeedback = function() {
-        console.log(this.feedbackInput);
         if (this.feedbackInput) {
             this.feedback.list.splice(0, 0, {tag: this.feedbackInput, select: true});
             this.feedbackInput = '';
@@ -1891,12 +1785,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 'sendTag': { method:'PUT' }
             });
             Info.sendTag({tags: sendList, name: this.feedback.name}, function (result) {
-                console.log(result);
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
                     this_obj.feedback.history = result.history;
-                    console.log(this_obj.feedback.history);
                     if (this_obj.feedback.queue.length > 0) {
                         var response = this_obj.feedback.queue.splice(0, 1);
                         showFeedback(response[0]);
@@ -1906,7 +1798,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     }
                 }
             }, function(errorResult) {
-                console.log(errorResult);
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -1922,7 +1813,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     }
 
     showFeedback = function (response) {
-        console.log(response);
         $scope.feedback.name = response.name;
         $scope.feedback.uid = response.id;
         $scope.feedback.list = [];
@@ -1949,24 +1839,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 }
             }
         }
-        console.log($scope.feedback);
     };
 
-    /*var updateClock = function() {
-        var date = new Date();
-        $scope.clock = date.toString();
-    };
-    var timer = setInterval(function() {
-        $scope.$apply(updateClock);
-    }, 1000);
-    updateClock();*/
-    console.log($cookies);
     $scope.id = 'guest';
-    /*if ($cookies.id) {
-        $scope.id = $cookies.id;
-    } else {
-        $scope.id = 'guest';
-    }*/
     $scope.feedback = {uid: '', name: '', list: [], run: false, queue: [], history: [], other: []};
     $scope.mediaShow = [];
     $scope.navList = [{title: "homepage", hash: "/", css: "fa fa-fw fa-dashboard"}, {title: "Storage", hash: "/Storage", css: "fa fa-fw fa-desktop"}];
@@ -1988,7 +1863,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             'getUser': { method:'GET' }
         });
         Info.getUser({}, function (result) {
-            console.log(result);
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
@@ -2010,7 +1884,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     var wsmsg = JSON.parse(message.data);
                     switch (wsmsg.type) {
                         case 'file':
-                            console.log(wsmsg);
                             $scope.$broadcast('file', JSON.stringify(wsmsg.data));
                             break;
                         default:
@@ -2019,7 +1892,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 };
             }
         }, function(errorResult) {
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 //addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -2029,7 +1901,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     }
 
     $scope.urlUpload = function() {
-        console.log(this.inputUrl);
         var url = this.inputUrl;
         var this_obj = this;
         this.inputUrl = '';
@@ -2044,7 +1915,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    console.log(result);
                     if (this_obj.feedback.run) {
                         if (this_obj.feedback.uid === result.id) {
                             showFeedback(result);
@@ -2062,7 +1932,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 }
             }, function(errorResult) {
                 this_obj.disableUrlUpload = false;
-                console.log(errorResult);
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -2077,7 +1946,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     }
 
     $scope.urlSave = function() {
-        console.log(this.inputUrl);
         var url = this.inputUrl;
         this.inputUrl = '';
         var this_obj = this;
@@ -2091,7 +1959,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    console.log(result);
                     if (this_obj.feedback.run) {
                         if (this_obj.feedback.uid === result.id) {
                             showFeedback(result);
@@ -2109,7 +1976,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 }
             }, function(errorResult) {
                 this_obj.disableUrlSave = false;
-                console.log(errorResult);
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -2129,7 +1995,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             'getFeedback': { method:'GET' }
         });
         Info.getFeedback({}, function (result) {
-            console.log(result);
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
@@ -2141,7 +2006,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 }
             }
         }, function(errorResult) {
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 //addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -2153,7 +2017,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     }
 
     $scope.mediaRecord = function(type, end) {
-        console.log('record');
         var id = this[type].id;
         var time = 0;
         if (id) {
@@ -2172,12 +2035,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 'record': { method:'GET' }
             });
             mediaApi.record({}, function (result) {
-                console.log(result);
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 }
             }, function(errorResult) {
-                console.log(errorResult);
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -2194,12 +2055,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             'testLogin': { method:'GET' }
         });
         testApi.testLogin({}, function (result) {
-            console.log(result);
             if (result.loginOK) {
                 $window.location.href = $location.path();
             }
         }, function(errorResult) {
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -2253,7 +2112,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     }
 
     $scope.mediaMove = function(number, type, end) {
-        console.log(this[type]);
         var preType = '', status = 0, isLoad = false;
         switch (type) {
             case 'image':
@@ -2296,7 +2154,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     'more': { method:'GET' }
                 });
                 mediaApi.more({}, function (result) {
-                    console.log(result);
                     if (result.loginOK) {
                         $window.location.href = $location.path();
                     } else {
@@ -2317,14 +2174,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 this_obj[type].front = this_obj[type].front + this_obj[type].list.length - length;
                             }
                             this_obj[type].frontPage = this_obj[type].frontPage + result.itemList.length;
-                            console.log(this_obj[type].list);
                         } else {
                             $scope[type].end = true;
-                            console.log($scope[type].end);
                             this_obj[type].index = -this_obj[type].back;
                         }
                         $scope.mediaMoreDisabled = false;
-                        console.log(this_obj[type].end);
                         if (type === 'video' || type === 'music') {
                             if (this_obj[type].id) {
                                this_obj.mediaRecord(type, end);
@@ -2333,7 +2187,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 'setTime': { method:'GET' }
                             });
                             mediaApi.setTime({}, function (result) {
-                                console.log(result);
                                 if (result.loginOK) {
                                     $window.location.href = $location.path();
                                 } else {
@@ -2371,13 +2224,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                             this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                         }
                                     }
-                                    console.log(this_obj[type].index);
                                     this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
                                     this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
                                 }
                             }, function(errorResult) {
-                                console.log(errorResult);
                                 if (errorResult.status === 400) {
                                     addAlert(errorResult.data);
                                 } else if (errorResult.status === 403) {
@@ -2414,7 +2265,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                     this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                 }
                             }
-                            console.log(this_obj[type].index);
                             this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                             this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
                             this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
@@ -2422,7 +2272,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     }
                 }, function(errorResult) {
                     $scope.mediaMoreDisabled = false;
-                    console.log(errorResult);
                     if (errorResult.status === 400) {
                         addAlert(errorResult.data);
                     } else if (errorResult.status === 403) {
@@ -2447,7 +2296,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 }
                 $scope.mediaMoreDisabled = true;
                 mediaApi.more({}, function (result) {
-                    console.log(result);
                     if (result.loginOK) {
                         $window.location.href = $location.path();
                     } else {
@@ -2468,12 +2316,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 this_obj[type].back = this_obj[type].back + this_obj[type].list.length - length;
                             }
                             this_obj[type].backPage = this_obj[type].backPage + result.itemList.length;
-                            console.log(this_obj[type].list);
                         } else {
                             this_obj[type].index = this_obj[type].front - 1;
                             this_obj[type].end = true;
                         }
-                        console.log(this_obj[type].end);
                         $scope.mediaMoreDisabled = false;
                         if (type === 'video' || type === 'music') {
                             if (this_obj[type].id) {
@@ -2483,7 +2329,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 'setTime': { method:'GET' }
                             });
                             mediaApi.setTime({}, function (result) {
-                                console.log(result);
                                 if (result.loginOK) {
                                     $window.location.href = $location.path();
                                 } else {
@@ -2521,13 +2366,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                             this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                         }
                                     }
-                                    console.log(this_obj[type].index);
                                     this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
                                     this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
                                 }
                             }, function(errorResult) {
-                                console.log(errorResult);
                                 if (errorResult.status === 400) {
                                     addAlert(errorResult.data);
                                 } else if (errorResult.status === 403) {
@@ -2564,7 +2407,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                     this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                 }
                             }
-                            console.log(this_obj[type].index);
                             this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                             this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
                             this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
@@ -2572,7 +2414,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     }
                 }, function(errorResult) {
                     $scope.mediaMoreDisabled = false;
-                    console.log(errorResult);
                     if (errorResult.status === 400) {
                         addAlert(errorResult.data);
                     } else if (errorResult.status === 403) {
@@ -2594,7 +2435,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     'setTime': { method:'GET' }
                 });
                 mediaApi.setTime({}, function (result) {
-                    console.log(result);
                     if (result.loginOK) {
                         $window.location.href = $location.path();
                     } else {
@@ -2632,13 +2472,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                             }
                         }
-                        console.log(this_obj[type].index);
                         this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
                         this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
                     }
                 }, function(errorResult) {
-                    console.log(errorResult);
                     if (errorResult.status === 400) {
                         addAlert(errorResult.data);
                     } else if (errorResult.status === 403) {
@@ -2675,7 +2513,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                         this[type].sub = '/subtitle/' + this[type].list[this[type].index + this[type].back].id;
                     }
                 }
-                console.log(this[type].index);
                 this[type].id = this[type].list[this[type].index + this[type].back].id;
                 this.$broadcast('latest', JSON.stringify({id: this[type].bookmarkID, latest: this[type].id}));
                 this[type].name = this[type].list[this[type].index + this[type].back].name;
@@ -2724,10 +2561,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 for (var i in result.parentList) {
                     $scope.dirList.push({name: result.parentList[i].name, show: result.parentList[i].show, collpase: true, edit: false, list: [], page: 0, more: true, moreDisabled: false, sortName: '', sortMtime: '', sort: 'name/asc'});
                 }
-                console.log($scope.dirList);
             }
         }, function(errorResult) {
-            console.log(errorResult);
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -2738,20 +2573,16 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         });
     }
     $scope.feedbackAdd2Parent = function(name) {
-        console.log(name);
-        console.log($scope.feedbackSelectTag);
         if (isValidString(name, 'name') && isValidString($scope.feedbackSelectTag, 'name')) {
             var Info = $resource('/api/parent/add', {}, {
                 'addDir': { method:'POST' }
             });
             var this_obj = this.$parent;
             Info.addDir({ name: name, tag: $scope.feedbackSelectTag}, function (result) {
-                console.log(result);
                 if (result.id) {
                     this_obj.$broadcast('dir', JSON.stringify({id: result.id, name: result.name, parent: name}));
                 }
             }, function(errorResult) {
-                console.log(errorResult);
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
