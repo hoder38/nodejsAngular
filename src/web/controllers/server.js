@@ -2614,8 +2614,11 @@ wsjServer.on('connection', function(ws) {
     ws.on('close', onWsConnClose);
 });
 
-(function loopDrive(countdown) {
+(function loopDrive(error, countdown) {
     console.log('loopDrive');
+    if (error) {
+        util.handleError(err);
+    }
     if (!countdown) {
         countdown = 60000;
     }
@@ -2632,21 +2635,23 @@ wsjServer.on('connection', function(ws) {
 })();
 
 function userDrive(userlist, index, callback) {
+    console.log('userDrive');
+    console.log(userlist[index].username);
     var folderlist = [{id: userlist[index].auto, title: 'drive upload'}];
     var dirpath = [];
     var is_root = true;
     getDriveList(function(err, metadataList, dirpath, folderId) {
         if (err) {
-            util.handleError(err, callback, callback);
+            util.handleError(err, callback, callback, drive_interval);
         }
         if (metadataList.length > 0) {
             var data = {folderId: userlist[index].auto, name: 'uploaded'};
             googleApi.googleApi('list folder', data, function(err, folderList) {
                 if (err) {
-                    util.handleError(err, callback, callback);
+                    util.handleError(err, callback, callback, drive_interval);
                 }
                 if (folderList.length < 1 ) {
-                    util.handleError({hoerror: 2, message: "do not have uploaded folder!!!"}, callback, callback);
+                    util.handleError({hoerror: 2, message: "do not have uploaded folder!!!"}, callback, callback, drive_interval);
                 }
                 singleDrive(metadataList, 0, userlist[index], folderId, folderList[0].id, dirpath, function(err) {
                     if (err) {
@@ -2657,7 +2662,7 @@ function userDrive(userlist, index, callback) {
                         userDrive(userlist, index, callback);
                     } else {
                         setTimeout(function(){
-                            callback(drive_interval);
+                            callback(null, drive_interval);
                         }, 0);
                     }
                 });
@@ -2679,7 +2684,7 @@ function userDrive(userlist, index, callback) {
             var data = {folderId: current.id};
             googleApi.googleApi('list file', data, function(err, metadataList) {
                 if (err) {
-                    util.handleError(err, callback, callback);
+                    util.handleError(err, callback, callback, drive_interval);
                 }
                 if (metadataList.length > 0) {
                     setTimeout(function(){
@@ -2688,7 +2693,7 @@ function userDrive(userlist, index, callback) {
                 } else {
                     googleApi.googleApi('list folder', data, function(err, metadataList) {
                         if (err) {
-                            util.handleError(err, callback, callback);
+                            util.handleError(err, callback, callback, drive_interval);
                         }
                         if (is_root) {
                             var templist = [];
