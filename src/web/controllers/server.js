@@ -2666,7 +2666,7 @@ function userDrive(userlist, index, callback) {
     });
     function getDriveList(next) {
         var current = folderlist.pop();
-        while (!current.id && folderlist.length !== 0) {
+        while (folderlist.length !== 0 && !current.id) {
             dirpath.pop();
             current = folderlist.pop();
         }
