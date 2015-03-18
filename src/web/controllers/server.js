@@ -2667,6 +2667,15 @@ function userDrive(userlist, index, callback) {
                     }
                 });
             });
+        } else {
+            index++;
+            if (index < userlist.length) {
+                userDrive(userlist, index, callback);
+            } else {
+                setTimeout(function(){
+                    callback(null, drive_interval);
+                }, 0);
+            }
         }
     });
     function getDriveList(next) {
