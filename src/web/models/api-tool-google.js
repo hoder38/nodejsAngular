@@ -568,22 +568,23 @@ module.exports = {
                                 }, threshold);
                             });
                         }, threshold);
-                    }
-                    media_location = output.match(pattern);
-                    if (!media_location) {
-                        console.log(output);
-                        util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
-                    }
-                    media_location = media_location[1];
-                    media_location = deUnicode(media_location);
-                    this_obj.googleDownload(media_location, filePath, function(err) {
-                        if (err) {
-                            util.handleError(err, callback, callback);
+                    } else {
+                        media_location = output.match(pattern);
+                        if (!media_location) {
+                            console.log(output);
+                            util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
                         }
-                        setTimeout(function(){
-                            callback(null);
-                        }, 0);
-                    }, threshold);
+                        media_location = media_location[1];
+                        media_location = deUnicode(media_location);
+                        this_obj.googleDownload(media_location, filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        }, threshold);
+                    }
                 });
             }, threshold);
         }, threshold);
