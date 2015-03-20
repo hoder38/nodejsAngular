@@ -1409,6 +1409,7 @@ app.get('/api/handleMedia/:uid/:action(act|del)', function(req, res, next) {
             if (!item) {
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
+            console.log(item);
             switch(req.params.action) {
                 case 'act':
                     if (!item.mediaType) {
