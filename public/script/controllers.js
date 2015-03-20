@@ -651,6 +651,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             }
             if (sort === 'fileSort') {
                 this.page = 0;
+                this.image.end = false;
+                this.video.end = false;
+                this.music.end = false;
+                this.doc.end = false;
+                this.present.end = false;
                 this.more = true;
                 getItemlist(this);
             } else if (sort === 'bookmarkSort') {
@@ -693,6 +698,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         var this_obj = this;
         this.page = 0;
         this.more = true;
+        this.image.end = false;
+        this.video.end = false;
+        this.music.end = false;
+        this.doc.end = false;
+        this.present.end = false;
         getItemlist(this_obj, this.inputText);
         this.inputText = '';
     }
@@ -700,12 +710,22 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.exactlyStorage = function(this_obj, item) {
         this_obj.page = 0;
         this_obj.more = true;
+        this_obj.image.end = false;
+        this_obj.video.end = false;
+        this_obj.music.end = false;
+        this_obj.doc.end = false;
+        this_obj.present.end = false;
         getItemlist(this_obj, item, 0, true);
     }
 
     $scope.gotoStorage = function(this_obj, item, index) {
         this_obj.page = 0;
         this_obj.more = true;
+        this_obj.image.end = false;
+        this_obj.video.end = false;
+        this_obj.music.end = false;
+        this_obj.doc.end = false;
+        this_obj.present.end = false;
         getItemlist(this_obj, item, index+1);
     }
 
@@ -722,6 +742,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         var this_obj = this.$parent.$parent;
         this_obj.page = 0;
         this_obj.more = true;
+        this_obj.image.end = false;
+        this_obj.video.end = false;
+        this_obj.music.end = false;
+        this_obj.doc.end = false;
+        this_obj.present.end = false;
         this_obj.moreDisabled = true;
         parentApi.query({}, function (result) {
             this_obj.itemList = [];
@@ -840,6 +865,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.resetStorage = function() {
         var this_obj = this;
         this.page = 0;
+        this.image.end = false;
+        this.video.end = false;
+        this.music.end = false;
+        this.doc.end = false;
+        this.present.end = false;
         $scope.more = true;
         $scope.moreDisabled = true;
         Info = $resource('/api/storage/reset', {}, {
@@ -1419,6 +1449,10 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         if (this.selectList.length) {
             for (var i in this.itemList) {
                 this.itemList[i].select = false;
+            }
+        } else {
+            for (var i in this.itemList) {
+                this.itemList[i].select = true;
             }
         }
         return false;

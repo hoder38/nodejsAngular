@@ -539,11 +539,37 @@ module.exports = {
                     media_code = 18;
                 }
                 child_process.exec(cmdline, function (err, output) {
-                    if (err) {
-                        util.handleError(err, callback, callback);
-                    }
                     var pattern = media_code + '\\|(https\:\/\/[^,"]+)';
-                    var media_location = output.match(pattern);
+                    var media_location;
+                    if (err) {
+                        alternate = alternate.replace(/\/a\/g2\.nctu\.edu\.tw\//,'/');
+                        this_obj.googleDownload(alternate, filePath + "_a.htm", function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            child_process.exec(cmdline, function (err, output) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                media_location = output.match(pattern);
+                                if (!media_location) {
+                                    console.log(output);
+                                    util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
+                                }
+                                media_location = media_location[1];
+                                media_location = deUnicode(media_location);
+                                this_obj.googleDownload(media_location, filePath, function(err) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                }, threshold);
+                            });
+                        }, threshold);
+                    }
+                    media_location = output.match(pattern);
                     if (!media_location) {
                         console.log(output);
                         util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);

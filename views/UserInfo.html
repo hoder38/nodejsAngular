@@ -139,7 +139,7 @@
                                     <dl>
                                         <section>
                                             <dt>Auto upload:</dt>
-                                            <dd ng-hide="user.edit">{{user.auto}}</dd>
+                                            <dd ng-hide="user.edit" class="user-break">{{user.auto}}</dd>
                                             <dd ng-show="user.edit && user.editAuto">
                                                 <input type="text" class="form-control" value="{{user.auto}}" ng-model="user.auto" focus-me="user.autoFocus" ng-enter="user.hasPerm && (user.permFocus = true) || (user.newPwdFocus = true)" />
                                             </dd>
@@ -153,7 +153,7 @@
                                         </section>
                                         <section ng-if="user.hasDesc">
                                             <dt>Description:</dt>
-                                            <dd ng-hide="user.edit">{{user.desc}}</dd>
+                                            <dd ng-hide="user.edit" class="user-break">{{user.desc}}</dd>
                                             <dd ng-show="user.edit">
                                                 <input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.hasUnDay && (user.unDayFocus = true) || (user.newPwdFocus = true)" />
                                             </dd>
@@ -197,7 +197,7 @@
                                         <tbody>
                                         <tr>
                                             <td>Auto upload:</td>
-                                            <td ng-hide="user.edit">{{user.auto}}</td>
+                                            <td ng-hide="user.edit" class="user-break">{{user.auto}}</td>
                                             <td ng-show="user.edit && user.editAuto">
                                                 <input type="text" class="form-control" value="{{user.auto}}" ng-model="user.auto" focus-me="user.autoFocus" ng-enter="user.hasPerm && (user.permFocus = true) || (user.newPwdFocus = true)" />
                                             </td>
@@ -211,7 +211,7 @@
                                         </tr>
                                         <tr ng-if="user.hasDesc">
                                             <td>Description:</td>
-                                            <td ng-hide="user.edit">{{user.desc}}</td>
+                                            <td ng-hide="user.edit" class="user-break">{{user.desc}}</td>
                                             <td ng-show="user.edit">
                                                 <input type="text" class="form-control" value="{{user.desc}}" ng-model="user.desc" focus-me="user.descFocus" ng-enter="user.hasUnDay && (user.unDayFocus = true) || (user.newPwdFocus = true)" />
                                             </td>

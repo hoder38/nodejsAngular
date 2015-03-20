@@ -2617,7 +2617,7 @@ wsjServer.on('connection', function(ws) {
 (function loopDrive(error, countdown) {
     console.log('loopDrive');
     if (error) {
-        util.handleError(err);
+        util.handleError(error);
     }
     if (!countdown) {
         countdown = 60000;
@@ -2684,7 +2684,7 @@ function userDrive(userlist, index, callback) {
             dirpath.pop();
             current = folderlist.pop();
         }
-        if (!current) {
+        if (!current || !current.id) {
             setTimeout(function(){
                 next(null, [], [], '');
             }, 0);

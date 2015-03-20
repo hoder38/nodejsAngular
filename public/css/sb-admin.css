@@ -601,3 +601,9 @@ audio.full-media-screen {
 #docID {
     width: 45px;
 }
+
+.user-break {
+    word-break: break-all;
+    word-wrap: break-word;
+    height: auto;
+}
