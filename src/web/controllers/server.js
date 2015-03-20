@@ -251,7 +251,7 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
         }
         if (req.body.name) {
             var name = util.isValidString(req.body.name, 'name');
-            if (name === false) {
+            if (name === false || tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
                 util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
             }
             mongo.orig("findOne", "user", {username: name}, function(err, user){
@@ -311,7 +311,7 @@ app.post('/api/adduser', function(req, res, next){
                 perm = util.isValidString(req.body.perm, 'perm'),
                 newPwd = util.isValidString(req.body.newPwd, 'passwd'),
                 conPwd = util.isValidString(req.body.conPwd, 'passwd');
-            if (name === false) {
+            if (name === false || tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
                 util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
             }
             if (desc === false) {
@@ -1000,7 +1000,7 @@ app.post('/upload/subtitle/:uid', function(req, res, next) {
     });
 });
 
-app.post('/upload/file', function(req, res, next){
+app.post('/upload/file/:type(\\d)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('upload files');
         console.log(req.url);
@@ -1037,6 +1037,9 @@ app.post('/upload/file', function(req, res, next){
                     util.handleError(err, next, res);
                 }
                 var name = util.toValidName(req.files.file.name);
+                if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
+                    name = name + '(1)';
+                }
                 var utime = Math.round(new Date().getTime() / 1000);
                 var oUser_id = req.user._id;
                 var ownerTag = [];
@@ -1048,7 +1051,7 @@ app.post('/upload/file', function(req, res, next){
                 data['size'] = req.files.file.size;
                 data['count'] = 0;
                 data['recycle'] = 0;
-                if (util.checkAdmin(2 ,req.user)) {
+                if (util.checkAdmin(2 ,req.user) && Number(req.params.type) === 1) {
                     data['adultonly'] = 1;
                 } else {
                     data['adultonly'] = 0;
@@ -1075,14 +1078,23 @@ app.post('/upload/file', function(req, res, next){
                         var parentList = tags.getArray();
                         for (var i in parentList.cur) {
                             normal = tagTool.normalizeTag(parentList.cur[i]);
-                            if (mediaTag.def.indexOf(normal) === -1) {
-                                mediaTag.def.push(normal);
+                            if (!tagTool.isDefaultTag(normal)) {
+                                if (mediaTag.def.indexOf(normal) === -1) {
+                                    mediaTag.def.push(normal);
+                                }
+                            } else {
+                                if (normal === '18禁') {
+                                    DBdata['adultonly'] = 1;
+                                }
                             }
                         }
                         var temp_tag = [];
                         for (var j in mediaTag.opt) {
-                            if (mediaTag.def.indexOf(mediaTag.opt[j]) === -1) {
-                                temp_tag.push(mediaTag.opt[j]);
+                            normal = tagTool.normalizeTag(mediaTag.opt[j]);
+                            if (!tagTool.isDefaultTag(normal)) {
+                                if (mediaTag.def.indexOf(normal) === -1) {
+                                    temp_tag.push(normal);
+                                }
                             }
                         }
                         mediaTag.opt = temp_tag;
@@ -1097,8 +1109,14 @@ app.post('/upload/file', function(req, res, next){
                         console.log('save end');
                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                         if (util.checkAdmin(2 ,req.user)) {
-                            if (mediaTag.def.indexOf('18禁') === -1) {
-                                mediaTag.def.push('18禁');
+                            if (item[0].adultonly === 1) {
+                                if (mediaTag.def.indexOf('18禁') === -1) {
+                                    mediaTag.def.push('18禁');
+                                }
+                            } else {
+                                if (mediaTag.opt.indexOf('18禁') === -1) {
+                                    mediaTag.opt.push('18禁');
+                                }
                             }
                         }
                         res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
@@ -1436,6 +1454,9 @@ app.get('/api/parent/list/:lang?', function(req, res, next) {
         console.log(req.body);
         var lang = typeof req.params.lang !== 'undefined' ? req.params.lang : 'tw';
         var list = tagTool.parentList();
+        if (util.checkAdmin(2, req.user)) {
+            list = list.concat(tagTool.adultonlyParentList());
+        }
         var ret = [];
         for (var i in list) {
             ret.push({'name':list[i].name, 'show':list[i][lang]});
@@ -1470,7 +1491,7 @@ app.post('/api/parent/add', function(req, res,next) {
         console.log("parentAdd");
         console.log(req.url);
         console.log(req.body);
-        tagTool.addParent(req.body.name, req.body.tag, next, function(err, result) {
+        tagTool.addParent(req.body.name, req.body.tag, req.user, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -1861,7 +1882,7 @@ app.get('/api/media/setTime/:id', function(req, res, next){
     });
 });
 
-app.post('/api/upload/url', function(req, res, next){
+app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('upload url');
         console.log(req.url);
@@ -1893,6 +1914,9 @@ app.post('/api/upload/url', function(req, res, next){
                     filename = path.basename(pathname);
                 }
                 var name = util.toValidName(filename);
+                if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
+                    name = name + '(1)';
+                }
                 var utime = Math.round(new Date().getTime() / 1000);
                 var oUser_id = req.user._id;
                 var ownerTag = [];
@@ -1905,7 +1929,7 @@ app.post('/api/upload/url', function(req, res, next){
                 data['size'] = stats["size"];
                 data['count'] = 0;
                 data['recycle'] = 0;
-                if (util.checkAdmin(2 ,req.user)) {
+                if (util.checkAdmin(2 ,req.user) && Number(req.params.type) === 1) {
                     data['adultonly'] = 1;
                 } else {
                     data['adultonly'] = 0;
@@ -1932,14 +1956,23 @@ app.post('/api/upload/url', function(req, res, next){
                         var parentList = tags.getArray();
                         for (var i in parentList.cur) {
                             normal = tagTool.normalizeTag(parentList.cur[i]);
-                            if (mediaTag.def.indexOf(normal) === -1) {
-                                mediaTag.def.push(normal);
+                            if (!tagTool.isDefaultTag(normal)) {
+                                if (mediaTag.def.indexOf(normal) === -1) {
+                                    mediaTag.def.push(normal);
+                                }
+                            } else {
+                                if (normal === '18禁') {
+                                    DBdata['adultonly'] = 1;
+                                }
                             }
                         }
                         var temp_tag = [];
                         for (var j in mediaTag.opt) {
-                            if (mediaTag.def.indexOf(mediaTag.opt[j]) === -1) {
-                                temp_tag.push(mediaTag.opt[j]);
+                            normal = tagTool.normalizeTag(mediaTag.opt[j]);
+                            if (!tagTool.isDefaultTag(normal)) {
+                                if (mediaTag.def.indexOf(normal) === -1) {
+                                    temp_tag.push(normal);
+                                }
                             }
                         }
                         mediaTag.opt = temp_tag;
@@ -1954,8 +1987,14 @@ app.post('/api/upload/url', function(req, res, next){
                         console.log('save end');
                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                         if (util.checkAdmin(2 ,req.user)) {
-                            if (mediaTag.def.indexOf('18禁') === -1) {
-                                mediaTag.def.push('18禁');
+                            if (item[0].adultonly === 1) {
+                                if (mediaTag.def.indexOf('18禁') === -1) {
+                                    mediaTag.def.push('18禁');
+                                }
+                            } else {
+                                if (mediaTag.opt.indexOf('18禁') === -1) {
+                                    mediaTag.opt.push('18禁');
+                                }
                             }
                         }
                         res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
@@ -1973,7 +2012,7 @@ app.post('/api/upload/url', function(req, res, next){
     });
 });
 
-app.post('/api/addurl', function(req, res, next){
+app.post('/api/addurl/:type(\\d)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('add url');
         console.log(req.url);
@@ -1981,6 +2020,10 @@ app.post('/api/addurl', function(req, res, next){
         var url = util.isValidString(req.body.url, 'url');
         if (url === false) {
             util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
+        }
+        url = util.toValidName(url);
+        if (tagTool.isDefaultTag(tagTool.normalizeTag(url))) {
+            url = url + '(1)';
         }
         var oOID = mongo.objectID();
         var utime = Math.round(new Date().getTime() / 1000);
@@ -1995,7 +2038,7 @@ app.post('/api/addurl', function(req, res, next){
         data['size'] = 0;
         data['count'] = 0;
         data['recycle'] = 0;
-        if (util.checkAdmin(2 ,req.user)) {
+        if (util.checkAdmin(2 ,req.user) && Number(req.params.type) === 1) {
             data['adultonly'] = 1;
         } else {
             data['adultonly'] = 0;
@@ -2017,17 +2060,25 @@ app.post('/api/addurl', function(req, res, next){
             var tags = tagTool.searchTags(req.session, 'parent');
             if (tags) {
                 var parentList = tags.getArray();
-                var normal = '';
                 for (var i in parentList.cur) {
                     normal = tagTool.normalizeTag(parentList.cur[i]);
-                    if (mediaTag.def.indexOf(normal) === -1) {
-                        mediaTag.def.push(normal);
+                    if (!tagTool.isDefaultTag(normal)) {
+                        if (mediaTag.def.indexOf(normal) === -1) {
+                            mediaTag.def.push(normal);
+                        }
+                    } else {
+                        if (normal === '18禁') {
+                            DBdata['adultonly'] = 1;
+                        }
                     }
                 }
                 var temp_tag = [];
                 for (var j in mediaTag.opt) {
-                    if (mediaTag.def.indexOf(mediaTag.opt[j]) === -1) {
-                        temp_tag.push(mediaTag.opt[j]);
+                    normal = tagTool.normalizeTag(mediaTag.opt[j]);
+                    if (!tagTool.isDefaultTag(normal)) {
+                        if (mediaTag.def.indexOf(normal) === -1) {
+                            temp_tag.push(normal);
+                        }
                     }
                 }
                 mediaTag.opt = temp_tag;
@@ -2042,8 +2093,14 @@ app.post('/api/addurl', function(req, res, next){
                 console.log('save end');
                 sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                 if (util.checkAdmin(2 ,req.user)) {
-                    if (mediaTag.def.indexOf('18禁') === -1) {
-                        mediaTag.def.push('18禁');
+                    if (item[0].adultonly === 1) {
+                        if (mediaTag.def.indexOf('18禁') === -1) {
+                            mediaTag.def.push('18禁');
+                        }
+                    } else {
+                        if (mediaTag.opt.indexOf('18禁') === -1) {
+                            mediaTag.opt.push('18禁');
+                        }
                     }
                 }
                 res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
@@ -2063,7 +2120,11 @@ app.get('/api/getUser', function(req, res, next){
         } else if (util.checkAdmin(2, req.user)) {
             ws_url = 'wss://' + config_glb.ip + ':' + config_glb.ws_port;
         }
-        res.json({id: req.user.username, ws_url: ws_url});
+        var isAdult = false;
+        if (util.checkAdmin(2 ,req.user)) {
+            isAdult = true;
+        }
+        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult});
     });
 });
 
@@ -2803,6 +2864,9 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
     }
     function streamClose(callback){
         var name = util.toValidName(metadata.title);
+        if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
+            name = name + '(1)';
+        }
         var utime = Math.round(new Date().getTime() / 1000);
         var oUser_id = user._id;
         var ownerTag = [];
@@ -2815,10 +2879,14 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
         data['count'] = 0;
         data['recycle'] = 0;
         data['status'] = 0;
+        data['adultonly'] = 0;
         if (util.checkAdmin(2 ,user)) {
-            data['adultonly'] = 1;
-        } else {
-            data['adultonly'] = 0;
+            for (var i in dirpath) {
+                if (tagTool.normalizeTag(dirpath[i]) === '18禁') {
+                    data['adultonly'] = 1;
+                    break;
+                }
+            }
         }
         data['untag'] = 1;
         data['status'] = 0;//media type
@@ -2849,12 +2917,12 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                         if (mediaTag.def.indexOf(normal) === -1) {
                             mediaTag.def.push(normal);
                         }
-                        if (mediaTag.def.indexOf('drive upload') === -1) {
-                            mediaTag.def.push('drive upload');
-                        }
                         for(var i in dirpath) {
-                            if (mediaTag.def.indexOf(dirpath[i]) === -1) {
-                                mediaTag.def.push(dirpath[i]);
+                            normal = tagTool.normalizeTag(dirpath[i]);
+                            if (!tagTool.isDefaultTag(normal)) {
+                                if (mediaTag.def.indexOf(normal) === -1) {
+                                    mediaTag.def.push(normal);
+                                }
                             }
                         }
                         DBdata['tags'] = mediaTag.def;
@@ -2914,12 +2982,12 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                             if (mediaTag.def.indexOf(normal) === -1) {
                                 mediaTag.def.push(normal);
                             }
-                            if (mediaTag.def.indexOf('drive upload') === -1) {
-                                mediaTag.def.push('drive upload');
-                            }
                             for(var i in dirpath) {
-                                if (mediaTag.def.indexOf(dirpath[i]) === -1) {
-                                    mediaTag.def.push(dirpath[i]);
+                                normal = tagTool.normalizeTag(dirpath[i]);
+                                if (!tagTool.isDefaultTag(normal)) {
+                                    if (mediaTag.def.indexOf(normal) === -1) {
+                                        mediaTag.def.push(normal);
+                                    }
                                 }
                             }
                             DBdata['tags'] = mediaTag.def;
@@ -2971,12 +3039,12 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                             if (mediaTag.def.indexOf(normal) === -1) {
                                 mediaTag.def.push(normal);
                             }
-                            if (mediaTag.def.indexOf('drive upload') === -1) {
-                                mediaTag.def.push('drive upload');
-                            }
                             for(var i in dirpath) {
-                                if (mediaTag.def.indexOf(dirpath[i]) === -1) {
-                                    mediaTag.def.push(dirpath[i]);
+                                normal = tagTool.normalizeTag(dirpath[i]);
+                                if (!tagTool.isDefaultTag(normal)) {
+                                    if (mediaTag.def.indexOf(normal) === -1) {
+                                        mediaTag.def.push(normal);
+                                    }
                                 }
                             }
                             DBdata['tags'] = mediaTag.def;
@@ -3014,12 +3082,12 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                     if (mediaTag.def.indexOf(normal) === -1) {
                         mediaTag.def.push(normal);
                     }
-                    if (mediaTag.def.indexOf('drive upload') === -1) {
-                        mediaTag.def.push('drive upload');
-                    }
                     for(var i in dirpath) {
-                        if (mediaTag.def.indexOf(dirpath[i]) === -1) {
-                            mediaTag.def.push(dirpath[i]);
+                        normal = tagTool.normalizeTag(dirpath[i]);
+                        if (!tagTool.isDefaultTag(normal)) {
+                            if (mediaTag.def.indexOf(normal) === -1) {
+                                mediaTag.def.push(normal);
+                            }
                         }
                     }
                     DBdata['tags'] = mediaTag.def;

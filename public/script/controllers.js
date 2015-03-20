@@ -283,7 +283,7 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
                 addAlert('unactive day not vaild!!!');
             } else if (!isValidString(item.unHit, 'int') && item.edit && item.hasUnHit) {
                 addAlert('unactive hit not vaild!!!');
-            } else if (!isValidString(item.auto, 'url') && item.edit && item.editAuto) {
+            } else if (item.auto && !isValidString(item.auto, 'url') && item.edit && item.editAuto) {
                 addAlert('auto upload not vaild!!!');
             } else if ((item.newPwd || item.conPwd) && (!isValidString(item.newPwd, 'passwd') || !isValidString(item.conPwd, 'passwd'))) {
                 item.newPwd = '';
@@ -1618,6 +1618,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.loginFocus = {user: true, pwd:false};
     $scope.alerts = [];
     $scope.currentPage = 0;
+    $scope.adultonly = false;
     var alertTime;
     addAlert = function(msg) {
         $scope.alerts.splice(0,0,{type: 'danger', msg: msg});
@@ -1685,9 +1686,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     var uploader = $scope.uploader = new FileUploader({
         url: 'upload/file'
     });
-    /*uploader.bind('beforeupload', function (event, item) {
-        item.url = uploader.url;
-    });*/
     uploader.onWhenAddingFileFailed = function(item /*{File|FileLikeObject}*/, filter, options) {
         console.info('onWhenAddingFileFailed', item, filter, options);
     };
@@ -1699,6 +1697,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         console.info('onAfterAddingAll', addedFileItems);
     };
     uploader.onBeforeUploadItem = function(item) {
+        if ($scope.adultonly) {
+            item.url = 'upload/file/1';
+        } else {
+            item.url = 'upload/file';
+        }
         console.info('onBeforeUploadItem', item);
     };
     uploader.onProgressItem = function(fileItem, progress) {
@@ -1889,6 +1892,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.inputUrl = '';
     $scope.disableUrlUpload = false;
     $scope.disableUrlSave = false;
+    $scope.isAdult = false;
 
     indexInit();
 
@@ -1904,6 +1908,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 getFeedbacks(1);
                 $scope.isLogin = true;
                 $scope.id = result.id;
+                $scope.isAdult = result.isAdult;
                 if (window.MozWebSocket) {
                     window.WebSocket = window.MozWebSocket;
                 }
@@ -1940,7 +1945,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         this.inputUrl = '';
         if (isValidString(url, 'url') && !this.disableUrlUpload) {
             this.disableUrlUpload = true;
-            var api = $resource('/api/upload/url', {}, {
+            var uploadurl = '/api/upload/url';
+            if (this.adultonly) {
+                uploadurl = '/api/upload/url/1';
+            }
+            var api = $resource(uploadurl, {}, {
                 'uploadUrl': { method:'POST' }
             });
             api.uploadUrl({url: url}, function (result) {
@@ -1985,7 +1994,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         var this_obj = this;
         if (isValidString(url, 'url') && !this.disableUrlSave) {
             this.disableUrlSave = true;
-            var api = $resource('/api/addurl', {}, {
+            var addurl = '/api/addurl';
+            if (this.adultonly) {
+                addurl = '/api/addurl/1';
+            }
+            var api = $resource(addurl, {}, {
                 'addurl': { method:'POST' }
             });
             api.addurl({url: url}, function (result) {

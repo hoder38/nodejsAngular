@@ -542,6 +542,7 @@ module.exports = {
                     var pattern = media_code + '\\|(https\:\/\/[^,"]+)';
                     var media_location;
                     if (err) {
+                        util.handleError(err);
                         alternate = alternate.replace(/\/a\/g2\.nctu\.edu\.tw\//,'/');
                         this_obj.googleDownload(alternate, filePath + "_a.htm", function(err) {
                             if (err) {

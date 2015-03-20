@@ -3,7 +3,8 @@ var mongo = require("../models/mongo-tool.js");
 
 var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle'];
 
-var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'author', 'tw': '作者'}];
+var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '分類'}, {'name': 'author', 'tw': '作者'}, {'name': 'director', 'tw': '導演'}, {'name': 'actor', 'tw': '演員'}, {'name': 'complete', 'tw': '完結'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'country', 'tw': '國家'}, {'name': 'year', 'tw': '年份'}];
+var adultonly_arr = [{'name': 'adultonly_category', 'tw': '18禁分類'}];
 
 var queryLimit = 20;
 
@@ -595,14 +596,31 @@ module.exports = function(collection) {
         parentList: function() {
             return parent_arr;
         },
+        adultonlyParentList: function() {
+            return adultonly_arr;
+        },
+        isDefaultTag: function(tag) {
+            if (default_tags.indexOf(tag) !== -1) {
+                return true;
+            } else {
+                return false;
+            }
+        },
         parentQuery: function(tagName, sortName, sortType, page, user, next, callback) {
             var name = util.isValidString(tagName, 'name');
             if (name === false) {
                 util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
             }
             if (!inParentArray(name)) {
-                console.log(name);
-                util.handleError({hoerror: 2, message: "name is not allow"}, next, callback);
+                if (util.checkAdmin(2, user)) {
+                    if(!inAdultonlyArray(name)) {
+                        console.log(name);
+                        util.handleError({hoerror: 2, message: "name is not allow"}, next, callback);
+                    }
+                } else {
+                    console.log(name);
+                    util.handleError({hoerror: 2, message: "name is not allow"}, next, callback);
+                }
             }
             if (sortName === 'mtime') {
                 sortName = 'qtime';
@@ -621,7 +639,7 @@ module.exports = function(collection) {
                 }, 0);
             });
         },
-        addParent: function(parentName, tagName, next, callback) {
+        addParent: function(parentName, tagName, user, next, callback) {
             var name = util.isValidString(parentName, 'name');
             if (name === false) {
                 util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
@@ -631,8 +649,15 @@ module.exports = function(collection) {
                 util.handleError({hoerror: 2, message: "tag name is not vaild"}, next, callback);
             }
             if (!inParentArray(name)) {
-                console.log(name);
-                util.handleError({hoerror: 2, message: "name is not allow"}, next, callback);
+                if (util.checkAdmin(2, user)) {
+                    if(!inAdultonlyArray(name)) {
+                        console.log(name);
+                        util.handleError({hoerror: 2, message: "name is not allow"}, next, callback);
+                    }
+                } else {
+                    console.log(name);
+                    util.handleError({hoerror: 2, message: "name is not allow"}, next, callback);
+                }
             }
             var normal = normalize(tag);
             mongo.orig("findOne", collection + "Dir" ,{parent: name, name: normal}, function(err,parent){
@@ -860,6 +885,15 @@ module.exports = function(collection) {
 function inParentArray(parent) {
     for (var i in parent_arr) {
         if (parent_arr[i].name === parent) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function inAdultonlyArray(parent) {
+    for (var i in adultonly_arr) {
+        if (adultonly_arr[i].name === parent) {
             return true;
         }
     }

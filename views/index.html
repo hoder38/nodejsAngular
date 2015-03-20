@@ -118,13 +118,16 @@
                         </div>
                         <form ng-submit="urlSave()">
                             <div class="input-group">
+                                <span ng-show="isAdult" class="input-group-addon" tooltip="18禁"  tooltip-trigger="mouseenter">
+                                    <input type="checkbox" ng-model="adultonly"/>
+                                </span>
                                 <input type="text" class="form-control" ng-model="inputUrl" placeholder="URL upload or bookmark" />
-                                <span class="input-group-btn">
+                                <span class="input-group-btn" tooltip="儲存書籤"  tooltip-trigger="mouseenter">
                                     <button class="btn btn-default" type="submit" ng-disabled="disableUrlSave">
                                         <i class="glyphicon glyphicon-star-empty"></i>
                                     </button>
                                 </span>
-                                <span class="input-group-btn">
+                                <span class="input-group-btn" tooltip="上傳檔案"  tooltip-trigger="mouseenter">
                                     <button type="button" class="btn btn-default" ng-click="urlUpload()" ng-disabled="disableUrlUpload">
                                         <i class="glyphicon glyphicon-upload"></i>
                                     </button>
@@ -191,7 +194,7 @@
                         </div>
                         <form ng-submit="addFeedback()">
                             <div class="input-group">
-                                <span class="input-group-btn">
+                                <span class="input-group-btn" tooltip="儲存tag" tooltip-trigger="mouseenter">
                                     <button type="button" class="btn btn-default" ng-click="sendFeedback()">
                                         <i class="glyphicon glyphicon-thumbs-up"></i>
                                     </button>
