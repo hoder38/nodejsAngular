@@ -338,7 +338,7 @@ app.post('/api/adduser', function(req, res, next){
                     util.handleError({hoerror: 2, message: 'password must equal!!!'}, next, res);
                 }
                 var data = {};
-                var item = {newable: false, delable: true};
+                var item = {newable: false, delable: true, editAuto: true};
                 item['name'] = name;
                 item['desc'] = desc;
                 item['perm'] = perm;
