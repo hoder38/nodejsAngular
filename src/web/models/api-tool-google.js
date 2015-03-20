@@ -33,6 +33,20 @@ function sendAPI(method, data, callback) {
     var drive = googleapis.drive({ version: 'v2', auth: oauth2Client });
     var param = {};
     switch(method) {
+        case 'get':
+        if (!data['fileId']) {
+            util.handleError({hoerror: 2, message: 'get parameter lost!!!'}, callback, callback);
+        }
+        param['fileId'] = data['fileId'];
+        drive.files.get(param, function(err, metadata) {
+            if (err) {
+                util.handleError(err, callback, callback, null);
+            }
+            setTimeout(function(){
+                callback(null, metadata);
+            }, 0);
+        });
+        break;
         case 'upload':
         if (!data['type'] || !data['name'] || (!data['filePath'] && !data['body'])) {
             util.handleError({hoerror: 2, message: 'upload parameter lost!!!'}, callback, callback);
@@ -374,7 +388,7 @@ module.exports = {
             }
         });
     },
-    googleDownloadDoc: function(exportlink, key, filePath, ext, callback, doc_name) {
+    googleDownloadDoc: function(exportlink, filePath, ext, callback, doc_name) {
         exportlink = exportlink.replace("=pdf", "=zip");
         this.googleDownload(exportlink, filePath + ".zip", function(err) {
             if (err) {
@@ -439,7 +453,7 @@ module.exports = {
             }
         });
     },
-    googleDownloadPresent: function(exportlink, key, filePath, ext, callback) {
+    googleDownloadPresent: function(exportlink, filePath, ext, callback) {
         var this_obj = this;
         exportlink = exportlink.replace("=pdf", "=svg&pageid=p");
         var pageid = 3;

@@ -69,6 +69,7 @@ app.use(express.static(staticPath));
 app.use('/views', function (req, res, next) {
     "use strict";
     console.log('views');
+    console.log(new Date());
     console.log(req.url);
     console.log(req.body);
     if (req.isAuthenticated()) {
@@ -83,6 +84,7 @@ app.use('/views', function (req, res, next) {
 
 app.get('/refresh', function (req, res, next) {
     console.log('refresh');
+    console.log(new Date());
     console.log(req.url);
     console.log(req.body);
     res.end("refresh");
@@ -90,6 +92,7 @@ app.get('/refresh', function (req, res, next) {
 
 app.get('/api/logout', function(req, res, next) {
     console.log("logout");
+    console.log(new Date());
     console.log(req.url);
     console.log(req.body);
     if (req.isAuthenticated()) {
@@ -103,6 +106,7 @@ app.get('/api/logout', function(req, res, next) {
 app.get('/api/userinfo', function (req, res, next) {
     checkLogin(req, res, next, function(req, res) {
         console.log("userinfo");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var user_info = [];
@@ -144,6 +148,7 @@ app.get('/api/userinfo', function (req, res, next) {
 app.put('/api/edituser/(:uid)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("edituser");
+        console.log(new Date());
         console.log(req.url);
         var pwd = util.isValidString(req.body.pwd, 'passwd');
         if (pwd === false) {
@@ -298,6 +303,7 @@ app.post('/api/adduser', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         if (util.checkAdmin(1, req.user)) {
             console.log("adduser");
+            console.log(new Date());
             console.log(req.url);
             var pwd = util.isValidString(req.body.pwd, 'passwd');
             if (pwd === false) {
@@ -367,6 +373,7 @@ app.put('/api/deluser/:uid', function(req, res, next){
             util.handleError({hoerror: 2, message: 'unknown type in deluser'}, next, res, 403);
         }
         console.log("deluser");
+        console.log(new Date());
         console.log(req.url);
         var pwd = util.isValidString(req.body.pwd, 'passwd'),
             id = util.isValidString(req.params.uid, 'uid');
@@ -402,6 +409,7 @@ app.put('/api/deluser/:uid', function(req, res, next){
 app.get('/api/storage/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(\\d+)/:name?/:exactly(true|false)?/:index(\\d+)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("storage");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var exactly = false;
@@ -424,6 +432,7 @@ app.get('/api/storage/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(
 app.get('/api/storage/single/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("storage single");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         tagTool.singleQuery(req.params.uid, req.user, req.session, next, function(err, result) {
@@ -443,6 +452,7 @@ app.get('/api/storage/single/:uid', function(req, res, next){
 app.get('/api/storage/reset', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("resetStorage");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var sortName = 'name';
@@ -466,6 +476,7 @@ app.get('/api/storage/reset', function(req, res, next){
 app.put('/api/addTag/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("addTag");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         tagTool.addTag(req.params.uid, req.body.tag, req.user, next, function(err, result) {
@@ -481,6 +492,7 @@ app.put('/api/addTag/:uid', function(req, res, next){
 app.put('/api/sendTag/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("sendTag");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         tagTool.sendTag(req.params.uid, req.body.name, req.body.tags, req.user, next, function(err, result) {
@@ -496,6 +508,7 @@ app.put('/api/sendTag/:uid', function(req, res, next){
 app.put('/api/delTag/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("delTag");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         tagTool.delTag(req.params.uid, req.body.tag, req.user, next, function (err, result) {
@@ -511,6 +524,7 @@ app.put('/api/delTag/:uid', function(req, res, next){
 app.put('/api/editFile/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("editFile");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         editFile(req.params.uid, req.body.name, req.user, next, function(err, result) {
@@ -611,6 +625,7 @@ function editFile(uid, newName, user, next, callback) {
                                 util.handleError(err);
                             }
                             console.log('transcode done');
+                            console.log(new Date());
                         });
                     });
                 });
@@ -622,6 +637,7 @@ function editFile(uid, newName, user, next, callback) {
 app.put('/api/recoverFile/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("recoverFile");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         if (!util.checkAdmin(1, req.user)) {
@@ -670,6 +686,7 @@ function deleteFolderRecursive(path) {
 app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("delFile");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.uid, 'uid');
@@ -929,6 +946,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
 app.post('/upload/subtitle/:uid', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('upload substitle');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.files);
         if (req.files.file.size > (10 * 1024 * 1024)) {
@@ -1003,6 +1021,7 @@ app.post('/upload/subtitle/:uid', function(req, res, next) {
 app.post('/upload/file/:type(\\d)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('upload files');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.files);
         var oOID = mongo.objectID();
@@ -1126,6 +1145,7 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                                 util.handleError(err);
                             }
                             console.log('transcode done');
+                            console.log(new Date());
                         });
                     });
                 }
@@ -1177,7 +1197,7 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                     console.log(metadata);
                     util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
                 }
-                mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.thumbnail": mediaType['thumbnail'], "mediaType.key": metadata.id}}, function(err, item){
+                mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.key": metadata.id}}, function(err, item){
                     if(err) {
                         util.handleError(err, callback, errerMedia, fileID, callback);
                     }
@@ -1217,22 +1237,50 @@ function completeMedia(fileID, status, callback, number) {
 
 function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback) {
     if (mediaType['type'] === 'image') {
-        googleApi.googleDownload(mediaType['thumbnail'], filePath + ".jpg", function(err) {
-            if (err) {
-                util.handleError(err, callback, errerMedia, fileID, callback);
-            }
-            if (!mediaType['notOwner']) {
-                var data = {fileId: key};
-                googleApi.googleApi('delete', data, function(err) {
+        if (mediaType['thumbnail']) {
+            googleApi.googleDownload(mediaType['thumbnail'], filePath + ".jpg", function(err) {
+                if (err) {
+                    util.handleError(err, callback, errerMedia, fileID, callback);
+                }
+                if (!mediaType['notOwner']) {
+                    var data = {fileId: key};
+                    googleApi.googleApi('delete', data, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, errerMedia, fileID, callback);
+                        }
+                        completeMedia(fileID, 2, callback);
+                    });
+                } else {
+                    completeMedia(fileID, 2, callback);
+                }
+            });
+        } else {
+            googleApi.googleApi('get', key, function(err, filedata) {
+                if (err) {
+                    util.handleError(err, callback, errerMedia, fileID, callback);
+                }
+                if (!filedata['thumbnail']) {
+                    console.log(filedata);
+                    util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
+                }
+                googleApi.googleDownload(filedata['thumbnail'], filePath + ".jpg", function(err) {
                     if (err) {
                         util.handleError(err, callback, errerMedia, fileID, callback);
                     }
-                    completeMedia(fileID, 2, callback);
+                    if (!mediaType['notOwner']) {
+                        var data = {fileId: key};
+                        googleApi.googleApi('delete', data, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, errerMedia, fileID, callback);
+                            }
+                            completeMedia(fileID, 2, callback);
+                        });
+                    } else {
+                        completeMedia(fileID, 2, callback);
+                    }
                 });
-            } else {
-                completeMedia(fileID, 2, callback);
-            }
-        });
+            });
+        }
     } else if (mediaType['type'] === 'vlog') {
         if (!mediaType.hasOwnProperty('time') && !mediaType.hasOwnProperty('hd')) {
             console.log(mediaType);
@@ -1339,63 +1387,149 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
             console.log(mediaType);
             util.handleError({hoerror: 2, message: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback);
         }
-        googleApi.googleDownloadMedia(mediaType['time'], mediaType['thumbnail'], key, filePath, mediaType['hd'], function(err) {
-            if(err) {
-                util.handleError(err, callback, errerMedia, fileID, callback);
-            }
-            var data = {fileId: key};
-            googleApi.googleApi('delete', data, function(err) {
-                if (err) {
+        if (mediaType['thumbnail']) {
+            googleApi.googleDownloadMedia(mediaType['time'], mediaType['thumbnail'], key, filePath, mediaType['hd'], function(err) {
+                if(err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
-                completeMedia(fileID, 3, function(err) {
+                var data = {fileId: key};
+                googleApi.googleApi('delete', data, function(err) {
                     if (err) {
-                        util.handleError(err, callback, callback);
-                    } else {
-                        editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
-                            if(err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            setTimeout(function(){
-                                callback(null);
-                            }, 0);
-                        });
+                        util.handleError(err, callback, errerMedia, fileID, callback);
                     }
+                    completeMedia(fileID, 3, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        } else {
+                            editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
+                                if(err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        }
+                    });
                 });
             });
-        });
+        } else {
+            googleApi.googleApi('get', key, function(err, filedata) {
+                if(err) {
+                    util.handleError(err, callback, errerMedia, fileID, callback);
+                }
+                if (!filedata['alternateLink']) {
+                    console.log(filedata);
+                    util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
+                }
+                googleApi.googleDownloadMedia(mediaType['time'], filedata['alternateLink'], key, filePath, mediaType['hd'], function(err) {
+                    if(err) {
+                        util.handleError(err, callback, errerMedia, fileID, callback);
+                    }
+                    var data = {fileId: key};
+                    googleApi.googleApi('delete', data, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, errerMedia, fileID, callback);
+                        }
+                        completeMedia(fileID, 3, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            } else {
+                                editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
+                                    if(err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                });
+                            }
+                        });
+                    });
+                });
+            });
+        }
     } else if (mediaType['type'] === 'doc' || mediaType['type'] === 'rawdoc' || mediaType['type'] === 'sheet') {
-        googleApi.googleDownloadDoc(mediaType['thumbnail'], key, filePath, mediaType['ext'], function(err, number) {
-            if(err) {
-                util.handleError(err, callback, errerMedia, fileID, callback);
-            }
-            var data = {fileId: key};
-            googleApi.googleApi('delete', data, function(err) {
-                if (err) {
+        if (mediaType['thumbnail']) {
+            googleApi.googleDownloadDoc(mediaType['thumbnail'], filePath, mediaType['ext'], function(err, number) {
+                if(err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
-                completeMedia(fileID, 5, callback, number);
+                var data = {fileId: key};
+                googleApi.googleApi('delete', data, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, errerMedia, fileID, callback);
+                    }
+                    completeMedia(fileID, 5, callback, number);
+                });
             });
-        });
+        } else {
+            googleApi.googleApi('get', key, function(err, filedata) {
+                if(err) {
+                    util.handleError(err, callback, errerMedia, fileID, callback);
+                }
+                if (!filedata.exportLinks || !filedata.exportLinks['application/pdf']) {
+                    console.log(filedata);
+                    util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
+                }
+                googleApi.googleDownloadDoc(filedata.exportLinks['application/pdf'], filePath, mediaType['ext'], function(err, number) {
+                    if(err) {
+                        util.handleError(err, callback, errerMedia, fileID, callback);
+                    }
+                    var data = {fileId: key};
+                    googleApi.googleApi('delete', data, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, errerMedia, fileID, callback);
+                        }
+                        completeMedia(fileID, 5, callback, number);
+                    });
+                });
+            });
+        }
     } else if (mediaType['type'] === 'present') {
-        googleApi.googleDownloadPresent(mediaType['thumbnail'], key, filePath, mediaType['ext'], function(err, number) {
-            if(err) {
-                util.handleError(err, callback, errerMedia, fileID, callback);
-            }
-            var data = {fileId: key};
-            googleApi.googleApi('delete', data, function(err) {
-                if (err) {
+        if (mediaType['thumbnail']) {
+            googleApi.googleDownloadPresent(mediaType['thumbnail'], filePath, mediaType['ext'], function(err, number) {
+                if(err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
-                completeMedia(fileID, 6, callback, number);
+                var data = {fileId: key};
+                googleApi.googleApi('delete', data, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, errerMedia, fileID, callback);
+                    }
+                    completeMedia(fileID, 6, callback, number);
+                });
             });
-        });
+        } else {
+            googleApi.googleApi('get', key, function(err, filedata) {
+                if(err) {
+                    util.handleError(err, callback, errerMedia, fileID, callback);
+                }
+                if (!filedata.exportLinks || !filedata.exportLinks['application/pdf']) {
+                    console.log(filedata);
+                    util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
+                }
+                googleApi.googleDownloadPresent(filedata.exportLinks['application/pdf'], filePath, mediaType['ext'], function(err, number) {
+                    if(err) {
+                        util.handleError(err, callback, errerMedia, fileID, callback);
+                    }
+                    var data = {fileId: key};
+                    googleApi.googleApi('delete', data, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, errerMedia, fileID, callback);
+                        }
+                        completeMedia(fileID, 6, callback, number);
+                    });
+                });
+            });
+        }
     }
 }
 
 app.get('/api/handleMedia/:uid/:action(act|del)', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('handle media');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.uid, 'uid');
@@ -1423,12 +1557,14 @@ app.get('/api/handleMedia/:uid/:action(act|del)', function(req, res, next) {
                             sendWs({type: 'file', data: item._id}, item.adultonly);
                             util.handleError(err);
                             console.log('transcode done');
+                            console.log(new Date());
                         });
                     } else {
                         handleMediaUpload(item.mediaType, filePath, item._id, item.name, item.size, req.user, function (err) {
                             sendWs({type: 'file', data: item._id}, item.adultonly);
                             util.handleError(err);
                             console.log('transcode done');
+                            console.log(new Date());
                         });
                     }
                     break;
@@ -1451,6 +1587,7 @@ app.get('/api/handleMedia/:uid/:action(act|del)', function(req, res, next) {
 app.get('/api/parent/list/:lang?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('parent list');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var lang = typeof req.params.lang !== 'undefined' ? req.params.lang : 'tw';
@@ -1473,6 +1610,7 @@ app.get('/api/parent/list/:lang?', function(req, res, next) {
 app.get('/api/parent/taglist/:name/:sortName(name|mtime)/:sortType(desc|asc)/:page(\\d+)', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("showTaglist");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var page = Number(req.params.page);
@@ -1490,6 +1628,7 @@ app.get('/api/parent/taglist/:name/:sortName(name|mtime)/:sortType(desc|asc)/:pa
 app.post('/api/parent/add', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("parentAdd");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         tagTool.addParent(req.body.name, req.body.tag, req.user, next, function(err, result) {
@@ -1504,6 +1643,7 @@ app.post('/api/parent/add', function(req, res,next) {
 app.delete('/api/parent/del/:id', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("parentDel");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.id, 'uid');
@@ -1522,6 +1662,7 @@ app.delete('/api/parent/del/:id', function(req, res, next) {
 app.get('/api/parent/query/:id', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("parent query");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.id, 'uid');
@@ -1549,6 +1690,7 @@ app.get('/api/parent/query/:id', function(req, res, next) {
 app.get('/api/feedback', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("feedback");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         mongo.orig("find", "storage", {untag: 1, owner: req.user._id}, {sort: ["utime",'desc'], limit: 20}, function(err, items){
@@ -1653,6 +1795,7 @@ function getFeedback(item, callback, user) {
 app.get('/api/bookmark/getList/:sortName(name|mtime)/:sortType(desc|asc)', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get bookmark list");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         res.cookie('bookmarkSortName', req.params.sortName);
@@ -1669,6 +1812,7 @@ app.get('/api/bookmark/getList/:sortName(name|mtime)/:sortType(desc|asc)', funct
 app.get('/api/bookmark/get/:id', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get bookmark");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.id, 'uid');
@@ -1696,6 +1840,7 @@ app.get('/api/bookmark/get/:id', function (req, res, next) {
 app.post('/api/bookmark/add', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("addbookmark");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var name = util.isValidString(req.body.name, 'name');
@@ -1714,6 +1859,7 @@ app.post('/api/bookmark/add', function (req, res, next) {
 app.delete('/api/bookmark/del/:id', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("del bookmark");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.id, 'uid');
@@ -1732,6 +1878,7 @@ app.delete('/api/bookmark/del/:id', function (req, res, next) {
 app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('more media');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         if (req.params.type < 2 || req.params.type > 6) {
@@ -1777,6 +1924,7 @@ app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, re
 app.post('/api/media/saveParent', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('saveParent');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var name = util.isValidString(req.body.name, 'name');
@@ -1803,6 +1951,7 @@ app.post('/api/media/saveParent', function(req, res, next) {
 app.get('/api/media/record/:id/:time(\\d+)', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('media record');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.id, 'uid');
@@ -1864,6 +2013,7 @@ app.get('/api/media/record/:id/:time(\\d+)', function(req, res, next){
 app.get('/api/media/setTime/:id', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('media setTime');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.id, 'uid');
@@ -1886,6 +2036,7 @@ app.get('/api/media/setTime/:id', function(req, res, next){
 app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('upload url');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var url = util.isValidString(req.body.url, 'url');
@@ -2005,6 +2156,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                 util.handleError(err);
                             }
                             console.log('transcode done');
+                            console.log(new Date());
                         });
                     });
                 });
@@ -2016,6 +2168,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
 app.post('/api/addurl/:type(\\d)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('add url');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var url = util.isValidString(req.body.url, 'url');
@@ -2113,6 +2266,7 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
 app.get('/api/getUser', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get user');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var ws_url = 'wss://' + config_glb.ip + ':' + config_glb.wsj_port;
@@ -2132,6 +2286,7 @@ app.get('/api/getUser', function(req, res, next){
 app.get('/download/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('download file');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.uid, 'uid');
@@ -2166,6 +2321,7 @@ app.get('/download/:uid', function(req, res, next){
 app.get('/image/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('download img');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.uid, 'uid');
@@ -2200,6 +2356,7 @@ app.get('/image/:uid', function(req, res, next){
 app.get('/preview/:uid/:type(doc|images|\\d+)?/:imgName(image\\d+.png)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('preview');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.uid, 'uid');
@@ -2273,6 +2430,7 @@ app.get('/preview/:uid/:type(doc|images|\\d+)?/:imgName(image\\d+.png)?', functi
 app.get('/subtitle/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle');
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.uid, 'uid');
@@ -2303,6 +2461,7 @@ app.get('/subtitle/:uid', function(req, res, next){
 app.get('/video/:uid', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("video");
+        console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var id = util.isValidString(req.params.uid, 'uid');
@@ -2417,6 +2576,7 @@ app.post('/api*', passport.authenticate('local', { failureRedirect: '/api' }),
 app.all('/api*', function(req, res, next) {
     "use strict";
     console.log('auth fail!!!');
+    console.log(new Date());
     console.log(req.path);
     console.log(req.url);
     console.log(req.body);
@@ -2427,6 +2587,7 @@ app.all('/api*', function(req, res, next) {
 app.get('/views/UserInfo', function(req, res, next) {
     "use strict";
     console.log("views/userinfo");
+    console.log(new Date());
     console.log(req.url);
     console.log(req.body);
     if (!util.checkAdmin(1, req.user)) {
@@ -2443,6 +2604,7 @@ app.get('/views/UserInfo', function(req, res, next) {
 app.get('/views/UserInfo', function(req, res, next) {
     "use strict";
     console.log("views userinfo");
+    console.log(new Date());
     console.log(req.url);
     console.log(req.body);
     var stream = fs.createReadStream(viewsPath + '/UserInfo.html');
@@ -2455,6 +2617,7 @@ app.get('/views/UserInfo', function(req, res, next) {
 app.get('/views/Storage', function(req, res, next) {
     "use strict";
     console.log("views storage");
+    console.log(new Date());
     console.log(req.url);
     console.log(req.body);
     var stream = fs.createReadStream(viewsPath + '/Storage.html');
@@ -2467,6 +2630,7 @@ app.get('/views/Storage', function(req, res, next) {
 app.get('/views/:id(\\w+)', function(req, res) {
     "use strict";
     console.log("views id");
+    console.log(new Date());
     console.log(req.url);
     console.log(req.body);
     res.send(req.params.id);
@@ -2570,6 +2734,7 @@ function getStorageItem(user, items, mediaHandle) {
 app.get('*', function(req, res, next) {
     "use strict";
     console.log("index.html");
+    console.log(new Date());
     console.log(req.url);
     console.log(req.body);;
     var stream = fs.createReadStream(viewsPath + '/index.html');
@@ -2582,6 +2747,7 @@ app.get('*', function(req, res, next) {
 app.all('*', function(req, res, next) {
     "use strict";
     console.log('page not found');
+    console.log(new Date());
     console.log(req.url);
     console.log(req.body);
     console.log(req.path);
@@ -2678,6 +2844,7 @@ wsjServer.on('connection', function(ws) {
 
 (function loopDrive(error, countdown) {
     console.log('loopDrive');
+    console.log(new Date());
     if (error) {
         util.handleError(error);
     }
@@ -2698,6 +2865,7 @@ wsjServer.on('connection', function(ws) {
 
 function userDrive(userlist, index, callback) {
     console.log('userDrive');
+    console.log(new Date());
     console.log(userlist[index].username);
     var folderlist = [{id: userlist[index].auto, title: 'drive upload'}];
     var dirpath = [];
@@ -3108,7 +3276,7 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                                 mediaType.thumbnail = metadata.thumbnailLink;
                                 mediaType.key = metadata.id;
                                 mediaType.notOwner = true;
-                                mongo.orig("update", "storage", { _id: item[0]._id }, {$set: {"mediaType.thumbnail": mediaType.thumbnail, "mediaType.key": mediaType.key, "mediaType.notOwner": mediaType.notOwner}}, function(err, item1){
+                                mongo.orig("update", "storage", { _id: item[0]._id }, {$set: {"mediaType.key": mediaType.key, "mediaType.notOwner": mediaType.notOwner}}, function(err, item1){
                                     if(err) {
                                         errerMedia(err, item[0]._id, function() {
                                             sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
@@ -3121,6 +3289,7 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                                                 util.handleError(err);
                                             }
                                             console.log('transcode done');
+                                            console.log(new Date());
                                         });
                                     }
                                 });
@@ -3137,6 +3306,7 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                                     util.handleError(err);
                                 }
                                 console.log('transcode done');
+                                console.log(new Date());
                             });
                         }
                     });
