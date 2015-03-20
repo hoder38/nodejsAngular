@@ -2378,6 +2378,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                     } else if (req.params.type === 'images' && req.params.imgName) {
                         ext = '_doc/images/' + req.params.imgName;
                     } else if (req.params.type === 'resources' && req.params.imgName === 'sheet.css'){
+                        type = 'text/css';
                         ext = '_doc/resources/sheet.css';
                     } else if (Number(req.params.type) >= 1){
                         type = 'text/html';
