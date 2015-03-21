@@ -26,7 +26,7 @@ var util = require("../util/utility.js");
 
 var mime = require('../util/mime.js');
 
-var drive_interval = 3600000;
+var drive_interval = 7200000;
 
 var http = require('http'),
     https = require('https'),
