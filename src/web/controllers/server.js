@@ -3065,58 +3065,55 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
         var mediaType = mime.mediaType(name);
         switch(mediaType['type']) {
             case 'video':
-            if (metadata.videoMediaMetadata) {
-                var hd = 0;
-                if (metadata.videoMediaMetadata.height >= 1080) {
-                    hd = 1080;
-                } else if (metadata.videoMediaMetadata.height >= 720) {
-                    hd = 720;
+            if (!metadata.videoMediaMetadata) {
+                util.handleError({hoerror: 2, message: "not transcode yet"}, callback, callback);
+            }
+            var hd = 0;
+            if (metadata.videoMediaMetadata.height >= 1080) {
+                hd = 1080;
+            } else if (metadata.videoMediaMetadata.height >= 720) {
+                hd = 720;
+            }
+            googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err) {
+                if(err) {
+                    util.handleError(err, callback, callback);
                 }
-                googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err) {
+                data['status'] = 3;//media type
+                handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
                     if(err) {
                         util.handleError(err, callback, callback);
                     }
-                    data['status'] = 3;//media type
-                    handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
+                    var normal = tagTool.normalizeTag(name);
+                    if (mediaTag.def.indexOf(normal) === -1) {
+                        mediaTag.def.push(normal);
+                    }
+                    normal = tagTool.normalizeTag(user.username);
+                    if (mediaTag.def.indexOf(normal) === -1) {
+                        mediaTag.def.push(normal);
+                    }
+                    for(var i in dirpath) {
+                        normal = tagTool.normalizeTag(dirpath[i]);
+                        if (!tagTool.isDefaultTag(normal)) {
+                            if (mediaTag.def.indexOf(normal) === -1) {
+                                mediaTag.def.push(normal);
+                            }
+                        }
+                    }
+                    DBdata['tags'] = mediaTag.def;
+                    DBdata[oUser_id] = mediaTag.def;
+                    mongo.orig("insert", "storage", DBdata, function(err, item){
                         if(err) {
                             util.handleError(err, callback, callback);
                         }
-                        var normal = tagTool.normalizeTag(name);
-                        if (mediaTag.def.indexOf(normal) === -1) {
-                            mediaTag.def.push(normal);
-                        }
-                        normal = tagTool.normalizeTag(user.username);
-                        if (mediaTag.def.indexOf(normal) === -1) {
-                            mediaTag.def.push(normal);
-                        }
-                        for(var i in dirpath) {
-                            normal = tagTool.normalizeTag(dirpath[i]);
-                            if (!tagTool.isDefaultTag(normal)) {
-                                if (mediaTag.def.indexOf(normal) === -1) {
-                                    mediaTag.def.push(normal);
-                                }
-                            }
-                        }
-                        DBdata['tags'] = mediaTag.def;
-                        DBdata[oUser_id] = mediaTag.def;
-                        mongo.orig("insert", "storage", DBdata, function(err, item){
-                            if(err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            console.log(item);
-                            console.log('save end');
-                            sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                            setTimeout(function(){
-                                callback(null);
-                            }, 0);
-                        });
+                        console.log(item);
+                        console.log('save end');
+                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
                     });
                 });
-            } else {
-                setTimeout(function(){
-                    callback(null);
-                }, 0);
-            }
+            });
             break;
             case 'doc':
             case 'sheet':
