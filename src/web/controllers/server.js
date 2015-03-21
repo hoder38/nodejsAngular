@@ -28,7 +28,7 @@ var mime = require('../util/mime.js');
 
 var drive_interval = 3600000;
 
-var drive_batch = 4;
+var drive_batch = 100;
 
 var http = require('http'),
     https = require('https'),
