@@ -105,7 +105,6 @@ function intersect(a, b) {
         a = t;
     }
     return a.filter(function (e) {
-        console.log(e);
         if (b.indexOf(e) !== -1) {
             return true;
         }
