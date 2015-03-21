@@ -28,6 +28,8 @@ var mime = require('../util/mime.js');
 
 var drive_interval = 3600000;
 
+var drive_batch = 4;
+
 var http = require('http'),
     https = require('https'),
     privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
@@ -1057,7 +1059,7 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                 }
                 var name = util.toValidName(req.files.file.name);
                 if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
-                    name = name + '(1)';
+                    name = mime.addPost(name, '1');
                 }
                 var utime = Math.round(new Date().getTime() / 1000);
                 var oUser_id = req.user._id;
@@ -2067,7 +2069,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 }
                 var name = util.toValidName(filename);
                 if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
-                    name = name + '(1)';
+                    name = mime.addPost(name, '1');
                 }
                 var utime = Math.round(new Date().getTime() / 1000);
                 var oUser_id = req.user._id;
@@ -2177,7 +2179,7 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
         }
         url = util.toValidName(url);
         if (tagTool.isDefaultTag(tagTool.normalizeTag(url))) {
-            url = url + '(1)';
+            url = mime.addPost(url, '1');
         }
         var oOID = mongo.objectID();
         var utime = Math.round(new Date().getTime() / 1000);
@@ -2873,42 +2875,19 @@ function userDrive(userlist, index, callback) {
     var folderlist = [{id: userlist[index].auto, title: 'drive upload'}];
     var dirpath = [];
     var is_root = true;
-    getDriveList(function(err, metadataList, dirpath, folderId) {
+    var uploaded = null;
+    var file_count = 0;
+    getDriveList(function(err) {
         if (err) {
             util.handleError(err, callback, callback, drive_interval);
         }
-        if (metadataList.length > 0) {
-            var data = {folderId: userlist[index].auto, name: 'uploaded'};
-            googleApi.googleApi('list folder', data, function(err, folderList) {
-                if (err) {
-                    util.handleError(err, callback, callback, drive_interval);
-                }
-                if (folderList.length < 1 ) {
-                    util.handleError({hoerror: 2, message: "do not have uploaded folder!!!"}, callback, callback, drive_interval);
-                }
-                singleDrive(metadataList, 0, userlist[index], folderId, folderList[0].id, dirpath, function(err) {
-                    if (err) {
-                        util.handleError(err);
-                    }
-                    index++;
-                    if (index < userlist.length) {
-                        userDrive(userlist, index, callback);
-                    } else {
-                        setTimeout(function(){
-                            callback(null, drive_interval);
-                        }, 0);
-                    }
-                });
-            });
+        index++;
+        if (index < userlist.length) {
+            userDrive(userlist, index, callback);
         } else {
-            index++;
-            if (index < userlist.length) {
-                userDrive(userlist, index, callback);
-            } else {
-                setTimeout(function(){
-                    callback(null, drive_interval);
-                }, 0);
-            }
+            setTimeout(function(){
+                callback(null, drive_interval);
+            }, 0);
         }
     });
     function getDriveList(next) {
@@ -2919,7 +2898,7 @@ function userDrive(userlist, index, callback) {
         }
         if (!current || !current.id) {
             setTimeout(function(){
-                next(null, [], [], '');
+                next(null);
             }, 0);
         } else {
             dirpath.push(current.title);
@@ -2929,26 +2908,108 @@ function userDrive(userlist, index, callback) {
                     util.handleError(err, callback, callback, drive_interval);
                 }
                 if (metadataList.length > 0) {
-                    setTimeout(function(){
-                        next(null, metadataList, dirpath, data['folderId']);
-                    }, 0);
+                    if (uploaded) {
+                        singleDrive(metadataList, 0, userlist[index], data['folderId'], uploaded, dirpath, function(err) {
+                            if (err) {
+                                util.handleError(err);
+                            }
+                            file_count += metadataList.length;
+                            if (file_count >= drive_batch) {
+                                setTimeout(function(){
+                                    next(null);
+                                }, 0);
+                            } else {
+                                googleApi.googleApi('list folder', data, function(err, folder_metadataList) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback, drive_interval);
+                                    }
+                                    if (is_root) {
+                                        var templist = [];
+                                        for (var i in folder_metadataList) {
+                                            if (folder_metadataList[i].title !== 'uploaded') {
+                                                templist.push(folder_metadataList[i]);
+                                            }
+                                        }
+                                        folder_metadataList = templist;
+                                    }
+                                    if (folder_metadataList.length > 0) {
+                                        folderlist.push({id:null});
+                                        folderlist = folderlist.concat(folder_metadataList);
+                                    } else {
+                                        dirpath.pop();
+                                    }
+                                    is_root = false;
+                                    setTimeout(function(){
+                                        getDriveList(next);
+                                    }, 0);
+                                });
+                            }
+                        });
+                    } else {
+                        var uploaded_data = {folderId: userlist[index].auto, name: 'uploaded'};
+                        googleApi.googleApi('list folder', uploaded_data, function(err, uploadedList) {
+                            if (err) {
+                                util.handleError(err, callback, callback, drive_interval);
+                            }
+                            if (uploadedList.length < 1 ) {
+                                util.handleError({hoerror: 2, message: "do not have uploaded folder!!!"}, callback, callback, drive_interval);
+                            }
+                            uploaded = uploadedList[0].id;
+                            singleDrive(metadataList, 0, userlist[index], data['folderId'], uploaded, dirpath, function(err) {
+                                if (err) {
+                                    util.handleError(err);
+                                }
+                                file_count += metadataList.length;
+                                if (file_count >= drive_batch) {
+                                    setTimeout(function(){
+                                        next(null);
+                                    }, 0);
+                                } else {
+                                    googleApi.googleApi('list folder', data, function(err, folder_metadataList) {
+                                        if (err) {
+                                            util.handleError(err, callback, callback, drive_interval);
+                                        }
+                                        if (is_root) {
+                                            var templist = [];
+                                            for (var i in folder_metadataList) {
+                                                if (folder_metadataList[i].title !== 'uploaded') {
+                                                    templist.push(folder_metadataList[i]);
+                                                }
+                                            }
+                                            folder_metadataList = templist;
+                                        }
+                                        if (folder_metadataList.length > 0) {
+                                            folderlist.push({id:null});
+                                            folderlist = folderlist.concat(folder_metadataList);
+                                        } else {
+                                            dirpath.pop();
+                                        }
+                                        is_root = false;
+                                        setTimeout(function(){
+                                            getDriveList(next);
+                                        }, 0);
+                                    });
+                                }
+                            });
+                        });
+                    }
                 } else {
-                    googleApi.googleApi('list folder', data, function(err, metadataList) {
+                    googleApi.googleApi('list folder', data, function(err, folder_metadataList) {
                         if (err) {
                             util.handleError(err, callback, callback, drive_interval);
                         }
                         if (is_root) {
                             var templist = [];
-                            for (var i in metadataList) {
-                                if (metadataList[i].title !== 'uploaded') {
-                                    templist.push(metadataList[i]);
+                            for (var i in folder_metadataList) {
+                                if (folder_metadataList[i].title !== 'uploaded') {
+                                    templist.push(folder_metadataList[i]);
                                 }
                             }
-                            metadataList = templist;
+                            folder_metadataList = templist;
                         }
-                        if (metadataList.length > 0) {
+                        if (folder_metadataList.length > 0) {
                             folderlist.push({id:null});
-                            folderlist = folderlist.concat(metadataList);
+                            folderlist = folderlist.concat(folder_metadataList);
                         } else {
                             dirpath.pop();
                         }
@@ -2987,20 +3048,37 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                         }, 0);
                     }
                 } else {
-                    var data = {fileId: metadata.id, rmFolderId: folderId, addFolderId: uploaded};
-                    googleApi.googleApi('move parent', data, function(err) {
-                        if (err) {
-                            util.handleError(err);
-                        }
-                        index++;
-                        if (index < metadatalist.length) {
-                            singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
-                        } else {
-                            setTimeout(function(){
-                                next(null);
-                            }, 0);
-                        }
-                    });
+                    if (!metadata.userPermission || metadata.userPermission.role !== 'owner') {
+                        var data = {fileId: metadata.id, rmFolderId: folderId, addFolderId: uploaded};
+                        googleApi.googleApi('move parent', data, function(err) {
+                            if (err) {
+                                util.handleError(err);
+                            }
+                            index++;
+                            if (index < metadatalist.length) {
+                                singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
+                            } else {
+                                setTimeout(function(){
+                                    next(null);
+                                }, 0);
+                            }
+                        });
+                    } else {
+                        var data = {fileId: metadata.id};
+                        googleApi.googleApi('delete', data, function(err) {
+                            if (err) {
+                                util.handleError(err);
+                            }
+                            index++;
+                            if (index < metadatalist.length) {
+                                singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
+                            } else {
+                                setTimeout(function(){
+                                    next(null);
+                                }, 0);
+                            }
+                        });
+                    }
                 }
             });
         });
@@ -3017,27 +3095,44 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                     }, 0);
                 }
             } else {
-                var data = {fileId: metadata.id, rmFolderId: folderId, addFolderId: uploaded};
-                googleApi.googleApi('move parent', data, function(err) {
-                    if (err) {
-                        util.handleError(err);
-                    }
-                    index++;
-                    if (index < metadatalist.length) {
-                        singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
-                    } else {
-                        setTimeout(function(){
-                            next(null);
-                        }, 0);
-                    }
-                });
+                if (!metadata.userPermission || metadata.userPermission.role !== 'owner') {
+                    var data = {fileId: metadata.id, rmFolderId: folderId, addFolderId: uploaded};
+                    googleApi.googleApi('move parent', data, function(err) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                        index++;
+                        if (index < metadatalist.length) {
+                            singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
+                        } else {
+                            setTimeout(function(){
+                                next(null);
+                            }, 0);
+                        }
+                    });
+                } else {
+                    var data = {fileId: metadata.id};
+                    googleApi.googleApi('delete', data, function(err) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                        index++;
+                        if (index < metadatalist.length) {
+                            singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
+                        } else {
+                            setTimeout(function(){
+                                next(null);
+                            }, 0);
+                        }
+                    });
+                }
             }
         });
     }
     function streamClose(callback){
         var name = util.toValidName(metadata.title);
         if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
-            name = name + '(1)';
+            name = mime.addPost(name, '1');
         }
         var utime = Math.round(new Date().getTime() / 1000);
         var oUser_id = user._id;
@@ -3066,54 +3161,80 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
         switch(mediaType['type']) {
             case 'video':
             if (!metadata.videoMediaMetadata) {
-                util.handleError({hoerror: 2, message: "not transcode yet"}, callback, callback);
-            }
-            var hd = 0;
-            if (metadata.videoMediaMetadata.height >= 1080) {
-                hd = 1080;
-            } else if (metadata.videoMediaMetadata.height >= 720) {
-                hd = 720;
-            }
-            googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err) {
-                if(err) {
-                    util.handleError(err, callback, callback);
+                if (!metadata.userPermission || metadata.userPermission.role === 'owner') {
+                    util.handleError({hoerror: 2, message: "not transcode yet"}, callback, callback);
                 }
-                data['status'] = 3;//media type
-                handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
-                    if(err) {
+                var copydata = {fileId: metadata.id};
+                googleApi.googleApi('copy', copydata, function(err, metadata) {
+                    if (err) {
                         util.handleError(err, callback, callback);
                     }
-                    var normal = tagTool.normalizeTag(name);
-                    if (mediaTag.def.indexOf(normal) === -1) {
-                        mediaTag.def.push(normal);
-                    }
-                    normal = tagTool.normalizeTag(user.username);
-                    if (mediaTag.def.indexOf(normal) === -1) {
-                        mediaTag.def.push(normal);
-                    }
-                    for(var i in dirpath) {
-                        normal = tagTool.normalizeTag(dirpath[i]);
-                        if (!tagTool.isDefaultTag(normal)) {
+                    setTimeout(function(){
+                        callback(null);
+                    }, 0);
+                });
+            } else {
+                var hd = 0;
+                if (metadata.videoMediaMetadata.height >= 1080) {
+                    hd = 1080;
+                } else if (metadata.videoMediaMetadata.height >= 720) {
+                    hd = 720;
+                }
+                googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err) {
+                    if(err) {
+                        if (!metadata.userPermission || metadata.userPermission.role === 'owner') {
+                            util.handleError(err, callback, callback);
+                        }
+                        var copydata = {fileId: metadata.id};
+                        googleApi.googleApi('copy', copydata, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    } else {
+                        name = mime.changeExt(name, 'mp4');
+                        data['name'] = name;
+                        data['status'] = 3;//media type
+                        handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
+                            if(err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var normal = tagTool.normalizeTag(name);
                             if (mediaTag.def.indexOf(normal) === -1) {
                                 mediaTag.def.push(normal);
                             }
-                        }
+                            normal = tagTool.normalizeTag(user.username);
+                            if (mediaTag.def.indexOf(normal) === -1) {
+                                mediaTag.def.push(normal);
+                            }
+                            for(var i in dirpath) {
+                                normal = tagTool.normalizeTag(dirpath[i]);
+                                if (!tagTool.isDefaultTag(normal)) {
+                                    if (mediaTag.def.indexOf(normal) === -1) {
+                                        mediaTag.def.push(normal);
+                                    }
+                                }
+                            }
+                            DBdata['tags'] = mediaTag.def;
+                            DBdata[oUser_id] = mediaTag.def;
+                            mongo.orig("insert", "storage", DBdata, function(err, item){
+                                if(err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(item);
+                                console.log('save end');
+                                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
                     }
-                    DBdata['tags'] = mediaTag.def;
-                    DBdata[oUser_id] = mediaTag.def;
-                    mongo.orig("insert", "storage", DBdata, function(err, item){
-                        if(err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        console.log(item);
-                        console.log('save end');
-                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                        setTimeout(function(){
-                            callback(null);
-                        }, 0);
-                    });
                 });
-            });
+            }
             break;
             case 'doc':
             case 'sheet':

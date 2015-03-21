@@ -180,6 +180,20 @@ function sendAPI(method, data, callback) {
             }, 0);
         });
         break;
+        case 'copy':
+        if (!data['fileId']) {
+            util.handleError({hoerror: 2, message: 'copy parameter lost!!!'}, callback, callback);
+        }
+        param['fileId'] = data['fileId'];
+        drive.files.copy(param, function(err, metadata) {
+            if (err) {
+                util.handleError(err, callback, callback, null);
+            }
+            setTimeout(function(){
+                callback(null, metadata);
+            }, 0);
+        });
+        break;
         case 'delete':
         if (!data['fileId']) {
             util.handleError({hoerror: 2, message: 'delete parameter lost!!!'}, callback, callback);

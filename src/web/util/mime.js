@@ -148,6 +148,17 @@ module.exports = {
             return '.' + ext;
         });
     },
+    addPost: function(str, post) {
+        var result = name.match(ext_filename), extName = '';
+        if (result && result[1]) {
+            extName = result[1].toLowerCase();
+            return str.replace(ext_filename, function (a) {
+                return '(' + post + ').' + extName;
+            });
+        } else {
+            return str + '(' + post + ')';
+        }
+    },
     mediaMIME: function(name) {
         var result = name.match(ext_filename), extName = '';
         if (result && result[1]) {
