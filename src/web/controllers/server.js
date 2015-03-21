@@ -3182,6 +3182,25 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                 }
                 googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err) {
                     if(err) {
+                        if (fs.existsSync(filePath + "_s.jpg")) {
+                            fs.unlink(filePath + "_s.jpg", function (error) {
+                                if (error) {
+                                    util.handleError(error, callback, callback);
+                                }
+                                if (fs.existsSync(filePath + "_a.htm")) {
+                                    fs.unlink(filePath + "_a.htm", function (error) {
+                                        if (error) {
+                                            util.handleError(error, callback, callback);
+                                        }
+                                        util.handleError(err, callback, callback);
+                                    });
+                                } else {
+                                    util.handleError(err, callback, callback);
+                                }
+                            });
+                        } else {
+                            util.handleError(err, callback, callback);
+                        }
                         if (!metadata.userPermission || metadata.userPermission.role === 'owner') {
                             util.handleError(err, callback, callback);
                         }
@@ -3251,7 +3270,15 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                     }
                     googleApi.googleDownloadDoc(metadata.exportLinks['application/pdf'], metadata.id, filePath, mediaType['ext'], function(err, number) {
                         if(err) {
-                            util.handleError(err, callback, callback);
+                            if (fs.existsSync(filePath)) {
+                                fs.unlink(filePath, function (error) {
+                                    if (error) {
+                                        util.handleError(error, callback, callback);
+                                    }
+                                });
+                            } else {
+                                util.handleError(err, callback, callback);
+                            }
                         }
                         data['status'] = 5;
                         if (number > 1) {
@@ -3308,7 +3335,15 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                     }
                     googleApi.googleDownloadPresent(metadata.exportLinks['application/pdf'], metadata.id, filePath, mediaType['ext'], function(err, number) {
                         if(err) {
-                            util.handleError(err, callback, callback);
+                            if (fs.existsSync(filePath)) {
+                                fs.unlink(filePath, function (error) {
+                                    if (error) {
+                                        util.handleError(error, callback, callback);
+                                    }
+                                });
+                            } else {
+                                util.handleError(err, callback, callback);
+                            }
                         }
                         if (number > 1) {
                             data['present'] = number;
