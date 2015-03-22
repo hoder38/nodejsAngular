@@ -195,7 +195,7 @@
                         <form ng-submit="addFeedback()">
                             <div class="input-group">
                                 <span class="input-group-btn" tooltip="儲存tag" tooltip-trigger="mouseenter">
-                                    <button type="button" class="btn btn-default" ng-click="sendFeedback()">
+                                    <button type="button" class="btn btn-default" ng-click="sendFeedback()" ng-disabled="feedbackDisabled">
                                         <i class="glyphicon glyphicon-thumbs-up"></i>
                                     </button>
                                 </span>

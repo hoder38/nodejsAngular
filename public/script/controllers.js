@@ -1619,6 +1619,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.alerts = [];
     $scope.currentPage = 0;
     $scope.adultonly = false;
+    $scope.feedbackDisabled = true;
     var alertTime;
     addAlert = function(msg) {
         $scope.alerts.splice(0,0,{type: 'danger', msg: msg});
@@ -1810,6 +1811,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         }
     }
     $scope.sendFeedback = function() {
+        this.feedbackDisabled = true;
         var this_obj = this;
         var sendList = [];
         for (var i in this.feedback.list) {
@@ -1876,6 +1878,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 }
             }
         }
+        $scope.feedbackDisabled = false;
     };
 
     $scope.id = 'guest';
