@@ -293,6 +293,7 @@ module.exports = {
             }
         }
         console.log(url);
+        console.log(filePath);
         var urlParse = urlMod.parse(url);
         var this_obj = this;
         checkOauth(function(err) {
