@@ -1275,7 +1275,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                                     musicStart = result.time;
                                 }
                             }
-                            this_obj.$parent[type].src = '/' + preType + '/' + item.id;
+                            if (type === 'doc') {
+                                this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
+                            } else {
+                                this_obj.$parent[type].src = '/' + preType + '/' + item.id;
+                            }
                             this_obj.$parent[type].maxId = item.present;
                             if (type === 'video') {
                                 var track = video.textTracks[0];
@@ -1313,7 +1317,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                         }
                     });
                 } else {
-                    this_obj.$parent[type].src = '/' + preType + '/' + item.id;
+                    if (type === 'doc') {
+                        this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
+                    } else {
+                        this_obj.$parent[type].src = '/' + preType + '/' + item.id;
+                    }
                     this_obj.$parent[type].maxId = item.present;
                     if (type === 'video') {
                         var track = video.textTracks[0];
@@ -2264,7 +2272,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                         //music.play();
                                     } else {
                                         this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        if (type === 'doc') {
+                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                        } else {
+                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        }
                                         if (type === 'video') {
                                             var track = video.textTracks[0];
                                             if (track) {
@@ -2298,7 +2310,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 //music.play();
                             } else {
                                 this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                if (type === 'doc') {
+                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                } else {
+                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                }
                                 if (type === 'video') {
                                     var track = video.textTracks[0];
                                     if (track) {
@@ -2392,7 +2408,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                         //music.play();
                                     } else {
                                         this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        if (type === 'doc') {
+                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                        } else {
+                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        }
                                         if (type === 'video') {
                                             var track = video.textTracks[0];
                                             if (track) {
@@ -2426,7 +2446,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 //music.play();
                             } else {
                                 this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                if (type === 'doc') {
+                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                } else {
+                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                }
                                 if (type === 'video') {
                                     var track = video.textTracks[0];
                                     if (track) {
@@ -2484,7 +2508,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             //music.play();
                         } else {
                             this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                            if (type === 'doc') {
+                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                            } else {
+                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                            }
                             if (type === 'video') {
                                 var track = video.textTracks[0];
                                 if (track) {
@@ -2518,7 +2546,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     //music.play();
                 } else {
                     this[type].maxId = this[type].list[this[type].index + this[type].back].present;
-                    this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id;
+                    if (type === 'doc') {
+                        this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id + '/doc';
+                    } else {
+                        this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id;
+                    }
                     if (type === 'video') {
                         var track = video.textTracks[0];
                         if (track) {

@@ -2484,7 +2484,10 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                     ext = '_s.jpg';
                 } else if (item.status === 5) {
                     if (req.params.type) {
-                        if (req.params.type === 'images' && req.params.imgName) {
+                        if (req.params.type === 'doc' && !req.params.imgName) {
+                            type = 'text/html';
+                            ext = '_doc/doc.html';
+                        } else if (req.params.type === 'images' && req.params.imgName) {
                             ext = '_doc/images/' + req.params.imgName;
                         } else if (req.params.type === 'resources' && req.params.imgName === 'sheet.css'){
                             type = 'text/css';
@@ -2500,8 +2503,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                             util.handleError({hoerror: 2, message: "cannot find doc!!!"}, next, res);
                         }
                     } else {
-                        type = 'text/html';
-                        ext = '_doc/doc.html';
+                        util.handleError({hoerror: 2, message: "cannot find doc!!!"}, next, res);
                     }
                 } else if (item.status === 6) {
                     if (req.params.type) {
