@@ -37,6 +37,7 @@ var http = require('http'),
     credentials = {key: privateKey, cert: certificate},
     express = require('express'),
     crypto = require('crypto'),
+    child_process = require('child_process'),
     passport = require('passport'),
     Transcoder = require('stream-transcoder'),
     LocalStrategy = require('passport-local').Strategy,
@@ -894,6 +895,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                 case 'rawdoc':
                 case 'sheet':
                 case 'present':
+                case 'zipbook':
                     DBdata['status'] = 1;
                     mediaTag = mime.mediaTag(mediaType['type']);
                     DBdata['mediaType'] = mediaType;
@@ -1177,6 +1179,102 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                     });
                 });
             });
+        } else if (mediaType['type'] === 'zipbook') {
+            var cmdline = 'unzip ' + filePath + ' -d ' + filePath + '_img';
+            var zip_ext = mime.isZip(fileName);
+            if (!zip_ext) {
+                util.handleError({hoerror: 2, message: 'is not zip'}, callback, errerMedia, fileID, callback);
+            }
+            if (zip_ext === 'rar') {
+                cmdline = 'unrar x ' + filePath + ' ' + filePath + '_img';
+            } else if (zip_ext === '7z') {
+                cmdline = '7za x ' + filePath + ' -o' + filePath + '_img';
+            }
+            var folder = null;
+            console.log(cmdline);
+            child_process.exec(cmdline, function (err, output) {
+                if (err) {
+                    util.handleError(err, callback, callback);
+                }
+                var zip_arr = [];
+                fs.readdirSync(filePath + '_img').forEach(function(file,index){
+                    var curPath = filePath + '_img/' + file;
+                    if(fs.lstatSync(curPath).isDirectory()) {
+                        if (folder) {
+                            deleteFolderRecursive(curPath);
+                        } else {
+                            folder = file;
+                        }
+                    } else {
+                        var ext = mime.isImage(file);
+                        if (ext) {
+                            var zip_number = file.match(/\d+/g);
+                            if (!zip_number) {
+                                zip_number = [];
+                            }
+                            zip_arr.push({name: file, ext: ext, number: zip_number});
+                        }
+                    }
+                });
+                if (folder) {
+                    fs.readdirSync(filePath + '_img/' + folder).forEach(function(file,index){
+                        var curPath = filePath + '_img/' + folder + '/' + file;
+                        if(fs.lstatSync(curPath).isDirectory()) {
+                            if (folder) {
+                                deleteFolderRecursive(curPath);
+                            }
+                        } else {
+                            var ext = mime.isImage(file);
+                            if (ext) {
+                                var zip_number = file.match(/\d+/g);
+                                if (!zip_number) {
+                                    zip_number = [];
+                                }
+                                zip_arr.push({name: folder + '/' + file, ext: ext, number: zip_number});
+                            }
+                        }
+                    });
+                }
+                fs.rmdirSync(path);
+                var sort_result = zip_arr.sort(function(a, b) {
+                    if (a.number.length === b.number.length) {
+                        if (a.number.length > 0) {
+                            for (var i in a.number) {
+                                if (Number(a.number[i]) !== Number(b.number[i])) {
+                                    return (Number(a.number[i]) - Number(b.number[i]))*10;
+                                }
+                            }
+                        } else {
+                            return 0;
+                        }
+                    } else {
+                        return a.number.length - b.number.length;
+                    }
+                });
+                for (var i in sort_result) {
+                    var j = Number(i)+1;
+                    fs.renameSync(filePath + '_img/' + sort_result[i].name, filePath + '_img/' + j);
+                }
+                console.log(sort_result);
+                var data = {type: 'media', name: fileID.toString() + "." + sort_result[0].ext, filePath: filePath + '_img/1'};
+                googleApi.googleApi('upload', data, function(err, metadata) {
+                    if (err) {
+                        util.handleError(err, callback, errerMedia, fileID, callback);
+                    }
+                    if (metadata.thumbnailLink) {
+                        mediaType['thumbnail'] = metadata.thumbnailLink;
+                    } else {
+                        console.log(metadata);
+                        util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
+                    }
+                    mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.key": metadata.id, present: sort_result.length}}, function(err, item){
+                        if(err) {
+                            util.handleError(err, callback, errerMedia, fileID, callback);
+                        }
+                        handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback);
+                    });
+                });
+            });
         } else {
             if (mediaType['type'] === 'rawdoc') {
                 mediaType['ext'] = 'txt';
@@ -1238,7 +1336,7 @@ function completeMedia(fileID, status, callback, number) {
 }
 
 function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback) {
-    if (mediaType['type'] === 'image') {
+    if (mediaType['type'] === 'image' || mediaType['type'] === 'zipbook') {
         if (mediaType['thumbnail']) {
             googleApi.googleDownload(mediaType['thumbnail'], filePath + ".jpg", function(err) {
                 if (err) {
@@ -2320,7 +2418,7 @@ app.get('/download/:uid', function(req, res, next){
     });
 });
 
-app.get('/image/:uid', function(req, res, next){
+app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('download img');
         console.log(new Date());
@@ -2337,7 +2435,18 @@ app.get('/image/:uid', function(req, res, next){
             if (!item) {
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
+            console.log(item);
             var filePath = util.getFileLocation(item.owner, item._id);
+            if (item.present) {
+                var index = 1;
+                if (req.params.number) {
+                    index = req.params.number;
+                }
+                filePath = filePath + "_img/" + index;
+                if (!fs.existsSync(filePath)) {
+                    util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+                }
+            }
             tagTool.setLatest('image', item._id, req.session, next, function(err) {
                 if (err) {
                     util.handleError(err, next, res);
@@ -2374,30 +2483,37 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                 if (item.status === 3) {
                     ext = '_s.jpg';
                 } else if (item.status === 5) {
-                    if (req.params.type === 'doc') {
-                        type = 'text/html';
-                        ext = '_doc/doc.html';
-                    } else if (req.params.type === 'images' && req.params.imgName) {
-                        ext = '_doc/images/' + req.params.imgName;
-                    } else if (req.params.type === 'resources' && req.params.imgName === 'sheet.css'){
-                        type = 'text/css';
-                        ext = '_doc/resources/sheet.css';
-                    } else if (Number(req.params.type) >= 1){
-                        type = 'text/html';
-                        if (Number(req.params.type) === 1) {
-                            ext = '_doc/doc.html';
+                    if (req.params.type) {
+                        if (req.params.type === 'images' && req.params.imgName) {
+                            ext = '_doc/images/' + req.params.imgName;
+                        } else if (req.params.type === 'resources' && req.params.imgName === 'sheet.css'){
+                            type = 'text/css';
+                            ext = '_doc/resources/sheet.css';
+                        } else if (Number(req.params.type) > 0){
+                            type = 'text/html';
+                            if (Number(req.params.type) === 1) {
+                                ext = '_doc/doc.html';
+                            } else {
+                                ext = '_doc/doc' + Number(req.params.type) + '.html';
+                            }
                         } else {
-                            ext = '_doc/doc' + Number(req.params.type) + '.html';
+                            util.handleError({hoerror: 2, message: "cannot find doc!!!"}, next, res);
                         }
                     } else {
-                        util.handleError({hoerror: 2, message: "cannot find doc!!!"}, next, res);
+                        type = 'text/html';
+                        ext = '_doc/doc.html';
                     }
                 } else if (item.status === 6) {
-                    if (Number(req.params.type) >= 1) {
-                        type = 'image/svg+xml';
-                        ext = '.' + Number(req.params.type) + '.svg';
+                    if (req.params.type) {
+                        if (Number(req.params.type) > 0) {
+                            type = 'image/svg+xml';
+                            ext = '.' + Number(req.params.type) + '.svg';
+                        } else {
+                            util.handleError({hoerror: 2, message: "cannot find present!!!"}, next, res);
+                        }
                     } else {
-                        util.handleError({hoerror: 2, message: "cannot find present!!!"}, next, res);
+                        type = 'image/svg+xml';
+                        ext = '.1.svg';
                     }
                 }
                 var filePath = util.getFileLocation(item.owner, item._id);

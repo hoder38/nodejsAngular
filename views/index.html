@@ -219,6 +219,19 @@
                         <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
+                                    <span ng-show="image.maxId && image.maxId > 1">
+                                        <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                            <a href="#" ng-click="imgMove(-1)">
+                                                <span class="glyphicon glyphicon-chevron-up"></span>
+                                            </a>
+                                        </li>
+                                        <input id="imageID" type="text" ng-model="image.showId" ng-enter="imgMove(0)" />/{{image.maxId}}
+                                        <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                            <a href="#" ng-click="imgMove(1)">
+                                                <span class="glyphicon glyphicon-chevron-down"></span>
+                                            </a>
+                                        </li>
+                                    </span>
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(-1, 'image')">
                                             <span class="glyphicon glyphicon-chevron-left"></span>

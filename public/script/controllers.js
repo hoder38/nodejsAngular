@@ -1224,6 +1224,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         switch (type) {
             case 'image':
                 preType = 'image';
+                this.image.showId = this.image.presentId = 1;
                 status = 2;
                 break;
             case 'video':
@@ -1274,15 +1275,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                                     musicStart = result.time;
                                 }
                             }
-                            if (type === 'doc') {
-                                this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
-                                this_obj.$parent[type].maxId = item.present;
-                            } else if (type === 'present') {
-                                this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/1';
-                                this_obj.$parent[type].maxId = item.present;
-                            } else {
-                                this_obj.$parent[type].src = '/' + preType + '/' + item.id;
-                            }
+                            this_obj.$parent[type].src = '/' + preType + '/' + item.id;
+                            this_obj.$parent[type].maxId = item.present;
                             if (type === 'video') {
                                 var track = video.textTracks[0];
                                 if (track) {
@@ -1319,15 +1313,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                         }
                     });
                 } else {
-                    if (type === 'doc') {
-                        this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
-                        this_obj.$parent[type].maxId = item.present;
-                    } else if (type === 'present') {
-                        this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/1';
-                        this_obj.$parent[type].maxId = item.present;
-                    } else {
-                        this_obj.$parent[type].src = '/' + preType + '/' + item.id;
-                    }
+                    this_obj.$parent[type].src = '/' + preType + '/' + item.id;
+                    this_obj.$parent[type].maxId = item.present;
                     if (type === 'video') {
                         var track = video.textTracks[0];
                         if (track) {
@@ -1885,7 +1872,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.feedback = {uid: '', name: '', list: [], run: false, queue: [], history: [], other: []};
     $scope.mediaShow = [];
     $scope.navList = [{title: "homepage", hash: "/", css: "fa fa-fw fa-dashboard"}, {title: "Storage", hash: "/Storage", css: "fa fa-fw fa-desktop"}];
-    $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
     $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
@@ -2161,12 +2148,34 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         this.doc.src = '/preview/' + this.doc.list[this.doc.index + this.doc.back].id + '/' + this.doc.presentId;
     }
 
+    $scope.imgMove = function(number) {
+        if (number === 0) {
+            if (this.image.showId >= 1 && this.image.showId <= this.image.maxId) {
+                this.image.presentId = this.image.showId;
+            } else {
+                this.image.showId = this.image.presentId;
+                return false;
+            }
+        } else {
+            var newIndex = +this.image.presentId + number;
+            if (newIndex >= 1 && newIndex <= this.image.maxId) {
+                this.image.presentId = newIndex;
+                this.image.showId = this.image.presentId;
+            } else {
+                this.image.showId = this.image.presentId;
+                return false;
+            }
+        }
+        this.image.src = '/image/' + this.image.list[this.image.index + this.image.back].id + '/' + this.image.presentId;
+    }
+
     $scope.mediaMove = function(number, type, end) {
         var preType = '', status = 0, isLoad = false;
         switch (type) {
             case 'image':
                 preType = 'image';
                 status = 2;
+                this.img.showId = this.img.presentId = 1;
                 break;
             case 'video':
                 preType = 'video';
@@ -2254,15 +2263,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                         music.currentTime = 0;
                                         //music.play();
                                     } else {
-                                        if (type === 'doc') {
-                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                                            this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                        } else if (type === 'present') {
-                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
-                                            this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                        } else {
-                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                        }
+                                        this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                         if (type === 'video') {
                                             var track = video.textTracks[0];
                                             if (track) {
@@ -2295,15 +2297,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 music.currentTime = 0;
                                 //music.play();
                             } else {
-                                if (type === 'doc') {
-                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                                    this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                } else if (type === 'present') {
-                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
-                                    this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                } else {
-                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                }
+                                this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                 if (type === 'video') {
                                     var track = video.textTracks[0];
                                     if (track) {
@@ -2396,15 +2391,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                         music.currentTime = 0;
                                         //music.play();
                                     } else {
-                                        if (type === 'doc') {
-                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                                            this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                        } else if (type === 'present') {
-                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
-                                            this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                        } else {
-                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                        }
+                                        this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                         if (type === 'video') {
                                             var track = video.textTracks[0];
                                             if (track) {
@@ -2437,15 +2425,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 music.currentTime = 0;
                                 //music.play();
                             } else {
-                                if (type === 'doc') {
-                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                                    this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                } else if (type === 'present') {
-                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
-                                    this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                } else {
-                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                }
+                                this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                 if (type === 'video') {
                                     var track = video.textTracks[0];
                                     if (track) {
@@ -2502,15 +2483,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             music.currentTime = 0;
                             //music.play();
                         } else {
-                            if (type === 'doc') {
-                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                                this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                            } else if (type === 'present') {
-                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/1';
-                                this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                            } else {
-                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                            }
+                            this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                             if (type === 'video') {
                                 var track = video.textTracks[0];
                                 if (track) {
@@ -2543,15 +2517,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     music.currentTime = 0;
                     //music.play();
                 } else {
-                    if (type === 'doc') {
-                        this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id + '/doc';
-                        this[type].maxId = this[type].list[this[type].index + this[type].back].present;
-                    } else if (type === 'present') {
-                        this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id + '/1';
-                        this[type].maxId = this[type].list[this[type].index + this[type].back].present;
-                    } else {
-                        this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id;
-                    }
+                    this[type].maxId = this[type].list[this[type].index + this[type].back].present;
+                    this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id;
                     if (type === 'video') {
                         var track = video.textTracks[0];
                         if (track) {

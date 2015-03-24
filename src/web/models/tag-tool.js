@@ -3,8 +3,8 @@ var mongo = require("../models/mongo-tool.js");
 
 var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle'];
 
-var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '分類'}, {'name': 'author', 'tw': '作者'}, {'name': 'director', 'tw': '導演'}, {'name': 'actor', 'tw': '演員'}, {'name': 'complete', 'tw': '完結'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'country', 'tw': '國家'}, {'name': 'year', 'tw': '年份'}];
-var adultonly_arr = [{'name': 'adultonly_category', 'tw': '18禁分類'}];
+var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '分類'}, {'name': 'franchise', 'tw': '單集'}, {'name': 'complete', 'tw': '完結'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'year', 'tw': '年份'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
+var adultonly_arr = [{'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_category', 'tw': '18禁分類'}];
 
 var queryLimit = 20;
 

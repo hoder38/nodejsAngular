@@ -602,6 +602,10 @@ audio.full-media-screen {
     width: 45px;
 }
 
+#imageID {
+    width: 45px;
+}
+
 .user-break {
     word-break: break-all;
     word-wrap: break-word;
