@@ -1234,8 +1234,8 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                             }
                         }
                     });
+                    fs.rmdirSync(filePath + '_img/' + folder);
                 }
-                fs.rmdirSync(path);
                 var sort_result = zip_arr.sort(function(a, b) {
                     if (a.number.length === b.number.length) {
                         if (a.number.length > 0) {
