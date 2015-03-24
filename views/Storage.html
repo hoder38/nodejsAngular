@@ -24,8 +24,8 @@
                     </ul>
                     <ul aria-expanded="true" collapse="bookmarkCollpase">
                         <li ng-repeat="item in bookmarkList">
-                            <a ng-hide="bookmarkEdit" ng-click="getBookmarkItem(item.id)">{{item.name}}</a>
-                            <a ng-show="bookmarkEdit" confirmed-click="delBookmark(item.id)" ng-confirm-click="Would you sure to delete this bookmark?">
+                            <a ng-hide="bookmarkEdit" ng-click="getBookmarkItem(item.id)" href="#">{{item.name}}</a>
+                            <a ng-show="bookmarkEdit" confirmed-click="delBookmark(item.id)" ng-confirm-click="Would you sure to delete this bookmark?" href="#">
                                 <i class="glyphicon glyphicon-remove"></i>{{item.name}}
                             </a>
                         </li>
@@ -52,8 +52,8 @@
                     </ul>
                     <ul aria-expanded="true" collapse="dir.collpase">
                         <li ng-repeat="item in dir.list">
-                            <a ng-hide="dir.edit" ng-click="dirItemlist(item.id)">{{item.name}}</a>
-                            <a ng-show="dir.edit" confirmed-click="del2Parent(item.id, dir)" ng-confirm-click="Would you sure to delete this tag?">
+                            <a ng-hide="dir.edit" ng-click="dirItemlist(item.id)" href="#">{{item.name}}</a>
+                            <a ng-show="dir.edit" confirmed-click="del2Parent(item.id, dir)" ng-confirm-click="Would you sure to delete this tag?" href="#">
                                 <i class="glyphicon glyphicon-remove"></i>{{item.name}}
                             </a>
                         </li>
@@ -146,12 +146,12 @@
     </div>
     <ol class="breadcrumb" id="breadcrumb-section">
         <li ng-click="resetStorage()">
-            <a tooltip="清空搜尋"  tooltip-trigger="mouseenter">
+            <a tooltip="清空搜尋"  tooltip-trigger="mouseenter" href="#">
                 <i class="glyphicon glyphicon-home"></i>
             </a>
         </li>
         <li ng-repeat="item in parentList" ng-click="gotoStorage($parent.this, item, $index)">
-            <a>
+            <a href="#">
                 <i ng-hide="exactlyList[$index]" class="glyphicon glyphicon-eye-close"></i>
                 <i ng-show="exactlyList[$index]" class="glyphicon glyphicon-eye-open"></i>&nbsp;{{item}}
             </a>
@@ -166,18 +166,18 @@
             </span>
             <ul class="dropdown-menu" id="bookmark-list">
                 <li>
-                    <a ng-click="bookmarkNew = true; bookmarkNewFocus = true">new...</a>
+                    <a ng-click="bookmarkNew = true; bookmarkNewFocus = true" href="#">new...</a>
                 </li>
                 <li class="divider"></li>
                 <li ng-repeat="item in bookmarkList">
-                    <a ng-click="addBookmark(item.name)">{{item.name}}</a>
+                    <a ng-click="addBookmark(item.name)" href="#">{{item.name}}</a>
                 </li>
             </ul>
         </li>
     </ol>
     <ul class="nav nav-pills" id="item-head" aria-expanded="true">
         <li class="text-right item-check-head {{!selectList.length && 'active' || ''}}">
-            <a ng-click="cancelSelect()">
+            <a ng-click="cancelSelect()" href="#">
                 <i class="glyphicon {{selectList.length && 'glyphicon-remove-sign' || 'glyphicon-ok'}}"></i>
             </a>
         <li>
@@ -188,7 +188,7 @@
             </a>
         </li>
         <li class="pull-right item-tool {{!selectList.length && 'active' || ''}}">
-            <a ng-click="openNewTag()">
+            <a ng-click="openNewTag()" href="#">
                 <i class="glyphicon {{selectList.length && 'glyphicon-plus' || 'glyphicon-cog'}}"></i>
             </a>
         <li>
@@ -208,25 +208,25 @@
     <div class="dropdown" dropdown="" is-open="dropdown.item">
         <ul class="dropdown-menu" id="tool-list">
             <li ng-show="toolList.download">
-                <a confirmed-click="downloadFile()" ng-confirm-click="Would you sure to download this file?">download</a>
+                <a confirmed-click="downloadFile()" ng-confirm-click="Would you sure to download this file?" href="#">download</a>
             </li>
             <li ng-show="toolList.edit">
-                <a ng-click="itemNameNew = true; itemNameNewFocus = true;newItemName = toolList.item.name;">edit</a>
+                <a ng-click="itemNameNew = true; itemNameNewFocus = true;newItemName = toolList.item.name;" href="#">edit</a>
             </li>
             <li ng-show="toolList.upload">
-                <a confirmed-click="uploadSub = true" ng-confirm-click="目前支援srt，並且只保留上一個版本的字幕">upload subtitle</a>
+                <a confirmed-click="uploadSub = true" ng-confirm-click="目前支援srt，並且只保留上一個版本的字幕" href="#">upload subtitle</a>
             </li>
             <li ng-show="toolList.recover">
-                <a confirmed-click="fileRecover()" ng-confirm-click="Would you sure to recover this file?">recover</a>
+                <a confirmed-click="fileRecover()" ng-confirm-click="Would you sure to recover this file?" href="#">recover</a>
             </li>
             <li ng-show="toolList.del">
-                <a confirmed-click="fileDel()" ng-confirm-click="Would you sure to delete this file?">delete</a>
+                <a confirmed-click="fileDel()" ng-confirm-click="Would you sure to delete this file?" href="#">delete</a>
             </li>
             <li ng-show="toolList.delMedia">
-                <a confirmed-click="handleMedia('del')" ng-confirm-click="Would you sure to delete this Media?">delete media</a>
+                <a confirmed-click="handleMedia('del')" ng-confirm-click="Would you sure to delete this Media?" href="#">delete media</a>
             </li>
             <li ng-show="toolList.dir" ng-repeat="item in dirList">
-                <a confirmed-click="add2Parent(item)" ng-confirm-click="Would you sure to add this tag to Dir?">{{item.show}}</a>
+                <a confirmed-click="add2Parent(item)" ng-confirm-click="Would you sure to add this tag to Dir?" href="#">{{item.show}}</a>
             </li>
         </ul>
     </div>
@@ -259,33 +259,37 @@
                         {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}}
                     </td>
                     <td class="item-name" ng-if="item.status < 2 && !item.media" confirmed-click="downloadFile(item.id)" ng-confirm-click="Would you sure to download this file?">
-                        <i class="glyphicon glyphicon-question-sign item-icon"></i>{{item.name}}
+                        <a href="#" class="item-point"><i class="glyphicon glyphicon-question-sign item-icon"></i>{{item.name}}</a>
                     </td>
                     <td class="item-name" ng-if="item.status === 2 && !item.media" ng-click="showMedia(item, 'image')">
-                        <span class="preload-img">
-                            <i class="glyphicon glyphicon-picture item-icon"></i>
-                            <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" class="item-image" />
-                        </div>
-                        {{item.name}}
+                        <a href="#" class="item-point">
+                            <span class="preload-img">
+                                <i class="glyphicon glyphicon-picture item-icon"></i>
+                                <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" class="item-image" />
+                            </span>
+                            {{item.name}}
+                        </a>
                     </td>
                     <td class="item-name" ng-if="item.status === 3 && !item.media" ng-click="showMedia(item, 'video')">
-                        <span class="preload-img">
-                            <i class="glyphicon glyphicon-facetime-video item-icon"></i>
-                            <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" class="item-image" />
-                        </span>
-                        {{item.name}}
+                        <a href="#" class="item-point">
+                            <span class="preload-img">
+                                <i class="glyphicon glyphicon-facetime-video item-icon"></i>
+                                <img ng-src="/preview/{{item.id}}" alt="{{item.name}}" class="item-image" />
+                            </span>
+                            {{item.name}}
+                        </a>
                     </td>
                     <td class="item-name" ng-if="item.status === 4 && !item.media" ng-click="showMedia(item, 'music')">
-                        <i class="glyphicon glyphicon-headphones item-icon"></i>{{item.name}}
+                        <a href="#" class="item-point"><i class="glyphicon glyphicon-headphones item-icon"></i>{{item.name}}</a>
                     </td>
                     <td class="item-name" ng-if="item.status === 5 && !item.media" ng-click="showMedia(item, 'doc')">
-                        <i class="glyphicon glyphicon-file item-icon"></i>{{item.name}}
+                        <a href="#" class="item-point"><i class="glyphicon glyphicon-file item-icon"></i>{{item.name}}</a>
                     </td>
                     <td class="item-name" ng-if="item.status === 6 && !item.media" ng-click="showMedia(item, 'present')">
-                        <i class="glyphicon glyphicon-list-alt item-icon"></i>{{item.name}}
+                        <a href="#" class="item-point"><i class="glyphicon glyphicon-list-alt item-icon"></i>{{item.name}}</a>
                     </td>
                     <td class="item-name" ng-if="item.status === 7 && !item.media" ng-click="showUrl(item)">
-                        <i class="glyphicon glyphicon-bookmark item-icon"></i>{{item.name}}
+                        <a href="#" class="item-point"><i class="glyphicon glyphicon-bookmark item-icon"></i>{{item.name}}</a>
                     </td>
                     <td class="item-mtime">{{item.utime}}</td>
                     <td class="item-count">{{item.count}}</td>

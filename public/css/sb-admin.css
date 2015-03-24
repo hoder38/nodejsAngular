@@ -611,3 +611,7 @@ audio.full-media-screen {
     word-wrap: break-word;
     height: auto;
 }
+
+.item-point, .item-point:hover {
+    color: black;
+}
