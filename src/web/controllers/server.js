@@ -2748,6 +2748,15 @@ app.get('/views/Storage', function(req, res, next) {
     stream.pipe(res);
 });
 
+app.get('/views/homepage', function(req, res, next) {
+    "use strict";
+    console.log("views homepage");
+    console.log(new Date());
+    console.log(req.url);
+    console.log(req.body);
+    res.send("hello<br/> 壓縮檔加上.book可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z");
+});
+
 app.get('/views/:id(\\w+)', function(req, res) {
     "use strict";
     console.log("views id");
