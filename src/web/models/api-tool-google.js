@@ -284,11 +284,11 @@ module.exports = {
             sendAPI(method, data, callback);
         });
     },
-    googleDownload: function(url, filePath, callback, threshold, is_back) {
+    googleDownload: function(url, filePath, callback, threshold, is_one) {
         threshold = typeof threshold !== 'undefined' ? threshold : null;
         is_back = typeof is_back !== 'undefined' ? is_back : false;
         if (threshold) {
-            if (!is_back) {
+            if (!is_one) {
                 threshold = threshold > 600000 ? threshold : 600000;
             }
         }
@@ -312,6 +312,9 @@ module.exports = {
             };
             var time = 1000;
             var retry = max_retry;
+            if (is_one) {
+                time = threshold;
+            }
             recur_download(time);
             function recur_download(time) {
                 setTimeout(function(){
@@ -339,7 +342,7 @@ module.exports = {
                                 var file_write =  fs.createWriteStream(filePath);
                                 res.pipe(file_write);
                                 file_write.on('finish', function(){
-                                    console.log(filePath);
+                                    console.log('finish');
                                     var stats = fs.statSync(filePath);
                                     if (!length || length === stats["size"]) {
                                         setTimeout(function(){
@@ -417,7 +420,6 @@ module.exports = {
             if (!fs.existsSync(filePath + '_doc')) {
                 mkdirp(filePath + '_doc', function(err) {
                     if(err) {
-                        console.log(cmdline);
                         util.handleError(err, callback, callback);
                     }
                     doc_unzip();
@@ -433,6 +435,7 @@ module.exports = {
                                 util.handleError(err, callback, callback);
                             }
                             if (err) {
+                                console.log(cmdline);
                                 util.handleError(err, callback, callback);
                             }
                             if (!doc_name) {
@@ -468,35 +471,41 @@ module.exports = {
             }
         });
     },
-    googleDownloadPresent: function(exportlink, filePath, ext, callback) {
+    googleDownloadPresent: function(exportlink, alternate, filePath, ext, callback) {
         var this_obj = this;
-        exportlink = exportlink.replace("=pdf", "=svg&pageid=p");
-        var pageid = 3;
-        var number = 1;
-        recur_present(false);
-        function recur_present(is_back) {
-            this_obj.googleDownload(exportlink + pageid, filePath + "." + number + ".svg", function(err) {
-                if (err) {
-                    if (pageid === 3) {
-                        util.handleError(err, callback, callback);
-                    }
-                    util.handleError(err);
-                    setTimeout(function(){
-                        callback(null, number-1);
-                    }, 0);
-                } else {
-                    if (pageid === 3) {
-                        pageid+= 2;
+        this.googleDownload(alternate, filePath + "_b.htm", function(err) {
+            if (err) {
+                util.handleError(err, callback, callback);
+            }
+            exportlink = exportlink.replace("=pdf", "=svg&pageid=p");
+            var number = 0;
+            recur_present();
+            function recur_present() {
+                var cmdline = 'grep -o "12,\\\"p[0-9][0-9]*\\\",' + number + ',0" ' + filePath + "_b.htm";
+                child_process.exec(cmdline, function (err, output) {
+                    if (err) {
+                        util.handleError(err);
+                        setTimeout(function(){
+                            callback(null, number);
+                        }, 0);
                     } else {
-                        pageid++;
+                        console.log(output);
+                        number++;
+                        var pageid = output.match(/\"p(\d+)\"/);
+                        if (pageid) {
+                            this_obj.googleDownload(exportlink + pageid[1], filePath + "_present/" + number + ".svg", function(err) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                recur_present();
+                            });
+                        } else {
+                            util.handleError({hoerror: 2, message: 'can not find present'}, callback, callback);
+                        }
                     }
-                    number++;
-                    setTimeout(function(){
-                        recur_present(true);
-                    }, 0);
-                }
-            }, 10000, is_back);
-        }
+                });
+            }
+        });
     },
     googleBackup: function(id, name, filePath, tags, recycle, callback) {
         switch (recycle) {

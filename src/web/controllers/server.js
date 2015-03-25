@@ -723,13 +723,6 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                     if (fs.existsSync(filePath + '.jpg')) {
                         del_arr.push(filePath + '.jpg');
                     }
-                    if (item.present) {
-                        for(var i = 1; i <= item.present; i++) {
-                            if (fs.existsSync(filePath + '.' + i + '.svg')) {
-                                del_arr.push(filePath + '.' + i + '.svg');
-                            }
-                        }
-                    }
                     if (fs.existsSync(filePath + '_s.jpg')) {
                         del_arr.push(filePath + '_s.jpg');
                     }
@@ -745,6 +738,8 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                     var index = 0;
                     console.log(del_arr);
                     deleteFolderRecursive(filePath + '_doc');
+                    deleteFolderRecursive(filePath + '_img');
+                    deleteFolderRecursive(filePath + '_present');
                     recur_del(del_arr[0]);
                     function recur_del(delPath) {
                         fs.unlink(delPath, function (err) {
@@ -1180,48 +1175,39 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                 });
             });
         } else if (mediaType['type'] === 'zipbook') {
-            var cmdline = 'unzip ' + filePath + ' -d ' + filePath + '_img';
             var zip_ext = mime.isZip(fileName);
             if (!zip_ext) {
                 util.handleError({hoerror: 2, message: 'is not zip'}, callback, errerMedia, fileID, callback);
             }
-            if (zip_ext === 'rar') {
-                cmdline = 'unrar x ' + filePath + ' ' + filePath + '_img';
-            } else if (zip_ext === '7z') {
-                cmdline = '7za x ' + filePath + ' -o' + filePath + '_img';
-            }
-            var folder = null;
-            console.log(cmdline);
-            child_process.exec(cmdline, function (err, output) {
-                if (err) {
-                    util.handleError(err, callback, callback);
-                }
-                var zip_arr = [];
-                fs.readdirSync(filePath + '_img').forEach(function(file,index){
-                    var curPath = filePath + '_img/' + file;
-                    if(fs.lstatSync(curPath).isDirectory()) {
-                        if (folder) {
-                            deleteFolderRecursive(curPath);
-                        } else {
-                            folder = file;
-                        }
-                    } else {
-                        var ext = mime.isImage(file);
-                        if (ext) {
-                            var zip_number = file.match(/\d+/g);
-                            if (!zip_number) {
-                                zip_number = [];
-                            }
-                            zip_arr.push({name: file, ext: ext, number: zip_number});
-                        }
+            if (!fs.existsSync(filePath + '_img')) {
+                mkdirp(filePath + '_img', function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
                     }
+                    zipbook();
                 });
-                if (folder) {
-                    fs.readdirSync(filePath + '_img/' + folder).forEach(function(file,index){
-                        var curPath = filePath + '_img/' + folder + '/' + file;
+            } else {
+                zipbook();
+            }
+            function zipbook() {
+                var cmdline = 'unzip ' + filePath + ' -d ' + filePath + '_img/temp';
+                if (zip_ext === 'rar') {
+                    cmdline = 'unrar x ' + filePath + ' ' + filePath + '_img/temp';
+                } else if (zip_ext === '7z') {
+                    cmdline = '7za x ' + filePath + ' -o' + filePath + '_img/temp';
+                }
+                var folder = null;
+                child_process.exec(cmdline, function (err, output) {
+                    if (err) {
+                        console.log(cmdline);
+                        util.handleError(err, callback, callback);
+                    }
+                    var zip_arr = [];
+                    fs.readdirSync(filePath + '_img/temp').forEach(function(file,index){
+                        var curPath = filePath + '_img/temp/' + file;
                         if(fs.lstatSync(curPath).isDirectory()) {
-                            if (folder) {
-                                deleteFolderRecursive(curPath);
+                            if (!folder) {
+                                folder = file;
                             }
                         } else {
                             var ext = mime.isImage(file);
@@ -1230,51 +1216,65 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                                 if (!zip_number) {
                                     zip_number = [];
                                 }
-                                zip_arr.push({name: folder + '/' + file, ext: ext, number: zip_number});
+                                zip_arr.push({name: file, ext: ext, number: zip_number});
                             }
                         }
                     });
-                    fs.rmdirSync(filePath + '_img/' + folder);
-                }
-                var sort_result = zip_arr.sort(function(a, b) {
-                    if (a.number.length === b.number.length) {
-                        if (a.number.length > 0) {
-                            for (var i in a.number) {
-                                if (Number(a.number[i]) !== Number(b.number[i])) {
-                                    return (Number(a.number[i]) - Number(b.number[i]))*10;
+                    if (folder) {
+                        fs.readdirSync(filePath + '_img/temp/' + folder).forEach(function(file,index){
+                            var curPath = filePath + '_img/temp/' + folder + '/' + file;
+                            if(!fs.lstatSync(curPath).isDirectory()) {
+                                var ext = mime.isImage(file);
+                                if (ext) {
+                                    var zip_number = file.match(/\d+/g);
+                                    if (!zip_number) {
+                                        zip_number = [];
+                                    }
+                                    zip_arr.push({name: folder + '/' + file, ext: ext, number: zip_number});
                                 }
                             }
+                        });
+                    }
+                    var sort_result = zip_arr.sort(function(a, b) {
+                        if (a.number.length === b.number.length) {
+                            if (a.number.length > 0) {
+                                for (var i in a.number) {
+                                    if (Number(a.number[i]) !== Number(b.number[i])) {
+                                        return (Number(a.number[i]) - Number(b.number[i]))*10;
+                                    }
+                                }
+                            } else {
+                                return 0;
+                            }
                         } else {
-                            return 0;
+                            return a.number.length - b.number.length;
                         }
-                    } else {
-                        return a.number.length - b.number.length;
+                    });
+                    for (var i in sort_result) {
+                        var j = Number(i)+1;
+                        fs.renameSync(filePath + '_img/temp/' + sort_result[i].name, filePath + '_img/' + j);
                     }
-                });
-                for (var i in sort_result) {
-                    var j = Number(i)+1;
-                    fs.renameSync(filePath + '_img/' + sort_result[i].name, filePath + '_img/' + j);
-                }
-                console.log(sort_result);
-                var data = {type: 'media', name: fileID.toString() + "." + sort_result[0].ext, filePath: filePath + '_img/1'};
-                googleApi.googleApi('upload', data, function(err, metadata) {
-                    if (err) {
-                        util.handleError(err, callback, errerMedia, fileID, callback);
-                    }
-                    if (metadata.thumbnailLink) {
-                        mediaType['thumbnail'] = metadata.thumbnailLink;
-                    } else {
-                        console.log(metadata);
-                        util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
-                    }
-                    mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.key": metadata.id, present: sort_result.length}}, function(err, item){
-                        if(err) {
+                    deleteFolderRecursive(filePath + '_img/temp');
+                    var data = {type: 'media', name: fileID.toString() + "." + sort_result[0].ext, filePath: filePath + '_img/1'};
+                    googleApi.googleApi('upload', data, function(err, metadata) {
+                        if (err) {
                             util.handleError(err, callback, errerMedia, fileID, callback);
                         }
-                        handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback);
+                        if (metadata.thumbnailLink) {
+                            mediaType['thumbnail'] = metadata.thumbnailLink;
+                        } else {
+                            console.log(metadata);
+                            util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
+                        }
+                        mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.key": metadata.id, present: sort_result.length}}, function(err, item){
+                            if(err) {
+                                util.handleError(err, callback, errerMedia, fileID, callback);
+                            }
+                            handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback);
+                        });
                     });
                 });
-            });
+            }
         } else {
             if (mediaType['type'] === 'rawdoc') {
                 mediaType['ext'] = 'txt';
@@ -1289,6 +1289,14 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                 }
                 if(metadata.exportLinks && metadata.exportLinks['application/pdf']) {
                     mediaType['thumbnail'] = metadata.exportLinks['application/pdf'];
+                    if (mediaType['type'] === 'present') {
+                        if (metadata.alternateLink) {
+                            mediaType['alternate'] = metadata.alternateLink;
+                        } else {
+                            console.log(metadata);
+                            util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
+                        }
+                    }
                 } else if (mediaType['type'] === 'video' && metadata.alternateLink) {
                     mediaType['thumbnail'] = metadata.alternateLink;
                 } else if (metadata.thumbnailLink) {
@@ -1355,7 +1363,8 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                 }
             });
         } else {
-            googleApi.googleApi('get', key, function(err, filedata) {
+            var data = {fileId: key};
+            googleApi.googleApi('get', data, function(err, filedata) {
                 if (err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
@@ -1368,7 +1377,6 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                         util.handleError(err, callback, errerMedia, fileID, callback);
                     }
                     if (!mediaType['notOwner']) {
-                        var data = {fileId: key};
                         googleApi.googleApi('delete', data, function(err) {
                             if (err) {
                                 util.handleError(err, callback, errerMedia, fileID, callback);
@@ -1514,7 +1522,8 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                 });
             });
         } else {
-            googleApi.googleApi('get', key, function(err, filedata) {
+            var data = {fileId: key};
+            googleApi.googleApi('get', data, function(err, filedata) {
                 if(err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
@@ -1526,7 +1535,6 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                     if(err) {
                         util.handleError(err, callback, errerMedia, fileID, callback);
                     }
-                    var data = {fileId: key};
                     googleApi.googleApi('delete', data, function(err) {
                         if (err) {
                             util.handleError(err, callback, errerMedia, fileID, callback);
@@ -1564,7 +1572,8 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                 });
             });
         } else {
-            googleApi.googleApi('get', key, function(err, filedata) {
+            var data = {fileId: key};
+            googleApi.googleApi('get', data, function(err, filedata) {
                 if(err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
@@ -1576,7 +1585,6 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                     if(err) {
                         util.handleError(err, callback, errerMedia, fileID, callback);
                     }
-                    var data = {fileId: key};
                     googleApi.googleApi('delete', data, function(err) {
                         if (err) {
                             util.handleError(err, callback, errerMedia, fileID, callback);
@@ -1588,7 +1596,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
         }
     } else if (mediaType['type'] === 'present') {
         if (mediaType['thumbnail']) {
-            googleApi.googleDownloadPresent(mediaType['thumbnail'], filePath, mediaType['ext'], function(err, number) {
+            googleApi.googleDownloadPresent(mediaType['thumbnail'], mediaType['alternate'], filePath, mediaType['ext'], function(err, number) {
                 if(err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
@@ -1601,7 +1609,8 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                 });
             });
         } else {
-            googleApi.googleApi('get', key, function(err, filedata) {
+            var data = {fileId: key};
+            googleApi.googleApi('get', data, function(err, filedata) {
                 if(err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
@@ -1609,11 +1618,10 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                     console.log(filedata);
                     util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
                 }
-                googleApi.googleDownloadPresent(filedata.exportLinks['application/pdf'], filePath, mediaType['ext'], function(err, number) {
+                googleApi.googleDownloadPresent(filedata.exportLinks['application/pdf'], filedata.alternateLink, filePath, mediaType['ext'], function(err, number) {
                     if(err) {
                         util.handleError(err, callback, errerMedia, fileID, callback);
                     }
-                    var data = {fileId: key};
                     googleApi.googleApi('delete', data, function(err) {
                         if (err) {
                             util.handleError(err, callback, errerMedia, fileID, callback);
@@ -2509,13 +2517,13 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                     if (req.params.type) {
                         if (Number(req.params.type) > 0) {
                             type = 'image/svg+xml';
-                            ext = '.' + Number(req.params.type) + '.svg';
+                            ext = '_present/' + Number(req.params.type) + '.svg';
                         } else {
                             util.handleError({hoerror: 2, message: "cannot find present!!!"}, next, res);
                         }
                     } else {
                         type = 'image/svg+xml';
-                        ext = '.1.svg';
+                        ext = '_present/1.svg';
                     }
                 }
                 var filePath = util.getFileLocation(item.owner, item._id);
@@ -2987,7 +2995,7 @@ wsjServer.on('connection', function(ws) {
         mongo.orig("find", "user", {auto: {$exists: true}}, function(err, userlist){
             if(err) {
                 util.handleError(err);
-                loopDrive(drive_interval);
+                loopDrive(null, drive_interval);
             } else {
                 userDrive(userlist, 0, loopDrive);
             }
