@@ -479,7 +479,16 @@ module.exports = {
             }
             exportlink = exportlink.replace("=pdf", "=svg&pageid=p");
             var number = 0;
-            recur_present();
+            if (!fs.existsSync(filePath + '_present')) {
+                mkdirp(filePath + '_present', function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    recur_present();
+                });
+            } else {
+                recur_present();
+            }
             function recur_present() {
                 var cmdline = 'grep -o "12,\\\"p[0-9][0-9]*\\\",' + number + ',0" ' + filePath + "_b.htm";
                 child_process.exec(cmdline, function (err, output) {
