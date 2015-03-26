@@ -324,6 +324,9 @@
                         <div class="panel-body">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
+                                    <span ng-show="isPdf" tooltip="切換模式"  tooltip-trigger="mouseenter">
+                                        <input type="checkbox" ng-model="doc.mode"/>
+                                    </span>
                                     <span ng-show="doc.maxId && doc.maxId > 1">
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="docMove(-1)">
@@ -354,7 +357,7 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <iframe class="{{isFull && 'full-doc-screen'||'doc-screen'}}" ng-src="{{doc.src}}" style="border: 0;"></iframe>
+                            <iframe ng-iframe-bigpic class="{{isFull && 'full-doc-screen'||'doc-screen'}}" ng-src="{{doc.src}}" style="border: 0;"></iframe>
                             <!--object class="{{isFull && 'full-doc-screen'||'doc-screen'}}" data="{{doc.src}}" type="application/pdf">
                                 <embed ng-src="{{doc.src}}" type="application/pdf" />
                             </object-->
@@ -369,7 +372,7 @@
                         <div class="panel-body">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
-                                    <span ng-show="present.maxId && present.maxId > 1">
+                                    <span ng-show="present.maxId && present.maxId > 1" class="{{isFull && 'span-right'||'span-left'}}">
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="presentMove(-1)">
                                                 <span class="glyphicon glyphicon-chevron-up"></span>

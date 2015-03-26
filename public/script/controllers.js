@@ -119,28 +119,73 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
             });
         }
     };
-}).filter('gtFilter', function () {
-    return function (items, prop, num, obj) {
-        var filtered = [];
-        var isEqual = true;
-        var item;
-        for (var i = 0; i < items.length; i++) {
-            item = items[i];
-            if (obj) {
-                isEqual = true;
-                for (var j in obj) {
-                    if (obj[j] !== item[j]) {
-                        isEqual = false;
-                        break;
+}).directive('ngIframeBigpic', function(){
+    //for pdf
+    //doc 850px
+    return function(scope, element, attrs){
+        element.on('load', function(){
+            if (!scope.doc.maxId) {
+                var iframeBody = element[0].contentWindow.document.getElementsByTagName('body')[0];
+                var childnode = iframeBody.childNodes;
+                var iframeOffset = [];
+                var iframeWin = element[0].contentWindow.window;
+                if (scope.doc.name.match(/\.pdf$/i)) {
+                    scope.isPdf = true;
+                    iframeBody.style.padding = '0px';
+                    iframeBody.style["margin-left"] = 'auto';
+                    iframeBody.style["margin-right"] = 'auto';
+                    var imgNode = {offset: [], node: []};
+                    var textNode = {offset: [], node: []};
+                    var j = 0;
+                    for (var i = 0; i< childnode.length; i++) {
+                        var iframeSpan = childnode[i].getElementsByTagName('span')[0];
+                        if (iframeSpan) {
+                            var iframeImg = iframeSpan.getElementsByTagName('img')[0];
+                            if (iframeImg) {
+                                iframeImg.style.width = 'auto';
+                                iframeImg.style.height = 'auto';
+                                if (imgNode.offset.length === 0){
+                                    imgNode.offset[0] = 0;
+                                    textNode.offset[0] = 0;
+                                    imgNode.offset.push(childnode[i].offsetTop + childnode[i].offsetHeight);
+                                } else {
+                                    j++;
+                                    imgNode.offset.push(imgNode.offset[j] + childnode[i].offsetHeight);
+                                    textNode.offset.push(childnode[i].offsetTop - imgNode.offset[j]);
+                                }
+                                imgNode.node.push(childnode[i]);
+                            } else {
+                                textNode.node.push(childnode[i]);
+                            }
+                        } else {
+                            if (childnode[i].tagName === 'HR' && childnode[i].style.display === 'none') {
+                            } else {
+                                textNode.node.push(childnode[i]);
+                            }
+                        }
                     }
+                    textNode.offset.push(childnode[childnode.length-1].offsetTop + childnode[childnode.length-1].offsetHeight - imgNode.offset[imgNode.offset.length-1]);
+                    scope.$apply(function (){
+                        scope.setDoc(iframeWin, imgNode, textNode);
+                    });
+                } else {
+                    var lastchild = childnode[childnode.length-1];
+                    var iframelength = lastchild.offsetTop + lastchild.offsetHeight;
+                    for (var i = 0; i < iframelength; i+=850) {
+                        iframeOffset.push(i);
+                    }
+                    scope.$apply(function (){
+                        scope.setDoc(iframeWin, iframeOffset);
+                    });
                 }
+                element[0].contentWindow.document.onscroll = function() {
+                    scope.$apply(function (){
+                        scope.numberDoc();
+                    });
+                };
             }
-            if (isEqual && item[prop] > num) {
-                filtered.push(item);
-            }
-        }
-        return filtered;
-    };
+        });
+    }
 });
 
 function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $timeout) {
@@ -1278,6 +1323,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                             if (type === 'doc') {
                                 this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
                             } else {
+                                this_obj.$parent.isPdf = false;
+                                this_obj.$parent[type].iframeOffset = null;
                                 this_obj.$parent[type].src = '/' + preType + '/' + item.id;
                             }
                             this_obj.$parent[type].maxId = item.present;
@@ -1318,6 +1365,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                     });
                 } else {
                     if (type === 'doc') {
+                        this_obj.$parent.isPdf = false;
+                        this_obj.$parent[type].iframeOffset = null;
                         this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
                     } else {
                         this_obj.$parent[type].src = '/' + preType + '/' + item.id;
@@ -1883,7 +1932,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
     $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
     $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
-    $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
+    $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, mode: false};
     $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
     $scope.dirList = [];
     $scope.dirEdit = false;
@@ -2153,7 +2202,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 return false;
             }
         }
-        this.doc.src = '/preview/' + this.doc.list[this.doc.index + this.doc.back].id + '/' + this.doc.presentId;
+        if (this.doc.iframeOffset) {
+            this.doc.win.scrollTo(0, this.doc.iframeOffset[this.doc.presentId-1]);
+        } else {
+            this.doc.src = '/preview/' + this.doc.list[this.doc.index + this.doc.back].id + '/' + this.doc.presentId;
+        }
     }
 
     $scope.imgMove = function(number) {
@@ -2273,6 +2326,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                     } else {
                                         this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                         if (type === 'doc') {
+                                            this_obj.isPdf = false;
+                                            this_obj[type].iframeOffset = null;
                                             this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                         } else {
                                             this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -2311,6 +2366,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             } else {
                                 this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                 if (type === 'doc') {
+                                    this_obj.isPdf = false;
+                                    this_obj[type].iframeOffset = null;
                                     this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                 } else {
                                     this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -2409,6 +2466,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                     } else {
                                         this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                         if (type === 'doc') {
+                                            this_obj.isPdf = false;
+                                            this_obj[type].iframeOffset = null;
                                             this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                         } else {
                                             this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -2447,6 +2506,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             } else {
                                 this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                 if (type === 'doc') {
+                                    this_obj.isPdf = false;
+                                    this_obj[type].iframeOffset = null;
                                     this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                 } else {
                                     this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -2509,6 +2570,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                         } else {
                             this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                             if (type === 'doc') {
+                                this_obj.isPdf = false;
+                                this_obj[type].iframeOffset = null;
                                 this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                             } else {
                                 this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -2547,6 +2610,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 } else {
                     this[type].maxId = this[type].list[this[type].index + this[type].back].present;
                     if (type === 'doc') {
+                        this.isPdf = false;
+                        this[type].iframeOffset = null;
                         this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id + '/doc';
                     } else {
                         this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id;
@@ -2566,6 +2631,49 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 this.$broadcast('latest', JSON.stringify({id: this[type].bookmarkID, latest: this[type].id}));
                 this[type].name = this[type].list[this[type].index + this[type].back].name;
             }
+        }
+    }
+    $scope.$watch("this.doc.mode", function(newVal, oldVal) {
+        $scope.setDoc();
+    }, true);
+    $scope.numberDoc = function() {
+        if (this.doc.iframeOffset) {
+            for (var i in this.doc.iframeOffset) {
+                if (this.doc.win.pageYOffset < this.doc.iframeOffset[i]) {
+                    this.doc.showId = this.doc.presentId = i;
+                    break;
+                }
+            }
+        }
+    }
+    $scope.setDoc = function(iframeWindow, iframeOffset, textNode) {
+        this.doc.win = typeof iframeWindow !== 'undefined' ? iframeWindow : this.doc.win;
+        if (this.isPdf) {
+            this.doc.imgNode = typeof iframeOffset !== 'undefined' ? iframeOffset : this.doc.imgNode;
+            this.doc.textNode = typeof textNode !== 'undefined' ? textNode : this.doc.textNode;
+            if (!this.doc.mode) {
+                for (var i in this.doc.imgNode.node) {
+                    this.doc.imgNode.node[i].style.display = 'block';
+                }
+                for (var i in this.doc.textNode.node) {
+                    this.doc.textNode.node[i].style.display = 'none';
+                }
+                this.doc.iframeOffset = this.doc.imgNode.offset;
+            } else {
+                for (var i in this.doc.imgNode.node) {
+                    this.doc.imgNode.node[i].style.display = 'none';
+                }
+                for (var i in this.doc.textNode.node) {
+                    this.doc.textNode.node[i].style.display = 'block';
+                }
+                this.doc.iframeOffset = this.doc.textNode.offset;
+            }
+            this.doc.win.scrollTo(0, this.doc.iframeOffset[this.doc.presentId-1]);
+        } else {
+            this.doc.iframeOffset = typeof iframeOffset !== 'undefined' ? iframeOffset : this.doc.iframeOffset;
+        }
+        if (this.doc.iframeOffset) {
+            this.doc.maxId = this.doc.iframeOffset.length-1;
         }
     }
     $scope.mediaToggle = function(type, open) {

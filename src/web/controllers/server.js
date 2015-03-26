@@ -2047,6 +2047,9 @@ app.post('/api/media/saveParent', function(req, res, next) {
         var sortType = 'desc';
         if (req.cookies.fileSortName === 'name' || req.cookies.fileSortName === 'mtime') {
             sortName = req.cookies.fileSortName;
+            if (sortName === 'mtime') {
+                sortName = 'utime';
+            }
         }
         if (req.cookies.fileSortType === 'desc' || req.cookies.fileSortType === 'asc') {
             sortType = req.cookies.fileSortType;
@@ -2417,7 +2420,7 @@ app.get('/download/:uid', function(req, res, next){
                     if(err) {
                         util.handleError(err, next, res);
                     }
-                    sendWs({type: 'file', data: item._id}, item.adultonly);
+                    //sendWs({type: 'file', data: item._id}, item.adultonly);
                 });
             });
             console.log(filePath);
@@ -2463,7 +2466,7 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                     if(err) {
                         util.handleError(err, next, res);
                     }
-                    sendWs({type: 'file', data: item._id}, item.adultonly);
+                    //sendWs({type: 'file', data: item._id}, item.adultonly);
                 });
             });
             console.log(filePath);
@@ -2540,7 +2543,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                             if(err) {
                                 util.handleError(err, next, res);
                             }
-                            sendWs({type: 'file', data: item._id}, item.adultonly);
+                            //sendWs({type: 'file', data: item._id}, item.adultonly);
                         });
                     });
                 }
@@ -2617,7 +2620,7 @@ app.get('/video/:uid', function (req, res, next) {
                         if(err) {
                             util.handleError(err, next, res);
                         }
-                        sendWs({type: 'file', data: item._id}, item.adultonly);
+                        //sendWs({type: 'file', data: item._id}, item.adultonly);
                     });
                 });
                 fs.stat(videoPath, function(err, video) {
@@ -2985,9 +2988,10 @@ wsjServer.on('connection', function(ws) {
 (function loopDrive(error, countdown) {
     console.log('loopDrive');
     console.log(new Date());
-    if (error) {
+    //觀察log的亂碼
+    /*if (error) {
         util.handleError(error);
-    }
+    }*/
     if (!countdown) {
         countdown = 60000;
     }
