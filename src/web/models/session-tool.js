@@ -29,7 +29,7 @@ module.exports = function(express) {
     return {
         config: {
             secret: config_type.session_secret,
-            cookie: { maxAge: 86400 * 1000 },
+            cookie: { maxAge: 86400 * 1000 * 3 },
             store: new mongoStore({
                 host: config_glb.session_ip,
                 port: config_glb.session_port,

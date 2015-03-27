@@ -159,6 +159,7 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
                             }
                         } else {
                             if (childnode[i].tagName === 'HR' && childnode[i].style.display === 'none') {
+                            } else if (childnode[i].tagName === 'STYLE') {
                             } else {
                                 textNode.node.push(childnode[i]);
                             }
@@ -1694,6 +1695,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             return "You have uploaded files. Are you sure you want to navigate away from this page?";
         }
     };
+    /* sleep
+    window.addEventListener("pageshow", function(){
+        alert("page shown");
+    }, false);
+    */
 
     $scope.closeAlert = function(index) {
         $scope.alerts.splice(index, 1);

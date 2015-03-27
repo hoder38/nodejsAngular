@@ -406,7 +406,7 @@ module.exports = {
             }
         });
     },
-    googleDownloadDoc: function(exportlink, filePath, ext, callback, doc_name) {
+    googleDownloadDoc: function(exportlink, filePath, ext, callback) {
         exportlink = exportlink.replace("=pdf", "=zip");
         this.googleDownload(exportlink, filePath + ".zip", function(err) {
             if (err) {
@@ -437,9 +437,6 @@ module.exports = {
                             if (err) {
                                 console.log(cmdline);
                                 util.handleError(err, callback, callback);
-                            }
-                            if (!doc_name) {
-                                doc_name = path.basename(filePath) + '.' + ext;
                             }
                             var doc_index = 1;
                             if(fs.existsSync(filePath + '_doc')) {

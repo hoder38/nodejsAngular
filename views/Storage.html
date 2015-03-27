@@ -256,7 +256,7 @@
                 <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'warning' || ''}} {{item.recycle === 4 && 'danger' || ''}}">
                     <td class="item-check text-center"><input type="checkbox" ng-model="item.select"></td>
                     <td class="item-name" ng-if="item.media" confirmed-click="handleMedia('act', item)" ng-confirm-click="Would you sure to handle this media?">
-                        {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}}
+                        {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}} {{item.media.split}}
                     </td>
                     <td class="item-name" ng-if="item.status < 2 && !item.media" confirmed-click="downloadFile(item.id)" ng-confirm-click="Would you sure to download this file?">
                         <a href="#" class="item-point"><i class="glyphicon glyphicon-question-sign item-icon"></i>{{item.name}}</a>

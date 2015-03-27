@@ -67,6 +67,49 @@ app.use(require('connect-multiparty')({ uploadDir: config_glb.nas_tmp }));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(staticPath));
+/*
+pdftk pdf dump_data
+NumberOfPages
+pdftk pdf cat 1-10 output 0.pdf
+fs.readFile('/home/pi/Beigebook_20121010.pdf.html', 'utf-8', function(err, data){
+    if (err) {
+        console.log(err);
+    }
+
+    var newValue = data.replace(/<\/body><\/html>$/, '');
+
+    fs.writeFile('/home/pi/test.pdf.html', newValue, 'utf-8', function (err) {
+        if (err) {
+            console.log(err);
+        }
+        fs.readFile('/home/pi/bernanke20121115a.pdf.html', 'utf-8', function(err, data){
+            if (err) {
+                console.log(err);
+            }
+            var newStyle = data.match(/<style type="text\/css">.*<\/style>/);
+            var newBody = data.match(/<body class=[^>]+>(.*)<\/body><\/html>$/);
+            var finalStyle = newStyle[0];
+            var finalBody = newBody[1];
+            var i = 0;
+            var reg = new RegExp('c' + i + "\{");
+            var reg1 = new RegExp('class="c' + i + '">', "g");
+            while(newStyle[0].match(reg)) {
+                finalStyle = finalStyle.replace(reg, 'd' + i + '{');
+                finalBody = finalBody.replace(reg1, 'class="d' + i + '">');
+                i++;
+                reg = new RegExp('c' + i + "\{");
+                reg1 = new RegExp('class="c' + i + '">', "g");
+            }
+            finalBody = finalBody.replace(/src="images\/image0/g, 'src="images/image1');
+            fs.appendFile('/home/pi/test.pdf.html', finalStyle + finalBody + "</body></html>", 'utf-8', function (err) {
+                if (err) {
+                    console.log(err);
+                }
+                console.log('done');
+            });
+        });
+    });
+});*/
 
 //global entry
 app.use('/views', function (req, res, next) {
@@ -1280,6 +1323,9 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                 mediaType['ext'] = 'txt';
             }
             var data = {type: 'media', name: fileID.toString() + "." + mediaType['ext'], filePath: filePath};
+            if (mediaType['split']) {
+                data['filePath'] = filePath + '_doc/split/' + mediaType['split'] + '.pdf';
+            }
             if (mediaType['type'] === 'doc' || mediaType['type'] === 'rawdoc' || mediaType['type'] === 'sheet' || mediaType['type'] === 'present') {
                 data['convert'] = true;
             }
@@ -1558,18 +1604,16 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
             });
         }
     } else if (mediaType['type'] === 'doc' || mediaType['type'] === 'rawdoc' || mediaType['type'] === 'sheet') {
+        var realPath = filePath;
+        if (mediaType['split']) {
+            realPath = filePath + '_doc/split/' + mediaType['split'] + '.pdf';
+        }
         if (mediaType['thumbnail']) {
-            googleApi.googleDownloadDoc(mediaType['thumbnail'], filePath, mediaType['ext'], function(err, number) {
+            googleApi.googleDownloadDoc(mediaType['thumbnail'], realPath, mediaType['ext'], function(err, number) {
                 if(err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
-                var data = {fileId: key};
-                googleApi.googleApi('delete', data, function(err) {
-                    if (err) {
-                        util.handleError(err, callback, errerMedia, fileID, callback);
-                    }
-                    completeMedia(fileID, 5, callback, number);
-                });
+                rest_doc(number);
             });
         } else {
             var data = {fileId: key};
@@ -1585,14 +1629,89 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                     if(err) {
                         util.handleError(err, callback, errerMedia, fileID, callback);
                     }
-                    googleApi.googleApi('delete', data, function(err) {
+                    rest_doc(number);
+                });
+            });
+        }
+        function rest_doc(number) {
+            if (mediaType['ext'] === 'pdf') {
+                if (!mediaType['split']) {
+                    var cmdline = "pdftk " + filePath + " dump_data";
+                    child_process.exec(cmdline, function (err, output) {
                         if (err) {
                             util.handleError(err, callback, errerMedia, fileID, callback);
                         }
-                        completeMedia(fileID, 5, callback, number);
+                        console.log(output);
+                        var page = output.match(/NumberOfPages: (\d+)/);
+                        if (page && page[1] > 10) {
+                            mediaType['split'] = '10-' + page[1];
+                            SMPdf(filePath, mediaType['split'], filePath + '_doc/split', function(err, is_finish, split) {
+                                if(err) {
+                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                }
+                                mediaType['split'] = split;
+                                mongo.orig("update", "storage", { _id: fileID }, {$unset: {'mediaType.key': ""}, $set: {'media.split': mediaType['split']}}, function(err, item){
+                                    if(err) {
+                                        util.handleError(err, callback, errerMedia, fileID, callback);
+                                    }
+                                    if (is_finish) {
+                                        deleteFolderRecursive(filePath + '_doc/split');
+                                        var data = {fileId: key};
+                                        googleApi.googleApi('delete', data, function(err) {
+                                            if (err) {
+                                                util.handleError(err, callback, errerMedia, fileID, callback);
+                                            }
+                                            completeMedia(fileID, 5, callback, number);
+                                        });
+                                    } else {
+                                        handleMediaUpload(mediaType, filePath, fileID, fileName, 0, user, callback);
+                                    }
+                                });
+                            });
+                        } else {
+                            var data = {fileId: key};
+                            googleApi.googleApi('delete', data, function(err) {
+                                if (err) {
+                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                }
+                                completeMedia(fileID, 5, callback, number);
+                            });
+                        }
                     });
+                } else {
+                    SMPdf(filePath, mediaType['split'], filePath + '_doc/split', function(err, is_finish, split) {
+                        if(err) {
+                            util.handleError(err, callback, errerMedia, fileID, callback);
+                        }
+                        mediaType['split'] = split;
+                        mongo.orig("update", "storage", { _id: fileID }, {$unset: {'mediaType.key': ""}, $set: {'media.split': mediaType['split']}}, function(err, item){
+                            if(err) {
+                                util.handleError(err, callback, errerMedia, fileID, callback);
+                            }
+                            if (is_finish) {
+                                deleteFolderRecursive(filePath + '_doc/split');
+                                var data = {fileId: key};
+                                googleApi.googleApi('delete', data, function(err) {
+                                    if (err) {
+                                        util.handleError(err, callback, errerMedia, fileID, callback);
+                                    }
+                                    completeMedia(fileID, 5, callback, number);
+                                });
+                            } else {
+                                handleMediaUpload(mediaType, filePath, fileID, fileName, 0, user, callback);
+                            }
+                        });
+                    });
+                }
+            } else {
+                var data = {fileId: key};
+                googleApi.googleApi('delete', data, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, errerMedia, fileID, callback);
+                    }
+                    completeMedia(fileID, 5, callback, number);
                 });
-            });
+            }
         }
     } else if (mediaType['type'] === 'present') {
         if (mediaType['thumbnail']) {
@@ -1630,6 +1749,93 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                     });
                 });
             });
+        }
+    }
+}
+
+function SMPdf(filePath, progress, dir, callback) {
+    var match = progress.match(/^(\d+)-(\d+)$/);
+    if (!match) {
+        util.handleError({hoerror: 2, message: match + " split progress error"}, callback, callback);
+    }
+    var j = Math.ceil(match[1]/10) - 1;
+    if (j > 0) {
+        fs.readFile(filePath + '_doc/split/' + progress + '.pdf_doc/doc.html', 'utf-8', function(err, htmlData){
+            if (err) {
+                util.handleError(err, callback, callback);
+            }
+            var newStyle = htmlData.match(/<style type="text\/css">.*<\/style>/);
+            var newBody = htmlData.match(/<body class=[^>]+>(.*)$/);
+            var finalStyle = newStyle[0];
+            var finalBody = newBody[1];
+            var i = 0;
+            var k = (j - 1) * 30;
+            var reg = new RegExp('c' + i + "\{");
+            var reg1 = new RegExp('class="c' + i + '">', "g");
+            while(newStyle[0].match(reg)) {
+                finalStyle = finalStyle.replace(reg, 'd' + k + '{');
+                finalBody = finalBody.replace(reg1, 'class="d' + k + '">');
+                i++;
+                k++;
+                reg = new RegExp('c' + i + "\{");
+                reg1 = new RegExp('class="c' + i + '">', "g");
+            }
+            finalBody = finalBody.replace(/src="images\/image0/g, 'src="images/image' + j);
+            fs.appendFile(filePath + '_doc/doc.html', finalStyle + finalBody, 'utf-8', function (err) {
+                if (err) {
+                    util.handleError(err, callback, callback);
+                }
+                if(fs.existsSync(filePath + '_doc/split/' + progress + '.pdf_doc/images')) {
+                    fs.readdirSync(filePath + '_doc/split/' + progress + '.pdf_doc/images').forEach(function(file,index){
+                        fs.renameSync(filePath + '_doc/split/' + progress + '.pdf_doc/images/' + file, filePath + '_doc/images/' + file.replace(/image0/, 'image' + j));
+                    });
+                }
+                splitPdf();
+            });
+        });
+    } else {
+        splitPdf();
+    }
+
+    function splitPdf() {
+        var end = Number(match[1]) + 10;
+        var begin = Number(match[1]) + 1;
+        if (match[1] === match[2]) {
+            setTimeout(function(){
+                callback(null, true);
+            }, 0);
+        } else {
+            if (end > match[2]) {
+                end = match[2];
+            }
+            var split = end + '-' + match[2];
+            var cmdline = 'pdftk ' + filePath + ' cat ' + begin + '-' + end + ' output ' + dir + '/' + split + '.pdf';
+            if (!fs.existsSync(dir)) {
+                mkdirp(dir, function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    child_process.exec(cmdline, function (err, output) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(output);
+                        setTimeout(function(){
+                            callback(null, false, split);
+                        }, 0);
+                    });
+                });
+            } else {
+                child_process.exec(cmdline, function (err, output) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log(output);
+                    setTimeout(function(){
+                        callback(null, false, split);
+                    }, 0);
+                });
+            }
         }
     }
 }
@@ -3462,7 +3668,7 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                                 }, 0);
                             });
                         });
-                    }, metadata.title);
+                    });
                 });
                 break;
             }

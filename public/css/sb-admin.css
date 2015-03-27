@@ -644,7 +644,7 @@ audio.full-media-screen {
     height: auto;
 }
 
-.item-point, .item-point:hover {
+.item-point:hover, .item-point:link, .item-point:visited, .item-point:active {
     color: black;
 }
 
