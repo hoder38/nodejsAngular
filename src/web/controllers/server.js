@@ -67,49 +67,6 @@ app.use(require('connect-multiparty')({ uploadDir: config_glb.nas_tmp }));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(staticPath));
-/*
-pdftk pdf dump_data
-NumberOfPages
-pdftk pdf cat 1-10 output 0.pdf
-fs.readFile('/home/pi/Beigebook_20121010.pdf.html', 'utf-8', function(err, data){
-    if (err) {
-        console.log(err);
-    }
-
-    var newValue = data.replace(/<\/body><\/html>$/, '');
-
-    fs.writeFile('/home/pi/test.pdf.html', newValue, 'utf-8', function (err) {
-        if (err) {
-            console.log(err);
-        }
-        fs.readFile('/home/pi/bernanke20121115a.pdf.html', 'utf-8', function(err, data){
-            if (err) {
-                console.log(err);
-            }
-            var newStyle = data.match(/<style type="text\/css">.*<\/style>/);
-            var newBody = data.match(/<body class=[^>]+>(.*)<\/body><\/html>$/);
-            var finalStyle = newStyle[0];
-            var finalBody = newBody[1];
-            var i = 0;
-            var reg = new RegExp('c' + i + "\{");
-            var reg1 = new RegExp('class="c' + i + '">', "g");
-            while(newStyle[0].match(reg)) {
-                finalStyle = finalStyle.replace(reg, 'd' + i + '{');
-                finalBody = finalBody.replace(reg1, 'class="d' + i + '">');
-                i++;
-                reg = new RegExp('c' + i + "\{");
-                reg1 = new RegExp('class="c' + i + '">', "g");
-            }
-            finalBody = finalBody.replace(/src="images\/image0/g, 'src="images/image1');
-            fs.appendFile('/home/pi/test.pdf.html', finalStyle + finalBody + "</body></html>", 'utf-8', function (err) {
-                if (err) {
-                    console.log(err);
-                }
-                console.log('done');
-            });
-        });
-    });
-});*/
 
 //global entry
 app.use('/views', function (req, res, next) {
@@ -448,6 +405,34 @@ app.put('/api/deluser/:uid', function(req, res, next){
                 }
                 res.json({apiOK: true});
             });
+        });
+    });
+});
+
+app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(\\d+)/:name?/:exactly(true|false)?/:index(\\d+)?', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("storage single");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var exactly = false;
+        res.cookie('fileSortName', req.params.sortName);
+        res.cookie('fileSortType', req.params.sortType);
+        if (req.params.exactly === 'true') {
+            exactly = true;
+        }
+        var tags = tagTool.searchTags(req.session, 'parent');
+        if (!tags) {
+            util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
+        }
+        tags.resetArray();
+        var page = Number(req.params.page);
+        tagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
         });
     });
 });
@@ -1066,6 +1051,7 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
         console.log(new Date());
         console.log(req.url);
         console.log(req.files);
+        console.log(req.body);
         var oOID = mongo.objectID();
         var filePath = util.getFileLocation(req.user._id, oOID);
         var folderPath = path.dirname(filePath);
@@ -1973,7 +1959,7 @@ app.delete('/api/parent/del/:id', function(req, res, next) {
     });
 });
 
-app.get('/api/parent/query/:id', function(req, res, next) {
+app.get('/api/parent/query/:id/:single?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("parent query");
         console.log(new Date());
@@ -1990,6 +1976,13 @@ app.get('/api/parent/query/:id', function(req, res, next) {
         }
         if (req.cookies.fileSortType === 'desc' || req.cookies.fileSortType === 'asc') {
             sortType = req.cookies.fileSortType;
+        }
+        if (req.params.single === 'single') {
+            var tags = tagTool.searchTags(req.session, 'parent');
+            if (!tags) {
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
+            }
+            tags.resetArray();
         }
         tagTool.queryParentTag(id, sortName, sortType, req.user, req.session, next, function(err, result) {
             if(err) {
@@ -3085,7 +3078,7 @@ app.get('*', function(req, res, next) {
     console.log("index.html");
     console.log(new Date());
     console.log(req.url);
-    console.log(req.body);;
+    console.log(req.body);
     var stream = fs.createReadStream(viewsPath + '/index.html');
     stream.on('error', function(err){
         util.handleError(err, next, res);
@@ -3099,7 +3092,7 @@ app.all('*', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    console.log(req.path);
+    //console.log(req.path);
     res.send('Page not found!', 404);
 });
 
@@ -3194,13 +3187,13 @@ wsjServer.on('connection', function(ws) {
 (function loopDrive(error, countdown) {
     console.log('loopDrive');
     console.log(new Date());
-    //觀察log的亂碼
-    /*if (error) {
+    if (error) {
         util.handleError(error);
-    }*/
+    }
     if (!countdown) {
         countdown = 60000;
     }
+    console.log(countdown);
     setTimeout(function() {
         mongo.orig("find", "user", {auto: {$exists: true}}, function(err, userlist){
             if(err) {

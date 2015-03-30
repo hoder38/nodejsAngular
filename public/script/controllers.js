@@ -490,6 +490,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.fileSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
     $scope.dirSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
     $scope.bookmarkSort = {name:'', mtime: '', sort: 'name/asc'};
+    $scope.multiSearch = false;
     var lastRoute = $route.current;
     $scope.$on('$locationChangeSuccess', function(event) {
         if ($window.location.pathname === '/Storage') {
@@ -782,10 +783,16 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     }
 
     $scope.dirItemlist = function(id) {
-        var parentApi = $resource('/api/parent/query/' + id, {}, {
-            'query': { method:'get' }
-        });
         var this_obj = this.$parent.$parent;
+        if (this_obj.multiSearch) {
+            var parentApi = $resource('/api/parent/query/' + id, {}, {
+                'query': { method:'get' }
+            });
+        } else {
+            var parentApi = $resource('/api/parent/query/' + id + '/single', {}, {
+                'query': { method:'get' }
+            });
+        }
         this_obj.page = 0;
         this_obj.more = true;
         this_obj.image.end = false;
@@ -841,14 +848,26 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             exactly = 'true';
         }
         if (!name && !index) {
-            Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
-                'storage': { method:'GET' }
-            });
-        } else if (name && !index) {
-            if (isValidString(name, 'name')) {
-                Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly, {}, {
+            if (this_obj.multiSearch) {
+                Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
                     'storage': { method:'GET' }
                 });
+            } else {
+                Info = $resource('/api/storage/getSingle/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
+                    'storage': { method:'GET' }
+                });
+            }
+        } else if (name && !index) {
+            if (isValidString(name, 'name')) {
+                if (this_obj.multiSearch) {
+                    Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly, {}, {
+                        'storage': { method:'GET' }
+                    });
+                } else {
+                    Info = $resource('/api/storage/getSingle/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly, {}, {
+                        'storage': { method:'GET' }
+                    });
+                }
             } else {
                 addAlert('search tag is not vaild!!!');
                 return false;

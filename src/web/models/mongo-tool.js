@@ -67,19 +67,20 @@ module.exports = {
             db.collection(name, function(err, collection) {
                 if (err) {
                     var callback = args.splice(-1, 1);
-                    callback[0](err, null);
-                    throw new Error('terminal');
-                }
-                this_obj.collection[name] = collection;
-                if (functionName === 'find') {
-                    var callback = args.splice(-1, 1);
-                    setTimeout(function(){
-                        collection[functionName].apply(collection, args).toArray(callback[0]);
-                    }, 0);
+                    callback[0](err);
+                    //throw new Error('terminal');
                 } else {
-                    setTimeout(function(){
-                        collection[functionName].apply(collection, args);
-                    }, 0);
+                    this_obj.collection[name] = collection;
+                    if (functionName === 'find') {
+                        var callback = args.splice(-1, 1);
+                        setTimeout(function(){
+                            collection[functionName].apply(collection, args).toArray(callback[0]);
+                        }, 0);
+                    } else {
+                        setTimeout(function(){
+                            collection[functionName].apply(collection, args);
+                        }, 0);
+                    }
                 }
             });
         }
