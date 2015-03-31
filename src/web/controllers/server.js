@@ -421,12 +421,14 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
         if (req.params.exactly === 'true') {
             exactly = true;
         }
-        var tags = tagTool.searchTags(req.session, 'parent');
-        if (!tags) {
-            util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
-        }
-        tags.resetArray();
         var page = Number(req.params.page);
+        if (page === 0) {
+            var tags = tagTool.searchTags(req.session, 'parent');
+            if (!tags) {
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
+            }
+            tags.resetArray();
+        }
         tagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
