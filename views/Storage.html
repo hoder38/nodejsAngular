@@ -71,7 +71,7 @@
 <section id="top-section">
     <form ng-submit="submitText()">
         <div class="input-group">
-            <span class="input-group-btn" tooltip="嚴格比對"  tooltip-trigger="mouseenter" tooltip-placement="bottom">
+            <span class="input-group-btn" tooltip="嚴格比對"  tooltip-trigger="mouseenter" tooltip-placement="right">
                 <button class="btn {{!exactlyMatch && 'active btn-primary' || 'btn-default'}}" ng-click="exactlyMatch = !exactlyMatch" type="button">
                     <i class="glyphicon {{!exactlyMatch && 'glyphicon-eye-close' || 'glyphicon-eye-open'}}"></i>
                 </button>
@@ -146,7 +146,7 @@
     </div>
     <ol class="breadcrumb" id="breadcrumb-section">
         <li>
-            <input type="checkbox" ng-model="multiSearch" tooltip="多重搜尋"  tooltip-trigger="mouseenter" />
+            <input type="checkbox" ng-model="multiSearch" tooltip="多重搜尋" tooltip-trigger="mouseenter" tooltip-placement="bottom" />
         </li>
         <li ng-click="resetStorage()">
             <a tooltip="清空搜尋"  tooltip-trigger="mouseenter" href="#">

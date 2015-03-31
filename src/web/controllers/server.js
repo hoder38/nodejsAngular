@@ -422,7 +422,7 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
             exactly = true;
         }
         var page = Number(req.params.page);
-        if (page === 0) {
+        if (page === 0 && req.params.name) {
             var tags = tagTool.searchTags(req.session, 'parent');
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
@@ -2645,33 +2645,104 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                 util.handleError(err, next, res);
             }
             if (!item) {
+                console.log(filePath);
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
-            console.log(item);
             var filePath = util.getFileLocation(item.owner, item._id);
             if (item.present) {
-                var index = 1;
                 if (req.params.number) {
                     index = req.params.number;
+                    filePath = filePath + "_img/" + index;
+                    if (!fs.existsSync(filePath)) {
+                        console.log(filePath);
+                        util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+                    }
+                    console.log('image record');
+                    if (index === 1) {
+                        mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: item._id, $isolated: 1}, function(err,user){
+                            if(err) {
+                                util.handleError(err, next, res);
+                            }
+                            getImage(filePath);
+                        });
+                    } else {
+                        var utime = Math.round(new Date().getTime() / 1000);
+                        var data = {};
+                        data['recordTime'] = index;
+                        data['mtime'] = utime;
+                        mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: data}, function(err, item2){
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (item2 === 0) {
+                                mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 50, "sort":  [["mtime", "desc"]]}, function(err, items){
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (items.length === 0) {
+                                        data['userId'] = req.user._id;
+                                        data['fileId'] = item._id;
+                                        data['recordTime'] = index;
+                                        data['mtime'] = utime;
+                                        mongo.orig("insert", "storageRecord", data, function(err, item3){
+                                            if(err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            getImage(filePath);
+                                        });
+                                    } else {
+                                        data['fileId'] = id;
+                                        data['recordTime'] = index;
+                                        data['mtime'] = utime;
+                                        mongo.orig("update", "storageRecord", {_id: items[0]._id}, {$set: data}, function(err, item3){
+                                            if(err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            getImage(filePath);
+                                        });
+                                    }
+                                });
+                            } else {
+                                getImage(filePath);
+                            }
+                        });
+                    }
+                } else {
+                    console.log('image settime');
+                    mongo.orig("findOne", "storageRecord", {userId: req.user._id, fileId: item._id}, function(err, item2){
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (!item2) {
+                            filePath = filePath + "_img/1";
+                        } else {
+                            filePath = filePath + "_img/" + item2.recordTime;
+                        }
+                        if (!fs.existsSync(filePath)) {
+                            console.log(filePath);
+                            util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+                        }
+                        getImage(filePath);
+                    });
                 }
-                filePath = filePath + "_img/" + index;
-                if (!fs.existsSync(filePath)) {
-                    util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
-                }
+            } else {
+                getImage(filePath);
             }
-            tagTool.setLatest('image', item._id, req.session, next, function(err) {
-                if (err) {
-                    util.handleError(err, next, res);
-                }
-                mongo.orig("update", "storage", {_id: item._id}, {$set: {count: item.count+1}}, function(err, item2){
-                    if(err) {
+            function getImage(imageFilePath) {
+                tagTool.setLatest('image', item._id, req.session, next, function(err) {
+                    if (err) {
                         util.handleError(err, next, res);
                     }
-                    //sendWs({type: 'file', data: item._id}, item.adultonly);
+                    mongo.orig("update", "storage", {_id: item._id}, {$set: {count: item.count+1}}, function(err, item4){
+                        if(err) {
+                            util.handleError(err, next, res);
+                        }
+                        //sendWs({type: 'file', data: item._id}, item.adultonly);
+                    });
                 });
-            });
-            console.log(filePath);
-            res.download(filePath, unescape(encodeURIComponent(item.name)));
+                console.log(imageFilePath);
+                res.download(imageFilePath, unescape(encodeURIComponent(item.name)));
+            }
         });
     });
 });

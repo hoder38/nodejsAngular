@@ -1322,7 +1322,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
-                if (type === 'video' || type === 'music') {
+                if (type === 'video' || type === 'music' || type === 'image') {
                     if (this_obj[type].id) {
                         this_obj.mediaRecord(type);
                     }
@@ -1336,8 +1336,10 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                             if (result.time) {
                                 if (type === 'video') {
                                     videoStart = result.time;
-                                } else {
+                                } else if (type === 'music'){
                                     musicStart = result.time;
+                                } else if (type === 'image') {
+                                    this_obj.$parent[type].presentId = this_obj.$parent[type].showId = result.time;
                                 }
                             }
                             if (type === 'doc') {
@@ -2261,7 +2263,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             case 'image':
                 preType = 'image';
                 status = 2;
-                this.img.showId = this.img.presentId = 1;
+                this.image.showId = this.image.presentId = 1;
                 break;
             case 'video':
                 preType = 'video';
@@ -2324,7 +2326,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             this_obj[type].index = -this_obj[type].back;
                         }
                         $scope.mediaMoreDisabled = false;
-                        if (type === 'video' || type === 'music') {
+                        if (type === 'video' || type === 'music' || type === 'image') {
                             if (this_obj[type].id) {
                                this_obj.mediaRecord(type, end);
                             }
@@ -2338,8 +2340,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                     if (result.time) {
                                         if (type === 'video') {
                                             videoStart = result.time;
-                                        } else {
+                                        } else if (type === 'music'){
                                             musicStart = result.time;
+                                        } else if (type === 'image') {
+                                            this_obj[type].presentId = this_obj[type].showId = result.time;
                                         }
                                     }
                                     if (this_obj[type].list.length === 1 && type === 'video') {
@@ -2464,7 +2468,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             this_obj[type].end = true;
                         }
                         $scope.mediaMoreDisabled = false;
-                        if (type === 'video' || type === 'music') {
+                        if (type === 'video' || type === 'music' || type === 'image') {
                             if (this_obj[type].id) {
                                this_obj.mediaRecord(type, end);
                             }
@@ -2478,8 +2482,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                     if (result.time) {
                                         if (type === 'video') {
                                             videoStart = result.time;
-                                        } else {
+                                        } else if (type === 'music'){
                                             musicStart = result.time;
+                                        } else if (type === 'image') {
+                                            this_obj[type].presentId = this_obj[type].showId = result.time;
                                         }
                                     }
                                     if (this_obj[type].list.length === 1 && type === 'video') {
@@ -2568,7 +2574,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             }
         }
         if (!isLoad) {
-            if (type === 'video' || type === 'music') {
+            if (type === 'video' || type === 'music' || type === 'image') {
                 if (this[type].id) {
                     this.mediaRecord(type, end);
                 }
@@ -2582,8 +2588,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                         if (result.time) {
                             if (type === 'video') {
                                 videoStart = result.time;
-                            } else {
+                            } else if (type === 'music'){
                                 musicStart = result.time;
+                            } else if (type === 'image') {
+                                this_obj[type].presentId = this_obj[type].showId = result.time;
                             }
                         }
                         if (this_obj[type].list.length === 1 && type === 'video') {
