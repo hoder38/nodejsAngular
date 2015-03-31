@@ -2262,7 +2262,7 @@ app.post('/api/media/saveParent', function(req, res, next) {
 
 app.get('/api/media/record/:id/:time(\\d+)', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
-        console.log('media record');
+        console.log('media doc record');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
@@ -2287,7 +2287,7 @@ app.get('/api/media/record/:id/:time(\\d+)', function(req, res, next){
                     util.handleError(err, next, res);
                 }
                 if (item === 0) {
-                    mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 50, "sort":  [["mtime", "desc"]]}, function(err, items){
+                    mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
                         if (err) {
                             util.handleError(err, next, res);
                         }
@@ -2670,12 +2670,12 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                         var data = {};
                         data['recordTime'] = index;
                         data['mtime'] = utime;
-                        mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: data}, function(err, item2){
+                        mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: item._id}, {$set: data}, function(err, item2){
                             if (err) {
                                 util.handleError(err, next, res);
                             }
                             if (item2 === 0) {
-                                mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 50, "sort":  [["mtime", "desc"]]}, function(err, items){
+                                mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
@@ -2691,7 +2691,7 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                                             getImage(filePath);
                                         });
                                     } else {
-                                        data['fileId'] = id;
+                                        data['fileId'] = item._id;
                                         data['recordTime'] = index;
                                         data['mtime'] = utime;
                                         mongo.orig("update", "storageRecord", {_id: items[0]._id}, {$set: data}, function(err, item3){
@@ -2765,22 +2765,85 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                 var type = 'image/jpeg', ext = '.jpg';
                 if (item.status === 3) {
                     ext = '_s.jpg';
+                    getDoc(type, ext);
                 } else if (item.status === 5) {
                     if (req.params.type) {
                         if (req.params.type === 'doc' && !req.params.imgName) {
                             type = 'text/html';
-                            ext = '_doc/doc.html';
+                            console.log('doc xls settime');
+                            mongo.orig("findOne", "storageRecord", {userId: req.user._id, fileId: item._id}, function(err, item2){
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                console.log(item2);
+                                if (!item2 || !item.present) {
+                                    ext = '_doc/doc.html';
+                                } else {
+                                    ext = '_doc/doc' + item2.recordTime + '.html';
+                                }
+                                getDoc(type, ext);
+                            });
                         } else if (req.params.type === 'images' && req.params.imgName) {
                             ext = '_doc/images/' + req.params.imgName;
+                            getDoc(type, ext);
                         } else if (req.params.type === 'resources' && req.params.imgName === 'sheet.css'){
                             type = 'text/css';
                             ext = '_doc/resources/sheet.css';
+                            getDoc(type, ext);
                         } else if (Number(req.params.type) > 0){
                             type = 'text/html';
-                            if (Number(req.params.type) === 1) {
+                            var index = Number(req.params.type);
+                            console.log('xls record');
+                            if (index === 1) {
                                 ext = '_doc/doc.html';
+                                mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: item._id, $isolated: 1}, function(err,user){
+                                    if(err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    getDoc(type, ext);
+                                });
                             } else {
-                                ext = '_doc/doc' + Number(req.params.type) + '.html';
+                                ext = '_doc/doc' + index + '.html';
+                                var utime = Math.round(new Date().getTime() / 1000);
+                                var data = {};
+                                data['recordTime'] = index;
+                                data['mtime'] = utime;
+                                mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: item._id}, {$set: data}, function(err, item2){
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (item2 === 0) {
+                                        mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            if (items.length === 0) {
+                                                data['userId'] = req.user._id;
+                                                data['fileId'] = item._id;
+                                                data['recordTime'] = index;
+                                                data['mtime'] = utime;
+                                                mongo.orig("insert", "storageRecord", data, function(err, item3){
+                                                    if(err) {
+                                                        util.handleError(err, next, res);
+                                                    }
+                                                    getDoc(type, ext);
+                                                });
+                                            } else {
+                                                data['fileId'] = item._id;
+                                                data['recordTime'] = index;
+                                                data['mtime'] = utime;
+                                                mongo.orig("update", "storageRecord", {_id: items[0]._id}, {$set: data}, function(err, item3){
+                                                    if(err) {
+                                                        util.handleError(err, next, res);
+                                                    }
+                                                    getDoc(type, ext);
+                                                });
+                                            }
+                                        });
+                                    } else {
+                                        getDoc(type, ext);
+                                    }
+                                });
                             }
                         } else {
                             util.handleError({hoerror: 2, message: "cannot find doc!!!"}, next, res);
@@ -2790,42 +2853,107 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                     }
                 } else if (item.status === 6) {
                     if (req.params.type) {
-                        if (Number(req.params.type) > 0) {
+                        var index = Number(req.params.type);
+                        if (index > 0) {
                             type = 'image/svg+xml';
-                            ext = '_present/' + Number(req.params.type) + '.svg';
+                            ext = '_present/' + index + '.svg';
+                            console.log('present record');
+                            if (index === 1) {
+                                mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: item._id, $isolated: 1}, function(err,user){
+                                    if(err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    getDoc(type, ext);
+                                });
+                            } else {
+                                var utime = Math.round(new Date().getTime() / 1000);
+                                var data = {};
+                                data['recordTime'] = index;
+                                data['mtime'] = utime;
+                                mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: item._id}, {$set: data}, function(err, item2){
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (item2 === 0) {
+                                        mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            if (items.length === 0) {
+                                                data['userId'] = req.user._id;
+                                                data['fileId'] = item._id;
+                                                data['recordTime'] = index;
+                                                data['mtime'] = utime;
+                                                mongo.orig("insert", "storageRecord", data, function(err, item3){
+                                                    if(err) {
+                                                        util.handleError(err, next, res);
+                                                    }
+                                                    getDoc(type, ext);
+                                                });
+                                            } else {
+                                                data['fileId'] = item._id;
+                                                data['recordTime'] = index;
+                                                data['mtime'] = utime;
+                                                mongo.orig("update", "storageRecord", {_id: items[0]._id}, {$set: data}, function(err, item3){
+                                                    if(err) {
+                                                        util.handleError(err, next, res);
+                                                    }
+                                                    getDoc(type, ext);
+                                                });
+                                            }
+                                        });
+                                    } else {
+                                        getDoc(type, ext);
+                                    }
+                                });
+                            }
                         } else {
                             util.handleError({hoerror: 2, message: "cannot find present!!!"}, next, res);
                         }
                     } else {
-                        type = 'image/svg+xml';
-                        ext = '_present/1.svg';
-                    }
-                }
-                var filePath = util.getFileLocation(item.owner, item._id);
-                if (item.status === 6 || (item.status === 5 && req.params.type === 'doc')) {
-                    var saveType = 'doc';
-                    if (item.status === 6) {
-                        saveType = 'present';
-                    }
-                    tagTool.setLatest(saveType, item._id, req.session, next, function(err) {
-                        if (err) {
-                            util.handleError(err, next, res);
-                        }
-                        mongo.orig("update", "storage", {_id: item._id}, {$set: {count: item.count+1}}, function(err, item2){
-                            if(err) {
+                        console.log('present settime');
+                        mongo.orig("findOne", "storageRecord", {userId: req.user._id, fileId: item._id}, function(err, item2){
+                            if (err) {
                                 util.handleError(err, next, res);
                             }
-                            //sendWs({type: 'file', data: item._id}, item.adultonly);
+                            type = 'image/svg+xml';
+                            if (!item2) {
+                                ext = '_present/1.svg';
+                            } else {
+                                ext = '_present/' + item2.recordTime + '.svg';
+                            }
+                            getDoc(type, ext);
                         });
+                    }
+                }
+                function getDoc (docMime, docExt) {
+                    var filePath = util.getFileLocation(item.owner, item._id);
+                    if (item.status === 6 || (item.status === 5 && req.params.type === 'doc')) {
+                        var saveType = 'doc';
+                        if (item.status === 6) {
+                            saveType = 'present';
+                        }
+                        tagTool.setLatest(saveType, item._id, req.session, next, function(err) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            mongo.orig("update", "storage", {_id: item._id}, {$set: {count: item.count+1}}, function(err, item2){
+                                if(err) {
+                                    util.handleError(err, next, res);
+                                }
+                                //sendWs({type: 'file', data: item._id}, item.adultonly);
+                            });
+                        });
+                    }
+                    fs.exists(filePath + ext, function (exists) {
+                        if (!exists) {
+                            console.log(filePath + ext);
+                            util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+                        }
+                        res.writeHead(200, { 'Content-Type': type });
+                        var stream = fs.createReadStream(filePath + ext).pipe(res);
                     });
                 }
-                fs.exists(filePath + ext, function (exists) {
-                    if (!exists) {
-                        util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
-                    }
-                    res.writeHead(200, { 'Content-Type': type });
-                    var stream = fs.createReadStream(filePath + ext).pipe(res);
-                });
             } else {
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
@@ -2983,7 +3111,6 @@ app.all('/api*', function(req, res, next) {
     "use strict";
     console.log('auth fail!!!');
     console.log(new Date());
-    console.log(req.path);
     console.log(req.url);
     console.log(req.body);
     res.send('auth fail!!!', 401);

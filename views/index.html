@@ -340,6 +340,9 @@
                                             </a>
                                         </li>
                                     </span>
+                                    <span ng-hide="doc.maxId && doc.maxId > 1">
+                                        處理中...<img src="ajax-loader.gif" alt="loading" />
+                                    </span>
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(-1, 'doc')">
                                             <span class="glyphicon glyphicon-chevron-left"></span>

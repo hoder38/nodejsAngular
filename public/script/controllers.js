@@ -1264,28 +1264,16 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         return false;
     }
 
-    $scope.edit = function(item){
-        if (item["Edit"]) {
-            this.fileEdit(item);
-        } else if (item.isOwn) {
-            item["orig"] = item.name;
-            item["Edit"] = true;
-        }
-    }
-
-    $scope.esc = function(item) {
-        //recover
-        item.name = item["orig"];
-        delete item["Edit"];
-        $window.location.href = '#image';
-    }
-
     $scope.showUrl = function(item) {
         $window.open(decodeURIComponent(item.url));
     }
 
     $scope.showMedia = function(item, type) {
-        var preType = '', status = 0;
+        if (this[type] && (this[type].id === item.id)) {
+            this.mediaToggle(type, true);
+            return false;
+        }
+        var preType = '', status = 0, docRecord = 0;
         switch (type) {
             case 'image':
                 preType = 'image';
@@ -1302,6 +1290,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 break;
             case 'doc':
                 preType = 'preview';
+                docRecord = this.doc.showId;
                 this.doc.showId = this.doc.presentId = 1;
                 status = 5;
                 break;
@@ -1322,104 +1311,68 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
-                if (type === 'video' || type === 'music' || type === 'image') {
-                    if (this_obj[type].id) {
-                        this_obj.mediaRecord(type);
-                    }
-                    var mediaApi = $resource('/api/media/setTime/' + item.id, {}, {
-                        'setTime': { method:'GET' }
-                    });
-                    mediaApi.setTime({}, function (result) {
-                        if (result.loginOK) {
-                            $window.location.href = $location.path();
-                        } else {
-                            if (result.time) {
-                                if (type === 'video') {
-                                    videoStart = result.time;
-                                } else if (type === 'music'){
-                                    musicStart = result.time;
-                                } else if (type === 'image') {
-                                    this_obj.$parent[type].presentId = this_obj.$parent[type].showId = result.time;
-                                }
-                            }
-                            if (type === 'doc') {
-                                this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
-                            } else {
-                                this_obj.$parent.isPdf = false;
-                                this_obj.$parent[type].iframeOffset = null;
-                                this_obj.$parent[type].src = '/' + preType + '/' + item.id;
-                            }
-                            this_obj.$parent[type].maxId = item.present;
-                            if (type === 'video') {
-                                var track = video.textTracks[0];
-                                if (track) {
-                                    if (track.activeCues) {
-                                        var activeCue = track.activeCues[0];
-                                        track.removeCue(activeCue);
-                                    }
-                                }
-                                this_obj.$parent[type].sub = '/subtitle/' + item.id;
-                            }
-                            var tempList = $filter("filter")(this_obj.itemList, {status: status});
-                            this_obj.$parent[type].name = item.name;
-                            this_obj.$parent[type].bookmarkID = $scope.bookmarkID;
-                            this_obj.$parent[type].id = item.id;
-                            if ($scope.bookmarkID) {
-                                $scope.latest = item.id;
-                            }
-                            this_obj.$parent.mediaToggle(type, true);
-                            this_obj.$parent[type].list = clone(tempList);
-                            this_obj.$parent[type].front = this_obj.$parent[type].list.length;
-                            this_obj.$parent[type].frontPage = this_obj.$parent[type].front;
-                            var index = arrayObjectIndexOf(this_obj.$parent[type].list, item.id, 'id');
-                            if (index !== -1) {
-                                this_obj.$parent[type].index = index;
-                            }
-                        }
-                    }, function(errorResult) {
-                        if (errorResult.status === 400) {
-                            addAlert(errorResult.data);
-                        } else if (errorResult.status === 403) {
-                            addAlert('unknown API!!!');
-                        } else if (errorResult.status === 401) {
-                            $window.location.href = $location.path();
-                        }
-                    });
-                } else {
-                    if (type === 'doc') {
-                        this_obj.$parent.isPdf = false;
-                        this_obj.$parent[type].iframeOffset = null;
-                        this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
-                    } else {
-                        this_obj.$parent[type].src = '/' + preType + '/' + item.id;
-                    }
-                    this_obj.$parent[type].maxId = item.present;
-                    if (type === 'video') {
-                        var track = video.textTracks[0];
-                        if (track) {
-                            if (track.activeCues) {
-                                var activeCue = track.activeCues[0];
-                                track.removeCue(activeCue);
-                            }
-                        }
-                        this_obj.$parent[type].sub = '/subtitle/' + item.id;
-                    }
-                    var tempList = $filter("filter")(this_obj.itemList, {status: status});
-                    this_obj.$parent[type].name = item.name;
-                    this_obj.$parent[type].bookmarkID = $scope.bookmarkID;
-                    this_obj.$parent[type].id = item.id;
-                    if ($scope.bookmarkID) {
-                        $scope.latest = item.id;
-                    }
-                    this_obj.$parent.mediaToggle(type, true);
-                    this_obj.$parent[type].list = clone(tempList);
-                    this_obj.$parent[type].front = this_obj.$parent[type].list.length;
-                    this_obj.$parent[type].frontPage = this_obj.$parent[type].front;
-                    var index = arrayObjectIndexOf(this_obj.$parent[type].list, item.id, 'id');
-                    if (index !== -1) {
-                        this_obj.$parent[type].index = index;
-                    }
+                if (this_obj[type].id) {
+                    this_obj.mediaRecord(type, docRecord);
                 }
+                var mediaApi = $resource('/api/media/setTime/' + item.id, {}, {
+                    'setTime': { method:'GET' }
+                });
+                mediaApi.setTime({}, function (result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    } else {
+                        if (result.time) {
+                            if (type === 'video') {
+                                videoStart = result.time;
+                            } else if (type === 'music'){
+                                musicStart = result.time;
+                            } else {
+                                this_obj.$parent[type].presentId = this_obj.$parent[type].showId = result.time;
+                            }
+                        }
+                        if (type === 'doc') {
+                            this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
+                        } else {
+                            this_obj.$parent.isPdf = false;
+                            this_obj.$parent[type].iframeOffset = null;
+                            this_obj.$parent[type].src = '/' + preType + '/' + item.id;
+                        }
+                        this_obj.$parent[type].maxId = item.present;
+                        if (type === 'video') {
+                            var track = video.textTracks[0];
+                            if (track) {
+                                if (track.activeCues) {
+                                    var activeCue = track.activeCues[0];
+                                    track.removeCue(activeCue);
+                                }
+                            }
+                            this_obj.$parent[type].sub = '/subtitle/' + item.id;
+                        }
+                        var tempList = $filter("filter")(this_obj.itemList, {status: status});
+                        this_obj.$parent[type].name = item.name;
+                        this_obj.$parent[type].bookmarkID = $scope.bookmarkID;
+                        this_obj.$parent[type].id = item.id;
+                        if ($scope.bookmarkID) {
+                            $scope.latest = item.id;
+                        }
+                        this_obj.$parent.mediaToggle(type, true);
+                        this_obj.$parent[type].list = clone(tempList);
+                        this_obj.$parent[type].front = this_obj.$parent[type].list.length;
+                        this_obj.$parent[type].frontPage = this_obj.$parent[type].front;
+                        var index = arrayObjectIndexOf(this_obj.$parent[type].list, item.id, 'id');
+                        if (index !== -1) {
+                            this_obj.$parent[type].index = index;
+                        }
+                    }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
             }
         }, function(errorResult) {
             if (errorResult.status === 400) {
@@ -1712,15 +1665,22 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             mXmlhttp.setRequestHeader("Content-type", "application/json");
             mXmlhttp.send('');
         }
+        var dId = $scope.doc.id;
+        if (dId && $scope.doc.iframeOffset) {
+            var dTime = $scope.doc.showId;
+            var mXmlhttp = new XMLHttpRequest();
+            mXmlhttp.open("GET", "/api/media/record/" + dId + '/' + dTime, false);//the false is for making the call synchronous
+            mXmlhttp.setRequestHeader("Content-type", "application/json");
+            mXmlhttp.send('');
+        }
         if (uploader.isUploading) {
             return "You have uploaded files. Are you sure you want to navigate away from this page?";
         }
     };
-    /* sleep
-    window.addEventListener("pageshow", function(){
-        alert("page shown");
-    }, false);
-    */
+
+    window.addEventListener("pagehide", function(evt){
+            alert('hide');
+        }, false);
 
     $scope.closeAlert = function(index) {
         $scope.alerts.splice(index, 1);
@@ -2137,7 +2097,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         });
     }
 
-    $scope.mediaRecord = function(type, end) {
+    $scope.mediaRecord = function(type, record, end) {
         var id = this[type].id;
         var time = 0;
         if (id) {
@@ -2148,6 +2108,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             } else if (type === 'music') {
                 if (!end) {
                     time = parseInt(music.currentTime);
+                }
+            } else if (this[type].iframeOffset) {
+                if (record !== 1) {
+                    time = record;
                 }
             } else {
                 return;
@@ -2258,7 +2222,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     }
 
     $scope.mediaMove = function(number, type, end) {
-        var preType = '', status = 0, isLoad = false;
+        var preType = '', status = 0, isLoad = false, docRecord = 0;
         switch (type) {
             case 'image':
                 preType = 'image';
@@ -2276,6 +2240,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             case 'doc':
                 preType = 'preview';
                 status = 5;
+                docRecord = this.doc.showId;
                 this.doc.showId = this.doc.presentId = 1;
                 break;
             case 'present':
@@ -2326,96 +2291,64 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             this_obj[type].index = -this_obj[type].back;
                         }
                         $scope.mediaMoreDisabled = false;
-                        if (type === 'video' || type === 'music' || type === 'image') {
-                            if (this_obj[type].id) {
-                               this_obj.mediaRecord(type, end);
-                            }
-                            var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id, {}, {
-                                'setTime': { method:'GET' }
-                            });
-                            mediaApi.setTime({}, function (result) {
-                                if (result.loginOK) {
-                                    $window.location.href = $location.path();
-                                } else {
-                                    if (result.time) {
-                                        if (type === 'video') {
-                                            videoStart = result.time;
-                                        } else if (type === 'music'){
-                                            musicStart = result.time;
-                                        } else if (type === 'image') {
-                                            this_obj[type].presentId = this_obj[type].showId = result.time;
-                                        }
-                                    }
-                                    if (this_obj[type].list.length === 1 && type === 'video') {
-                                        video.currentTime = 0;
-                                        //video.play();
-                                    } else if (this_obj[type].list.length === 1 && type === 'music') {
-                                        music.currentTime = 0;
-                                        //music.play();
-                                    } else {
-                                        this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                        if (type === 'doc') {
-                                            this_obj.isPdf = false;
-                                            this_obj[type].iframeOffset = null;
-                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                                        } else {
-                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                        }
-                                        if (type === 'video') {
-                                            var track = video.textTracks[0];
-                                            if (track) {
-                                                if (track.activeCues) {
-                                                    var activeCue = track.activeCues[0];
-                                                    track.removeCue(activeCue);
-                                                }
-                                            }
-                                            this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                        }
-                                    }
-                                    this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                    this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
-                                    this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
-                                }
-                            }, function(errorResult) {
-                                if (errorResult.status === 400) {
-                                    addAlert(errorResult.data);
-                                } else if (errorResult.status === 403) {
-                                    addAlert('unknown API!!!');
-                                } else if (errorResult.status === 401) {
-                                    $window.location.href = $location.path();
-                                }
-                            });
-                        } else {
-                            if (this_obj[type].list.length === 1 && type === 'video') {
-                                video.currentTime = 0;
-                                //video.play();
-                            } else if (this_obj[type].list.length === 1 && type === 'music') {
-                                music.currentTime = 0;
-                                //music.play();
-                            } else {
-                                this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                if (type === 'doc') {
-                                    this_obj.isPdf = false;
-                                    this_obj[type].iframeOffset = null;
-                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                                } else {
-                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                }
-                                if (type === 'video') {
-                                    var track = video.textTracks[0];
-                                    if (track) {
-                                        if (track.activeCues) {
-                                            var activeCue = track.activeCues[0];
-                                            track.removeCue(activeCue);
-                                        }
-                                    }
-                                    this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                }
-                            }
-                            this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                            this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
-                            this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
+                        if (this_obj[type].id) {
+                           this_obj.mediaRecord(type, docRecord, end);
                         }
+                        var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id, {}, {
+                            'setTime': { method:'GET' }
+                        });
+                        mediaApi.setTime({}, function (result) {
+                            if (result.loginOK) {
+                                $window.location.href = $location.path();
+                            } else {
+                                if (result.time) {
+                                    if (type === 'video') {
+                                        videoStart = result.time;
+                                    } else if (type === 'music'){
+                                        musicStart = result.time;
+                                    } else {
+                                        this_obj[type].presentId = this_obj[type].showId = result.time;
+                                    }
+                                }
+                                if (this_obj[type].list.length === 1 && type === 'video') {
+                                    video.currentTime = 0;
+                                    //video.play();
+                                } else if (this_obj[type].list.length === 1 && type === 'music') {
+                                    music.currentTime = 0;
+                                    //music.play();
+                                } else {
+                                    this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                                    if (type === 'doc') {
+                                        this_obj.isPdf = false;
+                                        this_obj[type].iframeOffset = null;
+                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                    } else {
+                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                    }
+                                    if (type === 'video') {
+                                        var track = video.textTracks[0];
+                                        if (track) {
+                                            if (track.activeCues) {
+                                                var activeCue = track.activeCues[0];
+                                                track.removeCue(activeCue);
+                                            }
+                                        }
+                                        this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                    }
+                                }
+                                this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
+                                this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
+                            }
+                        }, function(errorResult) {
+                            if (errorResult.status === 400) {
+                                addAlert(errorResult.data);
+                            } else if (errorResult.status === 403) {
+                                addAlert('unknown API!!!');
+                            } else if (errorResult.status === 401) {
+                                $window.location.href = $location.path();
+                            }
+                        });
                     }
                 }, function(errorResult) {
                     $scope.mediaMoreDisabled = false;
@@ -2468,96 +2401,64 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             this_obj[type].end = true;
                         }
                         $scope.mediaMoreDisabled = false;
-                        if (type === 'video' || type === 'music' || type === 'image') {
-                            if (this_obj[type].id) {
-                               this_obj.mediaRecord(type, end);
-                            }
-                            var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id, {}, {
-                                'setTime': { method:'GET' }
-                            });
-                            mediaApi.setTime({}, function (result) {
-                                if (result.loginOK) {
-                                    $window.location.href = $location.path();
-                                } else {
-                                    if (result.time) {
-                                        if (type === 'video') {
-                                            videoStart = result.time;
-                                        } else if (type === 'music'){
-                                            musicStart = result.time;
-                                        } else if (type === 'image') {
-                                            this_obj[type].presentId = this_obj[type].showId = result.time;
-                                        }
-                                    }
-                                    if (this_obj[type].list.length === 1 && type === 'video') {
-                                        video.currentTime = 0;
-                                        //video.play();
-                                    } else if (this_obj[type].list.length === 1 && type === 'music') {
-                                        music.currentTime = 0;
-                                        //music.play();
-                                    } else {
-                                        this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                        if (type === 'doc') {
-                                            this_obj.isPdf = false;
-                                            this_obj[type].iframeOffset = null;
-                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                                        } else {
-                                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                        }
-                                        if (type === 'video') {
-                                            var track = video.textTracks[0];
-                                            if (track) {
-                                                if (track.activeCues) {
-                                                    var activeCue = track.activeCues[0];
-                                                    track.removeCue(activeCue);
-                                                }
-                                            }
-                                            this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                        }
-                                    }
-                                    this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                    this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
-                                    this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
-                                }
-                            }, function(errorResult) {
-                                if (errorResult.status === 400) {
-                                    addAlert(errorResult.data);
-                                } else if (errorResult.status === 403) {
-                                    addAlert('unknown API!!!');
-                                } else if (errorResult.status === 401) {
-                                    $window.location.href = $location.path();
-                                }
-                            });
-                        } else {
-                            if (this_obj[type].list.length === 1 && type === 'video') {
-                                video.currentTime = 0;
-                                //video.play();
-                            } else if (this_obj[type].list.length === 1 && type === 'music') {
-                                music.currentTime = 0;
-                                //music.play();
-                            } else {
-                                this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                if (type === 'doc') {
-                                    this_obj.isPdf = false;
-                                    this_obj[type].iframeOffset = null;
-                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                                } else {
-                                    this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                }
-                                if (type === 'video') {
-                                    var track = video.textTracks[0];
-                                    if (track) {
-                                        if (track.activeCues) {
-                                            var activeCue = track.activeCues[0];
-                                            track.removeCue(activeCue);
-                                        }
-                                    }
-                                    this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                }
-                            }
-                            this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                            this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
-                            this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
+                        if (this_obj[type].id) {
+                           this_obj.mediaRecord(type, docRecord, end);
                         }
+                        var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id, {}, {
+                            'setTime': { method:'GET' }
+                        });
+                        mediaApi.setTime({}, function (result) {
+                            if (result.loginOK) {
+                                $window.location.href = $location.path();
+                            } else {
+                                if (result.time) {
+                                    if (type === 'video') {
+                                        videoStart = result.time;
+                                    } else if (type === 'music'){
+                                        musicStart = result.time;
+                                    } else {
+                                        this_obj[type].presentId = this_obj[type].showId = result.time;
+                                    }
+                                }
+                                if (this_obj[type].list.length === 1 && type === 'video') {
+                                    video.currentTime = 0;
+                                    //video.play();
+                                } else if (this_obj[type].list.length === 1 && type === 'music') {
+                                    music.currentTime = 0;
+                                    //music.play();
+                                } else {
+                                    this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                                    if (type === 'doc') {
+                                        this_obj.isPdf = false;
+                                        this_obj[type].iframeOffset = null;
+                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                    } else {
+                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                    }
+                                    if (type === 'video') {
+                                        var track = video.textTracks[0];
+                                        if (track) {
+                                            if (track.activeCues) {
+                                                var activeCue = track.activeCues[0];
+                                                track.removeCue(activeCue);
+                                            }
+                                        }
+                                        this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                    }
+                                }
+                                this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
+                                this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
+                            }
+                        }, function(errorResult) {
+                            if (errorResult.status === 400) {
+                                addAlert(errorResult.data);
+                            } else if (errorResult.status === 403) {
+                                addAlert('unknown API!!!');
+                            } else if (errorResult.status === 401) {
+                                $window.location.href = $location.path();
+                            }
+                        });
                     }
                 }, function(errorResult) {
                     $scope.mediaMoreDisabled = false;
@@ -2574,96 +2475,64 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             }
         }
         if (!isLoad) {
-            if (type === 'video' || type === 'music' || type === 'image') {
-                if (this[type].id) {
-                    this.mediaRecord(type, end);
-                }
-                var mediaApi = $resource('/api/media/setTime/' + this[type].list[this[type].index + this[type].back].id, {}, {
-                    'setTime': { method:'GET' }
-                });
-                mediaApi.setTime({}, function (result) {
-                    if (result.loginOK) {
-                        $window.location.href = $location.path();
-                    } else {
-                        if (result.time) {
-                            if (type === 'video') {
-                                videoStart = result.time;
-                            } else if (type === 'music'){
-                                musicStart = result.time;
-                            } else if (type === 'image') {
-                                this_obj[type].presentId = this_obj[type].showId = result.time;
-                            }
-                        }
-                        if (this_obj[type].list.length === 1 && type === 'video') {
-                            video.currentTime = 0;
-                            //video.play();
-                        } else if (this_obj[type].list.length === 1 && type === 'music') {
-                            music.currentTime = 0;
-                            //music.play();
-                        } else {
-                            this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                            if (type === 'doc') {
-                                this_obj.isPdf = false;
-                                this_obj[type].iframeOffset = null;
-                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                            } else {
-                                this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                            }
-                            if (type === 'video') {
-                                var track = video.textTracks[0];
-                                if (track) {
-                                    if (track.activeCues) {
-                                        var activeCue = track.activeCues[0];
-                                        track.removeCue(activeCue);
-                                    }
-                                }
-                                this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                            }
-                        }
-                        this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                        this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
-                        this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
-                    }
-                }, function(errorResult) {
-                    if (errorResult.status === 400) {
-                        addAlert(errorResult.data);
-                    } else if (errorResult.status === 403) {
-                        addAlert('unknown API!!!');
-                    } else if (errorResult.status === 401) {
-                        $window.location.href = $location.path();
-                    }
-                });
-            } else {
-                if (this_obj[type].list.length === 1 && type === 'video') {
-                    video.currentTime = 0;
-                    //video.play();
-                } else if (this_obj[type].list.length === 1 && type === 'music') {
-                    music.currentTime = 0;
-                    //music.play();
-                } else {
-                    this[type].maxId = this[type].list[this[type].index + this[type].back].present;
-                    if (type === 'doc') {
-                        this.isPdf = false;
-                        this[type].iframeOffset = null;
-                        this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id + '/doc';
-                    } else {
-                        this[type].src = '/' + preType + '/' + this[type].list[this[type].index + this[type].back].id;
-                    }
-                    if (type === 'video') {
-                        var track = video.textTracks[0];
-                        if (track) {
-                            if (track.activeCues) {
-                                var activeCue = track.activeCues[0];
-                                track.removeCue(activeCue);
-                            }
-                        }
-                        this[type].sub = '/subtitle/' + this[type].list[this[type].index + this[type].back].id;
-                    }
-                }
-                this[type].id = this[type].list[this[type].index + this[type].back].id;
-                this.$broadcast('latest', JSON.stringify({id: this[type].bookmarkID, latest: this[type].id}));
-                this[type].name = this[type].list[this[type].index + this[type].back].name;
+            if (this[type].id) {
+                this.mediaRecord(type, docRecord, end);
             }
+            var mediaApi = $resource('/api/media/setTime/' + this[type].list[this[type].index + this[type].back].id, {}, {
+                'setTime': { method:'GET' }
+            });
+            mediaApi.setTime({}, function (result) {
+                if (result.loginOK) {
+                    $window.location.href = $location.path();
+                } else {
+                    if (result.time) {
+                        if (type === 'video') {
+                            videoStart = result.time;
+                        } else if (type === 'music'){
+                            musicStart = result.time;
+                        } else {
+                            this_obj[type].presentId = this_obj[type].showId = result.time;
+                        }
+                    }
+                    if (this_obj[type].list.length === 1 && type === 'video') {
+                        video.currentTime = 0;
+                        //video.play();
+                    } else if (this_obj[type].list.length === 1 && type === 'music') {
+                        music.currentTime = 0;
+                        //music.play();
+                    } else {
+                        this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                        if (type === 'doc') {
+                            this_obj.isPdf = false;
+                            this_obj[type].iframeOffset = null;
+                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                        } else {
+                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                        }
+                        if (type === 'video') {
+                            var track = video.textTracks[0];
+                            if (track) {
+                                if (track.activeCues) {
+                                    var activeCue = track.activeCues[0];
+                                    track.removeCue(activeCue);
+                                }
+                            }
+                            this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                        }
+                    }
+                    this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                    this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
+                    this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
+                }
+            }, function(errorResult) {
+                if (errorResult.status === 400) {
+                    addAlert(errorResult.data);
+                } else if (errorResult.status === 403) {
+                    addAlert('unknown API!!!');
+                } else if (errorResult.status === 401) {
+                    $window.location.href = $location.path();
+                }
+            });
         }
     }
     $scope.$watch("this.doc.mode", function(newVal, oldVal) {
@@ -2726,6 +2595,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                 this.mediaShow.splice(0,1);
                 if (type === 'video') {
                     video.pause();
+                } else if (type === 'doc' && this.doc.iframeOffset) {
+                    this.mediaRecord(type, this.doc.showId);
                 }
             }
         } else {
