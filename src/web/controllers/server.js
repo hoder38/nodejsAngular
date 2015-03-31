@@ -2763,7 +2763,9 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
             }
             if (item && (item.status === 2 || item.status === 3 || item.status === 5 || item.status === 6)) {
                 var type = 'image/jpeg', ext = '.jpg';
-                if (item.status === 3) {
+                if (item.status === 2) {
+                    getDoc(type, ext);
+                } else if (item.status === 3) {
                     ext = '_s.jpg';
                     getDoc(type, ext);
                 } else if (item.status === 5) {
@@ -2775,7 +2777,6 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                 if (err) {
                                     util.handleError(err, next, res);
                                 }
-                                console.log(item2);
                                 if (!item2 || !item.present) {
                                     ext = '_doc/doc.html';
                                 } else {
@@ -2928,7 +2929,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                 }
                 function getDoc (docMime, docExt) {
                     var filePath = util.getFileLocation(item.owner, item._id);
-                    if (item.status === 6 || (item.status === 5 && req.params.type === 'doc')) {
+                    if (item.status === 6 || (item.status === 5 && (req.params.type === 'doc' || Number(req.params.type) > 0))) {
                         var saveType = 'doc';
                         if (item.status === 6) {
                             saveType = 'present';
@@ -2945,13 +2946,13 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                             });
                         });
                     }
-                    fs.exists(filePath + ext, function (exists) {
+                    fs.exists(filePath + docExt, function (exists) {
                         if (!exists) {
-                            console.log(filePath + ext);
+                            console.log(filePath + docExt);
                             util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
                         }
-                        res.writeHead(200, { 'Content-Type': type });
-                        var stream = fs.createReadStream(filePath + ext).pipe(res);
+                        res.writeHead(200, { 'Content-Type': docMime });
+                        var stream = fs.createReadStream(filePath + docExt).pipe(res);
                     });
                 }
             } else {
