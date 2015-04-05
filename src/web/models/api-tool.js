@@ -84,7 +84,7 @@ function sendAPI(data, method, callback) {
             var result = JSON.parse(str);
             if (!result.ok) {
                 console.log(result);
-                util.handleError({hoerror: 2, message: result.message}, callback, callback, 400, null);
+                util.handleError({hoerror: 2, message: result.msg}, callback, callback, 400, null);
             }
             setTimeout(function(){
                 callback(null, result.rsp);
