@@ -22,6 +22,8 @@ var googleApi = require("../models/api-tool-google.js");
 
 var tagTool = require("../models/tag-tool.js")('storage');
 
+var stockTool = require("../models/stock-tool.js");
+
 var util = require("../util/utility.js");
 
 var mime = require('../util/mime.js');
@@ -2579,15 +2581,33 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
     });
 });
 
+app.get('/api/stock/init', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('stock init');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        stockTool.initXml(function (err, xml) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            var cash = stockTool.getCashflow(xml);
+            res.json({xml: xml, cash: cash});
+        });
+    });
+});
+
 app.get('/api/getUser', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get user');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
+        var nav = [];
         var ws_url = 'wss://' + config_glb.ip + ':' + config_glb.wsj_port;
         if (util.checkAdmin(1, req.user)) {
             ws_url = 'wss://' + config_glb.ip + ':' + config_glb.wss_port;
+            nav = [{title: "Stock", hash: "/Stock", css: "fa fa-fw fa-line-chart"}];
         } else if (util.checkAdmin(2, req.user)) {
             ws_url = 'wss://' + config_glb.ip + ':' + config_glb.ws_port;
         }
@@ -2595,7 +2615,7 @@ app.get('/api/getUser', function(req, res, next){
         if (util.checkAdmin(2 ,req.user)) {
             isAdult = true;
         }
-        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult});
+        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav});
     });
 });
 
@@ -3165,6 +3185,23 @@ app.get('/views/Storage', function(req, res, next) {
     stream.pipe(res);
 });
 
+app.get('/views/Stock', function(req, res, next) {
+    "use strict";
+    console.log("views stock");
+    console.log(new Date());
+    console.log(req.url);
+    console.log(req.body);
+    if (util.checkAdmin(1, req.user)) {
+         var stream = fs.createReadStream(viewsPath + '/Stock.html');
+        stream.on('error', function(err){
+            util.handleError(err, next, res);
+        });
+        stream.pipe(res);
+    } else {
+        res.send('permission denied');
+    }
+});
+
 app.get('/views/homepage', function(req, res, next) {
     "use strict";
     console.log("views homepage");
@@ -3182,100 +3219,6 @@ app.get('/views/:id(\\w+)', function(req, res) {
     console.log(req.body);
     res.send(req.params.id);
 });
-
-function checkLogin(req, res, next, callback) {
-    if(!req.isAuthenticated()){
-        if (util.isMobile(req.headers['user-agent'])) {
-            if (/^\/video\//.test(req.path)) {
-                console.log("mobile");
-                setTimeout(function(){
-                    callback(req, res, next);
-                }, 0);
-            } else {
-                next();
-            }
-        } else {
-            next();
-        }
-    } else {
-        console.log(req.user._id);
-        setTimeout(function(){
-            callback(req, res, next);
-        }, 0);
-    }
-}
-
-function getStorageItem(user, items, mediaHandle) {
-    var itemList = [];
-    if (mediaHandle === 1) {
-        if (util.checkAdmin(1, user)) {
-            for (var i in items) {
-                if (items[i].adultonly === 1) {
-                    items[i].tags.push('18禁');
-                }
-                var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, utime: items[i].utime, count: items[i].count, media: items[i].mediaType};
-                if (items[i].present) {
-                    data.present = items[i].present;
-                }
-                if (items[i].url) {
-                    data.url = items[i].url;
-                }
-                itemList.push(data);
-            }
-        } else {
-            for (var i in items) {
-                if (items[i].adultonly === 1) {
-                    items[i].tags.push('18禁');
-                }
-                var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, utime: items[i].utime, count: items[i].count, media: items[i].mediaType};
-                if (items[i].present) {
-                    data.present = items[i].present;
-                }
-                if (items[i].url) {
-                    data.url = items[i].url;
-                }
-                if (user._id.equals(items[i].owner)) {
-                    data.isOwn = true;
-                }
-                itemList.push(data);
-            }
-        }
-    } else {
-        if (util.checkAdmin(1, user)) {
-            for (var i in items) {
-                if (items[i].adultonly === 1) {
-                    items[i].tags.push('18禁');
-                }
-                var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, utime: items[i].utime, count: items[i].count};
-                if (items[i].present) {
-                    data.present = items[i].present;
-                }
-                if (items[i].url) {
-                    data.url = items[i].url;
-                }
-                itemList.push(data);
-            }
-        } else {
-            for (var i in items) {
-                if (items[i].adultonly === 1) {
-                    items[i].tags.push('18禁');
-                }
-                var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, utime: items[i].utime, count: items[i].count};
-                if (items[i].present) {
-                    data.present = items[i].present;
-                }
-                if (items[i].url) {
-                    data.url = items[i].url;
-                }
-                if (user._id.equals(items[i].owner)) {
-                    data.isOwn = true;
-                }
-                itemList.push(data);
-            }
-        }
-    }
-    return itemList;
-}
 
 //default
 app.get('*', function(req, res, next) {
@@ -3388,6 +3331,100 @@ wsjServer.on('connection', function(ws) {
     ws.on('message', onWsConnMessage);
     ws.on('close', onWsConnClose);
 });
+
+function checkLogin(req, res, next, callback) {
+    if(!req.isAuthenticated()){
+        if (util.isMobile(req.headers['user-agent'])) {
+            if (/^\/video\//.test(req.path)) {
+                console.log("mobile");
+                setTimeout(function(){
+                    callback(req, res, next);
+                }, 0);
+            } else {
+                next();
+            }
+        } else {
+            next();
+        }
+    } else {
+        console.log(req.user._id);
+        setTimeout(function(){
+            callback(req, res, next);
+        }, 0);
+    }
+}
+
+function getStorageItem(user, items, mediaHandle) {
+    var itemList = [];
+    if (mediaHandle === 1) {
+        if (util.checkAdmin(1, user)) {
+            for (var i in items) {
+                if (items[i].adultonly === 1) {
+                    items[i].tags.push('18禁');
+                }
+                var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, utime: items[i].utime, count: items[i].count, media: items[i].mediaType};
+                if (items[i].present) {
+                    data.present = items[i].present;
+                }
+                if (items[i].url) {
+                    data.url = items[i].url;
+                }
+                itemList.push(data);
+            }
+        } else {
+            for (var i in items) {
+                if (items[i].adultonly === 1) {
+                    items[i].tags.push('18禁');
+                }
+                var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, utime: items[i].utime, count: items[i].count, media: items[i].mediaType};
+                if (items[i].present) {
+                    data.present = items[i].present;
+                }
+                if (items[i].url) {
+                    data.url = items[i].url;
+                }
+                if (user._id.equals(items[i].owner)) {
+                    data.isOwn = true;
+                }
+                itemList.push(data);
+            }
+        }
+    } else {
+        if (util.checkAdmin(1, user)) {
+            for (var i in items) {
+                if (items[i].adultonly === 1) {
+                    items[i].tags.push('18禁');
+                }
+                var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: true, status: items[i].status, utime: items[i].utime, count: items[i].count};
+                if (items[i].present) {
+                    data.present = items[i].present;
+                }
+                if (items[i].url) {
+                    data.url = items[i].url;
+                }
+                itemList.push(data);
+            }
+        } else {
+            for (var i in items) {
+                if (items[i].adultonly === 1) {
+                    items[i].tags.push('18禁');
+                }
+                var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, recycle: items[i].recycle, isOwn: false, status: items[i].status, utime: items[i].utime, count: items[i].count};
+                if (items[i].present) {
+                    data.present = items[i].present;
+                }
+                if (items[i].url) {
+                    data.url = items[i].url;
+                }
+                if (user._id.equals(items[i].owner)) {
+                    data.isOwn = true;
+                }
+                itemList.push(data);
+            }
+        }
+    }
+    return itemList;
+}
 
 (function loopDrive(error, countdown) {
     console.log('loopDrive');

@@ -10,6 +10,9 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
     }).when('/Storage', {
         templateUrl: '/views/Storage',
         controller: StorageInfoCntl
+    }).when('/Stock', {
+        templateUrl: '/views/Stock',
+        controller: StockCntl
     }).otherwise({ redirectTo: '/' });
     // configure html5 to get links working on jsfiddle
     $locationProvider.html5Mode(true);
@@ -1940,6 +1943,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             } else {
                 getParentlist();
                 getFeedbacks(1);
+                for (var i in result.nav) {
+                    $scope.navList.push(result.nav[i]);
+                }
                 $scope.isLogin = true;
                 $scope.id = result.id;
                 $scope.isAdult = result.isAdult;
