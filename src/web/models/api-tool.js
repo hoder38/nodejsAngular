@@ -185,6 +185,7 @@ function postData(fields, files, options, headers, callback) {
         request.write(headerparams.postdata[i]);
     }
     request.on('error', function(e) {
+        console.log(post_options);
         util.handleError(e, callback, callback, 400, null);
     });
     request.end();
@@ -280,6 +281,7 @@ module.exports = {
                                         setTimeout(function(){
                                             recur_download(1000);
                                         }, 0);
+                                        req.abort();
                                     }
                                 }
                             });
@@ -291,6 +293,7 @@ module.exports = {
                                     setTimeout(function(){
                                         recur_download(time);
                                     }, 0);
+                                    req.abort();
                                 } else {
                                     console.log(options);
                                     util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
@@ -300,6 +303,7 @@ module.exports = {
                                     setTimeout(function(){
                                         recur_download(time);
                                     }, 0);
+                                    req.abort();
                                 } else {
                                     console.log(options);
                                     util.handleError({hoerror: 2, message: "timeout"}, callback, callback);

@@ -375,6 +375,7 @@ module.exports = {
                                         setTimeout(function(){
                                             recur_download(time);
                                         }, 0);
+                                        req.abort();
                                     } else {
                                         console.log(options);
                                         util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
@@ -384,6 +385,7 @@ module.exports = {
                                         setTimeout(function(){
                                             recur_download(time);
                                         }, 0);
+                                        req.abort();
                                     } else {
                                         console.log(options);
                                         util.handleError({hoerror: 2, message: "timeout"}, callback, callback);

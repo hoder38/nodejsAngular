@@ -344,7 +344,7 @@ audio.full-media-screen {
     height: 68vh;
 }
 
-@media(min-height:768px) {
+@media(min-height:700px) {
     .media-screen {
         max-width: 100%;
         max-height: 85vh;

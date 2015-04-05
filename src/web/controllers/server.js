@@ -911,6 +911,8 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                         setTimeout(function(){
                             callback(null, mediaType, mediaTag, DBdata);
                         }, 0);
+                    }).on('finish', function() {
+                        console.log('metadata get');
                     }).on('error', function(err) {
                         util.handleError(err);
                     }).exec();
@@ -958,6 +960,8 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                             setTimeout(function(){
                                 callback(null, mediaType, mediaTag, DBdata);
                             }, 0);
+                        }).on('finish', function() {
+                            console.log('metadata get');
                         }).on('error', function(err) {
                             util.handleError(err);
                         }).exec();
