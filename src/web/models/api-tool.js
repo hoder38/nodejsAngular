@@ -244,6 +244,7 @@ module.exports = {
         };
         var this_obj = this;
         var time = 1000;
+        var retry = max_retry;
         recur_download(time);
         function recur_download(time) {
             setTimeout(function(){
