@@ -1681,10 +1681,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         }
     };
 
-    window.addEventListener("pagehide", function(evt){
-            alert('hide');
-        }, false);
-
     $scope.closeAlert = function(index) {
         $scope.alerts.splice(index, 1);
     };
