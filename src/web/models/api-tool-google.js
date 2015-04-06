@@ -560,15 +560,19 @@ module.exports = {
                 util.handleError({hoerror: 2, message: 'recycle ' + recycle + ' denied!!!'}, callback, callback);
         }
     },
-    googleDownloadMedia: function(threshold, alternate, key, filePath, hd, callback) {
+    googleDownloadMedia: function(threshold, alternate, key, filePath, hd, callback, is_ok) {
         var this_obj = this;
         if (hd === 1080) {
             threshold = 3*threshold;
         } else if (hd === 720) {
             threshold = 2*threshold;
         }
+        var img_threshold = threshold;
+        if (is_ok) {
+            img_threshold = 60000;
+        }
         this.googleDownload("https://drive.google.com/thumbnail?id=" + key, filePath + "_s.jpg", function(err) {
-            if (err) {
+            if (err && !is_ok) {
                 util.handleError(err, callback, callback);
             }
             this_obj.googleDownload(alternate, filePath + "_a.htm", function(err) {
@@ -582,7 +586,7 @@ module.exports = {
                 } else if(hd === 720) {
                     media_code = 22;
                 } else {
-                    media_code = 18;43
+                    media_code = 18;
                 }
                 child_process.exec(cmdline, function (err, output) {
                     var pattern = media_code + '\\|(https\:\/\/[^,"]+)';
@@ -645,7 +649,7 @@ module.exports = {
                     }
                 });
             }, threshold);
-        }, threshold);
+        }, img_threshold);
     }
 };
 
