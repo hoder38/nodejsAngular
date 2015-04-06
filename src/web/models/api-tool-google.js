@@ -582,7 +582,7 @@ module.exports = {
                 } else if(hd === 720) {
                     media_code = 22;
                 } else {
-                    media_code = 18;
+                    media_code = 18;43
                 }
                 child_process.exec(cmdline, function (err, output) {
                     var pattern = media_code + '\\|(https\:\/\/[^,"]+)';
@@ -619,17 +619,28 @@ module.exports = {
                         media_location = output.match(pattern);
                         if (!media_location) {
                             console.log(output);
-                            util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
+                            media_code = 43;
+                            pattern = media_code + '\\|(https\:\/\/[^,"]+)';
+                            media_location = output.match(pattern);
+                            if (!media_location) {
+                                media_code = 34;
+                                pattern = media_code + '\\|(https\:\/\/[^,"]+)';
+                                media_location = output.match(pattern);
+                                if (!media_location) {
+                                    util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
+                                }
+                            }
                         }
                         media_location = media_location[1];
                         media_location = deUnicode(media_location);
                         this_obj.googleDownload(media_location, filePath, function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
+                            } else {
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
                             }
-                            setTimeout(function(){
-                                callback(null);
-                            }, 0);
                         }, threshold);
                     }
                 });
