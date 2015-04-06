@@ -3735,27 +3735,38 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                                         if (error) {
                                             util.handleError(error, callback, callback);
                                         }
-                                        util.handleError(err, callback, callback);
+                                        if (fs.existsSync(filePath)) {
+                                            fs.unlink(filePath, function (error) {
+                                                if (error) {
+                                                    util.handleError(error, callback, callback);
+                                                }
+                                                restHandle();
+                                            });
+                                        } else {
+                                            restHandle();
+                                        }
                                     });
                                 } else {
-                                    util.handleError(err, callback, callback);
+                                    restHandle();
                                 }
                             });
                         } else {
-                            util.handleError(err, callback, callback);
+                            restHandle();
                         }
-                        if (!metadata.userPermission || metadata.userPermission.role === 'owner') {
-                            util.handleError(err, callback, callback);
-                        }
-                        var copydata = {fileId: metadata.id};
-                        googleApi.googleApi('copy', copydata, function(err, metadata) {
-                            if (err) {
+                        function restHandle() {
+                            if (!metadata.userPermission || metadata.userPermission.role === 'owner') {
                                 util.handleError(err, callback, callback);
                             }
-                            setTimeout(function(){
-                                callback(null);
-                            }, 0);
-                        });
+                            var copydata = {fileId: metadata.id};
+                            googleApi.googleApi('copy', copydata, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        }
                     } else {
                         name = mime.changeExt(name, 'mp4');
                         data['name'] = name;
@@ -3967,9 +3978,11 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                         console.log(item);
                         console.log('save end');
                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                        setTimeout(function(){
-                            callback(null);
-                        }, 0);
+                        if (mediaType['type'] !== 'image') {
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        }
                         if (mediaType['type'] === 'image') {
                             if (metadata.thumbnailLink) {
                                 mediaType.thumbnail = metadata.thumbnailLink;
@@ -3980,6 +3993,9 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                                         errerMedia(err, item[0]._id, function() {
                                             sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                                             console.log('auto upload media error');
+                                            setTimeout(function(){
+                                                callback(null);
+                                            }, 0);
                                         });
                                     } else {
                                         handleMedia(mediaType, filePath, DBdata['_id'], DBdata['name'], metadata.id, user, function(err) {
@@ -3989,6 +4005,9 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                                             }
                                             console.log('transcode done');
                                             console.log(new Date());
+                                            setTimeout(function(){
+                                                callback(null);
+                                            }, 0);
                                         });
                                     }
                                 });
@@ -3996,6 +4015,9 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                                 errerMedia({hoerror: 2, message: "error type"}, item[0]._id, function() {
                                     sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                                     console.log('auto upload media error');
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
                                 });
                             }
                         } else {
