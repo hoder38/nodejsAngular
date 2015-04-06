@@ -1569,6 +1569,10 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                     console.log(filedata);
                     util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
                 }
+                var is_ok = false;
+                if (filedata['videoMediaMetadata'])  {
+                    is_ok = true;
+                }
                 googleApi.googleDownloadMedia(mediaType['time'], filedata['alternateLink'], key, filePath, mediaType['hd'], function(err) {
                     if(err) {
                         util.handleError(err, callback, errerMedia, fileID, callback);
@@ -1592,7 +1596,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                             }
                         });
                     });
-                });
+                }, is_ok);
             });
         }
     } else if (mediaType['type'] === 'doc' || mediaType['type'] === 'rawdoc' || mediaType['type'] === 'sheet') {
@@ -3806,7 +3810,7 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
                             });
                         });
                     }
-                });
+                }, true);
             }
             break;
             case 'doc':
