@@ -861,7 +861,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 });
             }
         } else if (name && !index) {
-            if (isValidString(name, 'name')) {
+            if (name.match(/^>\d+$/) || isValidString(name, 'name')) {
                 if (this_obj.multiSearch) {
                     Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly, {}, {
                         'storage': { method:'GET' }
@@ -879,7 +879,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             addAlert("not enough parameter");
             return false;
         } else {
-            if (isValidString(name, 'name') && isValidString(index, 'parentIndex')) {
+            if ((name.match(/^>\d+$/) || isValidString(name, 'name')) && isValidString(index, 'parentIndex')) {
                 Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly + '/' + index, {}, {
                     'storage': { method:'GET' }
                 });
@@ -1399,7 +1399,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         if (!item) {
             item = this.toolList.item;
         }
-        if (action == 'act' || action == 'del') {
+        if (action == 'act'|| action == 'vlog' || action == 'del') {
             var handleMedia = $resource('/api/handleMedia/' + item.id + '/' + action, {}, {
                 'handlemedia': { method:'GET' }
             });
@@ -1433,6 +1433,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             this.$parent.toolList.recover = false;
             this.$parent.toolList.upload = false;
             this.$parent.toolList.delMedia = false;
+            this.$parent.toolList.vlogMedia = false;
         } else {
             if (item.status === 7) {
                 this.$parent.toolList.download = false;
@@ -1459,8 +1460,10 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             }
             if (item.media) {
                 this.$parent.toolList.delMedia = true;
+                this.$parent.toolList.vlogMedia = true;
             } else {
                 this.$parent.toolList.delMedia = false;
+                this.$parent.toolList.vlogMedia = false;
             }
         }
         this.toggleDropdown($event, 'item');
@@ -1835,9 +1838,23 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     }
     $scope.addFeedback = function() {
         if (this.feedbackInput) {
-            this.feedback.list.splice(0, 0, {tag: this.feedbackInput, select: true});
+            if (!isValidString(this.feedbackInput)) {
+                addAlert('feedback name is not valid!!!');
+            } else {
+                this.feedback.list.splice(0, 0, {tag: this.feedbackInput, select: true});
+            }
             this.feedbackInput = '';
             this.feedbackBlur = true;
+        }
+        return false;
+    }
+    $scope.delayFeedback = function() {
+        if (this.feedback.queue.length > 0) {
+            var response = this.feedback.queue.splice(0, 1);
+            showFeedback(response[0]);
+        } else {
+            this.feedback.run = false;
+            getFeedbacks(0);
         }
     }
     $scope.sendFeedback = function() {

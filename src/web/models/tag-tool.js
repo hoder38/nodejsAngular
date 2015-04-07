@@ -3,8 +3,8 @@ var mongo = require("../models/mongo-tool.js");
 
 var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle'];
 
-var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '分類'}, {'name': 'franchise', 'tw': '單集'}, {'name': 'complete', 'tw': '完結'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'game', 'tw': '遊戲'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'year', 'tw': '年份'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
-var adultonly_arr = [{'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_category', 'tw': '18禁分類'}];
+var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '分類'}, {'name': 'franchise', 'tw': '單集'}, {'name': 'complete', 'tw': '完結'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'game', 'tw': '遊戲'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
+var adultonly_arr = [{'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_category', 'tw': '18禁分類'}, {'name': 'adultonly_producer', 'tw': '成人片商'}, {'name': 'adultonly_franchise', 'tw': '成人系列作'}];
 
 var queryLimit = 20;
 
@@ -373,6 +373,9 @@ module.exports = function(collection) {
             }
             var parentList = tags.resetArray();
             var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
+            if (nosql.skip) {
+                nosql = nosql.nosql;
+            }
             var options = {"limit": queryLimit, "sort": [[sortName, sortType]]};
             delete tags;
             mongo.orig("find", collection, nosql, options, function(err, items){
@@ -397,6 +400,10 @@ module.exports = function(collection) {
                 }
                 var parentList = tags.getArray();
                 var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
+                if (nosql.skip) {
+                    options = {"limit": queryLimit, "skip" : page + nosql.skip, "sort": [[sortName, sortType]]};
+                    nosql = nosql.nosql;
+                }
                 delete tags;
                 mongo.orig("find", collection, nosql, options, function(err, items){
                     if(err) {
@@ -427,7 +434,12 @@ module.exports = function(collection) {
                     }
                 });
             } else if (!index) {
-                var name = util.isValidString(tagName, 'name');
+                var name = false;
+                if (tagName.match(/^>\d+$/)) {
+                    name = tagName;
+                } else {
+                    name = util.isValidString(tagName, 'name');
+                }
                 if (name === false) {
                     util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
                 }
@@ -437,6 +449,10 @@ module.exports = function(collection) {
                 }
                 var parentList = tags.getArray(name, exactly);
                 var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
+                if (nosql.skip) {
+                    options = {"limit": queryLimit, "skip" : page + nosql.skip, "sort": [[sortName, sortType]]};
+                    nosql = nosql.nosql;
+                }
                 delete tags;
                 mongo.orig("find", collection, nosql, options, function(err, items){
                     if(err) {
@@ -467,8 +483,13 @@ module.exports = function(collection) {
                     }
                 });
             } else {
-                var name = util.isValidString(tagName, 'name'),
+                var name = false,
                     Pindex = util.isValidString(index, 'parentIndex');
+                if (tagName.match(/^>\d+$/)) {
+                    name = tagName;
+                } else {
+                    name = util.isValidString(tagName, 'name');
+                }
                 if (name === false) {
                     util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
                 }
@@ -481,6 +502,10 @@ module.exports = function(collection) {
                 }
                 var parentList = tags.getArray(name, exactly, Pindex);
                 var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
+                if (nosql.skip) {
+                    options = {"limit": queryLimit, "skip" : page + nosql.skip, "sort": [[sortName, sortType]]};
+                    nosql = nosql.nosql;
+                }
                 delete tags;
                 mongo.orig("find", collection, nosql, options, function(err, items){
                     if(err) {
@@ -524,6 +549,9 @@ module.exports = function(collection) {
             }
             var parentList = tags.getArray();
             var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
+            if (nosql.skip) {
+                nosql = nosql.nosql;
+            }
             if (!nosql.hasOwnProperty('$and')) {
                 nosql._id = id;
             } else {
@@ -575,10 +603,6 @@ module.exports = function(collection) {
             if (!save) {
                 return false;
             }
-            var nosql = getQuerySql(user, save.tags, save.exactly);
-            if (!nosql.hasOwnProperty('$and')) {
-                nosql.$and = [];
-            }
             if (back === 'back') {
                 if (save.sortType === 'desc') {
                     save.sortType = 'asc';
@@ -587,6 +611,15 @@ module.exports = function(collection) {
                 }
             }
             var options = {"limit": queryLimit, "skip" : page, "sort": [[save.sortName, save.sortType]]};
+            var nosql = getQuerySql(user, save.tags, save.exactly);
+            if (nosql.skip) {
+                options = {"limit": queryLimit, "skip" : page + nosql.skip, "sort": [[save.sortName, save.sortType]]};
+                nosql = nosql.nosql;
+            }
+            if (!nosql.hasOwnProperty('$and')) {
+                nosql.$and = [];
+            }
+
             delete tags;
             return {nosql: nosql, options: options};
         },
@@ -902,6 +935,7 @@ function inAdultonlyArray(parent) {
 
 function getQuerySql(user, tagList, exactly) {
     var nosql = {};
+    var skip = 0;
     if (tagList.length === 0) {
         if (!util.checkAdmin(2, user)) {
             nosql['adultonly'] = 0;
@@ -913,6 +947,11 @@ function getQuerySql(user, tagList, exactly) {
         var isAdult = false;
         nosql = {$and: []};
         for (var i in tagList) {
+            var skip_number = tagList[i].match(/^>(\d+)$/);
+            if (skip_number) {
+                skip = Number(skip_number[1]);
+                continue;
+            }
             var normal = normalize(tagList[i]);
             var index = default_tags.indexOf(normal);
             if (index === 0) {
@@ -922,6 +961,7 @@ function getQuerySql(user, tagList, exactly) {
             } else if (index === 1) {
                 if (util.checkAdmin(1, user)) {
                     var time = Math.round(new Date().getTime() / 1000) - handleTime;
+                    console.log({mediaType: {$exists: true}, utime: {$lt: time}});
                     return {mediaType: {$exists: true}, utime: {$lt: time}};
                 }
             } else if (index === 2) {
@@ -929,11 +969,13 @@ function getQuerySql(user, tagList, exactly) {
                     var unDay = user.unDay? user.unDay: unactive_day;
                     var unHit = user.unHit? user.unHit: unactive_hit;
                     var time = Math.round(new Date().getTime() / 1000) - unDay * 86400;
+                    console.log({count: {$lt: unHit}, utime: {$lt: time}});
                     return {count: {$lt: unHit}, utime: {$lt: time}};
                 }
             } else if (index === 3) {
                 if (util.checkAdmin(1, user)) {
                     var time = Math.round(new Date().getTime() / 1000) - handleTime;
+                    console.log({recycle: {$ne: 0}, utime: {$lt: time}});
                     return {recycle: {$ne: 0}, utime: {$lt: time}};
                 }
             } else {
@@ -955,6 +997,16 @@ function getQuerySql(user, tagList, exactly) {
         }
     }
     console.log(nosql);
+    if (nosql.$and) {
+        console.log(nosql.$and);
+    }
+    if (skip) {
+        console.log('skip:' + skip);
+        if (nosql.$and.length === 0) {
+            nosql = {};
+        }
+        nosql = {skip: skip, nosql: nosql};
+    }
     return nosql;
 }
 
