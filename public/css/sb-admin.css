@@ -648,6 +648,10 @@ audio.full-media-screen {
     color: black;
 }
 
+.history-point:hover, .history-point:link, .history-point:visited, .history-point:active {
+    color: #777;
+}
+
 .span-right {
     float: right;
 }

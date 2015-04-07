@@ -1188,9 +1188,9 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
     });
 });
 
-function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user, callback) {
+function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user, callback, vlog_act) {
     if (mediaType) {
-        if (mediaType['type'] === 'vlog') {
+        if (mediaType['type'] === 'vlog' || (mediaType['type'] === 'video' && vlog_act)) {
             api.xuiteApi("xuite.webhd.prepare.cloudbox.postFile", {full_path: '/public/' + fileID.toString() + "." + mediaType['ext'], size: fileSize}, function(err, result) {
                 if (err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
@@ -1205,7 +1205,7 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                         if(err) {
                             util.handleError(err, callback, errerMedia, fileID, callback);
                         }
-                        handleMedia(mediaType, filePath, fileID, fileName, uploadResult.key, user, callback);
+                        handleMedia(mediaType, filePath, fileID, fileName, uploadResult.key, user, callback, vlog_act);
                     });
                 });
             });
@@ -1305,7 +1305,7 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                             if(err) {
                                 util.handleError(err, callback, errerMedia, fileID, callback);
                             }
-                            handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback);
+                            handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback, vlog_act);
                         });
                     });
                 });
@@ -1347,7 +1347,7 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                     if(err) {
                         util.handleError(err, callback, errerMedia, fileID, callback);
                     }
-                    handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback);
+                    handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback, vlog_act);
                 });
             });
         }
@@ -1381,7 +1381,7 @@ function completeMedia(fileID, status, callback, number) {
     });
 }
 
-function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback) {
+function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback, vlog_act) {
     if (mediaType['type'] === 'image' || mediaType['type'] === 'zipbook') {
         if (mediaType['thumbnail']) {
             googleApi.googleDownload(mediaType['thumbnail'], filePath + ".jpg", function(err) {
@@ -1427,7 +1427,7 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                 });
             });
         }
-    } else if (mediaType['type'] === 'vlog') {
+    } else if (mediaType['type'] === 'vlog' || (mediaType['type'] === 'video' && vlog_act)) {
         if (!mediaType.hasOwnProperty('time') && !mediaType.hasOwnProperty('hd')) {
             console.log(mediaType);
             util.handleError({hoerror: 2, message: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback);
@@ -1645,23 +1645,29 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                                 if(err) {
                                     util.handleError(err, callback, errerMedia, fileID, callback);
                                 }
-                                mediaType['split'] = split;
-                                mongo.orig("update", "storage", { _id: fileID }, {$unset: {'mediaType.key': ""}, $set: {'media.split': mediaType['split']}}, function(err, item){
-                                    if(err) {
+                                var data = {fileId: key};
+                                googleApi.googleApi('delete', data, function(err) {
+                                    if (err) {
                                         util.handleError(err, callback, errerMedia, fileID, callback);
                                     }
-                                    if (is_finish) {
-                                        deleteFolderRecursive(filePath + '_doc/split');
-                                        var data = {fileId: key};
-                                        googleApi.googleApi('delete', data, function(err) {
-                                            if (err) {
-                                                util.handleError(err, callback, errerMedia, fileID, callback);
-                                            }
-                                            completeMedia(fileID, 5, callback, number);
-                                        });
-                                    } else {
-                                        handleMediaUpload(mediaType, filePath, fileID, fileName, 0, user, callback);
-                                    }
+                                    mediaType['split'] = split;
+                                    mongo.orig("update", "storage", { _id: fileID }, {$unset: {'mediaType.key': ""}, $set: {'media.split': mediaType['split']}}, function(err, item){
+                                        if(err) {
+                                            util.handleError(err, callback, errerMedia, fileID, callback);
+                                        }
+                                        if (is_finish) {
+                                            deleteFolderRecursive(filePath + '_doc/split');
+                                            var data = {fileId: key};
+                                            googleApi.googleApi('delete', data, function(err) {
+                                                if (err) {
+                                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                                }
+                                                completeMedia(fileID, 5, callback, number);
+                                            });
+                                        } else {
+                                            handleMediaUpload(mediaType, filePath, fileID, fileName, 0, user, callback);
+                                        }
+                                    });
                                 });
                             });
                         } else {
@@ -1679,23 +1685,29 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback)
                         if(err) {
                             util.handleError(err, callback, errerMedia, fileID, callback);
                         }
-                        mediaType['split'] = split;
-                        mongo.orig("update", "storage", { _id: fileID }, {$unset: {'mediaType.key': ""}, $set: {'media.split': mediaType['split']}}, function(err, item){
-                            if(err) {
+                        var data = {fileId: key};
+                        googleApi.googleApi('delete', data, function(err) {
+                            if (err) {
                                 util.handleError(err, callback, errerMedia, fileID, callback);
                             }
-                            if (is_finish) {
-                                deleteFolderRecursive(filePath + '_doc/split');
-                                var data = {fileId: key};
-                                googleApi.googleApi('delete', data, function(err) {
-                                    if (err) {
-                                        util.handleError(err, callback, errerMedia, fileID, callback);
-                                    }
-                                    completeMedia(fileID, 5, callback, number);
-                                });
-                            } else {
-                                handleMediaUpload(mediaType, filePath, fileID, fileName, 0, user, callback);
-                            }
+                            mediaType['split'] = split;
+                            mongo.orig("update", "storage", { _id: fileID }, {$unset: {'mediaType.key': ""}, $set: {'media.split': mediaType['split']}}, function(err, item){
+                                if(err) {
+                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                }
+                                if (is_finish) {
+                                    deleteFolderRecursive(filePath + '_doc/split');
+                                    var data = {fileId: key};
+                                    googleApi.googleApi('delete', data, function(err) {
+                                        if (err) {
+                                            util.handleError(err, callback, errerMedia, fileID, callback);
+                                        }
+                                        completeMedia(fileID, 5, callback, number);
+                                    });
+                                } else {
+                                    handleMediaUpload(mediaType, filePath, fileID, fileName, 0, user, callback);
+                                }
+                            });
                         });
                     });
                 }
@@ -1836,7 +1848,7 @@ function SMPdf(filePath, progress, dir, callback) {
     }
 }
 
-app.get('/api/handleMedia/:uid/:action(act|del)', function(req, res, next) {
+app.get('/api/handleMedia/:uid/:action(act|vlog|del)', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('handle media');
         console.log(new Date());
@@ -1855,6 +1867,19 @@ app.get('/api/handleMedia/:uid/:action(act|del)', function(req, res, next) {
             }
             console.log(item);
             switch(req.params.action) {
+                case 'vlog':
+                    if (!item.mediaType) {
+                        console.log(item);
+                        util.handleError({hoerror: 2, message: "this file is not media!!!"}, next, res);
+                    }
+                    var filePath = util.getFileLocation(item.owner, item._id);
+                    res.json({apiOK: true});
+                    handleMediaUpload(item.mediaType, filePath, item._id, item.name, item.size, req.user, function (err) {
+                        sendWs({type: 'file', data: item._id}, item.adultonly);
+                        util.handleError(err);
+                        console.log('transcode done');
+                        console.log(new Date());
+                    }, true);
                 case 'act':
                     if (!item.mediaType) {
                         console.log(item);
@@ -3175,7 +3200,7 @@ app.get('/views/homepage', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    res.send("hello<br/> 壓縮檔加上.book可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z");
+    res.send("hello<br/> 壓縮檔加上.book可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>搜尋大於編號100的指令為'>100'");
 });
 
 app.get('/views/:id(\\w+)', function(req, res) {
