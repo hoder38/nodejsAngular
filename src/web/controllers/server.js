@@ -1214,8 +1214,8 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
             if (!zip_ext) {
                 util.handleError({hoerror: 2, message: 'is not zip'}, callback, errerMedia, fileID, callback);
             }
-            if (!fs.existsSync(filePath + '_img')) {
-                mkdirp(filePath + '_img', function(err) {
+            if (!fs.existsSync(filePath + '_img/temp')) {
+                mkdirp(filePath + '_img/temp', function(err) {
                     if(err) {
                         util.handleError(err, callback, callback);
                     }
