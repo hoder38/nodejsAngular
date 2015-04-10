@@ -2621,7 +2621,8 @@ app.get('/api/stock/init', function(req, res,next) {
                 util.handleError(err, next, res);
             }
             var cash = stockTool.getCashflow(xml);
-            res.json({xml: xml, cash: cash});
+            var asset = stockTool.getAsset(xml);
+            res.json({xml: xml, cash: cash, asset: asset});
         });
     });
 });
