@@ -1838,7 +1838,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     }
     $scope.addFeedback = function() {
         if (this.feedbackInput) {
-            if (!isValidString(this.feedbackInput)) {
+            if (!isValidString(this.feedbackInput, 'name')) {
                 addAlert('feedback name is not valid!!!');
             } else {
                 this.feedback.list.splice(0, 0, {tag: this.feedbackInput, select: true});
