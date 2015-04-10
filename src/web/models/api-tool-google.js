@@ -623,16 +623,15 @@ module.exports = {
                         media_location = output.match(pattern);
                         if (!media_location) {
                             console.log(output);
-                            media_code = 43;
-                            pattern = media_code + '\\|(https\:\/\/[^,"]+)';
-                            media_location = output.match(pattern);
-                            if (!media_location) {
-                                media_code = 34;
+                            if (media_code === 18) {
+                                media_code = 43;
                                 pattern = media_code + '\\|(https\:\/\/[^,"]+)';
                                 media_location = output.match(pattern);
                                 if (!media_location) {
                                     util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
                                 }
+                            } else {
+                                util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
                             }
                         }
                         media_location = media_location[1];
