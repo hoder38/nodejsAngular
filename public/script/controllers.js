@@ -1341,9 +1341,11 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                         if (type === 'video') {
                             var track = video.textTracks[0];
                             if (track) {
-                                if (track.activeCues) {
-                                    var activeCue = track.activeCues[0];
-                                    track.removeCue(activeCue);
+                                var cues = track.cues;
+                                if (cues) {
+                                    for (var i=cues.length;i>=0;i--) {
+                                        track.removeCue(cues[i]);
+                                    }
                                 }
                             }
                             this_obj.$parent[type].sub = '/subtitle/' + item.id;
@@ -2341,9 +2343,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                     if (type === 'video') {
                                         var track = video.textTracks[0];
                                         if (track) {
-                                            if (track.activeCues) {
-                                                var activeCue = track.activeCues[0];
-                                                track.removeCue(activeCue);
+                                            var cues = track.cues;
+                                            if (cues) {
+                                                for (var i=cues.length;i>=0;i--) {
+                                                    track.removeCue(cues[i]);
+                                                }
                                             }
                                         }
                                         this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -2451,9 +2455,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                     if (type === 'video') {
                                         var track = video.textTracks[0];
                                         if (track) {
-                                            if (track.activeCues) {
-                                                var activeCue = track.activeCues[0];
-                                                track.removeCue(activeCue);
+                                            var cues = track.cues;
+                                            if (cues) {
+                                                for (var i=cues.length;i>=0;i--) {
+                                                    track.removeCue(cues[i]);
+                                                }
                                             }
                                         }
                                         this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -2525,9 +2531,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                         if (type === 'video') {
                             var track = video.textTracks[0];
                             if (track) {
-                                if (track.activeCues) {
-                                    var activeCue = track.activeCues[0];
-                                    track.removeCue(activeCue);
+                                var cues = track.cues;
+                                if (cues) {
+                                    for (var i=cues.length;i>=0;i--) {
+                                        track.removeCue(cues[i]);
+                                    }
                                 }
                             }
                             this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
