@@ -250,8 +250,30 @@
                         </button>
                     </td>
                     <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">
-                        <i class="glyphicon glyphicon-folder-open item-icon"></i>
-                        {{tag}}
+                        <a href="#" class="item-point">
+                            <i class="glyphicon glyphicon-folder-open item-icon"></i>
+                            {{tag}}
+                        </a>
+                    </td>
+                    <td class="item-mtime"></td>
+                    <td class="item-count"></td>
+                    <td class="item-tool">
+                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false">
+                            <span class="caret"></span>
+                        </button>
+                    </td>
+                </tr>
+                <tr ng-repeat="tag in exceptList">
+                    <td class="item-check text-center">
+                        <button confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to delete this tag? You can only delete tag which you added." type="button" class="btn btn-default">
+                            <i class="glyphicon glyphicon-remove-sign"></i>
+                        </button>
+                    </td>
+                    <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">
+                        <a href="#" class="history-point">
+                            <i class="glyphicon glyphicon-folder-open item-icon except-tag"></i>
+                            {{tag}}
+                        </a>
                     </td>
                     <td class="item-mtime"></td>
                     <td class="item-count"></td>

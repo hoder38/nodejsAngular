@@ -469,6 +469,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.itemList = [];
     $scope.selectList = [];
     $scope.tagList = [];
+    $scope.exceptList = [];
     $scope.page = 0;
     $scope.more = true;
     $scope.moreDisabled = false;
@@ -979,11 +980,13 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         $scope.selectList = $filter("filter")(newVal, {select:true});
         if ($scope.selectList.length > 0) {
             $scope.tagList = $scope.selectList[0].tags;
+            $scope.exceptList = [];
             for (var i = 1; i < $scope.selectList.length; i++) {
-                $scope.tagList = intersect($scope.tagList, $scope.selectList[i].tags);
+                $scope.tagList = intersect($scope.tagList, $scope.selectList[i].tags, $scope.exceptList);
             }
         } else {
             $scope.tagList = [];
+            $scope.exceptList = [];
         }
     }, true);
 
@@ -1843,7 +1846,12 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             if (!isValidString(this.feedbackInput, 'name')) {
                 addAlert('feedback name is not valid!!!');
             } else {
-                this.feedback.list.splice(0, 0, {tag: this.feedbackInput, select: true});
+                var index = arrayObjectIndexOf(this.feedback.list, this.feedbackInput, 'tag');
+                if (index === -1) {
+                    this.feedback.list.splice(0, 0, {tag: this.feedbackInput, select: true});
+                } else {
+                    this.feedback.list[index].select = true;
+                }
             }
             this.feedbackInput = '';
             this.feedbackBlur = true;
