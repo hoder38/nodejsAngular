@@ -283,6 +283,7 @@ module.exports = function(collection) {
             });
         },
         sendTag: function(uid, objName, tags, user, next, callback) {
+            tags.reverse();
             var this_obj = this;
             var history = [];
             var name = util.isValidString(objName, 'name');

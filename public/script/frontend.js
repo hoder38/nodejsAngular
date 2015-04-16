@@ -97,18 +97,32 @@ function isValidString(str, type)
     return false;
 }
 
-function intersect(a, b) {
-    var t;
+//不能有重複的物件
+function intersect(a, b, c) {
+    /*var t;
     if (b.length > a.length) {
         t = b;
         b = a;
         a = t;
-    }
-    return a.filter(function (e) {
-        if (b.indexOf(e) !== -1) {
+    }*/
+    var temp = clone(b);
+    var intersect = a.filter(function (e) {
+        var index = temp.indexOf(e);
+        if (index !== -1) {
+            temp.splice(index, 1);
             return true;
+        } else {
+            if (c.indexOf(e) === -1) {
+                c.push(e);
+            }
         }
     });
+    temp.forEach(function (e) {
+        if (c.indexOf(e) === -1) {
+            c.push(e);
+        }
+    });
+    return intersect;
 }
 
 function arrayObjectIndexOf(myArray, searchTerm, property) {

@@ -2684,14 +2684,14 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
             var filePath = util.getFileLocation(item.owner, item._id);
             if (item.present) {
                 if (req.params.number) {
-                    index = req.params.number;
+                    index = Number(req.params.number);
                     filePath = filePath + "_img/" + index;
                     if (!fs.existsSync(filePath)) {
                         console.log(filePath);
                         util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
                     }
                     console.log('image record');
-                    if (index === 1) {
+                    if (index === 1 || index === item.present) {
                         mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: item._id, $isolated: 1}, function(err,user){
                             if(err) {
                                 util.handleError(err, next, res);
