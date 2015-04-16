@@ -3,7 +3,7 @@ var mongo = require("../models/mongo-tool.js");
 
 var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle'];
 
-var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '分類'}, {'name': 'franchise', 'tw': '單集'}, {'name': 'complete', 'tw': '完結'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'game', 'tw': '遊戲'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
+var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'franchise', 'tw': '單集'}, {'name': 'complete', 'tw': '完結'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'game', 'tw': '遊戲'}, {'name': 'album', 'tw': '專輯'}, {'name': 'command', 'tw': '指令'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
 var adultonly_arr = [{'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_category', 'tw': '18禁分類'}, {'name': 'adultonly_producer', 'tw': '成人片商'}, {'name': 'adultonly_franchise', 'tw': '成人系列作'}];
 
 var queryLimit = 20;
@@ -75,6 +75,7 @@ module.exports = function(collection) {
                             }
                             if (pos >= index) {
                                 search[name].tags.splice(pos, 1);
+                                search[name].tags.splice(index-1, 0, value);
                             }
                             search[name].index = index;
                         } else {

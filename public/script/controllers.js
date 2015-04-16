@@ -2250,6 +2250,14 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         this.image.src = '/image/' + this.image.list[this.image.index + this.image.back].id + '/' + this.image.presentId;
     }
 
+    $scope.nextImage = function() {
+        if (this.image.presentId === this.image.maxId) {
+            this.mediaMove(1, 'image');
+        } else {
+            this.imgMove(1);
+        }
+    }
+
     $scope.mediaMove = function(number, type, end) {
         var preType = '', status = 0, isLoad = false, docRecord = 0;
         switch (type) {
