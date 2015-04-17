@@ -1,7 +1,7 @@
 var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 
-var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle'];
+var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item'];
 
 var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'franchise', 'tw': '單集'}, {'name': 'complete', 'tw': '完結'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'game', 'tw': '遊戲'}, {'name': 'album', 'tw': '專輯'}, {'name': 'command', 'tw': '指令'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
 var adultonly_arr = [{'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_category', 'tw': '18禁分類'}, {'name': 'adultonly_producer', 'tw': '成人片商'}, {'name': 'adultonly_franchise', 'tw': '成人系列作'}];
@@ -980,6 +980,15 @@ function getQuerySql(user, tagList, exactly) {
                     console.log({recycle: {$ne: 0}, utime: {$lt: time}});
                     return {recycle: {$ne: 0}, utime: {$lt: time}};
                 }
+            } else if (index === 4) {
+                nosql.$and.push({tags: normal});
+            } else if (index === 5) {
+                for (var j in nosql.$and) {
+                    if (nosql.$and[j].tags === 'first item') {
+                        nosql.$and.splice(j, 1);
+                        break;
+                    }
+                }
             } else {
                 if (exactly[i]) {
                     nosql.$and.push({tags: normal});
@@ -1004,10 +1013,10 @@ function getQuerySql(user, tagList, exactly) {
     }
     if (skip) {
         console.log('skip:' + skip);
-        if (nosql.$and.length === 0) {
-            nosql = {};
-        }
         nosql = {skip: skip, nosql: nosql};
+    }
+    if (nosql.$and && nosql.$and.length === 0) {
+        delete(nosql.$and);
     }
     return nosql;
 }
@@ -1022,7 +1031,7 @@ function getQueryTag(user, tag, del) {
         } else {
             return {type: 0};
         }
-    } else if (index === 1 || index === 2 || index === 3) {
+    } else if (index === 1 || index === 2 || index === 3 || index === 5) {
         return {type: 0};
     } else {
         return {tag: {tags: normal}, type: 1};

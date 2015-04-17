@@ -507,11 +507,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         url: 'upload/subtitle'
     });
 
-    miscUploader.onWhenAddingFileFailed = function(item /*{File|FileLikeObject}*/, filter, options) {
-        console.info('onWhenAddingFileFailed', item, filter, options);
-    };
     miscUploader.onAfterAddingFile = function(fileItem) {
-        console.info('onAfterAddingFile', fileItem);
+        //console.info('onAfterAddingFile', fileItem);
         if ($scope.toolList.item) {
             fileItem.url = 'upload/subtitle/' + $scope.toolList.item.id;
             this.uploadAll();
@@ -519,36 +516,15 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             addAlert('Select item first!!!');
         }
     };
-    miscUploader.onAfterAddingAll = function(addedFileItems) {
-        console.info('onAfterAddingAll', addedFileItems);
-    };
-    miscUploader.onBeforeUploadItem = function(item) {
-        console.info('onBeforeUploadItem', item);
-    };
-    miscUploader.onProgressItem = function(fileItem, progress) {
-        console.info('onProgressItem', fileItem, progress);
-    };
-    miscUploader.onProgressAll = function(progress) {
-        console.info('onProgressAll', progress);
-    };
     miscUploader.onSuccessItem = function(fileItem, response, status, headers) {
-        console.info('onSuccessItem', fileItem, response, status, headers);
+        //console.info('onSuccessItem', fileItem, response, status, headers);
         $scope.uploadSub = false;
         this.clearQueue();
     };
     miscUploader.onErrorItem = function(fileItem, response, status, headers) {
-        console.info('onErrorItem', fileItem, response, status, headers);
+        //console.info('onErrorItem', fileItem, response, status, headers);
         addAlert(response);
         this.clearQueue();
-    };
-    miscUploader.onCancelItem = function(fileItem, response, status, headers) {
-        console.info('onCancelItem', fileItem, response, status, headers);
-    };
-    miscUploader.onCompleteItem = function(fileItem, response, status, headers) {
-        console.info('onCompleteItem', fileItem, response, status, headers);
-    };
-    miscUploader.onCompleteAll = function() {
-        console.info('onCompleteAll');
     };
 
     $scope.$on('dir', function(e, d) {
@@ -1725,15 +1701,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     var uploader = $scope.uploader = new FileUploader({
         url: 'upload/file'
     });
-    uploader.onWhenAddingFileFailed = function(item /*{File|FileLikeObject}*/, filter, options) {
-        console.info('onWhenAddingFileFailed', item, filter, options);
-    };
     uploader.onAfterAddingFile = function(fileItem) {
         $scope.widget.uploader = true;
-        console.info('onAfterAddingFile', fileItem);
-    };
-    uploader.onAfterAddingAll = function(addedFileItems) {
-        console.info('onAfterAddingAll', addedFileItems);
+        //console.info('onAfterAddingFile', fileItem);
     };
     uploader.onBeforeUploadItem = function(item) {
         if ($scope.adultonly) {
@@ -1741,16 +1711,10 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         } else {
             item.url = 'upload/file';
         }
-        console.info('onBeforeUploadItem', item);
-    };
-    uploader.onProgressItem = function(fileItem, progress) {
-        console.info('onProgressItem', fileItem, progress);
-    };
-    uploader.onProgressAll = function(progress) {
-        console.info('onProgressAll', progress);
+        //console.info('onBeforeUploadItem', item);
     };
     uploader.onSuccessItem = function(fileItem, response, status, headers) {
-        console.info('onSuccessItem', fileItem, response, status, headers);
+        //console.info('onSuccessItem', fileItem, response, status, headers);
         if ($scope.feedback.run) {
             if ($scope.feedback.uid === response.id) {
                 showFeedback(response);
@@ -1765,18 +1729,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             $scope.feedback.run = true;
             showFeedback(response);
         }
-    };
-    uploader.onErrorItem = function(fileItem, response, status, headers) {
-        console.info('onErrorItem', fileItem, response, status, headers);
-    };
-    uploader.onCancelItem = function(fileItem, response, status, headers) {
-        console.info('onCancelItem', fileItem, response, status, headers);
-    };
-    uploader.onCompleteItem = function(fileItem, response, status, headers) {
-        console.info('onCompleteItem', fileItem, response, status, headers);
-    };
-    uploader.onCompleteAll = function() {
-        console.info('onCompleteAll');
     };
 
     $scope.addItem = function() {
