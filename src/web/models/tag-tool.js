@@ -1011,12 +1011,12 @@ function getQuerySql(user, tagList, exactly) {
     if (nosql.$and) {
         console.log(nosql.$and);
     }
+    if (nosql.$and && nosql.$and.length === 0) {
+        delete(nosql.$and);
+    }
     if (skip) {
         console.log('skip:' + skip);
         nosql = {skip: skip, nosql: nosql};
-    }
-    if (nosql.$and && nosql.$and.length === 0) {
-        delete(nosql.$and);
     }
     return nosql;
 }

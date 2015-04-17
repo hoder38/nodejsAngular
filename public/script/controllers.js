@@ -2215,6 +2215,13 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             case 'video':
                 preType = 'video';
                 status = 3;
+                if (document.webkitFullScreen) {
+                    document.webkitFullScreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else {
+                    video.webkitExitFullScreen();
+                }
                 break;
             case 'music':
                 preType = 'video';
