@@ -173,7 +173,7 @@ module.exports = {
         });
     },
     addPost: function(str, post) {
-        var result = name.match(ext_filename), extName = '';
+        var result = str.match(ext_filename), extName = '';
         if (result && result[1]) {
             extName = result[1].toLowerCase();
             return str.replace(ext_filename, function (a) {

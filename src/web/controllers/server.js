@@ -623,6 +623,9 @@ function editFile(uid, newName, user, next, callback) {
                             temp_tag2.push(mediaTag.opt[i]);
                         }
                     }
+                    if (item.tags.indexOf('first item') === -1) {
+                        temp_tag2.push('first item');
+                    }
                     mediaTag.opt = temp_tag2;
                     var tagsAdd = {$set: DBdata};
                     if (mediaTag.def.length > 0) {
@@ -1149,6 +1152,9 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                                     temp_tag.push(normal);
                                 }
                             }
+                        }
+                        if (mediaTag.def.indexOf('first item') === -1) {
+                            temp_tag.push('first item');
                         }
                         mediaTag.opt = temp_tag;
                     }
@@ -2108,6 +2114,9 @@ function getFeedback(item, callback, user) {
                 temp_tag.push(mediaTag.opt[i]);
             }
         }
+        if (item.tags.indexOf('first item') === -1) {
+            temp_tag.push('first item');
+        }
         if (item.adultonly === 1) {
             item.tags.push('18禁');
         } else {
@@ -2472,6 +2481,9 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                 }
                             }
                         }
+                        if (mediaTag.def.indexOf('first item') === -1) {
+                            temp_tag.push('first item');
+                        }
                         mediaTag.opt = temp_tag;
                     }
                     DBdata['tags'] = mediaTag.def;
@@ -2579,6 +2591,9 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
                             temp_tag.push(normal);
                         }
                     }
+                }
+                if (mediaTag.def.indexOf('first item') === -1) {
+                    temp_tag.push('first item');
                 }
                 mediaTag.opt = temp_tag;
             }
