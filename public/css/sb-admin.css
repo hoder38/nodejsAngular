@@ -264,7 +264,7 @@ ul.alert-dropdown {
     position:fixed;
     top:0px;
     left:0px;
-    max-width: 100vh;
+    max-width: 100vw;
     z-index: 2000;
     _position:absolute; /* position fixed for IE6 */
 }
@@ -274,7 +274,7 @@ ul.alert-dropdown {
     position:fixed;
     top:0px;
     left:0px;
-    max-width: 100vh;
+    max-width: 100vw;
     z-index: 2000;
     _position:absolute; /* position fixed for IE6 */
 }
