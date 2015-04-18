@@ -3,7 +3,7 @@ var mongo = require("../models/mongo-tool.js");
 
 var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item'];
 
-var parent_arr = [{'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'franchise', 'tw': '單集'}, {'name': 'complete', 'tw': '完結'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'game', 'tw': '遊戲'}, {'name': 'album', 'tw': '專輯'}, {'name': 'command', 'tw': '指令'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
+var parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'franchise', 'tw': '單集'}, {'name': 'complete', 'tw': '完結'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'game', 'tw': '遊戲'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
 var adultonly_arr = [{'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_category', 'tw': '18禁分類'}, {'name': 'adultonly_producer', 'tw': '成人片商'}, {'name': 'adultonly_franchise', 'tw': '成人系列作'}];
 
 var queryLimit = 20;
@@ -164,7 +164,7 @@ module.exports = function(collection) {
                     if (!item) {
                         util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, callback, null);
                     }
-                    if (item.adultonly === tagType.tag.adultonly) {
+                    if ((tagType.tag.hasOwnProperty('adultonly') && item.adultonly === tagType.tag.adultonly) || (tagType.tag.hasOwnProperty('first') && item.adultonly === tagType.tag.first)) {
                         setTimeout(function(){
                             callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.name});
                         }, 0);
@@ -618,9 +618,6 @@ module.exports = function(collection) {
                 options = {"limit": queryLimit, "skip" : page + nosql.skip, "sort": [[save.sortName, save.sortType]]};
                 nosql = nosql.nosql;
             }
-            if (!nosql.hasOwnProperty('$and')) {
-                nosql.$and = [];
-            }
 
             delete tags;
             return {nosql: nosql, options: options};
@@ -936,7 +933,7 @@ function inAdultonlyArray(parent) {
 }
 
 function getQuerySql(user, tagList, exactly) {
-    var nosql = {};
+    var nosql = {first: 1};
     var skip = 0;
     if (tagList.length === 0) {
         if (!util.checkAdmin(2, user)) {
@@ -947,7 +944,7 @@ function getQuerySql(user, tagList, exactly) {
         }
     } else {
         var isAdult = false;
-        nosql = {$and: []};
+        nosql['$and'] = [];
         for (var i in tagList) {
             var skip_number = tagList[i].match(/^>(\d+)$/);
             if (skip_number) {
@@ -958,7 +955,7 @@ function getQuerySql(user, tagList, exactly) {
             var index = default_tags.indexOf(normal);
             if (index === 0) {
                 if (util.checkAdmin(2, user)) {
-                    isAdult = true;
+                    nosql['adultonly'] = 1;
                 }
             } else if (index === 1) {
                 if (util.checkAdmin(1, user)) {
@@ -981,14 +978,8 @@ function getQuerySql(user, tagList, exactly) {
                     return {recycle: {$ne: 0}, utime: {$lt: time}};
                 }
             } else if (index === 4) {
-                nosql.$and.push({tags: normal});
             } else if (index === 5) {
-                for (var j in nosql.$and) {
-                    if (nosql.$and[j].tags === 'first item') {
-                        nosql.$and.splice(j, 1);
-                        break;
-                    }
-                }
+                delete nosql['first'];
             } else {
                 if (exactly[i]) {
                     nosql.$and.push({tags: normal});
@@ -998,21 +989,18 @@ function getQuerySql(user, tagList, exactly) {
             }
         }
         if (!util.checkAdmin(1, user)) {
-            nosql.$and.push({recycle: 0});
-        }
-        if (isAdult) {
-            nosql.$and.push({adultonly: 1});
+            nosql['recycle'] = 0;
         }
         if (!util.checkAdmin(2, user)) {
-            nosql.$and.push({adultonly: 0});
+            nosql['adultonly'] = 0;
         }
     }
     console.log(nosql);
     if (nosql.$and) {
         console.log(nosql.$and);
-    }
-    if (nosql.$and && nosql.$and.length === 0) {
-        delete(nosql.$and);
+        if (nosql.$and.length === 0) {
+            delete(nosql.$and);
+        }
     }
     if (skip) {
         console.log('skip:' + skip);
@@ -1031,6 +1019,8 @@ function getQueryTag(user, tag, del) {
         } else {
             return {type: 0};
         }
+    } else if (index === 4) {
+        return {tag: {first: del}, type: 2, name: default_tags[4]};
     } else if (index === 1 || index === 2 || index === 3 || index === 5) {
         return {type: 0};
     } else {
