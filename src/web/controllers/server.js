@@ -433,7 +433,6 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
             if (err) {
                 util.handleError(err, next, res);
             }
-            console.log(result.items);
             var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
             res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
         });
