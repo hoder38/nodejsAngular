@@ -164,7 +164,7 @@ module.exports = function(collection) {
                     if (!item) {
                         util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, callback, null);
                     }
-                    if ((tagType.tag.hasOwnProperty('adultonly') && item.adultonly === tagType.tag.adultonly) || (tagType.tag.hasOwnProperty('first') && item.adultonly === tagType.tag.first)) {
+                    if ((tagType.tag.hasOwnProperty('adultonly') && item.adultonly === tagType.tag.adultonly) || (tagType.tag.hasOwnProperty('first') && item.first === tagType.tag.first)) {
                         setTimeout(function(){
                             callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.name});
                         }, 0);
