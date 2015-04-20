@@ -1618,6 +1618,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.mediaMoreDisabled = false;
     $scope.isLogin = false;
     $scope.isFull = false;
+    $scope.isExtend = false;
     $scope.loginFocus = {user: true, pwd:false};
     $scope.alerts = [];
     $scope.currentPage = 0;

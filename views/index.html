@@ -247,6 +247,11 @@
                                             <span class="glyphicon {{isFull && 'glyphicon-minus-sign'||'glyphicon-plus-sign'}}"></span>
                                         </a>
                                     </li>
+                                    <li>
+                                        <a href="#" ng-click="isExtend = !isExtend">
+                                            <span class="glyphicon {{isExtend && 'glyphicon-resize-small'||'glyphicon-resize-full'}}"></span>
+                                        </a>
+                                    </li>
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(1, 'image')">
                                             <span class="glyphicon glyphicon-chevron-right"></span>
@@ -254,7 +259,9 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <img class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="nextImage()" />
+                            <div class="{{isExtend && 'extend-image-screen' || ''}}">
+                                <img class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="nextImage()" />
+                            </div>
                         </div>
                     </section>
                     <section class="panel panel-success" ng-show="mediaShow[0] === 'video'">

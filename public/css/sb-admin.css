@@ -264,7 +264,7 @@ ul.alert-dropdown {
     position:fixed;
     top:0px;
     left:0px;
-    max-width: 100vw;
+    max-width: 98vw;
     z-index: 2000;
     _position:absolute; /* position fixed for IE6 */
 }
@@ -274,7 +274,7 @@ ul.alert-dropdown {
     position:fixed;
     top:0px;
     left:0px;
-    max-width: 100vw;
+    max-width: 98vw;
     z-index: 2000;
     _position:absolute; /* position fixed for IE6 */
 }
@@ -324,6 +324,12 @@ ul.alert-dropdown {
     height: auto;
 }
 
+.extend-image-screen {
+    height: 68vh;
+    width: 100%;
+    overflow: auto;
+}
+
 audio.media-screen {
     width: 300px;
     height: 30px;
@@ -357,6 +363,11 @@ audio.full-media-screen {
         width: auto;
         height: auto;
     }
+    .extend-image-screen {
+        height: 83vh;
+        width: 100%;
+        overflow: auto;
+    }
     .doc-screen {
         width: 100%;
         height: 83vh;
@@ -365,6 +376,13 @@ audio.full-media-screen {
         width: 100%;
         height: 83vh;
     }
+}
+
+.extend-image-screen > .full-media-screen, .extend-image-screen > .media-screen {
+    max-width: none;
+    max-height: none;
+    width: auto;
+    height: auto;
 }
 
 #doc-section {
@@ -393,6 +411,10 @@ audio.full-media-screen {
 
 .pager li>.media-hide {
     display: none;
+}
+
+.pager li>.media-show {
+    display: inline;
 }
 
 #inverse-toggle {
@@ -449,8 +471,6 @@ audio.full-media-screen {
     float: right;
 }
 
-
-
 @media(min-width:768px) {
     #center-section {
         top:60px;
@@ -472,6 +492,9 @@ audio.full-media-screen {
     }
     .pager li>.media-hide {
         display: inline;
+    }
+    .pager li>.media-show {
+        display: none;
     }
     .navbar-collapse>.collapse {
         display: block;
