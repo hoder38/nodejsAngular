@@ -112,7 +112,7 @@ module.exports = function(collection) {
                 },
                 setArray: function(bookmark, tagList, exactly) {
                     if (tagList) {
-                        search[name] = {tags: tagList, exactly: exactly, index: tagList.length+1, save: search[name].save};
+                        search[name] = {tags: tagList, exactly: exactly, index: tagList.length, save: search[name].save};
                     }
                     if (bookmark) {
                         search[name].bookmark = bookmark;
@@ -139,6 +139,23 @@ module.exports = function(collection) {
                         return false;
                     }
                     return {tags: search[name].save[saveName].tags, exactly: search[name].save[saveName].exactly, bookmark: search[name].save[saveName].bookmark, sortName: search[name].save[saveName].sortName, sortType: search[name].save[saveName].sortType};
+                },
+                setSingleArray: function(value) {
+                    var normal = normalize(value);
+                    if (normal === 'all item' || normal === '18禁' || normal.match(/^>(\d+)$/)) {
+                        return true;
+                    } else {
+                        for (var i = 0; i < search[name].index; i++) {
+                            normal = search[name].tags[i];
+                            if (normal !== 'all item' && normal !== '18禁' && !normal.match(/^>(\d+)$/)) {
+                                search[name].tags = search[name].tags.slice(0, i);
+                                search[name].exactly = search[name].exactly.slice(0, i);
+                                search[name].index = search[name].tags.length;
+                                break;
+                            }
+                        }
+                        return true;
+                    }
                 }
             };
         },
@@ -732,7 +749,7 @@ module.exports = function(collection) {
                 }
             });
         },
-        queryParentTag: function(id, sortName, sortType, user, session, next, callback) {
+        queryParentTag: function(id, single, sortName, sortType, user, session, next, callback) {
             var this_obj = this;
             mongo.orig("findOne", collection + "Dir" ,{_id: id}, function(err,parent){
                 if(err) {
@@ -741,6 +758,13 @@ module.exports = function(collection) {
                 if (!parent) {
                     util.handleError({hoerror: 2, message: "can not find dir"}, next, callback);
                 } else {
+                    if (single === 'single') {
+                        var tags = this_obj.searchTags(session, 'parent');
+                        if (!tags) {
+                            util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
+                        }
+                        tags.setSingleArray(parent.name);
+                    }
                     this_obj.tagQuery(0, parent.name, true, null, sortName, sortType, user, session, next, function(err, result) {
                         if (err) {
                             util.handleError(err, next, callback);

@@ -429,7 +429,11 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
-            tags.resetArray();
+            var name = util.isValidString(req.params.name, 'name');
+            if (name === false) {
+                util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
+            }
+            tags.setSingleArray(name);
         }
         tagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
@@ -2021,14 +2025,7 @@ app.get('/api/parent/query/:id/:single?', function(req, res, next) {
         if (req.cookies.fileSortType === 'desc' || req.cookies.fileSortType === 'asc') {
             sortType = req.cookies.fileSortType;
         }
-        if (req.params.single === 'single') {
-            var tags = tagTool.searchTags(req.session, 'parent');
-            if (!tags) {
-                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
-            }
-            tags.resetArray();
-        }
-        tagTool.queryParentTag(id, sortName, sortType, req.user, req.session, next, function(err, result) {
+        tagTool.queryParentTag(id, req.params.single, sortName, sortType, req.user, req.session, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
             }
@@ -3254,7 +3251,7 @@ app.get('/views/homepage', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    res.send("hello<br/> 壓縮檔加上.book可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目");
+    res.send("hello<br/> 壓縮檔加上.book可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/><br/>指令不算在單項搜尋裡");
 });
 
 app.get('/views/:id(\\w+)', function(req, res) {
