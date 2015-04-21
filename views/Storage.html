@@ -78,7 +78,7 @@
             </span>
             <input type="text" class="form-control" ng-model="inputText" placeholder="Search Tag" blur-me="searchBlur" />
             <span class="input-group-btn">
-                <button class="btn btn-default" type="submit">
+                <button class="btn btn-default" type="submit" tooltip="搜尋檔案" tooltip-trigger="mouseenter" tooltip-placement="left">
                     <span class="glyphicon glyphicon-search"></span>
                 </button>
             </span>
@@ -166,7 +166,7 @@
             </a>
         </li>
         <li ng-show="parentList.length > 0" class="dropdown" dropdown="">
-            <span class="dropdown-toggle" dropdown-toggle="">
+            <span class="dropdown-toggle" dropdown-toggle="" tooltip="儲存到我的最愛" tooltip-trigger="mouseenter" tooltip-placement="bottom">
                 <a href="#" class="item-point"><i class="glyphicon glyphicon-floppy-disk"></i>&nbsp;SAVE</a>
             </span>
             <ul class="dropdown-menu" id="bookmark-list">
@@ -181,7 +181,7 @@
         </li>
     </ol>
     <ul class="nav nav-pills" id="item-head" aria-expanded="true">
-        <li class="text-right item-check-head {{!selectList.length && 'active' || ''}}">
+        <li tooltip="全選 / 取消，點選下方的checkbox可以觀看共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right" class="text-right item-check-head {{!selectList.length && 'active' || ''}}">
             <a ng-click="cancelSelect()" href="#">
                 <i class="glyphicon {{selectList.length && 'glyphicon-remove-sign' || 'glyphicon-ok'}}"></i>
             </a>
@@ -192,7 +192,7 @@
                 <i ng-show="fileSort.name" class="{{(fileSort.name === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
             </a>
         </li>
-        <li class="pull-right item-tool {{!selectList.length && 'active' || ''}}">
+        <li class="pull-right item-tool {{!selectList.length && 'active' || ''}}" tooltip="{{selectList.length && '新增共同TAG，共同TAG顯示在列表上半部' || '設定，點選下方的expand可以開啟功能列'}}" tooltip-trigger="mouseenter" tooltip-placement="left">
             <a ng-click="openNewTag()" href="#">
                 <i class="glyphicon {{selectList.length && 'glyphicon-plus' || 'glyphicon-cog'}}"></i>
             </a>
@@ -244,8 +244,8 @@
         <table class="table table-hover">
             <tbody>
                 <tr ng-repeat="tag in tagList">
-                    <td class="item-check text-center">
-                        <button confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to delete this tag? You can only delete tag which you added." type="button" class="btn btn-default">
+                    <td class="item-check text-center" >
+                        <button confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to delete this tag? You can only delete tag which you added." type="button" class="btn btn-default" tooltip="刪除此共同TAG，需持有權限" tooltip-trigger="mouseenter" tooltip-placement="right">
                             <i class="glyphicon glyphicon-remove-sign"></i>
                         </button>
                     </td>
@@ -258,14 +258,14 @@
                     <td class="item-mtime"></td>
                     <td class="item-count"></td>
                     <td class="item-tool">
-                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false">
+                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false" tooltip="增加此TAG到預設分類裡" tooltip-trigger="mouseenter" tooltip-placement="left">
                             <span class="caret"></span>
                         </button>
                     </td>
                 </tr>
                 <tr ng-repeat="tag in exceptList">
                     <td class="item-check text-center">
-                        <button confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to delete this tag? You can only delete tag which you added." type="button" class="btn btn-default">
+                        <button confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to delete this tag? You can only delete tag which you added." type="button" class="btn btn-default" tooltip="刪除此TAG，需持有權限" tooltip-trigger="mouseenter" tooltip-placement="right">
                             <i class="glyphicon glyphicon-remove-sign"></i>
                         </button>
                     </td>
@@ -278,13 +278,13 @@
                     <td class="item-mtime"></td>
                     <td class="item-count"></td>
                     <td class="item-tool">
-                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false">
+                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false" tooltip="增加此TAG到預設分類裡" tooltip-trigger="mouseenter" tooltip-placement="left">
                             <span class="caret"></span>
                         </button>
                     </td>
                 </tr>
                 <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'warning' || ''}} {{item.recycle === 4 && 'danger' || ''}}">
-                    <td class="item-check text-center"><input type="checkbox" ng-model="item.select"></td>
+                    <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG，顯示在列表上半部" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
                     <td class="item-name" ng-if="item.media" confirmed-click="handleMedia('act', item)" ng-confirm-click="Would you sure to handle this media?">
                         {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}} {{item.media.split}}
                     </td>
@@ -324,7 +324,7 @@
                     <td class="item-mtime">{{item.utime}}</td>
                     <td class="item-count">{{item.count}}</td>
                     <td class="item-tool">
-                        <button ng-click="selectItem($event, item)" type="button" class="btn btn-default" aria-expanded="false">
+                        <button ng-click="selectItem($event, item)" type="button" class="btn btn-default" aria-expanded="false" tooltip="開啟功能列" tooltip-trigger="mouseenter" tooltip-placement="left">
                             <span class="caret"></span>
                         </button>
                     </td>
