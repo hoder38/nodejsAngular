@@ -1228,11 +1228,12 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
             if (!fs.existsSync(filePath + '_img/temp')) {
                 mkdirp(filePath + '_img/temp', function(err) {
                     if(err) {
-                        util.handleError(err, callback, callback);
+                        util.handleError(err, callback, errerMedia, fileID, callback);
                     }
                     zipbook();
                 });
             } else {
+                deleteFolderRecursive(filePath + '_img/temp');
                 zipbook();
             }
             function zipbook() {
@@ -1246,7 +1247,7 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                 child_process.exec(cmdline, function (err, output) {
                     if (err) {
                         console.log(cmdline);
-                        util.handleError(err, callback, callback);
+                        util.handleError(err, callback, errerMedia, fileID, callback);
                     }
                     var zip_arr = [];
                     fs.readdirSync(filePath + '_img/temp').forEach(function(file,index){
@@ -3213,7 +3214,7 @@ app.get('/views/homepage', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    res.send("hello<br/> 壓縮檔加上.book可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/><br/>指令不算在單項搜尋裡");
+    res.send("hello<br/> 壓縮檔加上.book可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/><br/>指令不算在單項搜尋裡<br/>預設只會搜尋到有first item的檔案<br/>方便尋找，可以縮小範圍後再下all item顯示全部");
 });
 
 app.get('/views/:id(\\w+)', function(req, res) {
