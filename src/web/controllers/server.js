@@ -2630,13 +2630,15 @@ app.get('/api/stock/init', function(req, res,next) {
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        stockTool.initXml(function (err, xml) {
+        stockTool.initXml('/home/pi/test8213.xml', function (err, xml) {
             if (err) {
                 util.handleError(err, next, res);
             }
             var cash = stockTool.getCashflow(xml);
             var asset = stockTool.getAsset(xml);
-            res.json({xml: xml, cash: cash, asset: asset});
+            var sales = stockTool.getSales(xml);
+            var cashStatus = stockTool.getCashStatus(cash, asset);
+            res.json({xml: xml, cash: cash, asset: asset, sales: sales, cashStatus: cashStatus});
         });
     });
 });
