@@ -154,6 +154,10 @@ module.exports = function(collection) {
                                 break;
                             }
                         }
+                        if (search[name].index < search[name].markIndex) {
+                            search[name].bookmark = '';
+                            search[name].markIndex = 0;
+                        }
                         return true;
                     }
                 }

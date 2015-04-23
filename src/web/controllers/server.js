@@ -430,6 +430,9 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
             var name = util.isValidString(req.params.name, 'name');
+            if (req.params.name.match(/^>(\d+)$/)) {
+                name = req.params.name;
+            }
             if (name === false) {
                 util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
             }
