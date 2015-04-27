@@ -2641,7 +2641,9 @@ app.get('/api/stock/init', function(req, res,next) {
             var asset = stockTool.getAsset(xml);
             var sales = stockTool.getSales(xml);
             var cashStatus = stockTool.getCashStatus(cash, asset);
-            res.json({xml: xml, cash: cash, asset: asset, sales: sales, cashStatus: cashStatus});
+            var assetStatus = stockTool.getAssetStatus(asset);
+            var salseStatus = stockTool.getSalesStatus(sales, asset);
+            res.json({xml: xml, cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salseStatus: salseStatus});
         });
     });
 });
