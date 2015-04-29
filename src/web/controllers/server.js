@@ -4099,4 +4099,6 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
 
 console.log('start express server\n');
 
+console.log("Server running at http://" + config_glb.ip + ":" + config_glb.http_port + ' ' + new Date());
+
 console.log("Server running at https://" + config_glb.ip + ":" + config_glb.port + ' ' + new Date());
