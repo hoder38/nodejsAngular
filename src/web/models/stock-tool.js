@@ -81,7 +81,7 @@ module.exports = {
         for (var i in asset) {
             assetStatus[i] = [];
             for (var j in asset[i]) {
-                assetStatus[i][j] = {cash: Math.ceil(asset[i][j].cash/asset[i][j].total*100), inventories: Math.ceil(asset[i][j].inventories/asset[i][j].total*100), receivable: Math.ceil(asset[i][j].receivable/asset[i][j].total*100), payable: Math.ceil(asset[i][j].payable/asset[i][j].total*100), property: Math.ceil(asset[i][j].property/asset[i][j].total*100), current_liabilities: Math.ceil(asset[i][j].current_liabilities/asset[i][j].total*100), noncurrent_liabilities: Math.ceil(asset[i][j].noncurrent_liabilities/asset[i][j].total*100), equity: Math.ceil(asset[i][j].equity/asset[i][j].total*100), share: Math.ceil(asset[i][j].share/asset[i][j].total*100)
+                assetStatus[i][j] = {cash: Math.ceil(asset[i][j].cash/asset[i][j].total*100), inventories: Math.ceil(asset[i][j].inventories/asset[i][j].total*100), receivable: Math.ceil(asset[i][j].receivable/asset[i][j].total*100), payable: Math.ceil(asset[i][j].payable/asset[i][j].total*100), property: Math.ceil(asset[i][j].property/asset[i][j].total*100), current_liabilities_without_payable: Math.ceil((asset[i][j].current_liabilities - asset[i][j].payable)/asset[i][j].total*100), noncurrent_liabilities: Math.ceil(asset[i][j].noncurrent_liabilities/asset[i][j].total*100), equity: Math.ceil(asset[i][j].equity/asset[i][j].total*100), share: Math.ceil(asset[i][j].share/asset[i][j].total*100)
                     , longterm: Math.ceil(asset[i][j].longterm/asset[i][j].total*100), other: Math.ceil((asset[i][j].total - asset[i][j].cash - asset[i][j].inventories - asset[i][j].receivable - asset[i][j].property - asset[i][j].longterm)/asset[i][j].total*100)};
             }
         }
@@ -96,5 +96,25 @@ module.exports = {
             }
         }
         return salesStatus;
+    },
+    getProfitStatus: function(salesStatus, cash, asset, sales) {
+        var profitStatus = {};
+        for (var i in salesStatus) {
+            profitStatus[i] = [];
+            for (var j in salesStatus[i]) {
+                profitStatus[i][j] = {gross_profit: salesStatus[i][j].gross_profit, operating_profit: salesStatus[i][j].operating, profit: salesStatus[i][j].profit, turnover: salesStatus[i][j].salesPerAsset, asset_growth: salesStatus[i][j].profit*salesStatus[i][j].salesPerAsset, operationAG: Math.ceil(cash[i][j].operation/asset[i][j].total*100), oiAG: Math.ceil((cash[i][j].operation + cash[i][j].invest)/asset[i][j].total*100), realAG: Math.ceil(cash[i][j].change/asset[i][j].total*100), realAG_dividends: Math.ceil((cash[i][j].change - cash[i][j].dividends)/asset[i][j].total*100), operatingP: Math.ceil(cash[i][j].operation/sales[i][j].revenue*100), oiP: Math.ceil((cash[i][j].operation + cash[i][j].invest)/sales[i][j].revenue*100), realP: Math.ceil(cash[i][j].change/sales[i][j].revenue*100), realP_dividends: Math.ceil((cash[i][j].change - cash[i][j].dividends)/sales[i][j].revenue*100)};
+            }
+        }
+        return profitStatus;
+    },
+    getSafetyStatus: function(salesStatus, cash, asset) {
+        var safetyStatus = {};
+        for (var i in salesStatus) {
+            safetyStatus[i] = [];
+            for (var j in salesStatus[i]) {
+                safetyStatus[i][j] = {prMinusProfit: Math.ceil(asset[i][j].payable/asset[i][j].receivable*100) - salesStatus[i][j].profit, prRatio: Math.ceil(asset[i][j].payable/asset[i][j].receivable*100)};
+            }
+        }
+        return safetyStatus;
     }
 };
