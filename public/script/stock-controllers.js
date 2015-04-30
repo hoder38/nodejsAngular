@@ -12,7 +12,6 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                 console.log(result);
             }
         }, function(errorResult) {
-            this_obj.moreDisabled = false;
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
