@@ -2535,9 +2535,9 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
         if (url === false) {
             util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
         }
-        url = util.toValidName(url);
-        if (tagTool.isDefaultTag(tagTool.normalizeTag(url))) {
-            url = mime.addPost(url, '1');
+        var url_name = util.toValidName(url);
+        if (tagTool.isDefaultTag(tagTool.normalizeTag(url_name))) {
+            url_name = mime.addPost(url_name, '1');
         }
         var oOID = mongo.objectID();
         var utime = Math.round(new Date().getTime() / 1000);
@@ -2545,7 +2545,7 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
         var ownerTag = [];
         var data = {};
         data['_id'] = oOID;
-        data['name'] = url;
+        data['name'] = url_name;
         data['owner'] = oUser_id;
         data['utime'] = utime;
         data['url'] = url;
@@ -2560,11 +2560,11 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
         }
         data['untag'] = 1;
         data['status'] = 7;//media type
-        handleTag('', data, url, '', 7, function(err, mediaType, mediaTag, DBdata) {
+        handleTag('', data, url_name, '', 7, function(err, mediaType, mediaTag, DBdata) {
             if (err) {
                 util.handleError(err, next, res);
             }
-            var normal = tagTool.normalizeTag(url);
+            var normal = tagTool.normalizeTag(url_name);
             if (mediaTag.def.indexOf(normal) === -1) {
                 mediaTag.def.push(normal);
             }
