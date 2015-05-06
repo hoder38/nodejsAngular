@@ -29,6 +29,10 @@ var backup_folder = config_glb.google_backup_folder;
 //var auto_folder = '0B_BstyDfOj4RfkU3aGpIRDVXcEwxSkdQeEJnTWM0cG0tNk9Md0VoZ21RTkxGcUNsQUVyaW8';
 var max_retry = 10;
 
+var api_pool = [];
+
+var api_ing = 0;
+
 function sendAPI(method, data, callback) {
     var drive = googleapis.drive({ version: 'v2', auth: oauth2Client });
     var param = {};
@@ -49,6 +53,7 @@ function sendAPI(method, data, callback) {
         break;
         case 'upload':
         if (!data['type'] || !data['name'] || (!data['filePath'] && !data['body'])) {
+            exports.getApiQueue();
             util.handleError({hoerror: 2, message: 'upload parameter lost!!!'}, callback, callback);
         }
         var parent = {};
@@ -58,6 +63,7 @@ function sendAPI(method, data, callback) {
                 parent = {id: media_folder};
                 mimeType = mime.mediaMIME(data['name']);
                 if (!mimeType) {
+                    exports.getApiQueue();
                     util.handleError({hoerror: 2, message: 'upload mime type unknown!!!'}, callback, callback);
                 }
                 break;
@@ -65,6 +71,7 @@ function sendAPI(method, data, callback) {
                 parent = {id: backup_folder};
                 break;
             default:
+                exports.getApiQueue();
                 util.handleError({hoerror: 2, message: 'upload type unknown!!!'}, callback, callback);
         }
 
@@ -99,15 +106,18 @@ function sendAPI(method, data, callback) {
                 retry--;
                 if (err) {
                     if (retry === 0) {
+                        exports.getApiQueue();
                         util.handleError(err, callback, callback, null);
                     } else {
                         if (tokens.expiry_date < (Date.now())) {
                             oauth2Client.refreshAccessToken(function(err, refresh_tokens) {
                                 if (err) {
+                                    exports.getApiQueue();
                                     util.handleError(err, callback, callback, null);
                                 }
                                 mongo.orig("update", "accessToken", {api: "google"}, {$set: refresh_tokens}, function(err,token){
                                     if(err) {
+                                        exports.getApiQueue();
                                         util.handleError(err, callback, callback, null);
                                     }
                                     tokens = refresh_tokens;
@@ -119,6 +129,7 @@ function sendAPI(method, data, callback) {
                         uploadMul();
                     }
                 } else {
+                    exports.getApiQueue();
                     setTimeout(function(){
                         callback(null, metadata);
                     }, 0);
@@ -272,19 +283,31 @@ function checkOauth(callback) {
     }
 }
 
-module.exports = {
+var exports = module.exports = {
     googleApi: function (method, data, callback) {
+        if (method === 'upload') {
+            if (!this.setApiQueue('googleApi', [method, data, callback])) {
+                return false;
+            }
+        }
         console.log('googleApi');
         console.log(method);
         console.log(data);
+        var this_obj = this;
         checkOauth(function(err) {
             if (err) {
+                if (method === 'upload') {
+                    this_obj.getApiQueue();
+                }
                 util.handleError(err, callback, callback, null);
             }
             sendAPI(method, data, callback);
         });
     },
     googleDownload: function(url, filePath, callback, threshold, is_one) {
+        if (!this.setApiQueue('googleDownload', [url, filePath, callback, threshold, is_one])) {
+            return false;
+        }
         threshold = typeof threshold !== 'undefined' ? threshold : null;
         is_back = typeof is_back !== 'undefined' ? is_back : false;
         if (threshold) {
@@ -298,6 +321,7 @@ module.exports = {
         var this_obj = this;
         checkOauth(function(err) {
             if (err) {
+                this_obj.getApiQueue();
                 util.handleError(err, callback, callback, null);
             }
             var options = {
@@ -320,6 +344,7 @@ module.exports = {
                 setTimeout(function(){
                     checkOauth(function(err) {
                         if (err) {
+                            this_obj.getApiQueue();
                             util.handleError(err, callback, callback, null);
                         }
                         options = {
@@ -345,6 +370,7 @@ module.exports = {
                                     console.log('finish');
                                     var stats = fs.statSync(filePath);
                                     if (!length || length === stats["size"]) {
+                                        this_obj.getApiQueue();
                                         setTimeout(function(){
                                             callback(null);
                                         }, 0);
@@ -352,6 +378,7 @@ module.exports = {
                                         retry--;
                                         if (retry === 0) {
                                             console.log(options);
+                                            this_obj.getApiQueue();
                                             util.handleError({hoerror: 2, message: "download not complete"}, callback, callback);
                                         } else {
                                             setTimeout(function(){
@@ -361,11 +388,14 @@ module.exports = {
                                     }
                                 });
                             } else if (res.statusCode === 302){
+                                this_obj.getApiQueue();
                                 if (!res.headers.location) {
                                     console.log(res.headers);
                                     util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                                 }
-                                this_obj.googleDownload(res.headers.location, filePath, callback);
+                                setTimeout(function(){
+                                    this_obj.googleDownload(res.headers.location, filePath, callback);
+                                }, 0);
                             } else if (res.statusCode >= 400 && res.statusCode < 500) {
                                 console.log(res.statusCode);
                                 time = time * 2;
@@ -378,6 +408,7 @@ module.exports = {
                                         req.abort();
                                     } else {
                                         console.log(options);
+                                        this_obj.getApiQueue();
                                         util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                     }
                                 } else {
@@ -388,11 +419,13 @@ module.exports = {
                                         req.abort();
                                     } else {
                                         console.log(options);
+                                        this_obj.getApiQueue();
                                         util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                     }
                                 }
                             } else {
                                 console.log(res);
+                                this_obj.getApiQueue();
                                 util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                             }
                             res.on('end', function() {
@@ -649,6 +682,33 @@ module.exports = {
                 });
             }, threshold);
         }, img_threshold);
+    },
+    setApiQueue: function(name, param) {
+        if (api_ing >= config_glb.api_limit) {
+            console.log('reach limit');
+            api_pool.push({fun_name: name, fun_param: param});
+            return false;
+        } else {
+            if (api_ing < config_glb.api_limit) {
+                api_ing++;
+            }
+            return true;
+        }
+    },
+    getApiQueue: function() {
+        var this_obj = this;
+        if (api_ing > 0) {
+            api_ing--;
+        }
+        var item = api_pool.splice(0, 1)[0];
+        if (item) {
+            console.log('go queue');
+            console.log(item.fun_name);
+            console.log(item.fun_param);
+            setTimeout(function(){
+                this_obj[item.fun_name].apply(this_obj, item.fun_param);
+            }, 0);
+        }
     }
 };
 

@@ -24,6 +24,10 @@ var parent_key = config_glb.xuite_parent_key;
 
 var util = require("../util/utility.js");
 
+var api_pool = [];
+
+var api_ing = 0;
+
 var crypto = require('crypto'),
     urlMod = require('url'),
     fs = require("fs"),
@@ -231,6 +235,9 @@ module.exports = {
         });
     },
     xuiteDownload: function(url, filePath, callback, threshold) {
+        if (!this.setApiQueue('xuiteDownload', [url, filePath, callback, threshold])) {
+            return false;
+        }
         threshold = typeof threshold !== 'undefined' ? threshold : null;
         var urlParse = urlMod.parse(url);
         var options = {
@@ -264,6 +271,7 @@ module.exports = {
                                     if (res.headers['content-disposition']) {
                                         filename = res.headers['content-disposition'].match(/attachment; filename=(.*)/);
                                     }
+                                    this_obj.getApiQueue();
                                     if (filename) {
                                         setTimeout(function(){
                                             callback(null, urlParse.pathname, filename[1]);
@@ -277,6 +285,7 @@ module.exports = {
                                     retry--;
                                     if (retry === 0) {
                                         console.log(options);
+                                        this_obj.getApiQueue();
                                         util.handleError({hoerror: 2, message: "download not complete"}, callback, callback);
                                     } else {
                                         setTimeout(function(){
@@ -297,6 +306,7 @@ module.exports = {
                                     req.abort();
                                 } else {
                                     console.log(options);
+                                    this_obj.getApiQueue();
                                     util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                 }
                             } else {
@@ -307,18 +317,23 @@ module.exports = {
                                     req.abort();
                                 } else {
                                     console.log(options);
+                                    this_obj.getApiQueue();
                                     util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                 }
                             }
                         }
                     } else if (res.statusCode === 302){
+                        this_obj.getApiQueue();
                         if (!res.headers.location) {
                             console.log(res.headers);
                             util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                         }
-                        this_obj.xuiteDownload(res.headers.location, filePath, callback);
+                        setTimeout(function(){
+                            this_obj.xuiteDownload(res.headers.location, filePath, callback);
+                        }, 0);
                     } else {
                         console.log(res);
+                        this_obj.getApiQueue();
                         util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                     }
                     res.on('end', function() {
@@ -333,6 +348,9 @@ module.exports = {
         }
     },
     xuiteUpload: function(url, fields, file_location, size, callback) {
+        if (!this.setApiQueue('xuiteUpload', [url, fields, file_location, size, callback])) {
+            return false;
+        }
         var urlParse = urlMod.parse(url);
 
         // An object of options to indicate where to post to
@@ -349,18 +367,21 @@ module.exports = {
 
         fields['api_key'] = api_key;
         recur_read(null, null);
-
+        var this_obj = this;
         function recur_read(err, res) {
             if (err) {
+                this_obj.getApiQueue();
                 util.handleError(err, callback, callback, null);
             }
             if (start !== 0 && !res) {
+                this_obj.getApiQueue();
                 util.handleError({hoerror: 1, message: "error stream"}, callback, callback, null);
             }
             if (res) {
                 var result = JSON.parse(res.body);
                 if (!result.ok) {
                     console.log(result);
+                    this_obj.getApiQueue();
                     util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
                 }
                 start = result.rsp.file_info.total_filesize;
@@ -373,11 +394,13 @@ module.exports = {
                 }
                 fs.open(file_location, 'r', function(err, fd) {
                     if (err) {
+                        this_obj.getApiQueue();
                         util.handleError(err, callback, callback, null);
                     }
                     var buffer = new Buffer(end - start);
                     fs.read(fd, buffer, 0, end - start, start, function(err, num) {
                         if (err) {
+                            this_obj.getApiQueue();
                             util.handleError(err, callback, callback, null);
                         }
                         files[0]['data'] = buffer;
@@ -390,16 +413,19 @@ module.exports = {
                 fields['action'] = "commit";
                 postData(fields, null, options, {}, function(err, res) {
                     if (err) {
+                        this_obj.getApiQueue();
                         util.handleError(err, callback, callback, null);
                     }
                     var result = JSON.parse(res.body);
                     if (!result.ok) {
                         console.log(result);
+                        this_obj.getApiQueue();
                         util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
                     }
                     setTimeout(function(){
                         callback(null, result.rsp);
                     }, 0);
+                    this_obj.getApiQueue();
                 });
             }
         }
@@ -545,5 +571,32 @@ module.exports = {
                 }
             });
         }, time);
+    },
+    setApiQueue: function(name, param) {
+        if (api_ing >= config_glb.api_limit) {
+            console.log('reach limit');
+            api_pool.push({fun_name: name, fun_param: param});
+            return false;
+        } else {
+            if (api_ing < config_glb.api_limit) {
+                api_ing++;
+            }
+            return true;
+        }
+    },
+    getApiQueue: function() {
+        var this_obj = this;
+        if (api_ing > 0) {
+            api_ing--;
+        }
+        var item = api_pool.splice(0, 1)[0];
+        if (item) {
+            console.log('go queue');
+            console.log(item.fun_name);
+            console.log(item.fun_param);
+            setTimeout(function(){
+                this_obj[item.fun_name].apply(this_obj, item.fun_param);
+            }, 0);
+        }
     }
 };

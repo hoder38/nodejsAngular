@@ -15,5 +15,6 @@ module.exports = {
     google_media_folder: '0B_BstyDfOj4Rfk54SHNvU2ExV3RJTGlvWHljWTRHSXprcU0tM0o5QXR6c1dfWlNiVTV6VlE',
     google_backup_folder: '0B_BstyDfOj4RfnU3RWRldjl0RGV4YUxxZlJTOEV1c1dDemRpa2c2cFphRDQ3bnI2M2RnblU',
     nas_tmp: "/mnt/tmp",
-    nas_prefix: "/mnt/storage"
+    nas_prefix: "/mnt/storage",
+    api_limit: 5
 };
