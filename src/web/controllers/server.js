@@ -2633,43 +2633,52 @@ app.get('/api/stock/init', function(req, res,next) {
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        stockTool.initXml('/home/pi/tifrs-fr0-m1-ci-cr-8213-2013Q1.xml', function (err, xml) {
+        stockTool.initXml('/home/pi/tw-gaap-ci-8213-2012Q4-cr.xml', function (err, Bxml) {
             if (err) {
                 util.handleError(err, next, res);
             }
-            var cash = stockTool.getCashflow(xml);
-            var asset = stockTool.getAsset(xml);
-            var sales = stockTool.getSales(xml);
-            stockTool.initXml('/home/pi/tifrs-fr0-m1-ci-cr-8213-2013Q2.xml', function (err, xml) {
+            var Bcash = stockTool.getCashflow(Bxml);
+            var Basset = stockTool.getAsset(Bxml);
+            res.json({xml: Bxml, cash: Bcash, asset: Basset});
+            /*
+            stockTool.initXml('/home/pi/tifrs-fr0-m1-ci-cr-8213-2013Q1.xml', function (err, xml) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
-                cash = stockTool.getCashflow(xml, cash);
-                asset = stockTool.getAsset(xml, asset);
-                sales = stockTool.getSales(xml, sales);
-                stockTool.initXml('/home/pi/tifrs-fr0-m1-ci-cr-8213-2013Q3.xml', function (err, xml) {
+                var cash = stockTool.getCashflow(xml);
+                var asset = stockTool.getAsset(xml);
+                var sales = stockTool.getSales(xml);
+                stockTool.initXml('/home/pi/tifrs-fr0-m1-ci-cr-8213-2013Q2.xml', function (err, xml) {
                     if (err) {
                         util.handleError(err, next, res);
                     }
                     cash = stockTool.getCashflow(xml, cash);
                     asset = stockTool.getAsset(xml, asset);
                     sales = stockTool.getSales(xml, sales);
-                    stockTool.initXml('/home/pi/test8213.xml', function (err, xml) {
+                    stockTool.initXml('/home/pi/tifrs-fr0-m1-ci-cr-8213-2013Q3.xml', function (err, xml) {
                         if (err) {
                             util.handleError(err, next, res);
                         }
                         cash = stockTool.getCashflow(xml, cash);
                         asset = stockTool.getAsset(xml, asset);
                         sales = stockTool.getSales(xml, sales);
-                        var cashStatus = stockTool.getCashStatus(cash, asset);
-                        var assetStatus = stockTool.getAssetStatus(asset);
-                        var salesStatus = stockTool.getSalesStatus(sales, asset);
-                        var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
-                        var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
-                        res.json({xml: xml, cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus});
+                        stockTool.initXml('/home/pi/test8213.xml', function (err, xml) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            cash = stockTool.getCashflow(xml, cash);
+                            asset = stockTool.getAsset(xml, asset);
+                            sales = stockTool.getSales(xml, sales);
+                            var cashStatus = stockTool.getCashStatus(cash, asset);
+                            var assetStatus = stockTool.getAssetStatus(asset);
+                            var salesStatus = stockTool.getSalesStatus(sales, asset);
+                            var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
+                            var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
+                            res.json({xml: Bxml, cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus});
+                        });
                     });
                 });
-            });
+            });*/
         });
     });
 });
