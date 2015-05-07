@@ -408,6 +408,7 @@ module.exports = {
                         fields['action'] = "transfer";
                         postData(fields, files, options, {}, recur_read);
                     });
+                    fs.close(fd);
                 });
             } else {
                 fields['action'] = "commit";
