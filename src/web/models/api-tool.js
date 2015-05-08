@@ -147,7 +147,7 @@ function getFormDataForPost(fields, files) {
     return params;
 }
 
-function postData(fields, files, options, headers, callback) {
+function postData(fields, files, options, headers, callback, filePath) {
     var headerparams = {}, post_options = {};
     if (files) {
         headerparams = getFormDataForPost(fields, files);
@@ -176,21 +176,63 @@ function postData(fields, files, options, headers, callback) {
     var request = http.request(post_options, function(response) {
         response.body = '';
         response.setEncoding(options.encoding);
-        response.on('data', function(chunk){
-            response.body += chunk;
-        });
-        response.on('end', function() {
-            setTimeout(function(){
-                callback(null, response);
-            }, 0);
-        });
+
+        if (filePath) {
+            if (response.statusCode === 200) {
+                var file_write =  fs.createWriteStream(filePath);
+                response.pipe(file_write);
+                file_write.on('finish', function(){
+                    setTimeout(function(){
+                        callback(null);
+                    }, 0);
+                });
+            } else if (res.statusCode === 302){
+                if (!response.headers.location) {
+                    console.log(response.headers);
+                    util.handleError({hoerror: 1, message: response.statusCode + ': download do not complete'}, callback, callback, 400, null);
+                }
+                setTimeout(function(){
+                    var urlParse = urlMod.parse(response.headers.location);
+                    // An object of options to indicate where to post to
+                    var new_options = {
+                        host: urlParse.hostname,
+                        port: options.port,
+                        path: urlParse.path,
+                        method: options.method,
+                        encoding : options.encoding
+                    };
+                    postData(fields, files, new_options, headers, callback, filePath);
+                }, 0);
+            } else {
+                console.log(response);
+                util.handleError({hoerror: 1, message: response.statusCode + ': download do not complete'}, callback, callback, 400, null);
+            }
+            response.on('end', function() {
+                end = true;
+                console.log('response end');
+            });
+        } else {
+            response.on('data', function(chunk){
+                response.body += chunk;
+            });
+            response.on('end', function() {
+                setTimeout(function(){
+                    callback(null, response);
+                }, 0);
+            });
+        }
     });
     for (var i = 0; i < headerparams.postdata.length; i++) {
         request.write(headerparams.postdata[i]);
     }
     request.on('error', function(e) {
         console.log(post_options);
-        util.handleError(e, callback, callback, 400, null);
+        request.abort();
+        if (e.code === 'HPE_INVALID_CONSTANT') {
+            util.handleError(e, callback, callback, 400, null);
+        } else {
+            util.handleError(e);
+        }
     });
     request.end();
 }
@@ -572,6 +614,51 @@ module.exports = {
                 }
             });
         }, time);
+    },
+    getTwseXml: function(stockCode, year, quarter, filePath, callback) {
+        var url = 'http://mops.twse.com.tw/server-java/FileDownLoad';
+        var urlParse = urlMod.parse(url);
+
+        // An object of options to indicate where to post to
+        var options = {
+            host: urlParse.hostname,
+            port: 80,
+            path: urlParse.path,
+            method: 'POST',
+            encoding : 'utf8'
+        };
+        var fields = {};
+        fields['step'] = 9;
+        fields['functionName'] = 't164sb01';
+        fields['report_id'] = 'C';
+        fields['co_id'] = stockCode;
+        fields['year'] = year;
+        fields['season'] = quarter;
+        postData(fields, null, options, {}, function(err) {
+            if (err) {
+                util.handleError(err);
+                fields['functionName'] = 't147sb02';
+                fields['report_id'] = 'B';
+                postData(fields, null, options, {}, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log(filePath);
+                    var stats = fs.statSync(filePath);
+                    console.log(stats);
+                    setTimeout(function(){
+                        callback(null, filePath);
+                    }, 0);
+                }, filePath);
+            } else {
+                console.log(filePath);
+                var stats = fs.statSync(filePath);
+                console.log(stats);
+                setTimeout(function(){
+                    callback(null, filePath);
+                }, 0);
+            }
+        }, filePath);
     },
     setApiQueue: function(name, param) {
         if (api_ing >= config_glb.api_limit) {

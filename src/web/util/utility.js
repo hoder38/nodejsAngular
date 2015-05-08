@@ -121,11 +121,11 @@ module.exports = {
         if (err) {
             if (!callback && !next) {
                 if (err.hoerror) {
-                    console.log("ignored error: %s", err.message);
+                    console.log("ignored error: %s [%s]", err.message, err.code);
                     err = new Error("ignored error: " + err.message);
                 } else {
                     console.log('ignored error: ');
-                    console.log("%s %s", err.name, err.message);
+                    console.log("%s %s [%s]", err.name, err.message, err.code);
                 }
                 if (err.stack) {
                     console.log(err.stack);
@@ -137,18 +137,18 @@ module.exports = {
                         throw new Error('terminal');
                     } else if (err.hoerror === 2) {
                         if (!callback) {
-                            console.log("ignored error: %s", err.message);
+                            console.log("ignored error: %s [%s]", err.message, err.code);
                             var ig_err = new Error("ignored error: "+ err.message);
                             if (ig_err.stack) {
                                 console.log(ig_err.stack);
                             }
                         } else if (typeof callback === 'object') {
                             code = typeof code !== 'undefined' ? code : 400;
-                            console.log("user error: %s", err.message);
+                            console.log("user error: %s [%s]", err.message, err.code);
                             callback.send(err.message, code);
                             throw new Error('terminal');
                         } else if (typeof callback === 'function') {
-                            console.log("delay error: %s", err.message);
+                            console.log("delay error: %s [%s]", err.message, err.code);
                             var this_obj = this;
                             var args = Array.prototype.slice.call(arguments, 3);
                             if (args.length > 0 ) {
