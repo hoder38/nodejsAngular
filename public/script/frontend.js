@@ -5,11 +5,13 @@ function isValidString(str, type)
     }
     if (type === 'name')
     {
-        if (str.search(/^[^\\\/\|\*\?"<>:]{1,255}$/) != -1)
-        {
-            if (str.replace(/[\s　]+/g, '') !== '')
+        if (str !== '.' && str !== '..') {
+            if (str.search(/^[^\\\/\|\*\?"<>:]{1,255}$/) != -1)
             {
-                return true;
+                if (str.replace(/[\s　]+/g, '') !== '')
+                {
+                    return true;
+                }
             }
         }
     }

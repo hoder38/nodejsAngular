@@ -1017,7 +1017,8 @@ function getQuerySql(user, tagList, exactly) {
                 if (exactly[i]) {
                     nosql.$and.push({tags: normal});
                 } else {
-                    nosql.$and.push({tags: { $regex: normal }});
+                    var es_reg = escapeRegExp(normal);
+                    nosql.$and.push({tags: { $regex: es_reg }});
                 }
             }
         }
@@ -1124,4 +1125,8 @@ function CN2ArabNum(cn) {
         }
     }
     return arab;
+}
+
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
