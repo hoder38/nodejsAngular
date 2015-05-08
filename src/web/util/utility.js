@@ -61,9 +61,11 @@ module.exports = {
                 case 'name':
                     var trim = str.trim();
                     //改為 \ / : ? < > * " |  允許 ' ` &
-                    if (trim.search(/^[^\\\/\|\*\?"<>:]{1,255}$/) != -1) {
-                        if (trim.replace(/[\s　]+/g, '') !== '') {
-                            return trim;
+                    if (trim !== '.' && trim !== '..') {
+                        if (trim.search(/^[^\\\/\|\*\?"<>:]{1,255}$/) != -1) {
+                            if (trim.replace(/[\s　]+/g, '') !== '') {
+                                return trim;
+                            }
                         }
                     }
                     break;
