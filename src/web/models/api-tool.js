@@ -96,6 +96,7 @@ function sendAPI(data, method, callback) {
         });
     });
     req.on('error', function(e) {
+        console.log(options);
         util.handleError(e, callback, callback, 400, null);
     });
     req.end();
