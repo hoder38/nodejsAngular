@@ -205,7 +205,7 @@ module.exports = function(collection) {
                     if(err) {
                         util.handleError(err, next, callback, null);
                     }
-                    if (item.length === 0) {
+                    if (items.length === 0) {
                         util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, callback, null);
                     }
                     if (items[0].tags.indexOf(tagType.tag.tags) === -1) {
