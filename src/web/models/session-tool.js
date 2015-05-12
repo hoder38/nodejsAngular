@@ -35,7 +35,8 @@ module.exports = function(express) {
                 port: config_glb.session_port,
                 db: config_glb.session_name,
                 username: config_type.session_username,
-                password: config_type.session_pwd
+                password: config_type.session_pwd,
+                auto_reconnect: true
             })
         },
         orig: function(functionName) {

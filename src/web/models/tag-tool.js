@@ -178,16 +178,16 @@ module.exports = function(collection) {
                 util.handleError({hoerror: 2, message: 'not authority set default tag!!!'}, next, callback, null);
             }
             if (tagType.type === 2) {
-                mongo.orig("findOne", collection, {_id: id}, function(err, item){
+                mongo.orig("find", collection, {_id: id}, {limit: 1}, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback, null);
                     }
-                    if (!item) {
+                    if (items.length === 0) {
                         util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, callback, null);
                     }
-                    if ((tagType.tag.hasOwnProperty('adultonly') && item.adultonly === tagType.tag.adultonly) || (tagType.tag.hasOwnProperty('first') && item.first === tagType.tag.first)) {
+                    if ((tagType.tag.hasOwnProperty('adultonly') && items[0].adultonly === tagType.tag.adultonly) || (tagType.tag.hasOwnProperty('first') && items[0].first === tagType.tag.first)) {
                         setTimeout(function(){
-                            callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.name});
+                            callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: tagType.name});
                         }, 0);
                     } else {
                         mongo.orig("update", collection, {_id: id}, {$set: tagType.tag}, function(err, item2){
@@ -195,32 +195,32 @@ module.exports = function(collection) {
                                 util.handleError(err, next, callback, null);
                             }
                             setTimeout(function(){
-                                callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.name});
+                                callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: tagType.name});
                             }, 0);
                         });
                     }
                 });
             } else if (tagType.type === 1) {
-                mongo.orig("findOne", collection, {_id: id}, function(err, item){
+                mongo.orig("find", collection, {_id: id}, {limit: 1}, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback, null);
                     }
-                    if (!item) {
+                    if (item.length === 0) {
                         util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, callback, null);
                     }
-                    if (item.tags.indexOf(tagType.tag.tags) === -1) {
+                    if (items[0].tags.indexOf(tagType.tag.tags) === -1) {
                         tagType.tag[user._id.toString()] = tagType.tag.tags;
                         mongo.orig("update", collection, { _id: id }, {$addToSet: tagType.tag}, {upsert: true}, function(err, item2){
                             if(err) {
                                 util.handleError(err, next, callback, null);
                             }
                             setTimeout(function(){
-                                callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.tag.tags});
+                                callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: tagType.tag.tags});
                             }, 0);
                         });
                     } else {
                         setTimeout(function(){
-                            callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.tag.tags});
+                            callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: tagType.tag.tags});
                         }, 0);
                     }
                 });
@@ -243,11 +243,11 @@ module.exports = function(collection) {
                 console.log(tagType);
                 util.handleError({hoerror: 2, message: 'not authority delete default tag!!!'}, next, callback, null);
             }
-            mongo.orig("findOne", collection, {_id: id}, function(err, item){
+            mongo.orig("find", collection, {_id: id}, {limit: 1}, function(err, items){
                 if(err) {
                     util.handleError(err, next, callback, null);
                 }
-                if (!item) {
+                if (items.length === 0) {
                     util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, callback, null);
                 }
                 if (tagType.type === 2) {
@@ -256,23 +256,23 @@ module.exports = function(collection) {
                             util.handleError(err, next, callback, null);
                         }
                         setTimeout(function(){
-                            callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.name});
+                            callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: tagType.name});
                         }, 0);
                     });
                 } else if (tagType.type === 1) {
-                    if (tagType.tag.tags === normalize(item.name)) {
+                    if (tagType.tag.tags === normalize(items[0].name)) {
                         console.log(tagType.tag.tags);
-                        console.log(normalize(item.name));
+                        console.log(normalize(items[0].name));
                         util.handleError({hoerror: 2, message: 'can not delete file name!!!'}, next, callback, null);
                     }
                     if (util.checkAdmin(1, user)) {
                         console.log('authority del tag');
-                        if (item.tags.indexOf(tagType.tag.tags) === -1) {
+                        if (items[0].tags.indexOf(tagType.tag.tags) === -1) {
                             setTimeout(function(){
-                                callback(null, {id: item._id, adultonly: item.adultonly, tag: ''});
+                                callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: ''});
                             }, 0);
                         } else {
-                            for (var i in item) {
+                            for (var i in items[0]) {
                                 if (util.isValidString(i, 'uid')) {
                                     tagType.tag[i] = tagType.tag.tags;
                                     mongo.orig("update", collection, {_id: id}, {$pull: tagType.tag}, function(err, item2){
@@ -280,26 +280,26 @@ module.exports = function(collection) {
                                             util.handleError(err, next, callback, null);
                                         }
                                         setTimeout(function(){
-                                            callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.tag.tags});
+                                            callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: tagType.tag.tags});
                                         }, 0);
                                     });
                                 }
                             }
                         }
                     } else {
-                        if (item[user._id.toString()].indexOf(tagType.tag.tags) === -1) {
+                        if (items[0][user._id.toString()].indexOf(tagType.tag.tags) === -1) {
                             tagType.tag[user._id.toString()] = tagType.tag.tags;
                             mongo.orig("update", collection, { _id: id }, {$pull: tagType.tag}, function(err, item2){
                                 if(err) {
                                     util.handleError(err, next, callback, null);
                                 }
                                 setTimeout(function(){
-                                    callback(null, {id: item._id, adultonly: item.adultonly, tag: tagType.tag.tags});
+                                    callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: tagType.tag.tags});
                                 }, 0);
                             });
                         } else {
                             setTimeout(function(){
-                                callback(null, {id: item._id, adultonly: item.adultonly, tag: ''});
+                                callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: ''});
                             }, 0);
                         }
                     }
@@ -343,12 +343,12 @@ module.exports = function(collection) {
                                 if(err) {
                                     util.handleError(err, next, callback, null);
                                 }
-                                mongo.orig("findOne", "storage", { _id: id }, function(err, item1){
+                                mongo.orig("find", collection, { _id: id }, {limit: 1}, function(err, item1s){
                                     if(err) {
                                         util.handleError(err, next, callback, null);
                                     }
                                     setTimeout(function(){
-                                        callback(null, {history: history, id: item1._id, adultonly: item1.adultonly});
+                                        callback(null, {history: history, id: item1s[0]._id, adultonly: item1s[0].adultonly});
                                     }, 0);
                                 });
                             });
@@ -377,12 +377,12 @@ module.exports = function(collection) {
                                 if(err) {
                                     util.handleError(err, next, callback, null);
                                 }
-                                mongo.orig("findOne", "storage", { _id: id }, function(err, item1){
+                                mongo.orig("find", collection, { _id: id }, {limit: 1}, function(err, item1s){
                                     if(err) {
                                         util.handleError(err, next, callback, null);
                                     }
                                     setTimeout(function(){
-                                        callback(null, {history: history, id: item1._id, adultonly: item1.adultonly});
+                                        callback(null, {history: history, id: item1s[0]._id, adultonly: item1s[0].adultonly});
                                     }, 0);
                                 });
                             });
@@ -586,35 +586,35 @@ module.exports = function(collection) {
                 nosql.$and.push({_id: id});
             }
             delete tags;
-            mongo.orig("findOne", collection, nosql, function(err, item){
+            mongo.orig("find", collection, nosql, {limit: 1}, function(err, items){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
-                if (!item) {
+                if (items.length === 0) {
                     setTimeout(function(){
                         callback(null, {empty: true});
                     }, 0);
                 } else {
                     if (nosql.mediaType) {
                         setTimeout(function(){
-                            callback(null, {item: item, mediaHadle: 1});
+                            callback(null, {item: items[0], mediaHadle: 1});
                         }, 0);
                     } else {
                         if (parentList.bookmark) {
                             this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
                                 if (latest) {
                                     setTimeout(function(){
-                                        callback(null, {item: item, latest: latest, bookmark: parentList.bookmark});
+                                        callback(null, {item: items[0], latest: latest, bookmark: parentList.bookmark});
                                     }, 0);
                                 } else {
                                     setTimeout(function(){
-                                        callback(null, {item: item, bookmark: parentList.bookmark});
+                                        callback(null, {item: items[0], bookmark: parentList.bookmark});
                                     }, 0);
                                 }
                             });
                         } else {
                             setTimeout(function(){
-                                callback(null, {item: item});
+                                callback(null, {item: items[0]});
                             }, 0);
                         }
                     }
@@ -684,7 +684,7 @@ module.exports = function(collection) {
                 sortName = 'qtime';
             }
             var options = {"limit": queryLimit, "skip" : page, "sort": [[sortName, sortType]]};
-            mongo.orig("find", collection + "Dir" ,{parent: name}, options, function(err, taglist){
+            mongo.orig("find", collection + "Dir" ,{parent: name}, {name: 1}, options, function(err, taglist){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
@@ -718,11 +718,11 @@ module.exports = function(collection) {
                 }
             }
             var normal = normalize(tag);
-            mongo.orig("findOne", collection + "Dir" ,{parent: name, name: normal}, function(err,parent){
+            mongo.orig("find", collection + "Dir" ,{parent: name, name: normal}, {name: 1}, {limit: 1}, function(err,parents){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
-                if (!parent) {
+                if (parents.length === 0) {
                     mongo.orig("insert", collection + "Dir", {parent: name, name: normal, qtime: Math.round(new Date().getTime() / 1000)}, function(err, parent1){
                         if(err) {
                             util.handleError(err, next, callback);
@@ -733,7 +733,7 @@ module.exports = function(collection) {
                     });
                 } else {
                     setTimeout(function(){
-                        callback(null, {name: parent.name, id: parent._id});
+                        callback(null, {name: parents[0].name, id: parents[0]._id});
                     }, 0);
                 }
             });
@@ -760,11 +760,11 @@ module.exports = function(collection) {
         },
         queryParentTag: function(id, single, sortName, sortType, user, session, next, callback) {
             var this_obj = this;
-            mongo.orig("findOne", collection + "Dir" ,{_id: id}, function(err,parent){
+            mongo.orig("find", collection + "Dir" ,{_id: id}, {name: 1}, {limit: 1}, function(err,parents){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
-                if (!parent) {
+                if (parents.length === 0) {
                     util.handleError({hoerror: 2, message: "can not find dir"}, next, callback);
                 } else {
                     if (single === 'single') {
@@ -772,13 +772,13 @@ module.exports = function(collection) {
                         if (!tags) {
                             util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                         }
-                        tags.setSingleArray(parent.name);
+                        tags.setSingleArray(parents[0].name);
                     }
-                    this_obj.tagQuery(0, parent.name, true, null, sortName, sortType, user, session, next, function(err, result) {
+                    this_obj.tagQuery(0, parents[0].name, true, null, sortName, sortType, user, session, next, function(err, result) {
                         if (err) {
                             util.handleError(err, next, callback);
                         }
-                        mongo.orig("update", collection + "Dir", {_id: parent._id}, {$set: {qtime: Math.round(new Date().getTime() / 1000)}}, function(err, parent1){
+                        mongo.orig("update", collection + "Dir", {_id: parents[0]._id}, {$set: {qtime: Math.round(new Date().getTime() / 1000)}}, function(err, parent1){
                             if(err) {
                                 util.handleError(err, next, callback);
                             }
@@ -791,13 +791,13 @@ module.exports = function(collection) {
             });
         },
         getLatest: function(bookmark, next, callback) {
-            mongo.orig("findOne", collection + "User" ,{_id: mongo.objectID(bookmark)}, function(err,item){
+            mongo.orig("find", collection + "User" ,{_id: mongo.objectID(bookmark)}, {limit: 1}, function(err,items){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
                 var latest = false;
-                if (item.latest) {
-                    latest = item.latest;
+                if (items.length > 0 && items[0].latest) {
+                    latest = items[0].latest;
                 }
                 setTimeout(function(){
                     callback(null, latest);
@@ -834,7 +834,7 @@ module.exports = function(collection) {
             }
         },
         getBookmarkList: function(sortName, sortType, user, next, callback) {
-            mongo.orig("find", collection + "User", {userId: user._id}, {"sort": [[sortName, sortType]]}, function(err, items){
+            mongo.orig("find", collection + "User", {userId: user._id}, {name: 1}, {"sort": [[sortName, sortType]]}, function(err, items){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
@@ -849,18 +849,18 @@ module.exports = function(collection) {
         },
         getBookmark: function(id, sortName, sortType, user, session, next, callback) {
             var this_obj = this;
-            mongo.orig("findOne", collection + "User", {_id: id}, function(err, item){
+            mongo.orig("find", collection + "User", {_id: id}, {limit: 1}, function(err, items){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
-                if (!item) {
+                if (items.length === 0) {
                     util.handleError({hoerror: 2, message: "can not find bookmark!!!"}, next, callback);
                 }
                 var tags = this_obj.searchTags(session, 'parent');
                 if (!tags) {
                     util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
-                tags.setArray(item._id, item.tag, item.exactly);
+                tags.setArray(items[0]._id, items[0].tag, items[0].exactly);
                 this_obj.tagQuery(0, null, null, null, sortName, sortType, user, session, next, function(err, result) {
                     if (err) {
                         util.handleError(err, next, callback);
@@ -890,11 +890,11 @@ module.exports = function(collection) {
             if (parentList.cur.length <= 0) {
                 util.handleError({hoerror: 2, message: 'empty parent list!!!'}, next, callback);
             }
-            mongo.orig("findOne", collection + "User", {userId: user._id, name: name}, function(err, item){
+            mongo.orig("find", collection + "User", {userId: user._id, name: name}, {limit: 1}, function(err, items){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
-                if (item) {
+                if (items.length > 0) {
                     var utime = Math.round(new Date().getTime() / 1000);
                     var data = {};
                     data['tag'] = parentList.cur;
@@ -904,7 +904,7 @@ module.exports = function(collection) {
                         if(err) {
                             util.handleError(err, next, callback);
                         }
-                        tags.setArray(item._id);
+                        tags.setArray(items[0]._id);
                         setTimeout(function(){
                             callback(null, {apiOk: true});
                         }, 0);

@@ -198,16 +198,16 @@ function postData(fields, files, options, headers, callback) {
 
 module.exports = {
     refreshToken: function(callback) {
-        mongo.orig("findOne", "accessToken", {api: "xuite"}, function(err, token){
+        mongo.orig("find", "accessToken", {api: "xuite"}, {limit: 1}, function(err, tokens){
             if(err) {
                 util.handleError(err, callback, callback);
             }
-            if (!token) {
+            if (tokens.length === 0) {
                 util.handleError({hoerror: 1, message: "can not find token"}, callback, callback);
             }
             var options = {
                 host: "my.xuite.net",
-                path: "/service/account/token.php?grant_type=refresh_token&client_id=" + api_key + "&client_secret=" + api_secret + "&refresh_token=" + token["refresh_token"] + "&redirect_uri=http://114.32.213.158/refresh",
+                path: "/service/account/token.php?grant_type=refresh_token&client_id=" + api_key + "&client_secret=" + api_secret + "&refresh_token=" + tokens[0]["refresh_token"] + "&redirect_uri=http://114.32.213.158/refresh",
                 port: 443,
                 method: 'GET',
                 headers: {
@@ -292,7 +292,6 @@ module.exports = {
                                         setTimeout(function(){
                                             recur_download(1000);
                                         }, 0);
-                                        req.abort();
                                     }
                                 }
                             });
@@ -304,7 +303,6 @@ module.exports = {
                                     setTimeout(function(){
                                         recur_download(time);
                                     }, 0);
-                                    req.abort();
                                 } else {
                                     console.log(options);
                                     this_obj.getApiQueue();
@@ -315,7 +313,6 @@ module.exports = {
                                     setTimeout(function(){
                                         recur_download(time);
                                     }, 0);
-                                    req.abort();
                                 } else {
                                     console.log(options);
                                     this_obj.getApiQueue();
@@ -407,9 +404,9 @@ module.exports = {
                         files[0]['data'] = buffer;
                         fields['p_size'] = buffer.length;
                         fields['action'] = "transfer";
+                        fs.close(fd);
                         postData(fields, files, options, {}, recur_read);
                     });
-                    fs.close(fd);
                 });
             } else {
                 fields['action'] = "commit";
@@ -435,15 +432,15 @@ module.exports = {
     xuiteApi: function (method, data, callback) {
         var this_obj = this;
         if (!access_token || !expire_in) {
-            mongo.orig("findOne", "accessToken", {api: "xuite"}, function(err, token){
+            mongo.orig("find", "accessToken", {api: "xuite"}, {limit: 1}, function(err, tokens){
                 if(err) {
                     util.handleError(err, callback, callback, null);
                 }
-                if (!token) {
+                if (tokens.length === 0) {
                     util.handleError({hoerror: 2, message: "can not find token"}, callback, callback, null);
                 }
-                access_token = token["access_token"];
-                expire_in = token["expire_in"];
+                access_token = tokens[0]["access_token"];
+                expire_in = tokens[0]["expire_in"];
                 if ((expire_in*1000) < (Date.now())) {
                     this_obj.refreshToken(function(err) {
                         if (err) {
