@@ -638,15 +638,16 @@ module.exports = function(collection) {
                     save.sortType = 'desc';
                 }
             }
-            var options = {"limit": queryLimit, "skip" : page, "sort": [[save.sortName, save.sortType]]};
+            var options = {"sort": [[save.sortName, save.sortType]]};
+            var start = page;
             var nosql = getQuerySql(user, save.tags, save.exactly);
             if (nosql.skip) {
-                options = {"limit": queryLimit, "skip" : page + nosql.skip, "sort": [[save.sortName, save.sortType]]};
+                start = page + nosql.skip;
                 nosql = nosql.nosql;
             }
-
+            var end = start + queryLimit;
             delete tags;
-            return {nosql: nosql, options: options};
+            return {nosql: nosql, options: options, start: start, end: end};
         },
         normalizeTag: function(tag) {
             return normalize(tag);
@@ -684,7 +685,7 @@ module.exports = function(collection) {
                 sortName = 'qtime';
             }
             var options = {"limit": queryLimit, "skip" : page, "sort": [[sortName, sortType]]};
-            mongo.orig("find", collection + "Dir" ,{parent: name}, {name: 1}, options, function(err, taglist){
+            mongo.orig("find", collection + "Dir" ,{parent: name}, options, function(err, taglist){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
@@ -718,7 +719,7 @@ module.exports = function(collection) {
                 }
             }
             var normal = normalize(tag);
-            mongo.orig("find", collection + "Dir" ,{parent: name, name: normal}, {name: 1}, {limit: 1}, function(err,parents){
+            mongo.orig("find", collection + "Dir" ,{parent: name, name: normal}, {limit: 1}, function(err,parents){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
@@ -760,7 +761,7 @@ module.exports = function(collection) {
         },
         queryParentTag: function(id, single, sortName, sortType, user, session, next, callback) {
             var this_obj = this;
-            mongo.orig("find", collection + "Dir" ,{_id: id}, {name: 1}, {limit: 1}, function(err,parents){
+            mongo.orig("find", collection + "Dir" ,{_id: id}, {limit: 1}, function(err,parents){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
@@ -834,7 +835,7 @@ module.exports = function(collection) {
             }
         },
         getBookmarkList: function(sortName, sortType, user, next, callback) {
-            mongo.orig("find", collection + "User", {userId: user._id}, {name: 1}, {"sort": [[sortName, sortType]]}, function(err, items){
+            mongo.orig("find", collection + "User", {userId: user._id}, {"sort": [[sortName, sortType]]}, function(err, items){
                 if(err) {
                     util.handleError(err, next, callback);
                 }

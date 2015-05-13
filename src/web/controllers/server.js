@@ -2264,12 +2264,26 @@ app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, re
         if (!sql) {
             util.handleError({hoerror: 2, message: "query error"}, next, res);
         }
-        sql.nosql['status'] = type;
+        //status改用js找,增進db效能
+        //sql.nosql['status'] = type;
         mongo.orig("find", "storage", sql.nosql, sql.options, function(err, items){
             if(err) {
                 util.handleError(err, next, res);
             }
-            var itemList = getStorageItem(req.user, items);
+            var index = 0;
+            var typeItems = [];
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].status === type) {
+                    index++;
+                    if (index > sql.start) {
+                        typeItems.push(items[i]);
+                        if (index >= sql.end) {
+                            break;
+                        }
+                    }
+                }
+            }
+            var itemList = getStorageItem(req.user, typeItems);
             res.json({itemList: itemList});
         });
     });
@@ -2332,7 +2346,7 @@ app.get('/api/media/record/:id/:time(\\d+)', function(req, res, next){
                     util.handleError(err, next, res);
                 }
                 if (item === 0) {
-                    mongo.orig("find", "storageRecord", {userId: req.user._id}, {_id: 1}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
+                    mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
                         if (err) {
                             util.handleError(err, next, res);
                         }
@@ -2377,7 +2391,7 @@ app.get('/api/media/setTime/:id', function(req, res, next){
         if (id === false) {
             util.handleError({hoerror: 2, message: "file is not vaild"}, next, res);
         }
-        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: id}, {recordTime:1, _id:0}, {limit: 1}, function(err, items){
+        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: id}, {limit: 1}, function(err, items){
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -2724,7 +2738,7 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                                 util.handleError(err, next, res);
                             }
                             if (item2 === 0) {
-                                mongo.orig("find", "storageRecord", {userId: req.user._id}, {_id: 1}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items2){
+                                mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items2){
                                     console.log(items2);
                                     if (err) {
                                         util.handleError(err, next, res);
@@ -2759,7 +2773,7 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                     }
                 } else {
                     console.log('image settime');
-                    mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {recordTime:1, _id:0}, {limit: 1}, function(err, items3){
+                    mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {limit: 1}, function(err, items3){
                         if (err) {
                             util.handleError(err, next, res);
                         }
@@ -2823,7 +2837,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                         if (req.params.type === 'doc' && !req.params.imgName) {
                             type = 'text/html';
                             console.log('doc xls settime');
-                            mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {recordTime:1, _id:0}, {limit: 1}, function(err, items2){
+                            mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {limit: 1}, function(err, items2){
                                 if (err) {
                                     util.handleError(err, next, res);
                                 }
@@ -2864,7 +2878,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                         util.handleError(err, next, res);
                                     }
                                     if (item2 === 0) {
-                                        mongo.orig("find", "storageRecord", {userId: req.user._id}, {_id: 1}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items3){
+                                        mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items3){
                                             if (err) {
                                                 util.handleError(err, next, res);
                                             }
@@ -2926,7 +2940,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                         util.handleError(err, next, res);
                                     }
                                     if (item2 === 0) {
-                                        mongo.orig("find", "storageRecord", {userId: req.user._id}, {_id: 1}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items3){
+                                        mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items3){
                                             if (err) {
                                                 util.handleError(err, next, res);
                                             }
@@ -2963,7 +2977,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                         }
                     } else {
                         console.log('present settime');
-                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {recordTime:1, _id:0}, {limit: 1}, function(err, items2){
+                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {limit: 1}, function(err, items2){
                             if (err) {
                                 util.handleError(err, next, res);
                             }
