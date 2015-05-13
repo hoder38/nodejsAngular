@@ -400,13 +400,14 @@ module.exports = function(collection) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
             }
             var parentList = tags.resetArray();
-            var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
-            if (nosql.skip) {
-                nosql = nosql.nosql;
-            }
+            var sql = getQuerySql(user, parentList.cur, parentList.exactly);
             var options = {"limit": queryLimit, "sort": [[sortName, sortType]]};
+            if (sql.hint) {
+                sql.hint[sortName] = 1;
+                options["hint"] = sql.hint;
+            }
             delete tags;
-            mongo.orig("find", collection, nosql, options, function(err, items){
+            mongo.orig("find", collection, sql.nosql, options, function(err, items){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
@@ -427,17 +428,20 @@ module.exports = function(collection) {
                     util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
                 var parentList = tags.getArray();
-                var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
-                if (nosql.skip) {
-                    options = {"limit": queryLimit, "skip" : page + nosql.skip, "sort": [[sortName, sortType]]};
-                    nosql = nosql.nosql;
+                var sql = getQuerySql(user, parentList.cur, parentList.exactly);
+                if (sql.skip) {
+                    options["skip"] = page + sql.skip;
+                }
+                if (sql.hint) {
+                    sql.hint[sortName] = 1;
+                    options["hint"] = sql.hint;
                 }
                 delete tags;
-                mongo.orig("find", collection, nosql, options, function(err, items){
+                mongo.orig("find", collection, sql.nosql, options, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback);
                     }
-                    if (nosql.mediaType) {
+                    if (sql.nosql.mediaType) {
                         setTimeout(function(){
                             callback(null, {items: items, parentList: parentList, mediaHadle: 1});
                         }, 0);
@@ -476,17 +480,20 @@ module.exports = function(collection) {
                     util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
                 var parentList = tags.getArray(name, exactly);
-                var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
-                if (nosql.skip) {
-                    options = {"limit": queryLimit, "skip" : page + nosql.skip, "sort": [[sortName, sortType]]};
-                    nosql = nosql.nosql;
+                var sql = getQuerySql(user, parentList.cur, parentList.exactly);
+                if (sql.skip) {
+                    options["skip"] = page + sql.skip;
+                }
+                if (sql.hint) {
+                    sql.hint[sortName] = 1;
+                    options["hint"] = sql.hint;
                 }
                 delete tags;
-                mongo.orig("find", collection, nosql, options, function(err, items){
+                mongo.orig("find", collection, sql.nosql, options, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback);
                     }
-                    if (nosql.mediaType) {
+                    if (sql.nosql.mediaType) {
                         setTimeout(function(){
                             callback(null, {items: items, parentList: parentList, mediaHadle: 1});
                         }, 0);
@@ -529,17 +536,20 @@ module.exports = function(collection) {
                     util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
                 var parentList = tags.getArray(name, exactly, Pindex);
-                var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
-                if (nosql.skip) {
-                    options = {"limit": queryLimit, "skip" : page + nosql.skip, "sort": [[sortName, sortType]]};
-                    nosql = nosql.nosql;
+                var sql = getQuerySql(user, parentList.cur, parentList.exactly);
+                if (sql.skip) {
+                    options["skip"] = page + sql.skip;
+                }
+                if (sql.hint) {
+                    sql.hint[sortName] = 1;
+                    options["hint"] = sql.hint;
                 }
                 delete tags;
-                mongo.orig("find", collection, nosql, options, function(err, items){
+                mongo.orig("find", collection, sql.nosql, options, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback);
                     }
-                    if (nosql.mediaType) {
+                    if (sql.nosql.mediaType) {
                         setTimeout(function(){
                             callback(null, {items: items, parentList: parentList, mediaHadle: 1});
                         }, 0);
@@ -576,17 +586,10 @@ module.exports = function(collection) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
             }
             var parentList = tags.getArray();
-            var nosql = getQuerySql(user, parentList.cur, parentList.exactly);
-            if (nosql.skip) {
-                nosql = nosql.nosql;
-            }
-            if (!nosql.hasOwnProperty('$and')) {
-                nosql._id = id;
-            } else {
-                nosql.$and.push({_id: id});
-            }
+            var sql = getQuerySql(user, parentList.cur, parentList.exactly);
+            sql.nosql['_id'] = id;
             delete tags;
-            mongo.orig("find", collection, nosql, {limit: 1}, function(err, items){
+            mongo.orig("find", collection, sql.nosql, {limit: 1, hint: {_id: 1}}, function(err, items){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
@@ -595,7 +598,7 @@ module.exports = function(collection) {
                         callback(null, {empty: true});
                     }, 0);
                 } else {
-                    if (nosql.mediaType) {
+                    if (sql.nosql.mediaType) {
                         setTimeout(function(){
                             callback(null, {item: items[0], mediaHadle: 1});
                         }, 0);
@@ -638,16 +641,17 @@ module.exports = function(collection) {
                     save.sortType = 'desc';
                 }
             }
-            var options = {"sort": [[save.sortName, save.sortType]]};
-            var start = page;
-            var nosql = getQuerySql(user, save.tags, save.exactly);
-            if (nosql.skip) {
-                start = page + nosql.skip;
-                nosql = nosql.nosql;
+            var options = {"limit": queryLimit, "skip" : page, "sort": [[save.sortName, save.sortType]]};
+            var sql = getQuerySql(user, save.tags, save.exactly);
+            if (sql.skip) {
+                options['skip'] = page + sql.skip;
             }
-            var end = start + queryLimit;
+            if (sql.hint) {
+                sql.hint[save.sortName] = 1;
+                options["hint"] = sql.hint;
+            }
             delete tags;
-            return {nosql: nosql, options: options, start: start, end: end};
+            return {nosql: sql.nosql, options: options};
         },
         normalizeTag: function(tag) {
             return normalize(tag);
@@ -968,13 +972,19 @@ function inAdultonlyArray(parent) {
 
 function getQuerySql(user, tagList, exactly) {
     var nosql = {first: 1};
+    var is_first = true;
+    var is_recycle = false;
+    var is_adultonly = false;
+    var is_tags = false;
     var skip = 0;
     if (tagList.length === 0) {
         if (!util.checkAdmin(2, user)) {
             nosql['adultonly'] = 0;
+            is_adultonly = true;
         }
         if (!util.checkAdmin(1, user)) {
             nosql['recycle'] = 0;
+            is_recycle = true;
         }
     } else {
         var isAdult = false;
@@ -990,12 +1000,13 @@ function getQuerySql(user, tagList, exactly) {
             if (index === 0) {
                 if (util.checkAdmin(2, user)) {
                     nosql['adultonly'] = 1;
+                    is_adultonly = true;
                 }
             } else if (index === 1) {
                 if (util.checkAdmin(1, user)) {
                     var time = Math.round(new Date().getTime() / 1000) - handleTime;
                     console.log({mediaType: {$exists: true}, utime: {$lt: time}});
-                    return {mediaType: {$exists: true}, utime: {$lt: time}};
+                    return {nosql: {mediaType: {$exists: true}, utime: {$lt: time}}};
                 }
             } else if (index === 2) {
                 if (util.checkAdmin(1, user)) {
@@ -1003,20 +1014,22 @@ function getQuerySql(user, tagList, exactly) {
                     var unHit = user.unHit? user.unHit: unactive_hit;
                     var time = Math.round(new Date().getTime() / 1000) - unDay * 86400;
                     console.log({count: {$lt: unHit}, utime: {$lt: time}});
-                    return {count: {$lt: unHit}, utime: {$lt: time}};
+                    return {nosql: {count: {$lt: unHit}, utime: {$lt: time}}};
                 }
             } else if (index === 3) {
                 if (util.checkAdmin(1, user)) {
                     var time = Math.round(new Date().getTime() / 1000) - handleTime;
                     console.log({recycle: {$ne: 0}, utime: {$lt: time}});
-                    return {recycle: {$ne: 0}, utime: {$lt: time}};
+                    return {nosql: {recycle: {$ne: 0}, utime: {$lt: time}}};
                 }
             } else if (index === 4) {
             } else if (index === 5) {
                 delete nosql['first'];
+                is_first = false;
             } else {
                 if (exactly[i]) {
                     nosql.$and.push({tags: normal});
+                    is_tags = true;
                 } else {
                     var es_reg = escapeRegExp(normal);
                     nosql.$and.push({tags: { $regex: es_reg }});
@@ -1025,9 +1038,11 @@ function getQuerySql(user, tagList, exactly) {
         }
         if (!util.checkAdmin(1, user)) {
             nosql['recycle'] = 0;
+            is_recycle = true;
         }
         if (!util.checkAdmin(2, user)) {
             nosql['adultonly'] = 0;
+            is_adultonly = true;
         }
     }
     console.log(nosql);
@@ -1037,11 +1052,31 @@ function getQuerySql(user, tagList, exactly) {
             delete(nosql.$and);
         }
     }
+    var hint = {};
+    if (is_recycle) {
+        hint['recycle'] = 1;
+    }
+    if (is_adultonly) {
+        hint['adultonly'] = 1;
+    }
+    if (is_tags) {
+        hint['tags'] = 1;
+    }
+    if (is_first) {
+        hint['first'] = 1;
+    }
+    console.log(hint);
+    var sql = {nosql: nosql};
+
+    if (hint) {
+        sql['hint'] = hint;
+    }
+
     if (skip) {
         console.log('skip:' + skip);
-        nosql = {skip: skip, nosql: nosql};
+        sql['skip'] = skip;
     }
-    return nosql;
+    return sql;
 }
 
 function getQueryTag(user, tag, del) {

@@ -2264,26 +2264,12 @@ app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, re
         if (!sql) {
             util.handleError({hoerror: 2, message: "query error"}, next, res);
         }
-        //status改用js找,增進db效能
-        //sql.nosql['status'] = type;
+        sql.nosql['status'] = type;
         mongo.orig("find", "storage", sql.nosql, sql.options, function(err, items){
             if(err) {
                 util.handleError(err, next, res);
             }
-            var index = 0;
-            var typeItems = [];
-            for (var i = 0; i < items.length; i++) {
-                if (items[i].status === type) {
-                    index++;
-                    if (index > sql.start) {
-                        typeItems.push(items[i]);
-                        if (index >= sql.end) {
-                            break;
-                        }
-                    }
-                }
-            }
-            var itemList = getStorageItem(req.user, typeItems);
+            var itemList = getStorageItem(req.user, items);
             res.json({itemList: itemList});
         });
     });
