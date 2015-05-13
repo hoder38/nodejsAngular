@@ -1476,17 +1476,22 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             'getbookmark': { method:'GET' }
         });
         this.$parent.moreDisabled = true;
+        this.$parent.more = true;
         bookmarkapi.getbookmark({}, function(result) {
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
                 this_obj.$parent.itemList = [];
-                var date;
-                for (var i in result.itemList) {
-                    result.itemList[i].select = false;
-                    date = new Date(result.itemList[i].utime*1000);
-                    result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
-                    this_obj.$parent.itemList.push(result.itemList[i]);
+                if (result.itemList.length > 0) {
+                    var date;
+                    for (var i in result.itemList) {
+                        result.itemList[i].select = false;
+                        date = new Date(result.itemList[i].utime*1000);
+                        result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                        this_obj.$parent.itemList.push(result.itemList[i]);
+                    }
+                } else {
+                    this_obj.$parent.more = false;
                 }
                 this_obj.$parent.page = result.itemList.length;
                 this_obj.$parent.latest = result.latest;

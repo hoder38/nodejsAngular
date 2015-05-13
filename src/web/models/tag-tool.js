@@ -1065,13 +1065,8 @@ function getQuerySql(user, tagList, exactly) {
     if (is_first) {
         hint['first'] = 1;
     }
-    console.log(hint);
     var sql = {nosql: nosql};
-
-    if (hint) {
-        sql['hint'] = hint;
-    }
-
+    sql['hint'] = hint;
     if (skip) {
         console.log('skip:' + skip);
         sql['skip'] = skip;
