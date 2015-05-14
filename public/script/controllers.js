@@ -1000,6 +1000,39 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         }
     }
 
+    $scope.addTag = function(tag) {
+        if (isValidString(tag, 'name')) {
+            if (this.selectList.length > 0) {
+                var this_obj = this;
+                for (var i in this.selectList) {
+                    var Info = $resource('/api/addTag/' + this.selectList[i].id, {}, {
+                        'addTag': { method:'PUT' }
+                    });
+                    Info.addTag({tag: tag}, function (result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        }
+                        if (Number(i) === this_obj.selectList.length -1) {
+                            this_obj.tagNew = false;
+                        }
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
+                }
+            } else {
+                addAlert('Please selects item!!!');
+            }
+        } else {
+            addAlert('Tag is not vaild!!!');
+        }
+    }
+
     $scope.delTag = function(tag) {
         if (isValidString(tag, 'name')) {
             var this_itemList = this.itemList;

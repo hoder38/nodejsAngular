@@ -16,5 +16,7 @@ module.exports = {
     google_backup_folder: '0B_BstyDfOj4RfnU3RWRldjl0RGV4YUxxZlJTOEV1c1dDemRpa2c2cFphRDQ3bnI2M2RnblU',
     nas_tmp: "/mnt/tmp",
     nas_prefix: "/mnt/storage",
+    hint: false,
+    autoUpload: false,
     api_limit: 5
 };

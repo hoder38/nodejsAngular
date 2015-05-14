@@ -246,7 +246,7 @@
             <tbody>
                 <tr ng-repeat="tag in tagList">
                     <td class="item-check text-center" >
-                        <button confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to delete this tag? You can only delete tag which you added." type="button" class="btn btn-default" tooltip="刪除此共同TAG，需持有權限" tooltip-trigger="mouseenter" tooltip-placement="right">
+                        <button confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to DELETE this tag? You can only delete tag which you added." type="button" class="btn btn-default" tooltip="刪除此共同TAG，需持有權限" tooltip-trigger="mouseenter" tooltip-placement="right">
                             <i class="glyphicon glyphicon-remove-sign"></i>
                         </button>
                     </td>
@@ -266,8 +266,8 @@
                 </tr>
                 <tr ng-repeat="tag in exceptList">
                     <td class="item-check text-center">
-                        <button confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to delete this tag? You can only delete tag which you added." type="button" class="btn btn-default" tooltip="刪除此TAG，需持有權限" tooltip-trigger="mouseenter" tooltip-placement="right">
-                            <i class="glyphicon glyphicon-remove-sign"></i>
+                        <button confirmed-click="addTag(tag)" ng-confirm-click="Would you sure to ADD this tag?" type="button" class="btn btn-default" tooltip="增加此TAG為共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right">
+                            <i class="glyphicon glyphicon-plus-sign"></i>
                         </button>
                     </td>
                     <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">

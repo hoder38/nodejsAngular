@@ -4,7 +4,7 @@ var mongo = require("../models/mongo-tool.js");
 var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item'];
 
 var parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
-var adultonly_arr = [{'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_category', 'tw': '18禁分類'}, {'name': 'adultonly_producer', 'tw': '成人片商'}, {'name': 'adultonly_franchise', 'tw': '成人系列作'}];
+var adultonly_arr = [{'name': 'adult_command', 'tw': '18禁指令'}, {'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_category', 'tw': '18禁分類'}, {'name': 'adultonly_producer', 'tw': '成人片商'}, {'name': 'adultonly_franchise', 'tw': '成人系列作'}];
 
 var queryLimit = 20;
 
@@ -13,6 +13,12 @@ var handleTime = 7200,
     unactive_hit = 10;
 
 var bookmarkLimit = 50;
+
+var config_type = require('../../../ver.js');
+
+var config_glb = require('../../../config/' + config_type.dev_type + '.js');
+
+var is_hint = config_glb.hint;
 
 module.exports = function(collection) {
     return {
@@ -973,7 +979,6 @@ function inAdultonlyArray(parent) {
 function getQuerySql(user, tagList, exactly) {
     var nosql = {first: 1};
     var is_first = true;
-    var is_recycle = false;
     var is_adultonly = false;
     var is_tags = false;
     var skip = 0;
@@ -984,7 +989,6 @@ function getQuerySql(user, tagList, exactly) {
         }
         if (!util.checkAdmin(1, user)) {
             nosql['recycle'] = 0;
-            is_recycle = true;
         }
     } else {
         var isAdult = false;
@@ -1038,7 +1042,6 @@ function getQuerySql(user, tagList, exactly) {
         }
         if (!util.checkAdmin(1, user)) {
             nosql['recycle'] = 0;
-            is_recycle = true;
         }
         if (!util.checkAdmin(2, user)) {
             nosql['adultonly'] = 0;
@@ -1053,9 +1056,6 @@ function getQuerySql(user, tagList, exactly) {
         }
     }
     var hint = {};
-    if (is_recycle) {
-        hint['recycle'] = 1;
-    }
     if (is_adultonly) {
         hint['adultonly'] = 1;
     }
@@ -1066,7 +1066,9 @@ function getQuerySql(user, tagList, exactly) {
         hint['first'] = 1;
     }
     var sql = {nosql: nosql};
-    sql['hint'] = hint;
+    if (is_hint) {
+        sql['hint'] = hint;
+    }
     if (skip) {
         console.log('skip:' + skip);
         sql['skip'] = skip;
