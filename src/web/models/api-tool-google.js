@@ -226,14 +226,14 @@ function sendAPI(method, data, callback) {
 
 function checkOauth(callback) {
     if (!tokens.access_token || !tokens.expiry_date) {
-        mongo.orig("findOne", "accessToken", {api: "google"}, function(err, token){
+        mongo.orig("find", "accessToken", {api: "google"}, {limit: 1}, function(err, token){
             if(err) {
                 util.handleError(err, callback, callback, null);
             }
-            if (!token) {
+            if (token.length === 0) {
                 util.handleError({hoerror: 2, message: "can not find token"}, callback, callback, null);
             }
-            tokens = token;
+            tokens = token[0];
             if (tokens.expiry_date < (Date.now())) {
                 oauth2Client.setCredentials(tokens);
                 oauth2Client.refreshAccessToken(function(err, refresh_tokens) {
@@ -405,7 +405,6 @@ var exports = module.exports = {
                                         setTimeout(function(){
                                             recur_download(time);
                                         }, 0);
-                                        req.abort();
                                     } else {
                                         console.log(options);
                                         this_obj.getApiQueue();
@@ -416,7 +415,6 @@ var exports = module.exports = {
                                         setTimeout(function(){
                                             recur_download(time);
                                         }, 0);
-                                        req.abort();
                                     } else {
                                         console.log(options);
                                         this_obj.getApiQueue();

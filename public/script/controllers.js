@@ -1003,6 +1003,39 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         }
     }
 
+    $scope.addTag = function(tag) {
+        if (isValidString(tag, 'name')) {
+            if (this.selectList.length > 0) {
+                var this_obj = this;
+                for (var i in this.selectList) {
+                    var Info = $resource('/api/addTag/' + this.selectList[i].id, {}, {
+                        'addTag': { method:'PUT' }
+                    });
+                    Info.addTag({tag: tag}, function (result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        }
+                        if (Number(i) === this_obj.selectList.length -1) {
+                            this_obj.tagNew = false;
+                        }
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
+                }
+            } else {
+                addAlert('Please selects item!!!');
+            }
+        } else {
+            addAlert('Tag is not vaild!!!');
+        }
+    }
+
     $scope.delTag = function(tag) {
         if (isValidString(tag, 'name')) {
             var this_itemList = this.itemList;
@@ -1479,17 +1512,22 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             'getbookmark': { method:'GET' }
         });
         this.$parent.moreDisabled = true;
+        this.$parent.more = true;
         bookmarkapi.getbookmark({}, function(result) {
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
                 this_obj.$parent.itemList = [];
-                var date;
-                for (var i in result.itemList) {
-                    result.itemList[i].select = false;
-                    date = new Date(result.itemList[i].utime*1000);
-                    result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
-                    this_obj.$parent.itemList.push(result.itemList[i]);
+                if (result.itemList.length > 0) {
+                    var date;
+                    for (var i in result.itemList) {
+                        result.itemList[i].select = false;
+                        date = new Date(result.itemList[i].utime*1000);
+                        result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                        this_obj.$parent.itemList.push(result.itemList[i]);
+                    }
+                } else {
+                    this_obj.$parent.more = false;
                 }
                 this_obj.$parent.page = result.itemList.length;
                 this_obj.$parent.latest = result.latest;

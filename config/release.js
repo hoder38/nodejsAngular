@@ -11,10 +11,12 @@ module.exports = {
     session_name: 'releaseSessionStore',
     session_ip: 'localhost',
     session_port: 27017,
-    xuite_parent_key: '777f8390c31dc934d2f6ee0d5af37afc',
+    xuite_parent_key: '79a690f50244a2e201a095d4192ca673',
     google_media_folder: '0B_BstyDfOj4Rfk54SHNvU2ExV3RJTGlvWHljWTRHSXprcU0tM0o5QXR6c1dfWlNiVTV6VlE',
     google_backup_folder: '0B_BstyDfOj4RfmJqUkJINGpVS0RhMm1qNlR5WE9FTlo2RUVQY3RIOXhlY3RRU0Vtb2NaeWc',
     nas_tmp: "/mnt/tmp",
     nas_prefix: "/mnt/release/storage",
+    hint: true,
+    autoUpload: true,
     api_limit: 5
 };

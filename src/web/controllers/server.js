@@ -20,7 +20,7 @@ var api = require("../models/api-tool.js");
 
 var googleApi = require("../models/api-tool-google.js");
 
-var tagTool = require("../models/tag-tool.js")('storage');
+var tagTool = require("../models/tag-tool.js")("storage");
 
 var stockTool = require("../models/stock-tool.js");
 
@@ -116,14 +116,14 @@ app.get('/api/userinfo', function (req, res, next) {
         console.log(req.body);
         var user_info = [];
         if (!util.checkAdmin(1, req.user)) {
-            mongo.orig("findOne", "user", {_id: req.user._id}, function(err,user){
+            mongo.orig("find", "user", {_id: req.user._id}, {limit: 1}, function(err,users){
                 if(err) {
                     util.handleError(err, next, res);
                 }
-                if (user.auto) {
-                    user.auto = 'https://drive.google.com/open?id=' + user.auto + '&authuser=0';
+                if (users.length > 0 && users[0].auto) {
+                    users[0].auto = 'https://drive.google.com/open?id=' + users[0].auto + '&authuser=0';
                 }
-                user_info.push({name: user.username, newable: false, auto: user.auto, editAuto: false});
+                user_info.push({name: users[0].username, newable: false, auto: users[0].auto, editAuto: false});
                 res.json({user_info: user_info});
             });
         } else {
@@ -264,11 +264,12 @@ app.put('/api/edituser/(:uid)?', function(req, res, next){
             if (name === false || tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
                 util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
             }
-            mongo.orig("findOne", "user", {username: name}, function(err, user){
+            mongo.orig("find", "user", {username: name}, {username: 1, _id: 0}, {limit: 1}, function(err, users){
                 if(err) {
                     util.handleError(err, next, res);
                 }
-                if (user) {
+                if (users.length > 0) {
+                    console.log(users);
                     util.handleError({hoerror: 2, message: 'already has one!!!'}, next, res);
                 }
                 data['username'] = name;
@@ -337,12 +338,12 @@ app.post('/api/adduser', function(req, res, next){
             if (conPwd === false) {
                 util.handleError({hoerror: 2, message: "con passwd is not vaild"}, next, res);
             }
-            mongo.orig("count", "user" ,{username: name}, function(err,count){
+            mongo.orig("find", "user" , {username: name}, {username: 1,_id: 0}, {limit: 1}, function(err, users){
                 if(err) {
                     util.handleError(err, next, res);
                 }
-                if (count > 0) {
-                    console.log(count);
+                if (users.length > 0) {
+                    console.log(users);
                     util.handleError({hoerror: 2, message: 'already has one!!!'}, next, res);
                 }
                 if (newPwd !== conPwd) {
@@ -358,7 +359,7 @@ app.post('/api/adduser', function(req, res, next){
                 data['perm'] = perm;
                 data['password'] = crypto.createHash('md5').update(newPwd).digest('hex');
                 console.log(data);
-                mongo.orig("insert", "user", data, function(err,user){
+                mongo.orig("insert", "user", data, function(err, user){
                     if(err) {
                         util.handleError(err, next, res);
                     }
@@ -391,14 +392,14 @@ app.put('/api/deluser/:uid', function(req, res, next){
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        mongo.orig("findOne", "user" , {_id: id}, function(err,user){
+        mongo.orig("find", "user" , {_id: id}, {limit: 1}, function(err,users){
             if(err) {
                 util.handleError(err, next, res);
             }
-            if (!user) {
+            if (users.length === 0) {
                 util.handleError({hoerror: 2, message: 'user does not exist!!!'}, next, res);
             }
-            if (util.checkAdmin(1, user)) {
+            if (util.checkAdmin(1, users[0])) {
                 util.handleError({hoerror: 2, message: 'owner cannot be deleted!!!'}, next, res);
             }
             mongo.orig("remove", "user", {_id: id, $isolated: 1}, function(err,user){
@@ -589,14 +590,14 @@ function editFile(uid, newName, user, next, callback) {
     if (id === false) {
         util.handleError({hoerror: 2, message: "uid is not vaild"}, next, callback);
     }
-    mongo.orig("findOne", "storage", { _id: id }, function(err, item){
+    mongo.orig("find", "storage", { _id: id }, {limit: 1}, function(err, items){
         if(err) {
             util.handleError(err, next, callback);
         }
-        if (!item) {
+        if (items.length === 0) {
             util.handleError({hoerror: 2, message: 'file not exist!!!'}, next, callback);
         }
-        if (!util.checkAdmin(1, user) && !user._id.equals(item.owner)) {
+        if (!util.checkAdmin(1, user) && !user._id.equals(items[0].owner)) {
             util.handleError({hoerror: 2, message: 'file is not yours!!!'}, next, callback);
         }
         mongo.orig("update", "storage", { _id: id }, {$set: {name: name}}, function(err, item2){
@@ -607,28 +608,28 @@ function editFile(uid, newName, user, next, callback) {
                 if (err) {
                     util.handleError(err, next, callback);
                 }
-                if (item.tags.indexOf(result.tag) === -1) {
-                    item.tags.splice(0, 0, result.tag);
+                if (items[0].tags.indexOf(result.tag) === -1) {
+                    items[0].tags.splice(0, 0, result.tag);
                 }
-                if (item[user._id.toString()].indexOf(result.tag) === -1) {
-                    item[user._id.toString()].splice(0, 0, result.tag);
+                if (items[0][user._id.toString()].indexOf(result.tag) === -1) {
+                    items[0][user._id.toString()].splice(0, 0, result.tag);
                 }
-                var filePath = util.getFileLocation(item.owner, item._id);
+                var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 var time = Math.round(new Date().getTime() / 1000);
-                handleTag(filePath, {utime: time, untag: 1}, newName, item.name, item.status, function(err, mediaType, mediaTag, DBdata) {
+                handleTag(filePath, {utime: time, untag: 1}, newName, items[0].name, items[0].status, function(err, mediaType, mediaTag, DBdata) {
                     if(err) {
                         util.handleError(err, next, callback);
                     }
                     var temp_tag = [];
                     for (var i in mediaTag.def) {
-                        if (item.tags.indexOf(mediaTag.def[i]) === -1) {
+                        if (items[0].tags.indexOf(mediaTag.def[i]) === -1) {
                             temp_tag.push(mediaTag.def[i]);
                         }
                     }
                     mediaTag.def = temp_tag;
                     var temp_tag2 = [];
                     for (var i in mediaTag.opt) {
-                        if (item.tags.indexOf(mediaTag.opt[i]) === -1) {
+                        if (items[0].tags.indexOf(mediaTag.opt[i]) === -1) {
                             temp_tag2.push(mediaTag.opt[i]);
                         }
                     }
@@ -643,31 +644,31 @@ function editFile(uid, newName, user, next, callback) {
                         if(err) {
                             util.handleError(err, next, callback);
                         }
-                        var result_tag = mediaTag.def.concat(item[user._id.toString()]);
+                        var result_tag = mediaTag.def.concat(items[0][user._id.toString()]);
                         var index_tag = 0;
                         for (var i in result_tag) {
-                            index_tag = item.tags.indexOf(result_tag[i]);
+                            index_tag = items[0].tags.indexOf(result_tag[i]);
                             if (index_tag !== -1) {
-                                item.tags.splice(index_tag, 1);
+                                items[0].tags.splice(index_tag, 1);
                             }
                         }
-                        if (item.adultonly === 1) {
+                        if (items[0].adultonly === 1) {
                             result_tag.push('18禁');
                         } else {
                             if (util.checkAdmin(2, user)) {
                                 mediaTag.opt.push('18禁');
                             }
                         }
-                        if (item.first === 1) {
+                        if (items[0].first === 1) {
                             result_tag.push('first item');
                         } else {
                             mediaTag.opt.push('first item');
                         }
                         setTimeout(function(){
-                            callback(null, {id: id, name: name, select: result_tag, option: mediaTag.opt, other: item.tags, adultonly: item.adultonly});
+                            callback(null, {id: id, name: name, select: result_tag, option: mediaTag.opt, other: items[0].tags, adultonly: items[0].adultonly});
                         }, 0);
-                        handleMediaUpload(mediaType, filePath, id, name, item.size, user, function(err) {
-                            sendWs({type: 'file', data: item._id}, item.adultonly);
+                        handleMediaUpload(mediaType, filePath, id, name, items[0].size, user, function(err) {
+                            sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                             if(err) {
                                 util.handleError(err);
                             }
@@ -695,21 +696,21 @@ app.put('/api/recoverFile/:uid', function(req, res, next){
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        mongo.orig("findOne", "storage", {_id: id}, function(err, item){
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items){
             if (err) {
                 util.handleError(err, next, res);
             }
-            if (!item) {
+            if (items.length === 0) {
                 util.handleError({hoerror: 2, message: 'file can not be fund!!!'}, next, res);
             }
-            if (item.recycle !== 1 && item.recycle !== 2 && item.recycle !== 3 && item.recycle !== 4) {
+            if (items[0].recycle !== 1 && items[0].recycle !== 2 && items[0].recycle !== 3 && items[0].recycle !== 4) {
                 util.handleError({hoerror: 2, message: 'recycle file first!!!'}, next, res);
             }
             mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 0}}, function(err, item2){
                 if(err) {
                     util.handleError(err, next, res);
                 }
-                sendWs({type: 'file', data: item._id}, item.adultonly);
+                sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                 res.json({apiOK: true});
             });
         });
@@ -740,26 +741,26 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        mongo.orig("findOne", "storage", {_id: id}, function(err, item){
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items){
             if (err) {
                 util.handleError(err, next, res);
             }
-            if (!item) {
+            if (items.length === 0) {
                 util.handleError({hoerror: 2, message: 'file can not be fund!!!'}, next, res);
             }
             var recycle = 1;
-            var filePath = util.getFileLocation(item.owner, item._id);
+            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
             if (req.params.recycle === '4' && util.checkAdmin(1, req.user)) {
-                if (item.recycle !== 4) {
+                if (items[0].recycle !== 4) {
                     util.handleError({hoerror: 2, message: 'recycle file first!!!'}, next, res);
                 }
-                if (item.status === 7) {
+                if (items[0].status === 7) {
                     mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
                         if(err) {
                             util.handleError(err, next, res);
                         }
                         console.log('perm delete file');
-                        sendWs({type: 'file', data: item._id}, 1, 1);
+                        sendWs({type: 'file', data: items[0]._id}, 1, 1);
                         res.json({apiOK: true});
                     });
                 } else {
@@ -801,7 +802,7 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                                         util.handleError(err, next, res);
                                     }
                                     console.log('perm delete file');
-                                    sendWs({type: 'file', data: item._id}, 1, 1);
+                                    sendWs({type: 'file', data: items[0]._id}, 1, 1);
                                     res.json({apiOK: true});
                                 });
                             }
@@ -809,14 +810,14 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                     }
                 }
             } else if (req.params.recycle === '0'){
-                if (!util.checkAdmin(1, req.user) && !req.user._id.equals(item.owner)) {
+                if (!util.checkAdmin(1, req.user) && !req.user._id.equals(items[0].owner)) {
                     util.handleError({hoerror: 2, message: 'file is not yours!!!'}, next, res);
                 }
                 mongo.orig("update", "storage", { _id: id }, {$set: {recycle: recycle, utime: Math.round(new Date().getTime() / 1000)}}, function(err, item2){
                     if(err) {
                         util.handleError(err, next, res);
                     }
-                    sendWs({type: 'file', data: item._id}, item.adultonly);
+                    sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                     res.json({apiOK: true});
                     recur_backup();
                 });
@@ -824,20 +825,20 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                 if (!util.checkAdmin(1, req.user)) {
                     util.handleError({hoerror: 2, message: 'permission dined!!!'}, next, res);
                 }
-                recycle = item.recycle;
+                recycle = items[0].recycle;
                 res.json({apiOK: true});
                 recur_backup();
             }
             function recur_backup() {
-                if (item.status === 7) {
+                if (items[0].status === 7) {
                     mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 4}}, function(err, item3){
                         if(err) {
                             util.handleError(err);
                         }
-                        sendWs({type: 'file', data: item._id}, item.adultonly);
+                        sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                     });
                 } else {
-                    googleApi.googleBackup(item._id, item.name, filePath, item.tags, recycle, function(err) {
+                    googleApi.googleBackup(items[0]._id, items[0].name, filePath, items[0].tags, recycle, function(err) {
                         if(err) {
                             util.handleError(err);
                         } else {
@@ -846,7 +847,7 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                                 if(err) {
                                     util.handleError(err);
                                 } else {
-                                    sendWs({type: 'file', data: item._id}, item.adultonly);
+                                    sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                                     if (recycle < 4) {
                                         setTimeout(function(){
                                             recur_backup();
@@ -1007,14 +1008,14 @@ app.post('/upload/subtitle/:uid', function(req, res, next) {
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        mongo.orig("findOne", "storage", { _id: id }, function(err, item){
+        mongo.orig("find", "storage", { _id: id }, {limit: 1}, function(err, items){
             if(err) {
                 util.handleError(err, next, callback);
             }
-            if (!item) {
+            if (items.length === 0 ) {
                 util.handleError({hoerror: 2, message: 'file not exist!!!'}, next, callback);
             }
-            var filePath = util.getFileLocation(item.owner, item._id);
+            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
             var folderPath = path.dirname(filePath);
             if (!fs.existsSync(folderPath)) {
                 mkdirp(folderPath, function(err) {
@@ -1207,7 +1208,7 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
 function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user, callback, vlog_act) {
     if (mediaType) {
         if (mediaType['type'] === 'vlog' || (mediaType['type'] === 'video' && vlog_act)) {
-            api.xuiteApi("xuite.webhd.prepare.cloudbox.postFile", {full_path: '/public/' + fileID.toString() + "." + mediaType['ext'], size: fileSize}, function(err, result) {
+            api.xuiteApi("xuite.webhd.prepare.cloudbox.postFile", {full_path: '/AnNoPiHo/' + fileID.toString() + "." + mediaType['ext'], size: fileSize}, function(err, result) {
                 if (err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
@@ -1875,45 +1876,43 @@ app.get('/api/handleMedia/:uid/:action(act|vlog|del)', function(req, res, next) 
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        mongo.orig("findOne", "storage", {_id: id}, function(err,item){
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
             if (err) {
                 util.handleError(err, next, res);
             }
-            if (!item) {
+            if (items.length === 0) {
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
-            console.log(item);
+            console.log(items);
             switch(req.params.action) {
                 case 'vlog':
-                    if (!item.mediaType) {
-                        console.log(item);
+                    if (!items[0].mediaType) {
                         util.handleError({hoerror: 2, message: "this file is not media!!!"}, next, res);
                     }
-                    var filePath = util.getFileLocation(item.owner, item._id);
+                    var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                     res.json({apiOK: true});
-                    handleMediaUpload(item.mediaType, filePath, item._id, item.name, item.size, req.user, function (err) {
-                        sendWs({type: 'file', data: item._id}, item.adultonly);
+                    handleMediaUpload(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].size, req.user, function (err) {
+                        sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                         util.handleError(err);
                         console.log('transcode done');
                         console.log(new Date());
                     }, true);
                 case 'act':
-                    if (!item.mediaType) {
-                        console.log(item);
+                    if (!items[0].mediaType) {
                         util.handleError({hoerror: 2, message: "this file is not media!!!"}, next, res);
                     }
-                    var filePath = util.getFileLocation(item.owner, item._id);
+                    var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                     res.json({apiOK: true});
-                    if(item.mediaType.key) {
-                        handleMedia(item.mediaType, filePath, item._id, item.name, item.mediaType.key, req.user, function (err) {
-                            sendWs({type: 'file', data: item._id}, item.adultonly);
+                    if(items[0].mediaType.key) {
+                        handleMedia(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].mediaType.key, req.user, function (err) {
+                            sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                             util.handleError(err);
                             console.log('transcode done');
                             console.log(new Date());
                         });
                     } else {
-                        handleMediaUpload(item.mediaType, filePath, item._id, item.name, item.size, req.user, function (err) {
-                            sendWs({type: 'file', data: item._id}, item.adultonly);
+                        handleMediaUpload(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].size, req.user, function (err) {
+                            sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                             util.handleError(err);
                             console.log('transcode done');
                             console.log(new Date());
@@ -1922,8 +1921,8 @@ app.get('/api/handleMedia/:uid/:action(act|vlog|del)', function(req, res, next) 
                     break;
                 case 'del':
                     res.json({apiOK: true});
-                    completeMedia(item._id, 0, function (err) {
-                        sendWs({type: 'file', data: item._id}, item.adultonly);
+                    completeMedia(items[0]._id, 0, function (err) {
+                        sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                         util.handleError(err);
                         console.log('delete media done');
                     });
@@ -2050,7 +2049,7 @@ app.get('/api/feedback', function (req, res, next) {
                 util.handleError(err, next, res);
             }
             if (items.length === 0 && util.checkAdmin(1, req.user)) {
-                mongo.orig("find", "storage", {untag: 1}, {sort: "utime", limit: 20}, function(err, items2){
+                mongo.orig("find", "storage", {untag: 1}, {sort: ["utime",'desc'], limit: 20}, function(err, items2){
                     if(err) {
                         util.handleError(err, next, res);
                     }
@@ -2268,7 +2267,7 @@ app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, re
             util.handleError({hoerror: 2, message: "query error"}, next, res);
         }
         sql.nosql['status'] = type;
-        mongo.orig("find", 'storage', sql.nosql, sql.options, function(err, items){
+        mongo.orig("find", "storage", sql.nosql, sql.options, function(err, items){
             if(err) {
                 util.handleError(err, next, res);
             }
@@ -2380,14 +2379,14 @@ app.get('/api/media/setTime/:id', function(req, res, next){
         if (id === false) {
             util.handleError({hoerror: 2, message: "file is not vaild"}, next, res);
         }
-        mongo.orig("findOne", "storageRecord", {userId: req.user._id, fileId: id}, function(err, item){
+        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: id}, {limit: 1}, function(err, items){
             if (err) {
                 util.handleError(err, next, res);
             }
-            if (!item) {
+            if (items.length === 0) {
                 res.json({apiOK: true});
             } else {
-                res.json({time: item.recordTime});
+                res.json({time: items[0].recordTime});
             }
         });
     });
@@ -2744,27 +2743,27 @@ app.get('/download/:uid', function(req, res, next){
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        mongo.orig("findOne", "storage", {_id: id}, function(err,item){
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
             if (err) {
                 util.handleError(err, next, res);
             }
-            if (!item) {
+            if (items.length === 0) {
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
-            var filePath = util.getFileLocation(item.owner, item._id);
-            tagTool.setLatest('', item._id, req.session, next, function(err) {
+            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            tagTool.setLatest('', items[0]._id, req.session, next, function(err) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
-                mongo.orig("update", "storage", {_id: item._id}, {$set: {count: item.count+1}}, function(err, item2){
+                mongo.orig("update", "storage", {_id: items[0]._id}, {$set: {count: items[0].count+1}}, function(err, item2){
                     if(err) {
                         util.handleError(err, next, res);
                     }
-                    //sendWs({type: 'file', data: item._id}, item.adultonly);
+                    //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                 });
             });
             console.log(filePath);
-            res.download(filePath, unescape(encodeURIComponent(item.name)));
+            res.download(filePath, unescape(encodeURIComponent(items[0].name)));
         });
     });
 });
@@ -2779,16 +2778,16 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        mongo.orig("findOne", "storage", {_id: id}, function(err,item){
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
             if (err) {
                 util.handleError(err, next, res);
             }
-            if (!item) {
+            if (items.length === 0) {
                 console.log(filePath);
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
-            var filePath = util.getFileLocation(item.owner, item._id);
-            if (item.present) {
+            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            if (items[0].present) {
                 if (req.params.number) {
                     index = Number(req.params.number);
                     filePath = filePath + "_img/" + index;
@@ -2797,8 +2796,8 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                         util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
                     }
                     console.log('image record');
-                    if (index === 1 || index === item.present) {
-                        mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: item._id, $isolated: 1}, function(err,user){
+                    if (index === 1 || index === items[0].present) {
+                        mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: items[0]._id, $isolated: 1}, function(err,user){
                             if(err) {
                                 util.handleError(err, next, res);
                             }
@@ -2809,18 +2808,19 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                         var data = {};
                         data['recordTime'] = index;
                         data['mtime'] = utime;
-                        mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: item._id}, {$set: data}, function(err, item2){
+                        mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {$set: data}, function(err, item2){
                             if (err) {
                                 util.handleError(err, next, res);
                             }
                             if (item2 === 0) {
-                                mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
+                                mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items2){
+                                    console.log(items2);
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
-                                    if (items.length === 0) {
+                                    if (items2.length === 0) {
                                         data['userId'] = req.user._id;
-                                        data['fileId'] = item._id;
+                                        data['fileId'] = items[0]._id;
                                         data['recordTime'] = index;
                                         data['mtime'] = utime;
                                         mongo.orig("insert", "storageRecord", data, function(err, item3){
@@ -2830,10 +2830,10 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                                             getImage(filePath);
                                         });
                                     } else {
-                                        data['fileId'] = item._id;
+                                        data['fileId'] = items[0]._id;
                                         data['recordTime'] = index;
                                         data['mtime'] = utime;
-                                        mongo.orig("update", "storageRecord", {_id: items[0]._id}, {$set: data}, function(err, item3){
+                                        mongo.orig("update", "storageRecord", {_id: items2[0]._id}, {$set: data}, function(err, item3){
                                             if(err) {
                                                 util.handleError(err, next, res);
                                             }
@@ -2848,14 +2848,14 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                     }
                 } else {
                     console.log('image settime');
-                    mongo.orig("findOne", "storageRecord", {userId: req.user._id, fileId: item._id}, function(err, item2){
+                    mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {limit: 1}, function(err, items3){
                         if (err) {
                             util.handleError(err, next, res);
                         }
-                        if (!item2) {
+                        if (items3.length === 0) {
                             filePath = filePath + "_img/1";
                         } else {
-                            filePath = filePath + "_img/" + item2.recordTime;
+                            filePath = filePath + "_img/" + items3[0].recordTime;
                         }
                         if (!fs.existsSync(filePath)) {
                             console.log(filePath);
@@ -2868,19 +2868,19 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                 getImage(filePath);
             }
             function getImage(imageFilePath) {
-                tagTool.setLatest('image', item._id, req.session, next, function(err) {
+                tagTool.setLatest('image', items[0]._id, req.session, next, function(err) {
                     if (err) {
                         util.handleError(err, next, res);
                     }
-                    mongo.orig("update", "storage", {_id: item._id}, {$set: {count: item.count+1}}, function(err, item4){
+                    mongo.orig("update", "storage", {_id: items[0]._id}, {$set: {count: items[0].count+1}}, function(err, item4){
                         if(err) {
                             util.handleError(err, next, res);
                         }
-                        //sendWs({type: 'file', data: item._id}, item.adultonly);
+                        //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                     });
                 });
                 console.log(imageFilePath);
-                res.download(imageFilePath, unescape(encodeURIComponent(item.name)));
+                res.download(imageFilePath, unescape(encodeURIComponent(items[0].name)));
             }
         });
     });
@@ -2896,30 +2896,30 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        mongo.orig("findOne", "storage", {_id: id}, function(err,item){
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
             if (err) {
                 util.handleError(err, next, res);
             }
-            if (item && (item.status === 2 || item.status === 3 || item.status === 5 || item.status === 6)) {
+            if (items.length > 0 && (items[0].status === 2 || items[0].status === 3 || items[0].status === 5 || items[0].status === 6)) {
                 var type = 'image/jpeg', ext = '.jpg';
-                if (item.status === 2) {
+                if (items[0].status === 2) {
                     getDoc(type, ext);
-                } else if (item.status === 3) {
+                } else if (items[0].status === 3) {
                     ext = '_s.jpg';
                     getDoc(type, ext);
-                } else if (item.status === 5) {
+                } else if (items[0].status === 5) {
                     if (req.params.type) {
                         if (req.params.type === 'doc' && !req.params.imgName) {
                             type = 'text/html';
                             console.log('doc xls settime');
-                            mongo.orig("findOne", "storageRecord", {userId: req.user._id, fileId: item._id}, function(err, item2){
+                            mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {limit: 1}, function(err, items2){
                                 if (err) {
                                     util.handleError(err, next, res);
                                 }
-                                if (!item2 || !item.present) {
+                                if (items2.length === 0 || !items[0].present) {
                                     ext = '_doc/doc.html';
                                 } else {
-                                    ext = '_doc/doc' + item2.recordTime + '.html';
+                                    ext = '_doc/doc' + items2[0].recordTime + '.html';
                                 }
                                 getDoc(type, ext);
                             });
@@ -2936,7 +2936,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                             console.log('xls record');
                             if (index === 1) {
                                 ext = '_doc/doc.html';
-                                mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: item._id, $isolated: 1}, function(err,user){
+                                mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: items[0]._id, $isolated: 1}, function(err,user){
                                     if(err) {
                                         util.handleError(err, next, res);
                                     }
@@ -2948,18 +2948,18 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                 var data = {};
                                 data['recordTime'] = index;
                                 data['mtime'] = utime;
-                                mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: item._id}, {$set: data}, function(err, item2){
+                                mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {$set: data}, function(err, item2){
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
                                     if (item2 === 0) {
-                                        mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
+                                        mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items3){
                                             if (err) {
                                                 util.handleError(err, next, res);
                                             }
-                                            if (items.length === 0) {
+                                            if (items3.length === 0) {
                                                 data['userId'] = req.user._id;
-                                                data['fileId'] = item._id;
+                                                data['fileId'] = items[0]._id;
                                                 data['recordTime'] = index;
                                                 data['mtime'] = utime;
                                                 mongo.orig("insert", "storageRecord", data, function(err, item3){
@@ -2969,10 +2969,10 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                                     getDoc(type, ext);
                                                 });
                                             } else {
-                                                data['fileId'] = item._id;
+                                                data['fileId'] = items[0]._id;
                                                 data['recordTime'] = index;
                                                 data['mtime'] = utime;
-                                                mongo.orig("update", "storageRecord", {_id: items[0]._id}, {$set: data}, function(err, item3){
+                                                mongo.orig("update", "storageRecord", {_id: items3[0]._id}, {$set: data}, function(err, item3){
                                                     if(err) {
                                                         util.handleError(err, next, res);
                                                     }
@@ -2991,7 +2991,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                     } else {
                         util.handleError({hoerror: 2, message: "cannot find doc!!!"}, next, res);
                     }
-                } else if (item.status === 6) {
+                } else if (items[0].status === 6) {
                     if (req.params.type) {
                         var index = Number(req.params.type);
                         if (index > 0) {
@@ -2999,7 +2999,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                             ext = '_present/' + index + '.svg';
                             console.log('present record');
                             if (index === 1) {
-                                mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: item._id, $isolated: 1}, function(err,user){
+                                mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: items[0]._id, $isolated: 1}, function(err,user){
                                     if(err) {
                                         util.handleError(err, next, res);
                                     }
@@ -3010,18 +3010,18 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                 var data = {};
                                 data['recordTime'] = index;
                                 data['mtime'] = utime;
-                                mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: item._id}, {$set: data}, function(err, item2){
+                                mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {$set: data}, function(err, item2){
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
                                     if (item2 === 0) {
-                                        mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
+                                        mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items3){
                                             if (err) {
                                                 util.handleError(err, next, res);
                                             }
-                                            if (items.length === 0) {
+                                            if (items3.length === 0) {
                                                 data['userId'] = req.user._id;
-                                                data['fileId'] = item._id;
+                                                data['fileId'] = items[0]._id;
                                                 data['recordTime'] = index;
                                                 data['mtime'] = utime;
                                                 mongo.orig("insert", "storageRecord", data, function(err, item3){
@@ -3031,10 +3031,10 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                                     getDoc(type, ext);
                                                 });
                                             } else {
-                                                data['fileId'] = item._id;
+                                                data['fileId'] = items[0]._id;
                                                 data['recordTime'] = index;
                                                 data['mtime'] = utime;
-                                                mongo.orig("update", "storageRecord", {_id: items[0]._id}, {$set: data}, function(err, item3){
+                                                mongo.orig("update", "storageRecord", {_id: items3[0]._id}, {$set: data}, function(err, item3){
                                                     if(err) {
                                                         util.handleError(err, next, res);
                                                     }
@@ -3052,36 +3052,36 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                         }
                     } else {
                         console.log('present settime');
-                        mongo.orig("findOne", "storageRecord", {userId: req.user._id, fileId: item._id}, function(err, item2){
+                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {limit: 1}, function(err, items2){
                             if (err) {
                                 util.handleError(err, next, res);
                             }
                             type = 'image/svg+xml';
-                            if (!item2) {
+                            if (items2.length === 0) {
                                 ext = '_present/1.svg';
                             } else {
-                                ext = '_present/' + item2.recordTime + '.svg';
+                                ext = '_present/' + items2[0].recordTime + '.svg';
                             }
                             getDoc(type, ext);
                         });
                     }
                 }
                 function getDoc (docMime, docExt) {
-                    var filePath = util.getFileLocation(item.owner, item._id);
-                    if (item.status === 6 || (item.status === 5 && (req.params.type === 'doc' || Number(req.params.type) > 0))) {
+                    var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+                    if (items[0].status === 6 || (items[0].status === 5 && (req.params.type === 'doc' || Number(req.params.type) > 0))) {
                         var saveType = 'doc';
-                        if (item.status === 6) {
+                        if (items[0].status === 6) {
                             saveType = 'present';
                         }
-                        tagTool.setLatest(saveType, item._id, req.session, next, function(err) {
+                        tagTool.setLatest(saveType, items[0]._id, req.session, next, function(err) {
                             if (err) {
                                 util.handleError(err, next, res);
                             }
-                            mongo.orig("update", "storage", {_id: item._id}, {$set: {count: item.count+1}}, function(err, item2){
+                            mongo.orig("update", "storage", {_id: items[0]._id}, {$set: {count: items[0].count+1}}, function(err, item2){
                                 if(err) {
                                     util.handleError(err, next, res);
                                 }
-                                //sendWs({type: 'file', data: item._id}, item.adultonly);
+                                //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                             });
                         });
                     }
@@ -3111,12 +3111,12 @@ app.get('/subtitle/:uid', function(req, res, next){
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        mongo.orig("findOne", "storage", {_id: id}, function(err,item){
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
             if (err) {
                 util.handleError(err, next, res);
             }
-            if (item && item.status === 3) {
-                var filePath = util.getFileLocation(item.owner, item._id);
+            if (items.length > 0 && items[0].status === 3) {
+                var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 fs.exists(filePath + '.vtt', function (exists) {
                     res.writeHead(200, { 'Content-Type': 'text/vtt' });
                     if (!exists) {
@@ -3142,25 +3142,25 @@ app.get('/video/:uid', function (req, res, next) {
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        mongo.orig("findOne", "storage", {_id: id}, function(err,item){
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
             if (err) {
                 util.handleError(err, next, res);
             }
-            if (item && (item.status === 3 || item.status === 4)) {
-                var videoPath = util.getFileLocation(item.owner, item._id);
+            if (items.length > 0 && (items[0].status === 3 || items[0].status === 4)) {
+                var videoPath = util.getFileLocation(items[0].owner, items[0]._id);
                 var saveType = 'video';
-                if (item.status === 4) {
+                if (items[0].status === 4) {
                     saveType = 'music';
                 }
-                tagTool.setLatest(saveType, item._id, req.session, next, function(err) {
+                tagTool.setLatest(saveType, items[0]._id, req.session, next, function(err) {
                     if (err) {
                         util.handleError(err, next, res);
                     }
-                    mongo.orig("update", "storage", {_id: item._id}, {$set: {count: item.count+1}}, function(err, item2){
+                    mongo.orig("update", "storage", {_id: items[0]._id}, {$set: {count: items[0].count+1}}, function(err, item2){
                         if(err) {
                             util.handleError(err, next, res);
                         }
-                        //sendWs({type: 'file', data: item._id}, item.adultonly);
+                        //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                     });
                 });
                 fs.stat(videoPath, function(err, video) {
@@ -3206,18 +3206,18 @@ passport.use(new LocalStrategy(function(username, password, done){
             util.handleError({hoerror: 2, message: "passwd is not vaild"}, done);
             done(null, false, { message: "passwd is not vaild" });
         } else {
-            mongo.orig("findOne", "user" ,{username: name}, function(err,user){
+            mongo.orig("find", "user" ,{username: name}, {limit: 1}, function(err,users){
                 if(err) {
                     util.handleError(err, done, function(err) {
                         return done(err);
                     });
                 }
-                if(!user){
+                if(users.length === 0){
                     return done(null, false, { message: "Incorrect username." });
                 }
                 var encodePwd = crypto.createHash('md5').update(pwd).digest('hex');
-                if (encodePwd === user.password) {
-                    return done(null, user);
+                if (encodePwd === users[0].password) {
+                    return done(null, users[0]);
                 }
                 return done(null, false, { message: 'Incorrect password.' });
             });
@@ -3230,13 +3230,13 @@ passport.serializeUser(function(user, done) {
 });
 
 passport.deserializeUser(function(id, done) {
-    mongo.orig("findOne", "user", {_id: mongo.objectID(id)}, function(err,user){
+    mongo.orig("find", "user", {_id: mongo.objectID(id)}, {limit: 1}, function(err,users){
         if(err) {
             util.handleError(err, done, function(err) {
                 return done(err);
             });
         }
-        done(null,user);
+        done(null,users[0]);
     });
 });
 
@@ -3323,7 +3323,12 @@ app.get('/views/homepage', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    res.send("hello<br/> 壓縮檔加上.book可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/><br/>指令不算在單項搜尋裡<br/>預設只會搜尋到有first item的檔案<br/>方便尋找，可以縮小範圍後再下all item顯示全部");
+    var msg = "hello<br/> 壓縮檔加上.book可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/><br/>指令不算在單項搜尋裡<br/>預設只會搜尋到有first item的檔案<br/>方便尋找，可以縮小範圍後再下all item顯示全部";
+    var adult_msg = "<br/><br/>18禁指令: <br/><br/>18禁: 只顯示十八禁的檔案"
+    if (util.checkAdmin(2, req.user)) {
+        msg += adult_msg;
+    }
+    res.send(msg);
 });
 
 app.get('/views/:id(\\w+)', function(req, res) {
@@ -3553,7 +3558,7 @@ function getStorageItem(user, items, mediaHandle) {
     return itemList;
 }
 
-(function loopDrive(error, countdown) {
+function loopDrive(error, countdown) {
     console.log('loopDrive');
     console.log(new Date());
     if (error) {
@@ -3573,7 +3578,11 @@ function getStorageItem(user, items, mediaHandle) {
             }
         });
     }, countdown);
-})();
+}
+
+if (config_glb.autoUpload) {
+    loopDrive();
+}
 
 function userDrive(userlist, index, callback) {
     console.log('userDrive');
