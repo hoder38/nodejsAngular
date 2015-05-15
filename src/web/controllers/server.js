@@ -1422,11 +1422,11 @@ function handleMedia(mediaType, filePath, fileID, fileName, key, user, callback,
                 if (err) {
                     util.handleError(err, callback, errerMedia, fileID, callback);
                 }
-                if (!filedata['thumbnail']) {
+                if (!filedata['thumbnailLink']) {
                     console.log(filedata);
                     util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
                 }
-                googleApi.googleDownload(filedata['thumbnail'], filePath + ".jpg", function(err) {
+                googleApi.googleDownload(filedata['thumbnailLink'], filePath + ".jpg", function(err) {
                     if (err) {
                         util.handleError(err, callback, errerMedia, fileID, callback);
                     }
