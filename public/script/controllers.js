@@ -1278,6 +1278,26 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
 
     $scope.showUrl = function(item) {
         $window.open(decodeURIComponent(item.url));
+        var mediaApi = $resource('/api/media/setTime/' + item.id + '/url', {}, {
+            'setTime': { method:'GET' }
+        });
+        mediaApi.setTime({}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                if ($scope.bookmarkID) {
+                    $scope.latest = item.id;
+                }
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
     }
 
     $scope.showMedia = function(item, type) {
@@ -1326,7 +1346,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                 if (this_obj[type].id) {
                     this_obj.mediaRecord(type, docRecord);
                 }
-                var mediaApi = $resource('/api/media/setTime/' + item.id, {}, {
+                var mediaApi = $resource('/api/media/setTime/' + item.id + '/' + type, {}, {
                     'setTime': { method:'GET' }
                 });
                 mediaApi.setTime({}, function (result) {
@@ -1402,6 +1422,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.downloadFile = function (id) {
         if (!id) {
             id = this.toolList.item.id;
+        }
+        if ($scope.bookmarkID) {
+            $scope.latest = id;
         }
         $window.location.href = '/download/' + id;
     }
@@ -2323,7 +2346,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                         if (this_obj[type].id) {
                            this_obj.mediaRecord(type, docRecord, end);
                         }
-                        var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id, {}, {
+                        var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/' + type, {}, {
                             'setTime': { method:'GET' }
                         });
                         mediaApi.setTime({}, function (result) {
@@ -2435,7 +2458,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                         if (this_obj[type].id) {
                            this_obj.mediaRecord(type, docRecord, end);
                         }
-                        var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id, {}, {
+                        var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/' + type, {}, {
                             'setTime': { method:'GET' }
                         });
                         mediaApi.setTime({}, function (result) {
@@ -2511,7 +2534,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             if (this[type].id) {
                 this.mediaRecord(type, docRecord, end);
             }
-            var mediaApi = $resource('/api/media/setTime/' + this[type].list[this[type].index + this[type].back].id, {}, {
+            var mediaApi = $resource('/api/media/setTime/' + this[type].list[this[type].index + this[type].back].id + '/' + type, {}, {
                 'setTime': { method:'GET' }
             });
             mediaApi.setTime({}, function (result) {

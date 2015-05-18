@@ -2367,7 +2367,7 @@ app.get('/api/media/record/:id/:time(\\d+)', function(req, res, next){
     });
 });
 
-app.get('/api/media/setTime/:id', function(req, res, next){
+app.get('/api/media/setTime/:id/:type', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('media setTime');
         console.log(new Date());
@@ -2377,16 +2377,44 @@ app.get('/api/media/setTime/:id', function(req, res, next){
         if (id === false) {
             util.handleError({hoerror: 2, message: "file is not vaild"}, next, res);
         }
-        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: id}, {limit: 1}, function(err, items){
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            if (items.length === 0) {
-                res.json({apiOK: true});
-            } else {
-                res.json({time: items[0].recordTime});
-            }
-        });
+        var type = util.isValidString(req.params.type, 'name');
+        if (type === false) {
+            util.handleError({hoerror: 2, message: "type is not vaild"}, next, res);
+        }
+        if (type === 'url') {
+            res.json({apiOK: true});
+            tagTool.setLatest('', id, req.session, next, function(err) {
+                if (err) {
+                    util.handleError(err);
+                }
+                mongo.orig("update", "storage", {_id: id}, {$inc: { count: 1}}, function(err, item2){
+                    if(err) {
+                        util.handleError(err);
+                    }
+                });
+            });
+        } else {
+            mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: id}, {limit: 1}, function(err, items){
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (items.length === 0) {
+                    res.json({apiOK: true});
+                } else {
+                    res.json({time: items[0].recordTime});
+                }
+                tagTool.setLatest(type, id, req.session, next, function(err) {
+                    if (err) {
+                        util.handleError(err);
+                    }
+                    mongo.orig("update", "storage", {_id: id}, {$inc: { count: 1}}, function(err, item2){
+                        if(err) {
+                            util.handleError(err);
+                        }
+                    });
+                });
+            });
+        }
     });
 });
 
@@ -2662,18 +2690,21 @@ app.get('/download/:uid', function(req, res, next){
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
             var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            console.log(filePath);
+            if (!fs.existsSync(filePath)) {
+                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+            }
             tagTool.setLatest('', items[0]._id, req.session, next, function(err) {
                 if (err) {
-                    util.handleError(err, next, res);
+                    util.handleError(err);
                 }
-                mongo.orig("update", "storage", {_id: items[0]._id}, {$set: {count: items[0].count+1}}, function(err, item2){
+                mongo.orig("update", "storage", {_id: items[0]._id}, {$inc: { count: 1}}, function(err, item2){
                     if(err) {
-                        util.handleError(err, next, res);
+                        util.handleError(err);
                     }
                     //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                 });
             });
-            console.log(filePath);
             res.download(filePath, unescape(encodeURIComponent(items[0].name)));
         });
     });
@@ -2702,10 +2733,6 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                 if (req.params.number) {
                     index = Number(req.params.number);
                     filePath = filePath + "_img/" + index;
-                    if (!fs.existsSync(filePath)) {
-                        console.log(filePath);
-                        util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
-                    }
                     console.log('image record');
                     if (index === 1 || index === items[0].present) {
                         mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: items[0]._id, $isolated: 1}, function(err,user){
@@ -2768,20 +2795,16 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                         } else {
                             filePath = filePath + "_img/" + items3[0].recordTime;
                         }
-                        if (!fs.existsSync(filePath)) {
-                            console.log(filePath);
-                            util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
-                        }
-                        getImage(filePath, true);
+                        getImage(filePath);
                     });
                 }
             } else {
-                getImage(filePath, true);
+                getImage(filePath);
             }
-            function getImage(imageFilePath, is_count) {
-                tagTool.setLatest('image', items[0]._id, req.session, next, function(err) {
+            function getImage(imageFilePath) {
+                /*tagTool.setLatest('image', items[0]._id, req.session, next, function(err) {
                     if (err) {
-                        util.handleError(err, next, res);
+                        util.handleError(err);
                     }
                     if (is_count) {
                         mongo.orig("update", "storage", {_id: items[0]._id}, {$set: {count: items[0].count+1}}, function(err, item4){
@@ -2791,8 +2814,11 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                             //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                         });
                     }
-                });
-                console.log(imageFilePath);
+                });*/
+                if (!fs.existsSync(imageFilePath)) {
+                    console.log(imageFilePath);
+                    util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+                }
                 res.download(imageFilePath, unescape(encodeURIComponent(items[0].name)));
             }
         });
@@ -2834,7 +2860,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                 } else {
                                     ext = '_doc/doc' + items2[0].recordTime + '.html';
                                 }
-                                getDoc(type, ext, true);
+                                getDoc(type, ext);
                             });
                         } else if (req.params.type === 'images' && req.params.imgName) {
                             ext = '_doc/images/' + req.params.imgName;
@@ -2975,20 +3001,20 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                             } else {
                                 ext = '_present/' + items2[0].recordTime + '.svg';
                             }
-                            getDoc(type, ext, true);
+                            getDoc(type, ext);
                         });
                     }
                 }
-                function getDoc(docMime, docExt, is_count) {
+                function getDoc(docMime, docExt) {
                     var filePath = util.getFileLocation(items[0].owner, items[0]._id);
-                    if (items[0].status === 6 || (items[0].status === 5 && (req.params.type === 'doc' || Number(req.params.type) > 0))) {
+                    /*if (items[0].status === 6 || (items[0].status === 5 && (req.params.type === 'doc' || Number(req.params.type) > 0))) {
                         var saveType = 'doc';
                         if (items[0].status === 6) {
                             saveType = 'present';
                         }
                         tagTool.setLatest(saveType, items[0]._id, req.session, next, function(err) {
                             if (err) {
-                                util.handleError(err, next, res);
+                                util.handleError(err);
                             }
                             if (is_count) {
                                 mongo.orig("update", "storage", {_id: items[0]._id}, {$set: {count: items[0].count+1}}, function(err, item2){
@@ -2999,15 +3025,13 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                 });
                             }
                         });
+                    }*/
+                    if (!fs.existsSync(filePath + docExt)) {
+                        console.log(filePath + docExt);
+                        util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
                     }
-                    fs.exists(filePath + docExt, function (exists) {
-                        if (!exists) {
-                            console.log(filePath + docExt);
-                            util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
-                        }
-                        res.writeHead(200, { 'Content-Type': docMime });
-                        var stream = fs.createReadStream(filePath + docExt).pipe(res);
-                    });
+                    res.writeHead(200, { 'Content-Type': docMime });
+                    var stream = fs.createReadStream(filePath + docExt).pipe(res);
                 }
             } else {
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
@@ -3063,13 +3087,13 @@ app.get('/video/:uid', function (req, res, next) {
             }
             if (items.length > 0 && (items[0].status === 3 || items[0].status === 4)) {
                 var videoPath = util.getFileLocation(items[0].owner, items[0]._id);
-                var saveType = 'video';
+                /*var saveType = 'video';
                 if (items[0].status === 4) {
                     saveType = 'music';
                 }
                 tagTool.setLatest(saveType, items[0]._id, req.session, next, function(err) {
                     if (err) {
-                        util.handleError(err, next, res);
+                        util.handleError(err);
                     }
                     mongo.orig("update", "storage", {_id: items[0]._id}, {$set: {count: items[0].count+1}}, function(err, item2){
                         if(err) {
@@ -3077,7 +3101,11 @@ app.get('/video/:uid', function (req, res, next) {
                         }
                         //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                     });
-                });
+                });*/
+                if (!fs.existsSync(videoPath)) {
+                    console.log(videoPath);
+                    util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+                }
                 fs.stat(videoPath, function(err, video) {
                     if (err) {
                         util.handleError(err, next, res);
