@@ -2772,23 +2772,25 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                             console.log(filePath);
                             util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
                         }
-                        getImage(filePath);
+                        getImage(filePath, true);
                     });
                 }
             } else {
-                getImage(filePath);
+                getImage(filePath, true);
             }
-            function getImage(imageFilePath) {
+            function getImage(imageFilePath, is_count) {
                 tagTool.setLatest('image', items[0]._id, req.session, next, function(err) {
                     if (err) {
                         util.handleError(err, next, res);
                     }
-                    mongo.orig("update", "storage", {_id: items[0]._id}, {$set: {count: items[0].count+1}}, function(err, item4){
-                        if(err) {
-                            util.handleError(err, next, res);
-                        }
-                        //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
-                    });
+                    if (is_count) {
+                        mongo.orig("update", "storage", {_id: items[0]._id}, {$set: {count: items[0].count+1}}, function(err, item4){
+                            if(err) {
+                                util.handleError(err, next, res);
+                            }
+                            //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                        });
+                    }
                 });
                 console.log(imageFilePath);
                 res.download(imageFilePath, unescape(encodeURIComponent(items[0].name)));
@@ -2832,7 +2834,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                 } else {
                                     ext = '_doc/doc' + items2[0].recordTime + '.html';
                                 }
-                                getDoc(type, ext);
+                                getDoc(type, ext, true);
                             });
                         } else if (req.params.type === 'images' && req.params.imgName) {
                             ext = '_doc/images/' + req.params.imgName;
@@ -2973,11 +2975,11 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                             } else {
                                 ext = '_present/' + items2[0].recordTime + '.svg';
                             }
-                            getDoc(type, ext);
+                            getDoc(type, ext, true);
                         });
                     }
                 }
-                function getDoc (docMime, docExt) {
+                function getDoc(docMime, docExt, is_count) {
                     var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                     if (items[0].status === 6 || (items[0].status === 5 && (req.params.type === 'doc' || Number(req.params.type) > 0))) {
                         var saveType = 'doc';
@@ -2988,12 +2990,14 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                             if (err) {
                                 util.handleError(err, next, res);
                             }
-                            mongo.orig("update", "storage", {_id: items[0]._id}, {$set: {count: items[0].count+1}}, function(err, item2){
-                                if(err) {
-                                    util.handleError(err, next, res);
-                                }
-                                //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
-                            });
+                            if (is_count) {
+                                mongo.orig("update", "storage", {_id: items[0]._id}, {$set: {count: items[0].count+1}}, function(err, item2){
+                                    if(err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                });
+                            }
                         });
                     }
                     fs.exists(filePath + docExt, function (exists) {

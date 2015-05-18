@@ -409,7 +409,6 @@ module.exports = function(collection) {
             var sql = getQuerySql(user, parentList.cur, parentList.exactly);
             var options = {"limit": queryLimit, "sort": [[sortName, sortType]]};
             if (sql.hint) {
-                sql.hint[sortName] = 1;
                 options["hint"] = sql.hint;
             }
             delete tags;
@@ -439,7 +438,6 @@ module.exports = function(collection) {
                     options["skip"] = page + sql.skip;
                 }
                 if (sql.hint) {
-                    sql.hint[sortName] = 1;
                     options["hint"] = sql.hint;
                 }
                 delete tags;
@@ -491,7 +489,6 @@ module.exports = function(collection) {
                     options["skip"] = page + sql.skip;
                 }
                 if (sql.hint) {
-                    sql.hint[sortName] = 1;
                     options["hint"] = sql.hint;
                 }
                 delete tags;
@@ -547,7 +544,6 @@ module.exports = function(collection) {
                     options["skip"] = page + sql.skip;
                 }
                 if (sql.hint) {
-                    sql.hint[sortName] = 1;
                     options["hint"] = sql.hint;
                 }
                 delete tags;
@@ -653,7 +649,6 @@ module.exports = function(collection) {
                 options['skip'] = page + sql.skip;
             }
             if (sql.hint) {
-                sql.hint[save.sortName] = 1;
                 options["hint"] = sql.hint;
             }
             delete tags;
@@ -1065,6 +1060,7 @@ function getQuerySql(user, tagList, exactly) {
     if (is_first) {
         hint['first'] = 1;
     }
+    hint['name'] = 1;
     var sql = {nosql: nosql};
     if (is_hint) {
         sql['hint'] = hint;
