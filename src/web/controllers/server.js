@@ -616,7 +616,7 @@ function editFile(uid, newName, user, next, callback) {
                 }
                 var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 var time = Math.round(new Date().getTime() / 1000);
-                handleTag(filePath, {utime: time, untag: 1}, newName, items[0].name, items[0].status, function(err, mediaType, mediaTag, DBdata) {
+                handleTag(filePath, {utime: time, untag: 1, time: item[0].time, height: item[0].height}, newName, items[0].name, items[0].status, function(err, mediaType, mediaTag, DBdata) {
                     if(err) {
                         util.handleError(err, next, callback);
                     }
@@ -878,43 +878,95 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                 case 'video':
                 case 'vlog':
                 case 'music':
-                    new Transcoder(filePath)
-                    .on('metadata', function(meta) {
-                        console.log(meta);
-                        if (meta.input.streams) {
-                            for (var i in meta.input.streams) {
-                                if (meta.input.streams[i].size) {
-                                    if (meta.input.streams[i].size.height >= 1080) {
-                                        if (mediaType['type'] === 'vlog') {
-                                            mediaType['hd'] = 1;
+                    if (!DBdata['height'] && !DBdata['time']) {
+                        new Transcoder(filePath)
+                        .on('metadata', function(meta) {
+                            console.log(meta);
+                            if (meta.input.streams) {
+                                for (var i in meta.input.streams) {
+                                    if (meta.input.streams[i].size) {
+                                        if (meta.input.streams[i].size.height >= 1080) {
+                                            if (mediaType['type'] === 'vlog') {
+                                                mediaType['hd'] = 1;
+                                            } else {
+                                                mediaType['hd'] = 1080;
+                                            }
+                                        } else if (meta.input.streams[i].size.height >= 720) {
+                                            if (mediaType['type'] === 'vlog') {
+                                                mediaType['hd'] = 1;
+                                            } else {
+                                                mediaType['hd'] = 720;
+                                            }
                                         } else {
-                                            mediaType['hd'] = 1080;
+                                            mediaType['hd'] = 0;
                                         }
-                                    } else if (meta.input.streams[i].size.height >= 720) {
-                                        if (mediaType['type'] === 'vlog') {
-                                            mediaType['hd'] = 1;
-                                        } else {
-                                            mediaType['hd'] = 720;
-                                        }
-                                    } else {
-                                        mediaType['hd'] = 0;
+                                        isVideo = true;
+                                        DBdata['height'] = meta.input.streams[i].size.height;
+                                        break;
                                     }
-                                    isVideo = true;
                                 }
+                                mediaTag = mime.mediaTag(mediaType['type']);
+                                if (!isVideo && mediaType['type'] === 'music') {
+                                    DBdata['status'] = 4;
+                                    mediaType = false;
+                                } else if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
+                                    mediaType['time'] = DBdata['time'] = meta.input.duration;
+                                    DBdata['status'] = 1;
+                                    if (mediaType['time'] < 20 * 60 * 1000) {
+                                        mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 1));
+                                    } else if (mediaType['time'] < 40 * 60 * 1000) {
+                                        mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
+                                    } else if (mediaType['time'] < 60 * 60 * 1000) {
+                                        mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(6, 1));
+                                    }
+                                    DBdata['mediaType'] = mediaType;
+                                } else {
+                                    mediaType = false;
+                                }
+                            } else {
+                                mediaType = false;
                             }
+                            setTimeout(function(){
+                                callback(null, mediaType, mediaTag, DBdata);
+                            }, 0);
+                        }).on('finish', function() {
+                            console.log('metadata get');
+                        }).on('error', function(err) {
+                            util.handleError(err);
+                        }).exec();
+                    } else {
+                        if (DBdata['height']) {
+                            if (DBdata['height'] >= 1080) {
+                                if (mediaType['type'] === 'vlog') {
+                                    mediaType['hd'] = 1;
+                                } else {
+                                    mediaType['hd'] = 1080;
+                                }
+                            } else if (DBdata['height'] >= 720) {
+                                if (mediaType['type'] === 'vlog') {
+                                    mediaType['hd'] = 1;
+                                } else {
+                                    mediaType['hd'] = 720;
+                                }
+                            } else {
+                                mediaType['hd'] = 0;
+                            }
+                            isVideo = true;
+                        }
+                        if (DBdata['time']) {
                             mediaTag = mime.mediaTag(mediaType['type']);
                             if (!isVideo && mediaType['type'] === 'music') {
                                 DBdata['status'] = 4;
                                 mediaType = false;
                             } else if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
-                                mediaType['time'] = meta.input.duration;
+                                mediaType['time'] = DBdata['time'];
                                 DBdata['status'] = 1;
                                 if (mediaType['time'] < 20 * 60 * 1000) {
                                     mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 1));
                                 } else if (mediaType['time'] < 40 * 60 * 1000) {
                                     mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
                                 } else if (mediaType['time'] < 60 * 60 * 1000) {
-                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
+                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(6, 1));
                                 }
                                 DBdata['mediaType'] = mediaType;
                             } else {
@@ -926,11 +978,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                         setTimeout(function(){
                             callback(null, mediaType, mediaTag, DBdata);
                         }, 0);
-                    }).on('finish', function() {
-                        console.log('metadata get');
-                    }).on('error', function(err) {
-                        util.handleError(err);
-                    }).exec();
+                    }
                     return;
                 case 'image':
                 case 'doc':
@@ -951,23 +999,50 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                 switch(mediaType['type']) {
                     case 'video':
                     case 'vlog':
-                        new Transcoder(filePath)
-                        .on('metadata', function(meta) {
-                            console.log(meta);
-                            for (var i in meta.input.streams) {
-                                if (meta.input.streams[i].size) {
-                                    isVideo = true;
-                                    break;
+                        if (!DBdata['height'] && !DBdata['time']) {
+                            new Transcoder(filePath)
+                            .on('metadata', function(meta) {
+                                console.log(meta);
+                                for (var i in meta.input.streams) {
+                                    if (meta.input.streams[i].size) {
+                                        DBdata['height'] = meta.input.streams[i].size.height;
+                                        isVideo = true;
+                                        break;
+                                    }
                                 }
+                                if (meta.input.streams) {
+                                    if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
+                                        if (meta.input.duration < 20 * 60 * 1000) {
+                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 1));
+                                        } else if (meta.input.duration < 40 * 60 * 1000) {
+                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
+                                        } else if (meta.input.duration < 60 * 60 * 1000) {
+                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(6, 1));
+                                        }
+                                        DBdata['time'] = meta.input.duration;
+                                    }
+                                }
+                                mediaType = false;
+                                setTimeout(function(){
+                                    callback(null, mediaType, mediaTag, DBdata);
+                                }, 0);
+                            }).on('finish', function() {
+                                console.log('metadata get');
+                            }).on('error', function(err) {
+                                util.handleError(err);
+                            }).exec();
+                        } else {
+                            if (DBdata['height']) {
+                                isVideo = true;
                             }
-                            if (meta.input.streams) {
+                            if (DBdata['time']) {
                                 if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
-                                    if (meta.input.duration < 20 * 60 * 1000) {
+                                    if (DBdata['time'] < 20 * 60 * 1000) {
                                         mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 1));
-                                    } else if (meta.input.duration < 40 * 60 * 1000) {
+                                    } else if (DBdata['time'] < 40 * 60 * 1000) {
                                         mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
-                                    } else if (meta.input.duration < 60 * 60 * 1000) {
-                                        mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
+                                    } else if (DBdata['time'] < 60 * 60 * 1000) {
+                                        mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(6, 1));
                                     }
                                 }
                             }
@@ -975,11 +1050,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                             setTimeout(function(){
                                 callback(null, mediaType, mediaTag, DBdata);
                             }, 0);
-                        }).on('finish', function() {
-                            console.log('metadata get');
-                        }).on('error', function(err) {
-                            util.handleError(err);
-                        }).exec();
+                        }
                         return;
                 }
                 mediaType = false;
@@ -1288,19 +1359,20 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                             }
                         });
                     }
+                    //只比較前面數字
                     var sort_result = zip_arr.sort(function(a, b) {
-                        if (a.number.length === b.number.length) {
-                            if (a.number.length > 0) {
-                                for (var i in a.number) {
-                                    if (Number(a.number[i]) !== Number(b.number[i])) {
-                                        return (Number(a.number[i]) - Number(b.number[i]))*10;
-                                    }
+                        if (a.number.length > 0) {
+                            for (var i in a.number) {
+                                if (!b.number[i]) {
+                                    return 1;
                                 }
-                            } else {
-                                return 0;
+                                if (Number(a.number[i]) !== Number(b.number[i])) {
+                                    return Number(a.number[i]) - Number(b.number[i]);
+                                }
                             }
+                            return -1;
                         } else {
-                            return a.number.length - b.number.length;
+                            return -1;
                         }
                     });
                     for (var i in sort_result) {
@@ -2107,7 +2179,7 @@ app.get('/api/feedback', function (req, res, next) {
 //user_id是改不是owner的時候用
 function getFeedback(item, callback, user) {
     var filePath = util.getFileLocation(item.owner, item._id);
-    handleTag(filePath, {}, item.name, '', item.status, function(err, mediaType, mediaTag, DBdata) {
+    handleTag(filePath, {time: item.time, height: item.height}, item.name, '', item.status, function(err, mediaType, mediaTag, DBdata) {
         if (err) {
             util.handleError(err, callback, callback);
         }
