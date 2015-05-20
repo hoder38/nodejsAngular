@@ -2727,7 +2727,8 @@ app.get('/api/stock/init', function(req, res,next) {
                                         var salesStatus = stockTool.getSalesStatus(sales, asset);
                                         var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
                                         var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
-                                        res.json({xml: xml, cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus});
+                                        var managementStatus = stockTool.getManagementStatus(sales, asset);
+                                        res.json({xml: xml, cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus});
                                     });
                                 });
                             });
@@ -2736,6 +2737,130 @@ app.get('/api/stock/init', function(req, res,next) {
                 });
             });
         });
+    });
+});
+
+app.get('/api/stock/query/:index', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('stock query');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var index = Number(req.params.index);
+        var temp = {};
+        var cash = {};
+        var asset = {};
+        var sales = {};
+        var date = new Date();
+        var year = date.getFullYear();
+        var month = date.getMonth();
+        var quarter = 3;
+        if (month < 4) {
+            quarter = 4;
+            year-- ;
+        } else if (month < 7) {
+            quarter = 1;
+        } else if (month < 10) {
+            quarter = 2;
+        }
+        var is_start = false;
+        quarter++;
+        year = 2012;
+        quarter = 2;
+        if (!fs.existsSync('/mnt/stock/' + index)) {
+            mkdirp('/mnt/stock/' + index, function(err) {
+                if(err) {
+                    util.handleError(err, next, res);
+                }
+                recur_getTwseXml();
+            });
+        } else {
+            recur_getTwseXml();
+        }
+        function recur_getTwseXml() {
+            console.log(year);
+            console.log(quarter);
+            api.getTwseXml(index, year, quarter, '/mnt/stock/' + index + '/' + year + quarter + '.xml', function(err, xmlPath) {
+                if (err) {
+                    if (err.code !== 'HPE_INVALID_CONSTANT') {
+                        util.handleError(err, next, res);
+                    }
+                }
+                if (err && err.code === 'HPE_INVALID_CONSTANT') {
+                    if (is_start) {
+                        var cashStatus = stockTool.getCashStatus(cash, asset);
+                        var assetStatus = stockTool.getAssetStatus(asset);
+                        var salesStatus = stockTool.getSalesStatus(sales, asset);
+                        var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
+                        var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
+                        var managementStatus = stockTool.getManagementStatus(sales, asset);
+                        res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus});
+                    } else {
+                        console.log('not');
+                        quarter--;
+                        if (quarter < 1) {
+                            quarter = 4;
+                            year--;
+                        }
+                        setTimeout(function(){
+                            recur_getTwseXml();
+                        }, 20000);
+                    }
+                } else {
+                    console.log('ok');
+                    stockTool.initXml('/mnt/stock/' + index + '/' + year + quarter + '.xml', function (err, xml) {
+                        quarter--;
+                        if (quarter < 1) {
+                            quarter = 4;
+                            year--;
+                        }
+                        if (err) {
+                            util.handleError(err);
+                            if (is_start) {
+                                var cashStatus = stockTool.getCashStatus(cash, asset);
+                                var assetStatus = stockTool.getAssetStatus(asset);
+                                var salesStatus = stockTool.getSalesStatus(sales, asset);
+                                var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
+                                var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
+                                var managementStatus = stockTool.getManagementStatus(sales, asset);
+                                res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus});
+                            } else {
+                                console.log('not');
+                                setTimeout(function(){
+                                    recur_getTwseXml();
+                                }, 20000);
+                            }
+                        } else {
+                            temp = stockTool.getCashflow(xml, cash);
+                            if (!temp) {
+                                if (is_start) {
+                                    var cashStatus = stockTool.getCashStatus(cash, asset);
+                                    var assetStatus = stockTool.getAssetStatus(asset);
+                                    var salesStatus = stockTool.getSalesStatus(sales, asset);
+                                    var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
+                                    var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
+                                    var managementStatus = stockTool.getManagementStatus(sales, asset);
+                                    res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus});
+                                } else {
+                                    console.log('not');
+                                    setTimeout(function(){
+                                        recur_getTwseXml();
+                                    }, 20000);
+                                }
+                            } else {
+                                cash = temp;
+                                asset = stockTool.getAsset(xml, asset);
+                                sales = stockTool.getSales(xml, sales);
+                                is_start = true;
+                                setTimeout(function(){
+                                    recur_getTwseXml();
+                                }, 20000);
+                            }
+                        }
+                    });
+                }
+            });
+        }
     });
 });
 

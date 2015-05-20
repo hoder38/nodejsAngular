@@ -111,11 +111,15 @@ module.exports = {
                 }
                 asset[year][quarter-1] = {receivable: Number(xml.xbrl['tifrs-bsci-ci:AccountsReceivableNet'][0]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherReceivables'][0]['_']), payable: Number(xml.xbrl['tifrs-bsci-ci:AccountsPayable'][0]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherPayables'][0]['_']), cash: Number(xml.xbrl['ifrs:CashAndCashEquivalents'][0]['_']), inventories: Number(xml.xbrl['ifrs:Inventories'][0]['_']), property: Number(xml.xbrl['ifrs:PropertyPlantAndEquipment'][0]['_']), current_liabilities: Number(xml.xbrl['ifrs:CurrentLiabilities'][0]['_']), noncurrent_liabilities: Number(xml.xbrl['ifrs:NoncurrentLiabilities'][0]['_']), equityParent: Number(xml.xbrl['ifrs:EquityAttributableToOwnersOfParent'][0]['_']), equityChild: Number(xml.xbrl['ifrs:NoncontrollingInterests'][0]['_']), share: Number(xml.xbrl['tifrs-bsci-ci:OrdinaryShare'][0]['_']), total: Number(xml.xbrl['ifrs:Assets'][0]['_']), longterm: 0};
                 asset[year-1][quarter-1] = {receivable: Number(xml.xbrl['tifrs-bsci-ci:AccountsReceivableNet'][1]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherReceivables'][1]['_']), payable: Number(xml.xbrl['tifrs-bsci-ci:AccountsPayable'][1]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherPayables'][1]['_']), cash: Number(xml.xbrl['ifrs:CashAndCashEquivalents'][1]['_']), inventories: Number(xml.xbrl['ifrs:Inventories'][1]['_']), property: Number(xml.xbrl['ifrs:PropertyPlantAndEquipment'][1]['_']), current_liabilities: Number(xml.xbrl['ifrs:CurrentLiabilities'][1]['_']), noncurrent_liabilities: Number(xml.xbrl['ifrs:NoncurrentLiabilities'][1]['_']), equityParent: Number(xml.xbrl['ifrs:EquityAttributableToOwnersOfParent'][1]['_']), equityChild: Number(xml.xbrl['ifrs:NoncontrollingInterests'][1]['_']), share: Number(xml.xbrl['tifrs-bsci-ci:OrdinaryShare'][1]['_']), total: Number(xml.xbrl['ifrs:Assets'][1]['_']), longterm: 0};
-                asset[year-2][quarter-1] = {receivable: Number(xml.xbrl['tifrs-bsci-ci:AccountsReceivableNet'][2]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherReceivables'][2]['_']), payable: Number(xml.xbrl['tifrs-bsci-ci:AccountsPayable'][2]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherPayables'][2]['_']), cash: Number(xml.xbrl['ifrs:CashAndCashEquivalents'][2]['_']), inventories: Number(xml.xbrl['ifrs:Inventories'][2]['_']), property: Number(xml.xbrl['ifrs:PropertyPlantAndEquipment'][2]['_']), current_liabilities: Number(xml.xbrl['ifrs:CurrentLiabilities'][2]['_']), noncurrent_liabilities: Number(xml.xbrl['ifrs:NoncurrentLiabilities'][2]['_']), equityParent: Number(xml.xbrl['ifrs:EquityAttributableToOwnersOfParent'][2]['_']), equityChild: Number(xml.xbrl['ifrs:NoncontrollingInterests'][2]['_']), share: Number(xml.xbrl['tifrs-bsci-ci:OrdinaryShare'][2]['_']), total: Number(xml.xbrl['ifrs:Assets'][2]['_']), longterm: 0};
+                if (xml.xbrl['tifrs-bsci-ci:AccountsReceivableNet'][2]) {
+                    asset[year-2][quarter-1] = {receivable: Number(xml.xbrl['tifrs-bsci-ci:AccountsReceivableNet'][2]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherReceivables'][2]['_']), payable: Number(xml.xbrl['tifrs-bsci-ci:AccountsPayable'][2]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherPayables'][2]['_']), cash: Number(xml.xbrl['ifrs:CashAndCashEquivalents'][2]['_']), inventories: Number(xml.xbrl['ifrs:Inventories'][2]['_']), property: Number(xml.xbrl['ifrs:PropertyPlantAndEquipment'][2]['_']), current_liabilities: Number(xml.xbrl['ifrs:CurrentLiabilities'][2]['_']), noncurrent_liabilities: Number(xml.xbrl['ifrs:NoncurrentLiabilities'][2]['_']), equityParent: Number(xml.xbrl['ifrs:EquityAttributableToOwnersOfParent'][2]['_']), equityChild: Number(xml.xbrl['ifrs:NoncontrollingInterests'][2]['_']), share: Number(xml.xbrl['tifrs-bsci-ci:OrdinaryShare'][2]['_']), total: Number(xml.xbrl['ifrs:Assets'][2]['_']), longterm: 0};
+                }
                 if (xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod']) {
                     asset[year][quarter-1].longterm = Number(xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod'][0]['_']);
                     asset[year-1][quarter-1].longterm = Number(xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod'][1]['_']);
-                    asset[year-2][quarter-1].longterm = Number(xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod'][2]['_']);
+                    if (xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod'][2]) {
+                        asset[year-2][quarter-1].longterm = Number(xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod'][2]['_']);
+                    }
                 }
             } else {
                 if (!asset[year]) {
@@ -130,12 +134,16 @@ module.exports = {
                 asset[year][quarter-1] = {receivable: Number(xml.xbrl['tifrs-bsci-ci:AccountsReceivableNet'][0]['_']), payable: Number(xml.xbrl['tifrs-bsci-ci:AccountsPayable'][0]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherPayables'][0]['_']), cash: Number(xml.xbrl['ifrs:CashAndCashEquivalents'][0]['_']), inventories: Number(xml.xbrl['ifrs:Inventories'][0]['_']), property: Number(xml.xbrl['ifrs:PropertyPlantAndEquipment'][0]['_']), current_liabilities: Number(xml.xbrl['ifrs:CurrentLiabilities'][0]['_']), noncurrent_liabilities: Number(xml.xbrl['ifrs:NoncurrentLiabilities'][0]['_']), equityParent: Number(xml.xbrl['ifrs:EquityAttributableToOwnersOfParent'][0]['_']), equityChild: Number(xml.xbrl['ifrs:NoncontrollingInterests'][0]['_']), share: Number(xml.xbrl['tifrs-bsci-ci:OrdinaryShare'][0]['_']), total: Number(xml.xbrl['ifrs:Assets'][0]['_']), longterm: 0};
                 asset[year-1][3] = {receivable: Number(xml.xbrl['tifrs-bsci-ci:AccountsReceivableNet'][1]['_']), payable: Number(xml.xbrl['tifrs-bsci-ci:AccountsPayable'][1]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherPayables'][1]['_']), cash: Number(xml.xbrl['ifrs:CashAndCashEquivalents'][1]['_']), inventories: Number(xml.xbrl['ifrs:Inventories'][1]['_']), property: Number(xml.xbrl['ifrs:PropertyPlantAndEquipment'][1]['_']), current_liabilities: Number(xml.xbrl['ifrs:CurrentLiabilities'][1]['_']), noncurrent_liabilities: Number(xml.xbrl['ifrs:NoncurrentLiabilities'][1]['_']), equityParent: Number(xml.xbrl['ifrs:EquityAttributableToOwnersOfParent'][1]['_']), equityChild: Number(xml.xbrl['ifrs:NoncontrollingInterests'][1]['_']), share: Number(xml.xbrl['tifrs-bsci-ci:OrdinaryShare'][0]['_']), total: Number(xml.xbrl['ifrs:Assets'][1]['_']), longterm: 0};
                 asset[year-1][quarter-1] = {receivable: Number(xml.xbrl['tifrs-bsci-ci:AccountsReceivableNet'][2]['_']), payable: Number(xml.xbrl['tifrs-bsci-ci:AccountsPayable'][2]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherPayables'][2]['_']), cash: Number(xml.xbrl['ifrs:CashAndCashEquivalents'][2]['_']), inventories: Number(xml.xbrl['ifrs:Inventories'][2]['_']), property: Number(xml.xbrl['ifrs:PropertyPlantAndEquipment'][2]['_']), current_liabilities: Number(xml.xbrl['ifrs:CurrentLiabilities'][2]['_']), noncurrent_liabilities: Number(xml.xbrl['ifrs:NoncurrentLiabilities'][2]['_']), equityParent: Number(xml.xbrl['ifrs:EquityAttributableToOwnersOfParent'][2]['_']), equityChild: Number(xml.xbrl['ifrs:NoncontrollingInterests'][2]['_']), share: Number(xml.xbrl['tifrs-bsci-ci:OrdinaryShare'][2]['_']), total: Number(xml.xbrl['ifrs:Assets'][2]['_']), longterm: 0};
-                asset[year-2][3] = {receivable: Number(xml.xbrl['tifrs-bsci-ci:AccountsReceivableNet'][3]['_']), payable: Number(xml.xbrl['tifrs-bsci-ci:AccountsPayable'][3]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherPayables'][3]['_']), cash: Number(xml.xbrl['ifrs:CashAndCashEquivalents'][3]['_']), inventories: Number(xml.xbrl['ifrs:Inventories'][3]['_']), property: Number(xml.xbrl['ifrs:PropertyPlantAndEquipment'][3]['_']), current_liabilities: Number(xml.xbrl['ifrs:CurrentLiabilities'][3]['_']), noncurrent_liabilities: Number(xml.xbrl['ifrs:NoncurrentLiabilities'][3]['_']), equityParent: Number(xml.xbrl['ifrs:EquityAttributableToOwnersOfParent'][3]['_']), equityChild: Number(xml.xbrl['ifrs:NoncontrollingInterests'][3]['_']), share: Number(xml.xbrl['tifrs-bsci-ci:OrdinaryShare'][3]['_']), total: Number(xml.xbrl['ifrs:Assets'][3]['_']), longterm: 0};
+                if (xml.xbrl['tifrs-bsci-ci:AccountsReceivableNet'][3]) {
+                    asset[year-2][3] = {receivable: Number(xml.xbrl['tifrs-bsci-ci:AccountsReceivableNet'][3]['_']), payable: Number(xml.xbrl['tifrs-bsci-ci:AccountsPayable'][3]['_']) + Number(xml.xbrl['tifrs-bsci-ci:OtherPayables'][3]['_']), cash: Number(xml.xbrl['ifrs:CashAndCashEquivalents'][3]['_']), inventories: Number(xml.xbrl['ifrs:Inventories'][3]['_']), property: Number(xml.xbrl['ifrs:PropertyPlantAndEquipment'][3]['_']), current_liabilities: Number(xml.xbrl['ifrs:CurrentLiabilities'][3]['_']), noncurrent_liabilities: Number(xml.xbrl['ifrs:NoncurrentLiabilities'][3]['_']), equityParent: Number(xml.xbrl['ifrs:EquityAttributableToOwnersOfParent'][3]['_']), equityChild: Number(xml.xbrl['ifrs:NoncontrollingInterests'][3]['_']), share: Number(xml.xbrl['tifrs-bsci-ci:OrdinaryShare'][3]['_']), total: Number(xml.xbrl['ifrs:Assets'][3]['_']), longterm: 0};
+                }
                 if (xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod']) {
                     asset[year][quarter-1].longterm = Number(xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod'][0]['_']);
                     asset[year-1][3].longterm = Number(xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod'][1]['_']);
                     asset[year-1][quarter-1].longterm = Number(xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod'][2]['_']);
-                    asset[year-2][3].longterm = Number(xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod'][3]['_']);
+                    if (xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod'][3]) {
+                        asset[year-2][3].longterm = Number(xml.xbrl['ifrs:InvestmentAccountedForUsingEquityMethod'][3]['_']);
+                    }
                 }
             }
             if (quarter === 3 || quarter === 2) {
@@ -269,5 +277,136 @@ module.exports = {
             }
         }
         return safetyStatus;
+    },
+    getManagementStatus: function(sales, asset) {
+        var managementStatus = {};
+        var revenue = [];
+        var profit = [];
+        var cash = [];
+        var inventories = [];
+        var receivable = [];
+        var payable = [];
+        var startY = 0;
+        var startQ = 0;
+        for (var i in sales) {
+            managementStatus[i] = [];
+            for (var j in sales[i]) {
+                if (j < 4) {
+                    if (sales[i][j-1]) {
+                        if (!startY && !startQ) {
+                            startY = i;
+                            startQ = j;
+                        }
+                        revenue.push(sales[i][j].revenue - sales[i][j-1].revenue);
+                        profit.push(sales[i][j].profit - sales[i][j-1].profit);
+                        cash.push(asset[i][j].cash);
+                        inventories.push(asset[i][j].inventories);
+                        receivable.push(asset[i][j].receivable);
+                        payable.push(asset[i][j].payable);
+                        managementStatus[i][j] = {revenue: sales[i][j].revenue - sales[i][j-1].revenue, profit: sales[i][j].profit - sales[i][j-1].profit, cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable};
+                    } else if (j === '0'){
+                        if (!startY && !startQ) {
+                            startY = i;
+                            startQ = j;
+                        }
+                        revenue.push(sales[i][j].revenue);
+                        profit.push(sales[i][j].profit);
+                        cash.push(asset[i][j].cash);
+                        inventories.push(asset[i][j].inventories);
+                        receivable.push(asset[i][j].receivable);
+                        payable.push(asset[i][j].payable);
+                        managementStatus[i][j] = {revenue: sales[i][j].revenue, profit: sales[i][j].profit, cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable};
+                    }
+                }
+            }
+        }
+        if (revenue.length < 3) {
+            return false;
+        }
+        if (startQ === '0') {
+            startQ = 2;
+            startY = Number(startY);
+        } else if (startQ === '2') {
+            startQ = 0;
+            startY = Number(startY) + 1;
+        } else if (startQ === '3') {
+            startQ = 1;
+            startY = Number(startY) + 1;
+        } else {
+            return false;
+        }
+
+        var revenueEven = caculateEven(revenue);
+        var revenueVariance = caculateVariance(revenue, revenueEven);
+
+        var profitEven = caculateEven(profit);
+        var profitVariance = caculateVariance(profit, profitEven);
+
+        var cashEven = caculateEven(cash);
+        var cashVariance = caculateVariance(cash, cashEven);
+
+        var inventoriesEven = caculateEven(inventories);
+        var inventoriesVariance = caculateVariance(inventories, inventoriesEven);
+
+        var receivableEven = caculateEven(receivable);
+        var receivableVariance = caculateVariance(receivable, receivableEven);
+
+        var payableEven = caculateEven(payable);
+        var payableVariance = caculateVariance(payable, payableEven);
+
+        revenueRelative(profit, profitEven, profitVariance, 'profitRelative');
+        revenueRelative(cash, cashEven, cashVariance, 'cashRelative');
+        revenueRelative(inventories, inventoriesEven, inventoriesVariance, 'inventoriesRelative');
+        revenueRelative(receivable, receivableEven, receivableVariance, 'receivableRelative');
+        revenueRelative(payable, payableEven, payableVariance, 'payableRelative');
+
+        function revenueRelative(data, dataEven, dataVariance, dataRelative) {
+            var Y = startY;
+            var Q = startQ;
+            var Relative = 0;
+            for (var i = 2; i < revenue.length; i++) {
+                if (Q > 3) {
+                    Q = 0;
+                    Y++;
+                }
+                Relative = 0;
+                for (var j = 0; j <= i; j++) {
+                    Relative += (revenue[j] - revenueEven[i-2]) * (data[j] - dataEven[i-2]);
+                }
+                managementStatus[Y][Q][dataRelative] = Math.ceil(Relative / dataVariance[i-2] / revenueVariance[i-2] * 1000) / 1000;
+                Q++;
+            }
+        }
+        return managementStatus;
     }
 };
+
+function caculateEven(data) {
+    var dataSum = [];
+    var dataEven = [];
+    var Sum = 0;
+    for (var i = 2; i < data.length; i++) {
+        Sum = 0;
+        for (var j = 0; j <= i; j++) {
+            Sum += data[j];
+        }
+        dataSum.push(Sum);
+    }
+    for (var i in dataSum) {
+        dataEven.push(Math.ceil(dataSum[i] / (Number(i)+3)));
+    }
+    return dataEven;
+}
+
+function caculateVariance(data, dataEven) {
+    var dataVariance = [];
+    var Variance = 0;
+    for (var i = 2; i < data.length; i++) {
+        Variance = 0;
+        for (var j = 0; j <= i; j++) {
+            Variance += (data[j] - dataEven[i-2]) * (data[j] - dataEven[i-2]);
+        }
+        dataVariance.push(Math.ceil(Math.sqrt(Variance)));
+    }
+    return dataVariance;
+}

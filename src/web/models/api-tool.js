@@ -229,7 +229,7 @@ function postData(fields, files, options, headers, callback, filePath) {
     request.on('error', function(e) {
         console.log(post_options);
         request.abort();
-        if (e.code === 'HPE_INVALID_CONSTANT') {
+        if (e.code === 'HPE_INVALID_CONSTANT' || e.code === 'ECONNREFUSED') {
             util.handleError(e, callback, callback, 400, null);
         } else {
             util.handleError(e);
@@ -627,35 +627,26 @@ module.exports = {
         };
         var fields = {};
         fields['step'] = 9;
-        fields['functionName'] = 't164sb01';
-        fields['report_id'] = 'C';
         fields['co_id'] = stockCode;
         fields['year'] = year;
         fields['season'] = quarter;
+        if (year > 2012) {
+            fields['functionName'] = 't164sb01';
+            fields['report_id'] = 'C';
+        } else {
+            fields['functionName'] = 't147sb02';
+            fields['report_id'] = 'B';
+        }
         postData(fields, null, options, {}, function(err) {
             if (err) {
-                util.handleError(err);
-                fields['functionName'] = 't147sb02';
-                fields['report_id'] = 'B';
-                postData(fields, null, options, {}, function(err) {
-                    if (err) {
-                        util.handleError(err, callback, callback);
-                    }
-                    console.log(filePath);
-                    var stats = fs.statSync(filePath);
-                    console.log(stats);
-                    setTimeout(function(){
-                        callback(null, filePath);
-                    }, 0);
-                }, filePath);
-            } else {
-                console.log(filePath);
-                var stats = fs.statSync(filePath);
-                console.log(stats);
-                setTimeout(function(){
-                    callback(null, filePath);
-                }, 0);
+                util.handleError(err, callback, callback);
             }
+            console.log(filePath);
+            var stats = fs.statSync(filePath);
+            console.log(stats);
+            setTimeout(function(){
+                callback(null, filePath);
+            }, 0);
         }, filePath);
     },
     setApiQueue: function(name, param) {
