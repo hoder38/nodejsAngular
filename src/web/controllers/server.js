@@ -2873,15 +2873,25 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                         util.handleError({hoerror: 2, message: "xml sales parse error!!!"}, next, res);
                     }
                     is_start = true;
-                    wait = 0;
-                    quarter--;
-                    if (quarter < 1) {
-                        quarter = 4;
-                        year--;
+                    if (year === 2014 && quarter === 2) {
+                        var cashStatus = stockTool.getCashStatus(cash, asset);
+                        var assetStatus = stockTool.getAssetStatus(asset);
+                        var salesStatus = stockTool.getSalesStatus(sales, asset);
+                        var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
+                        var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
+                        var managementStatus = stockTool.getManagementStatus(sales, asset);
+                        res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter});
+                    } else {
+                        wait = 0;
+                        quarter--;
+                        if (quarter < 1) {
+                            quarter = 4;
+                            year--;
+                        }
+                        setTimeout(function(){
+                            recur_getTwseXml();
+                        }, wait);
                     }
-                    setTimeout(function(){
-                        recur_getTwseXml();
-                    }, wait);
                 });
             } else {
                 api.getTwseXml(index, year, quarter, xml_path, function(err, xmlPath) {
@@ -2956,14 +2966,6 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                                     latestQuarter = quarter;
                                     latestYear = year;
                                 }
-                                var cashStatus = stockTool.getCashStatus(cash, asset);
-                                var assetStatus = stockTool.getAssetStatus(asset);
-                                var salesStatus = stockTool.getSalesStatus(sales, asset);
-                                var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
-                                var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
-                                var managementStatus = stockTool.getManagementStatus(sales, asset);
-                                res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter});
-                                /*
                                 quarter--;
                                 if (quarter < 1) {
                                     quarter = 4;
@@ -2971,7 +2973,7 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                                 }
                                 setTimeout(function(){
                                     recur_getTwseXml();
-                                }, wait);*/
+                                }, wait);
                             });
                         }
                     }
