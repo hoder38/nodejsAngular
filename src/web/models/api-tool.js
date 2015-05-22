@@ -641,9 +641,9 @@ module.exports = {
             if (err) {
                 util.handleError(err, callback, callback);
             }
-            console.log(filePath);
-            var stats = fs.statSync(filePath);
-            console.log(stats);
+            //console.log(filePath);
+            //var stats = fs.statSync(filePath);
+            //console.log(stats);
             setTimeout(function(){
                 callback(null, filePath);
             }, 0);

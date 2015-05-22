@@ -2836,11 +2836,11 @@ app.get('/api/stock/query/:index', function(req, res,next) {
             quarter = 2;
         }
         var is_start = false;
-        quarter++;
-        year = 2012;
-        quarter = 2;
-        if (!fs.existsSync('/mnt/stock/' + index)) {
-            mkdirp('/mnt/stock/' + index, function(err) {
+        var wait = 0;
+        var latestQuarter = 0;
+        var latestYear = 0;
+        if (!fs.existsSync('/mnt/stock/twse/' + index)) {
+            mkdirp('/mnt/stock/twse/' + index, function(err) {
                 if(err) {
                     util.handleError(err, next, res);
                 }
@@ -2850,44 +2850,49 @@ app.get('/api/stock/query/:index', function(req, res,next) {
             recur_getTwseXml();
         }
         function recur_getTwseXml() {
+            console.log(wait);
             console.log(year);
             console.log(quarter);
-            api.getTwseXml(index, year, quarter, '/mnt/stock/' + index + '/' + year + quarter + '.xml', function(err, xmlPath) {
-                if (err) {
-                    if (err.code !== 'HPE_INVALID_CONSTANT') {
+            var xml_path = '/mnt/stock/twse/' + index + '/' + year + quarter + '.xml';
+            if (is_start && fs.existsSync(xml_path)) {
+                console.log('exist');
+                stockTool.initXml(xml_path, function (err, xml) {
+                    if (err) {
                         util.handleError(err, next, res);
                     }
-                }
-                if (err && err.code === 'HPE_INVALID_CONSTANT') {
-                    if (is_start) {
-                        var cashStatus = stockTool.getCashStatus(cash, asset);
-                        var assetStatus = stockTool.getAssetStatus(asset);
-                        var salesStatus = stockTool.getSalesStatus(sales, asset);
-                        var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
-                        var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
-                        var managementStatus = stockTool.getManagementStatus(sales, asset);
-                        res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus});
-                    } else {
-                        console.log('not');
-                        quarter--;
-                        if (quarter < 1) {
-                            quarter = 4;
-                            year--;
-                        }
-                        setTimeout(function(){
-                            recur_getTwseXml();
-                        }, 20000);
+                    cash = stockTool.getCashflow(xml, cash);
+                    if (!cash) {
+                        util.handleError({hoerror: 2, message: "xml cash parse error!!!"}, next, res);
                     }
-                } else {
-                    console.log('ok');
-                    stockTool.initXml('/mnt/stock/' + index + '/' + year + quarter + '.xml', function (err, xml) {
-                        quarter--;
-                        if (quarter < 1) {
-                            quarter = 4;
-                            year--;
+                    asset = stockTool.getAsset(xml, asset);
+                    if (!asset) {
+                        util.handleError({hoerror: 2, message: "xml asset parse error!!!"}, next, res);
+                    }
+                    sales = stockTool.getSales(xml, sales);
+                    if (!sales) {
+                        util.handleError({hoerror: 2, message: "xml sales parse error!!!"}, next, res);
+                    }
+                    is_start = true;
+                    wait = 0;
+                    quarter--;
+                    if (quarter < 1) {
+                        quarter = 4;
+                        year--;
+                    }
+                    setTimeout(function(){
+                        recur_getTwseXml();
+                    }, wait);
+                });
+            } else {
+                api.getTwseXml(index, year, quarter, xml_path, function(err, xmlPath) {
+                    if (err) {
+                        if (err.code !== 'HPE_INVALID_CONSTANT' && err.code !== 'ECONNREFUSED') {
+                            util.handleError(err, next, res);
                         }
-                        if (err) {
-                            util.handleError(err);
+                    }
+                    if (err) {
+                        util.handleError(err);
+                        if (err.code === 'HPE_INVALID_CONSTANT') {
                             if (is_start) {
                                 var cashStatus = stockTool.getCashStatus(cash, asset);
                                 var assetStatus = stockTool.getAssetStatus(asset);
@@ -2895,43 +2900,83 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                                 var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
                                 var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
                                 var managementStatus = stockTool.getManagementStatus(sales, asset);
-                                res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus});
+                                res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter});
                             } else {
                                 console.log('not');
-                                setTimeout(function(){
-                                    recur_getTwseXml();
-                                }, 20000);
-                            }
-                        } else {
-                            temp = stockTool.getCashflow(xml, cash);
-                            if (!temp) {
-                                if (is_start) {
-                                    var cashStatus = stockTool.getCashStatus(cash, asset);
-                                    var assetStatus = stockTool.getAssetStatus(asset);
-                                    var salesStatus = stockTool.getSalesStatus(sales, asset);
-                                    var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
-                                    var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
-                                    var managementStatus = stockTool.getManagementStatus(sales, asset);
-                                    res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus});
-                                } else {
-                                    console.log('not');
-                                    setTimeout(function(){
-                                        recur_getTwseXml();
-                                    }, 20000);
+                                quarter--;
+                                if (quarter < 1) {
+                                    quarter = 4;
+                                    year--;
                                 }
-                            } else {
-                                cash = temp;
-                                asset = stockTool.getAsset(xml, asset);
-                                sales = stockTool.getSales(xml, sales);
-                                is_start = true;
+                                wait = 0;
                                 setTimeout(function(){
                                     recur_getTwseXml();
-                                }, 20000);
+                                }, wait);
                             }
+                        } else if (err.code === 'ECONNREFUSED') {
+                            wait += 10000;
+                            setTimeout(function(){
+                                recur_getTwseXml();
+                            }, wait);
                         }
-                    });
-                }
-            });
+                    } else {
+                        var stats = fs.statSync(xmlPath);
+                        console.log(stats.size);
+                        if (stats.size < 10000) {
+                            fs.unlink(xmlPath, function (err) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                wait += 10000;
+                                setTimeout(function(){
+                                    recur_getTwseXml();
+                                }, wait);
+                            });
+                        } else {
+                            console.log('ok');
+                            stockTool.initXml(xmlPath, function (err, xml) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                cash = stockTool.getCashflow(xml, cash);
+                                if (!cash) {
+                                    util.handleError({hoerror: 2, message: "xml cash parse error!!!"}, next, res);
+                                }
+                                asset = stockTool.getAsset(xml, asset);
+                                if (!asset) {
+                                    util.handleError({hoerror: 2, message: "xml asset parse error!!!"}, next, res);
+                                }
+                                sales = stockTool.getSales(xml, sales);
+                                if (!sales) {
+                                    util.handleError({hoerror: 2, message: "xml sales parse error!!!"}, next, res);
+                                }
+                                is_start = true;
+                                wait = 0;
+                                if (!latestQuarter && !latestYear) {
+                                    latestQuarter = quarter;
+                                    latestYear = year;
+                                }
+                                var cashStatus = stockTool.getCashStatus(cash, asset);
+                                var assetStatus = stockTool.getAssetStatus(asset);
+                                var salesStatus = stockTool.getSalesStatus(sales, asset);
+                                var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
+                                var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
+                                var managementStatus = stockTool.getManagementStatus(sales, asset);
+                                res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter});
+                                /*
+                                quarter--;
+                                if (quarter < 1) {
+                                    quarter = 4;
+                                    year--;
+                                }
+                                setTimeout(function(){
+                                    recur_getTwseXml();
+                                }, wait);*/
+                            });
+                        }
+                    }
+                });
+            }
         }
     });
 });

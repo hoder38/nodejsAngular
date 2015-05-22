@@ -1,5 +1,5 @@
 var video, music, subtitles, videoStart=0, musicStart=0;
-var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularFileUpload', 'ui.bootstrap'], function($routeProvider, $locationProvider) {
+var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularFileUpload', 'ui.bootstrap', 'chart.js'], function($routeProvider, $locationProvider) {
     $routeProvider.when('/', {
         templateUrl: '/views/homepage',
         controller: LoginCntl//,
