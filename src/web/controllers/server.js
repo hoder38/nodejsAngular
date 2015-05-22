@@ -614,7 +614,7 @@ function editFile(uid, newName, user, next, callback) {
                 }
                 var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 var time = Math.round(new Date().getTime() / 1000);
-                handleTag(filePath, {utime: time, untag: 1, time: item[0].time, height: item[0].height}, newName, items[0].name, items[0].status, function(err, mediaType, mediaTag, DBdata) {
+                handleTag(filePath, {utime: time, untag: 1, time: items[0].time, height: items[0].height}, newName, items[0].name, items[0].status, function(err, mediaType, mediaTag, DBdata) {
                     if(err) {
                         util.handleError(err, next, callback);
                     }
