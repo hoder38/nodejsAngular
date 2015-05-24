@@ -1374,8 +1374,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                             var track = video.textTracks[0];
                             if (track) {
                                 var cues = track.cues;
-                                if (cues) {
-                                    for (var i=cues.length;i>=0;i--) {
+                                if (cues && cues.length > 0) {
+                                    for (var i=cues.length-1;i>=0;i--) {
                                         track.removeCue(cues[i]);
                                     }
                                 }
@@ -2381,8 +2381,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                         var track = video.textTracks[0];
                                         if (track) {
                                             var cues = track.cues;
-                                            if (cues) {
-                                                for (var i=cues.length;i>=0;i--) {
+                                            if (cues && cues.length > 0) {
+                                                for (var i=cues.length-1;i>=0;i--) {
                                                     track.removeCue(cues[i]);
                                                 }
                                             }
@@ -2493,8 +2493,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                         var track = video.textTracks[0];
                                         if (track) {
                                             var cues = track.cues;
-                                            if (cues) {
-                                                for (var i=cues.length;i>=0;i--) {
+                                            if (cues && cues.length > 0) {
+                                                for (var i=cues.length-1;i>=0;i--) {
                                                     track.removeCue(cues[i]);
                                                 }
                                             }
@@ -2569,8 +2569,8 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                             var track = video.textTracks[0];
                             if (track) {
                                 var cues = track.cues;
-                                if (cues) {
-                                    for (var i=cues.length;i>=0;i--) {
+                                if (cues && cues.length > 0) {
+                                    for (var i=cues.length-1;i>=0;i--) {
                                         track.removeCue(cues[i]);
                                     }
                                 }
