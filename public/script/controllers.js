@@ -129,6 +129,7 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
                 var childnode = iframeBody.childNodes;
                 var iframeOffset = [];
                 var iframeWin = element[0].contentWindow.window;
+                scope.isPdf = false;
                 if (scope.doc.name.match(/\.pdf$/i)) {
                     scope.isPdf = true;
                     iframeBody.style.padding = '0px';
@@ -1363,10 +1364,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                             }
                         }
                         if (type === 'doc') {
+                            this_obj.$parent[type].iframeOffset = null;
                             this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
                         } else {
-                            this_obj.$parent.isPdf = false;
-                            this_obj.$parent[type].iframeOffset = null;
                             this_obj.$parent[type].src = '/' + preType + '/' + item.id;
                         }
                         this_obj.$parent[type].maxId = item.present;
@@ -1679,6 +1679,7 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
     $scope.mediaMoreDisabled = false;
     $scope.isLogin = false;
     $scope.isFull = false;
+    $scope.isVisible = false;
     $scope.isExtend = false;
     $scope.loginFocus = {user: true, pwd:false};
     $scope.alerts = [];
@@ -2371,7 +2372,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 } else {
                                     this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                     if (type === 'doc') {
-                                        this_obj.isPdf = false;
                                         this_obj[type].iframeOffset = null;
                                         this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                     } else {
@@ -2483,7 +2483,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                                 } else {
                                     this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                     if (type === 'doc') {
-                                        this_obj.isPdf = false;
                                         this_obj[type].iframeOffset = null;
                                         this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                     } else {
@@ -2559,7 +2558,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     } else {
                         this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                         if (type === 'doc') {
-                            this_obj.isPdf = false;
                             this_obj[type].iframeOffset = null;
                             this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                         } else {

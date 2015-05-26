@@ -911,7 +911,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                                     mediaType['time'] = DBdata['time'] = meta.input.duration;
                                     DBdata['status'] = 1;
                                     if (mediaType['time'] < 20 * 60 * 1000) {
-                                        mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 1));
+                                        mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 2));
                                     } else if (mediaType['time'] < 40 * 60 * 1000) {
                                         mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
                                     } else if (mediaType['time'] < 60 * 60 * 1000) {
@@ -960,7 +960,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                                 mediaType['time'] = DBdata['time'];
                                 DBdata['status'] = 1;
                                 if (mediaType['time'] < 20 * 60 * 1000) {
-                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 1));
+                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 2));
                                 } else if (mediaType['time'] < 40 * 60 * 1000) {
                                     mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
                                 } else if (mediaType['time'] < 60 * 60 * 1000) {
@@ -1011,7 +1011,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                                 if (meta.input.streams) {
                                     if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
                                         if (meta.input.duration < 20 * 60 * 1000) {
-                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 1));
+                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 2));
                                         } else if (meta.input.duration < 40 * 60 * 1000) {
                                             mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
                                         } else if (meta.input.duration < 60 * 60 * 1000) {
@@ -1036,7 +1036,7 @@ function handleTag(filePath, DBdata, newName, oldName, status, callback){
                             if (DBdata['time']) {
                                 if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
                                     if (DBdata['time'] < 20 * 60 * 1000) {
-                                        mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 1));
+                                        mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 2));
                                     } else if (DBdata['time'] < 40 * 60 * 1000) {
                                         mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
                                     } else if (DBdata['time'] < 60 * 60 * 1000) {
@@ -1319,6 +1319,7 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                     cmdline = '7za x ' + filePath + ' -o' + filePath + '_img/temp';
                 }
                 var folder = null;
+                var sub_folder = null;
                 child_process.exec(cmdline, function (err, output) {
                     if (err) {
                         console.log(cmdline);
@@ -1345,7 +1346,11 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                     if (folder) {
                         fs.readdirSync(filePath + '_img/temp/' + folder).forEach(function(file,index){
                             var curPath = filePath + '_img/temp/' + folder + '/' + file;
-                            if(!fs.lstatSync(curPath).isDirectory()) {
+                            if(fs.lstatSync(curPath).isDirectory()) {
+                                if (!sub_folder) {
+                                    sub_folder = file;
+                                }
+                            } else {
                                 var ext = mime.isImage(file);
                                 if (ext) {
                                     var zip_number = file.match(/\d+/g);
@@ -1356,6 +1361,21 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
                                 }
                             }
                         });
+                        if (sub_folder) {
+                            fs.readdirSync(filePath + '_img/temp/' + folder + '/' + sub_folder).forEach(function(file,index){
+                                var curPath = filePath + '_img/temp/' + folder + '/' + sub_folder + '/' + file;
+                                if(!fs.lstatSync(curPath).isDirectory()) {
+                                    var ext = mime.isImage(file);
+                                    if (ext) {
+                                        var zip_number = file.match(/\d+/g);
+                                        if (!zip_number) {
+                                            zip_number = [];
+                                        }
+                                        zip_arr.push({name: folder + '/' + sub_folder + '/' + file, ext: ext, number: zip_number});
+                                    }
+                                }
+                            });
+                        }
                     }
                     //只比較前面數字
                     var sort_result = zip_arr.sort(function(a, b) {

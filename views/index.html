@@ -215,7 +215,9 @@
                     </section>
                 </section>
                 <section id="{{isFull && 'full-section'||'center-section'}}">
-                    <section class="panel panel-warning media-section" ng-show="mediaShow[0] === 'image'">
+                    <section class="panel panel-warning {{(isVisible) && 'visible-section' || 'invisible-section'}}{{isFull && '-full panel-transparent'||' panel-untransparent'}}" ng-show="mediaShow[0] === 'image'">
+                        <section id="transparent" class="{{(isVisible) && 'visible-section' || 'invisible-section'}}{{isFull && '-full'||''}}" ng-click="isVisible = !isVisible">
+                        </section>
                         <div class="panel-heading" ng-click="mediaToggle('image')">
                             <h4 class="panel-title">
                                 {{(image.index) >= 0 && (image.index+1) || image.index}} : {{image.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
@@ -223,7 +225,7 @@
                         </div>
                         <div class="panel-body media-trim">
                             <nav>
-                                <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
+                                <ul id="extend-ul" class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
                                     <span ng-show="image.maxId && image.maxId > 1">
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="imgMove(-1)">
@@ -242,12 +244,12 @@
                                             <span class="glyphicon glyphicon-chevron-left"></span>
                                         </a>
                                     </li>
-                                    <li>
+                                    <li >
                                         <a href="#" class='media-hide' ng-click="isFull = !isFull">
                                             <span class="glyphicon {{isFull && 'glyphicon-minus-sign'||'glyphicon-plus-sign'}}"></span>
                                         </a>
                                     </li>
-                                    <li>
+                                    <li id="{{isFull && 'extend-button-full'||'extend-button'}}">
                                         <a href="#" ng-click="isExtend = !isExtend">
                                             <span class="glyphicon {{isExtend && 'glyphicon-resize-small'||'glyphicon-resize-full'}}"></span>
                                         </a>
@@ -259,8 +261,10 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <div class="{{isExtend && 'extend-image-screen' || ''}}">
-                                <img class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="nextImage()" />
+                            <div ng-click="isVisible=false">
+                                <div class="{{(isExtend&&isFull) && 'extend-image-screen' || ''}} {{(isExtend&&!isFull) && 'thin-image-screen' || ''}}">
+                                    <img class="{{isFull && 'full-image-screen'||'image-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="nextImage()" />
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -333,7 +337,7 @@
                                 {{(doc.index) >= 0 && (doc.index+1) || doc.index}} : {{doc.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
-                        <div class="panel-body">
+                        <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
                                     <span ng-show="isPdf" tooltip="切換模式"  tooltip-trigger="mouseenter">
@@ -372,7 +376,7 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <iframe ng-iframe-bigpic class="{{isFull && 'full-doc-screen'||'doc-screen'}}" ng-src="{{doc.src}}" style="border: 0;"></iframe>
+                            <iframe ng-iframe-bigpic class="doc-screen" ng-src="{{doc.src}}" style="border: 0;"></iframe>
                             <!--object class="{{isFull && 'full-doc-screen'||'doc-screen'}}" data="{{doc.src}}" type="application/pdf">
                                 <embed ng-src="{{doc.src}}" type="application/pdf" />
                             </object-->
@@ -384,10 +388,10 @@
                                 {{(present.index) >= 0 && (present.index+1) || present.index}} : {{present.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
-                        <div class="panel-body">
+                        <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
-                                    <span ng-show="present.maxId && present.maxId > 1" class="{{isFull && 'span-right'||'span-left'}}">
+                                    <span ng-show="present.maxId && present.maxId > 1">
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="presentMove(-1)">
                                                 <span class="glyphicon glyphicon-chevron-up"></span>
@@ -417,7 +421,7 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <iframe class="{{isFull && 'full-doc-screen'||'doc-screen'}}" ng-src="{{present.src}}" style="border: 0;"></iframe>
+                            <iframe class="doc-screen" ng-src="{{present.src}}" style="border: 0;"></iframe>
                         </div>
                     </section>
                 </section>

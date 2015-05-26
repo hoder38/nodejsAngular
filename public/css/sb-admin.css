@@ -279,6 +279,30 @@ ul.alert-dropdown {
     _position:absolute; /* position fixed for IE6 */
 }
 
+.visible-section, .visible-section-full {
+    visibility: visible;
+}
+
+.invisible-section-full, .invisible-section {
+    visibility: hidden;
+}
+
+#transparent.visible-section, #transparent.visible-section-full {
+    visibility: hidden;
+}
+
+#transparent.invisible-section-full, #transparent.invisible-section {
+    visibility: visible;
+}
+
+#extend-button-full {
+    display: inline;
+}
+
+#extend-button {
+    display: inline;
+}
+
 #uploader-section {
     width: 307px;
 }
@@ -310,9 +334,48 @@ ul.alert-dropdown {
     margin: 0;
 }
 
+.image-screen {
+    visibility: visible;
+    z-index: -1;
+    position:relative;
+    top: -90px;
+    max-width: 100%;
+    max-height: 95vh;
+    width: auto;
+    height: auto;
+}
+
 .media-screen {
     max-width: 100%;
     max-height: 70vh;
+    width: auto;
+    height: auto;
+}
+
+
+.panel-transparent.panel {
+    background: none;
+}
+
+.panel-transparent .panel-body{
+    background: rgba(46, 51, 56, 0)!important;
+}
+
+.panel-untransparent.panel {
+    background: none;
+}
+
+.panel-untransparent .panel-body{
+    background: rgba(46, 51, 56, 0)!important;
+}
+
+.full-image-screen {
+    visibility: visible;
+    z-index: -1;
+    position:relative;
+    top: -90px;
+    max-width: 100%;
+    max-height: 100vh;
     width: auto;
     height: auto;
 }
@@ -324,8 +387,27 @@ ul.alert-dropdown {
     height: auto;
 }
 
-.extend-image-screen {
-    height: 68vh;
+#transparent {
+    z-index: 2001;
+    position:fixed;
+    width: 100px;
+    height: 100px;
+    border-radius: 50px;
+    -webkit-border-radius: 50px;
+    -moz-border-radius: 50px;
+    background: rgba(10%, 10%, 10%, 0.1);
+    top:0px;
+    left:0px;
+    _position:absolute; /* position fixed for IE6 */
+}
+
+.extend-image-screen, .thin-image-screen {
+    float: right !important;
+    visibility: visible;
+    z-index: -1;
+    position:relative;
+    top: -90px;
+    height: 100vh;
     width: 100%;
     overflow: auto;
 }
@@ -345,11 +427,6 @@ audio.full-media-screen {
     height: 68vh;
 }
 
-.full-doc-screen {
-    width: 100%;
-    height: 68vh;
-}
-
 @media(min-height:700px) {
     .media-screen {
         max-width: 100%;
@@ -363,11 +440,6 @@ audio.full-media-screen {
         width: auto;
         height: auto;
     }
-    .extend-image-screen {
-        height: 83vh;
-        width: 100%;
-        overflow: auto;
-    }
     .doc-screen {
         width: 100%;
         height: 83vh;
@@ -378,7 +450,7 @@ audio.full-media-screen {
     }
 }
 
-.extend-image-screen > .full-media-screen, .extend-image-screen > .media-screen {
+.extend-image-screen > .full-image-screen, .extend-image-screen > .image-screen, .thin-image-screen > .image-screen {
     max-width: none;
     max-height: none;
     width: auto;
@@ -467,22 +539,68 @@ audio.full-media-screen {
     margin-top: -34px;
 }
 
-.span-left {
-    float: right;
-}
-
 @media(min-width:768px) {
+    #extend-button {
+        display: none;
+    }
+    #transparent.invisible-section{
+        visibility: hidden;
+    }
+    .invisible-section {
+        visibility: visible;
+    }
+    .panel-untransparent.panel {
+        background: white;
+    }
+
+    .panel-untransparent .panel-body{
+        background: white;
+    }
     #center-section {
         top:60px;
         right:10px;
         left: auto;
         max-width: 50%;
     }
+
+    #extend-ul {
+        position:relative;
+        z-index:1;
+    }
+
+    .thin-image-screen {
+        float: left !important;
+        visibility: inherit;
+        position:relative;
+        z-index: auto;
+        top: 0px;
+        overflow: inherit;
+    }
+
     #doc-section {
-        left: auto;
         top:60px;
         right:10px;
+        left: auto;
         width: 50%;
+    }
+    .thin-image-screen .image-screen {
+        visibility: visible;
+        z-index: 0;
+        position:relative;
+        top: 0px;
+        width: auto;
+        height: auto;
+        max-height: 100%;
+        max-width: 100%;
+    }
+    .image-screen {
+        visibility: visible;
+        z-index: 0;
+        position:relative;
+        top: 0px;
+        width: auto;
+        height: auto;
+        max-height: 100%;
     }
     .media-screen {
         max-height: 100%;
@@ -520,9 +638,6 @@ audio.full-media-screen {
         padding-right: 230px;
         top: 50px;
         border-top: 5px solid white;
-    }
-    .span-left {
-        float: none;
     }
 }
 
@@ -673,8 +788,4 @@ audio.full-media-screen {
 
 .history-point:hover, .history-point:link, .history-point:visited, .history-point:active {
     color: #777;
-}
-
-.span-right {
-    float: right;
 }
