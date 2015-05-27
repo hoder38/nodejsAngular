@@ -219,17 +219,17 @@
                     </section>
                 </section>
                 <section id="{{isFull && 'full-section'||'center-section'}}">
-                    <section class="panel panel-warning {{(isVisible) && 'visible-section' || 'invisible-section'}}{{isFull && '-full panel-transparent'||' panel-untransparent'}}" ng-show="mediaShow[0] === 'image'">
-                        <section id="transparent" class="{{(isVisible) && 'visible-section' || 'invisible-section'}}{{isFull && '-full'||''}}" ng-click="isVisible = !isVisible">
-                        </section>
+                    <section class="panel panel-warning {{(!isVisible&&isFull) && 'invisible-section' || ''}} {{isFull && 'panel-transparent' || ''}}" ng-show="mediaShow[0] === 'image'">
+                        <a href="#" id="transparent" class="{{(!isVisible&&isFull) && 'visible-section' || 'invisible-section'}}" ng-click="isVisible = !isVisible">
+                        </a>
                         <div class="panel-heading" ng-click="mediaToggle('image')">
                             <h4 class="panel-title">
                                 {{(image.index) >= 0 && (image.index+1) || image.index}} : {{image.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="panel-body media-trim">
-                            <nav>
-                                <ul id="extend-ul" class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
+                            <nav id="{{(isExtend&&isFull) && 'extend-nav' || ''}}">
+                                <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
                                     <span ng-show="image.maxId && image.maxId > 1">
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="imgMove(-1)">
@@ -253,7 +253,7 @@
                                             <span class="glyphicon {{isFull && 'glyphicon-minus-sign'||'glyphicon-plus-sign'}}"></span>
                                         </a>
                                     </li>
-                                    <li id="{{isFull && 'extend-button-full'||'extend-button'}}">
+                                    <li id="{{!isFull && 'extend-hide'}}">
                                         <a href="#" ng-click="isExtend = !isExtend">
                                             <span class="glyphicon {{isExtend && 'glyphicon-resize-small'||'glyphicon-resize-full'}}"></span>
                                         </a>
@@ -265,9 +265,11 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <div ng-click="isVisible=false">
-                                <div class="{{(isExtend&&isFull) && 'extend-image-screen' || ''}} {{(isExtend&&!isFull) && 'thin-image-screen' || ''}}">
-                                    <img class="{{isFull && 'full-image-screen'||'image-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="nextImage()" />
+                            <div ng-click="isVisible=false" id="non-blue">
+                                <div class="{{(isExtend&&isFull) && 'extend-image-screen' || ''}}">
+                                    <a href="#">
+                                        <img class="{{isFull && 'full-image-screen'||'image-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="nextImage()" />
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -275,12 +277,12 @@
                     <section class="panel panel-success" ng-show="mediaShow[0] === 'video'">
                         <div class="panel-heading" ng-click="mediaToggle('video')">
                             <h4 class="panel-title">
-                                {{(video.index) >= 0 && (video.index+1) || video.index}} : {{video.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
+                                {{(video.index) >= 0 && (video.index+1) || video.index}} : {{video.name}}<i class="pull-right glyphicon glyphichttps://114.32.213.158:8080/Storage#on-remove"></i>
                             </h4>
                         </div>
                         <div class="panel-body media-trim">
                             <nav>
-                                <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
+                                <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(-1, 'video')">
                                             <span class="glyphicon glyphicon-chevron-left"></span>
@@ -311,7 +313,7 @@
                         </div>
                         <div class="panel-body media-trim">
                             <nav>
-                                <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
+                                <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(-1, 'music')">
                                             <span class="glyphicon glyphicon-chevron-left"></span>
@@ -329,7 +331,7 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <audio class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{music.src}}" controls autoplay ng-music ng-ended="mediaMove(1, 'music', true)" ng-play="testLogin()" ng-pause="mediaRecord('music')">
+                            <audio class="media-screen" ng-src="{{music.src}}" controls autoplay ng-music ng-ended="mediaMove(1, 'music', true)" ng-play="testLogin()" ng-pause="mediaRecord('music')">
                             </audio>
                         </div>
                     </section>
@@ -343,7 +345,7 @@
                         </div>
                         <div class="panel-body media-trim">
                             <nav>
-                                <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
+                                <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
                                     <span ng-show="isPdf" tooltip="切換模式"  tooltip-trigger="mouseenter">
                                         <input type="checkbox" ng-model="doc.mode"/>
                                     </span>
@@ -394,7 +396,7 @@
                         </div>
                         <div class="panel-body media-trim">
                             <nav>
-                                <ul class="pager nav-trim {{isFull && 'pull-left'||'media-pull-right'}}">
+                                <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
                                     <span ng-show="present.maxId && present.maxId > 1">
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="presentMove(-1)">
