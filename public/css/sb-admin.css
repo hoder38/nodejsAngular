@@ -380,13 +380,13 @@ ul.alert-dropdown {
     _position:absolute; /* position fixed for IE6 */
 }
 
-.extend-image-screen {
+#extend-image-screen {
     top: -40px;
     visibility: visible;
     z-index: -1;
     position:relative;
     height: 100vh;
-    width: 100%;
+    width: 98vw;
     overflow: auto;
 }
 
@@ -423,7 +423,7 @@ audio.media-screen {
     }
 }
 
-.extend-image-screen > a > .full-image-screen {
+#extend-image-screen > a > .full-image-screen {
     top: 0px;
     max-width: none;
     max-height: none;

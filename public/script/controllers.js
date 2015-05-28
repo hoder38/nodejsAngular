@@ -191,6 +191,19 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
             }
         });
     }
+}).directive('ngImageOnload', function() {
+    return {
+        restrict: 'A',
+        link: function(scope, element, attrs) {
+            element.bind('load', function() {
+                var extend = document.getElementById('extend-image-screen');
+                if (extend) {
+                    extend.scrollTop = 0;
+                    extend.scrollLeft = extend.scrollWidth;
+                }
+            });
+        }
+    };
 });
 
 function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $timeout) {
@@ -527,6 +540,16 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         addAlert(response);
         this.clearQueue();
     };
+
+    $scope.$watch("isExtend", function(newVal, oldVal) {
+        if (newVal) {
+            var extend = document.getElementById('extend-image-screen');
+            if (extend) {
+                extend.scrollTop = 0;
+                extend.scrollLeft = extend.scrollWidth;
+            }
+        }
+    }, true);
 
     $scope.$on('dir', function(e, d) {
         var result = JSON.parse(d);
