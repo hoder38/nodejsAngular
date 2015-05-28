@@ -188,6 +188,19 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
             }
         });
     }
+}).directive('ngImageOnload', function() {
+    return {
+        restrict: 'A',
+        link: function(scope, element, attrs) {
+            element.bind('load', function() {
+                var extend = document.getElementById('extend-image-screen');
+                if (extend) {
+                    extend.scrollTop = 0;
+                    extend.scrollLeft = extend.scrollWidth;
+                }
+            });
+        }
+    };
 });
 
 function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $timeout) {
@@ -2264,12 +2277,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             this.mediaMove(1, 'image');
         } else {
             this.imgMove(1);
-        }
-        var extend = document.getElementById('extend-image-screen');
-        if (extend) {
-            console.log(extend.scrollRight);
-            extend.scrollTop = 0;
-            extend.scrollLeft = extend.scrollWidth;
         }
     }
 

@@ -264,7 +264,7 @@
                             <div ng-click="isVisible=false" id="non-blue">
                                 <div id="{{(isExtend&&isFull) && 'extend-image-screen' || ''}}">
                                     <a href="#">
-                                        <img class="{{isFull && 'full-image-screen'||'image-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="nextImage()" />
+                                        <img class="{{isFull && 'full-image-screen'||'image-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="nextImage()" ng-image-onload />
                                     </a>
                                 </div>
                             </div>
