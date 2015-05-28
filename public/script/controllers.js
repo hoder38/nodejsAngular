@@ -2265,6 +2265,11 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         } else {
             this.imgMove(1);
         }
+        var extend = document.getElementById('extend-image-screen');
+        if (extend) {
+            extend.scrollTop = 0;
+            extend.scrollLeft = 0;
+        }
     }
 
     $scope.mediaMove = function(number, type, end) {
