@@ -23,6 +23,7 @@ Index: <input type="text" ng-model="inputIndex" />
         <h4 class="panel-title">cash:{{stockIndex}}</h4>
     </div>
     <div class="panel-body">
+        <canvas id="cashSum" class="chart chart-line" data="cashSumData" labels="cashSumLabels" legend="true" series="cashSumSeries" options="cashOptions"></canvas>
         <canvas id="cash" class="chart chart-line" data="cashData" labels="cashLabels" legend="true" series="cashSeries" options="cashOptions"></canvas>
     </div>
 </section>

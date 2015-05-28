@@ -18,11 +18,15 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
     $scope.assetData = [];
     $scope.salesLabels = [];
     $scope.salesData = [];
+    $scope.cashSumLabels = [];
+    $scope.cashSumData = [[], []];
+    $scope.cashSumSeries = [['profitBT'], ['real']];
     $scope.cashLabels = [];
     $scope.cashData = [[], [], [], []];
     $scope.cashSeries = [['operation'], ['invest'], ['without_dividends'], ['minor']];
     //$scope.cashSeries = ['profitBT', 'real', 'dividends', 'real_dividends'];
     $scope.isParse = false;
+    $scope.parseResult = {};
     $scope.init = function(){
         /*var stockApi = $resource('/api/stock/init', {}, {
             'init': { method:'get' }
@@ -54,7 +58,10 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
         this.salesData = [];
         this.cashData = [[], [], [], []];
         this.cashLabels = [];
+        this.cashSumData = [[], []];
+        this.cashSumLabels = [];
         this.isParse = false;
+        this.parseResult = {};
         var stockApi = $resource('/api/stock/query/' + Number(this.inputIndex), {}, {
             'query': { method:'get' }
         });
@@ -65,6 +72,11 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                 $window.location.href = $location.path();
             } else {
                 console.log(result);
+                this_obj.parseResult.assetStatus = result.assetStatus;
+                this_obj.parseResult.salesStatus = result.salesStatus;
+                this_obj.parseResult.cashStatus = result.cashStatus;
+                this_obj.parseResult.latestYear = result.latestYear;
+                this_obj.parseResult.latestQuarter = result.latestQuarter;
                 this_obj.isParse = true;
                 //assetStatus
                 for(var i in result.assetStatus[result.latestYear][result.latestQuarter-1]) {
@@ -118,6 +130,7 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                     for (var j in result.cashStatus[i]) {
                         if (result.cashStatus[i][j] && j < 4) {
                             this_obj.cashLabels.push(i.toString() + (Number(j)+1));
+                            this_obj.cashSumLabels.push(i.toString() + (Number(j)+1));
                             for (var k in result.cashStatus[i][j]) {
                                 cashIndex = -1;
                                 switch (k){
@@ -133,12 +146,20 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                                     case 'minor':
                                     cashIndex = 3;
                                     break;
+                                    case 'profitBT':
+                                    cashIndex = 4;
+                                    break;
+                                    case 'real':
+                                    cashIndex = 5;
+                                    break;
                                 }
                                 if (cashIndex >= 0) {
                                     if (cashIndex === 1) {
                                         this_obj.cashData[cashIndex].push(-Math.ceil(result.cashStatus[i][j][k] * result.cashStatus[i][j].begin/100000000));
-                                    } else {
+                                    } else if(cashIndex < 4) {
                                         this_obj.cashData[cashIndex].push(Math.ceil(result.cashStatus[i][j][k] * result.cashStatus[i][j].begin/100000000));
+                                    } else {
+                                        this_obj.cashSumData[cashIndex-4].push(Math.ceil(result.cashStatus[i][j][k] * result.cashStatus[i][j].begin/100000000));
                                     }
                                 }
                             }
