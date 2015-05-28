@@ -538,6 +538,16 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         this.clearQueue();
     };
 
+    $scope.$watch("isExtend", function(newVal, oldVal) {
+        if (newVal) {
+            var extend = document.getElementById('extend-image-screen');
+            if (extend) {
+                extend.scrollTop = 0;
+                extend.scrollLeft = extend.scrollWidth;
+            }
+        }
+    }, true);
+
     $scope.$on('dir', function(e, d) {
         var result = JSON.parse(d);
         for (var i in $scope.dirList) {
