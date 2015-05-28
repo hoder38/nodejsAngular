@@ -2267,8 +2267,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         }
         var extend = document.getElementById('extend-image-screen');
         if (extend) {
+            console.log(extend.scrollRight);
             extend.scrollTop = 0;
-            extend.scrollLeft = 0;
+            extend.scrollLeft = extend.scrollWidth;
         }
     }
 
