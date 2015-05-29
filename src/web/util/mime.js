@@ -1,7 +1,7 @@
 /*jslint regexp: true*/
 var ext_filename = /(?:\.([^.]+))?$/;
 var image_arr = ['jpg', 'gif', 'bmp', 'jpeg', 'png'];
-var zip_arr = ['zip', 'rar', '7z'];
+var zip_arr = ['zip', 'rar', '7z', 'cbr', 'cbz'];
 //vlog
 //var video_arr = ['mp4', 'rm', 'mts', 'm2ts', '3gp2', '3gp', 'mpg', 'asf', 'mpeg', 'avi', 'mov', 'wmv', 'flv', 'rmvb', 'webm', 'm4v', 'f4v', 'mkv'];
 var video_vlog_arr = ['rm', 'rmvb'];
@@ -141,6 +141,8 @@ module.exports = {
                 return '';
             });
             if (name.match(/\.book$/)) {
+                return {type: 'zipbook', ext: extName};
+            } else if (extName === 'cbr' || extName === 'cbz') {
                 return {type: 'zipbook', ext: extName};
             } else {
                 return false;
