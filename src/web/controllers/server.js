@@ -1315,7 +1315,7 @@ function handleMediaUpload(mediaType, filePath, fileID, fileName, fileSize, user
             }
             function zipbook() {
                 var cmdline = 'unzip ' + filePath + ' -d ' + filePath + '_img/temp';
-                if (zip_ext === 'rar') {
+                if (zip_ext === 'rar' || zip_ext === 'cbr') {
                     cmdline = 'unrar x ' + filePath + ' ' + filePath + '_img/temp';
                 } else if (zip_ext === '7z') {
                     cmdline = '7za x ' + filePath + ' -o' + filePath + '_img/temp';
@@ -3644,7 +3644,7 @@ app.get('/views/homepage', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    var msg = "hello<br/> 壓縮檔加上.book可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/><br/>指令不算在單項搜尋裡<br/>預設只會搜尋到有first item的檔案<br/>方便尋找，可以縮小範圍後再下all item顯示全部";
+    var msg = "hello<br/> 壓縮檔加上.book或是cbr、cbz檔可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/><br/>指令不算在單項搜尋裡<br/>預設只會搜尋到有first item的檔案<br/>方便尋找，可以縮小範圍後再下all item顯示全部";
     var adult_msg = "<br/><br/>18禁指令: <br/><br/>18禁: 只顯示十八禁的檔案"
     if (util.checkAdmin(2, req.user)) {
         msg += adult_msg;
