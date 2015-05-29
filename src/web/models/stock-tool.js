@@ -272,15 +272,27 @@ module.exports = {
         for (var i in cash) {
             cashStatus[i] = [];
             for (var j in cash[i]) {
-                cashStatus[i][j] = {begin: cash[i][j].begin, profitBT: Math.ceil(cash[i][j].profitBT/cash[i][j].begin*100), real: Math.ceil(cash[i][j].change/cash[i][j].begin*100), operation: Math.ceil(cash[i][j].operation/cash[i][j].begin*100), invest: Math.ceil(cash[i][j].invest/cash[i][j].begin*100), dividends: Math.ceil(cash[i][j].dividends/cash[i][j].begin*100), without_dividends: Math.ceil((cash[i][j].finance - cash[i][j].dividends)/cash[i][j].begin*100), end: Math.ceil(cash[i][j].end/cash[i][j].begin*100), minor: Math.ceil((cash[i][j].change - cash[i][j].operation - cash[i][j].invest - cash[i][j].finance)/cash[i][j].begin*100), asset: Math.ceil(cash[i][j].end/asset[i][j].total*100), equity: Math.ceil(cash[i][j].end/(asset[i][j].equityParent + asset[i][j].equityChild)*100), investPerProperty: Math.ceil(cash[i][j].operation/asset[i][j].property*100), financePerLiabilities: Math.ceil((cash[i][j].finance - cash[i][j].dividends)/(asset[i][j].current_liabilities + asset[i][j].noncurrent_liabilities)*100)};
-                if ((j === '1' || j === '2' || j === '3') && cashStatus[i][Number(j)-1]) {
-                    cashStatus[i][j].profitBT -= cashStatus[i][Number(j)-1].profitBT;
-                    cashStatus[i][j].real -= cashStatus[i][Number(j)-1].real;
-                    cashStatus[i][j].dividends -= cashStatus[i][Number(j)-1].dividends;
-                    cashStatus[i][j].operation -= cashStatus[i][Number(j)-1].operation;
-                    cashStatus[i][j].invest -= cashStatus[i][Number(j)-1].invest;
-                    cashStatus[i][j].without_dividends -= cashStatus[i][Number(j)-1].without_dividends;
-                    cashStatus[i][j].minor -= cashStatus[i][Number(j)-1].minor;
+                cashStatus[i][j] = {begin: cash[i][j].begin, end: Math.ceil(cash[i][j].end/cash[i][j].begin*100), asset: Math.ceil(cash[i][j].end/asset[i][j].total*100), equity: Math.ceil(cash[i][j].end/(asset[i][j].equityParent + asset[i][j].equityChild)*100)};
+                if ((j === '1' || j === '2' || j === '3') && cash[i][Number(j)-1]) {
+                    cashStatus[i][j].profitBT = Math.ceil((cash[i][j].profitBT - cash[i][Number(j)-1].profitBT)/cash[i][j].begin*100);
+                    cashStatus[i][j].real = Math.ceil((cash[i][j].change - cash[i][Number(j)-1].change)/cash[i][j].begin*100);
+                    cashStatus[i][j].operation = Math.ceil((cash[i][j].operation - cash[i][Number(j)-1].operation)/cash[i][j].begin*100);
+                    cashStatus[i][j].invest = Math.ceil((cash[i][j].invest - cash[i][Number(j)-1].invest)/cash[i][j].begin*100);
+                    cashStatus[i][j].dividends = Math.ceil((cash[i][j].dividends - cash[i][Number(j)-1].dividends)/cash[i][j].begin*100);
+                    cashStatus[i][j].without_dividends = Math.ceil(((cash[i][j].finance - cash[i][j].dividends) - (cash[i][Number(j)-1].finance - cash[i][Number(j)-1].dividends))/cash[i][j].begin*100);
+                    cashStatus[i][j].minor = Math.ceil(((cash[i][j].change - cash[i][j].operation - cash[i][j].invest - cash[i][j].finance) - (cash[i][Number(j)-1].change - cash[i][Number(j)-1].operation - cash[i][Number(j)-1].invest - cash[i][Number(j)-1].finance))/cash[i][j].begin*100);
+                    cashStatus[i][j].investPerProperty = Math.ceil((cash[i][j].operation - cash[i][Number(j)-1].operation)/asset[i][j].property*100);
+                    cashStatus[i][j].financePerLiabilities = Math.ceil(((cash[i][j].finance - cash[i][j].dividends) - (cash[i][Number(j)-1].finance - cash[i][Number(j)-1].dividends))/(asset[i][j].current_liabilities + asset[i][j].noncurrent_liabilities)*100);
+                } else {
+                    cashStatus[i][j].profitBT = Math.ceil(cash[i][j].profitBT/cash[i][j].begin*100);
+                    cashStatus[i][j].real = Math.ceil(cash[i][j].change/cash[i][j].begin*100);
+                    cashStatus[i][j].operation = Math.ceil(cash[i][j].operation/cash[i][j].begin*100);
+                    cashStatus[i][j].invest = Math.ceil(cash[i][j].invest/cash[i][j].begin*100);
+                    cashStatus[i][j].dividends = Math.ceil(cash[i][j].dividends/cash[i][j].begin*100);
+                    cashStatus[i][j].without_dividends = Math.ceil((cash[i][j].finance - cash[i][j].dividends)/cash[i][j].begin*100);
+                    cashStatus[i][j].minor = Math.ceil((cash[i][j].change - cash[i][j].operation - cash[i][j].invest - cash[i][j].finance)/cash[i][j].begin*100);
+                    cashStatus[i][j].investPerProperty = Math.ceil(cash[i][j].operation/asset[i][j].property*100);
+                    cashStatus[i][j].financePerLiabilities = Math.ceil((cash[i][j].finance - cash[i][j].dividends)/(asset[i][j].current_liabilities + asset[i][j].noncurrent_liabilities)*100);
                 }
             }
         }

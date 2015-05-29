@@ -1,51 +1,108 @@
 <span id="initial" ng-init="init()"></span>
 <form ng-submit="submitIndex()">
-Index: <input type="text" ng-model="inputIndex" />
+    <div class="input-group">
+        <input type="text" class="form-control" ng-model="inputIndex" placeholder="Search Non-Finance Index" blur-me="searchBlur" />
+        <span class="input-group-btn">
+            <button class="btn btn-default" type="submit">
+                <span class="glyphicon glyphicon-search"></span>
+            </button>
+        </span>
+    </div>
 </form>
 <section class="panel panel-default" ng-show="isParse">
     <div class="panel-heading">
-        <h4 class="panel-title">asset:{{stockIndex}}</h4>
+        <h2 class="panel-title">Asset:{{stockIndex}}</h2>
     </div>
     <div class="panel-body">
-        <select ng-model="assetYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
-        </select>
-        <select ng-model="assetQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
-        </select>
-        <button ng-click="drawAsset(assetYear, assetQuarter)" type="button">Draw</button>
+        <div class="row">
+            <div class="col-md-6">
+                <select class="form-control" ng-model="assetYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <div class="input-group">
+                    <select class="form-control" ng-model="assetQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                    </select>
+                    <span class="input-group-btn">
+                        <button class="btn btn-default" ng-click="drawAsset(assetYear, assetQuarter)" type="button">
+                            <i class="fa fa-pie-chart"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <h3>Total: {{assetTotalCommas}}</h3>
         <canvas id="asset" class="chart chart-pie" data="assetData" labels="assetLabels"></canvas>
     </div>
 </section>
-<section class="panel panel-default" ng-show="isParse">
+<section class="panel panel-primary" ng-show="isParse">
     <div class="panel-heading">
-        <h4 class="panel-title">sales:{{stockIndex}}</h4>
+        <h2 class="panel-title">Sales:{{stockIndex}}</h2>
     </div>
     <div class="panel-body">
-        <select ng-model="salesYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
-        </select>
-        <select ng-model="salesQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
-        </select>
-        <button ng-click="drawSales(salesYear, salesQuarter)" type="button">Draw</button>
+        <div class="row">
+            <div class="col-md-6">
+                <select class="form-control" ng-model="salesYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <div class="input-group">
+                    <select class="form-control" ng-model="salesQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                    </select>
+                    <span class="input-group-btn">
+                        <button class="btn btn-primary" ng-click="drawSales(salesYear, salesQuarter)" type="button">
+                            <i class="fa fa-pie-chart"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <h3>Revenue + Plus: {{salesTotalCommas}} EPS: {{eps}}</h3>
         <canvas id="sales" class="chart chart-pie" data="salesData" labels="salesLabels"></canvas>
     </div>
 </section>
-<section class="panel panel-default" ng-show="isParse">
+<section class="panel panel-info" ng-show="isParse">
     <div class="panel-heading">
-        <h4 class="panel-title">cash:{{stockIndex}}</h4>
+        <h2 class="panel-title">Cash:{{stockIndex}}</h2>
     </div>
     <div class="panel-body">
-        Start:<select ng-model="cashStartYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
-        </select>
-        <select ng-model="cashStartQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
-        </select>
-        End:<select ng-model="cashEndYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
-        </select>
-        <select ng-model="cashEndQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
-        </select>
-        mode:<select ng-model="cashMode" ng-options="m.value as m.name for m in parseCashMode" convert-to-number>
-        </select>
-        accumulate:<input type="checkbox" ng-model="accumulate" />
-        <button ng-click="drawCash(cashMode, accumulate, cashStartYear, cashStartQuarter, cashEndYear, cashEndQuarter)" type="button">Draw</button>
-        <canvas id="cashSum" class="chart chart-line" data="cashSumData" labels="cashSumLabels" legend="true" series="cashSumSeries" options="cashOptions"></canvas>
-        <canvas id="cash" class="chart chart-line" data="cashData" labels="cashLabels" legend="true" series="cashSeries" options="cashOptions"></canvas>
+        <div class="row">
+            <div class="col-md-2">
+                <select class="form-control" ng-model="cashStartYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" ng-model="cashStartQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-1 text-center">
+                <strong>To</strong>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" ng-model="cashEndYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" ng-model="cashEndQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group">
+                    <select class="form-control" ng-model="cashMode" ng-options="m.value as m.name for m in parseCashMode" convert-to-number>
+                    </select>
+                    <span class="input-group-addon" tooltip="accumulate"  tooltip-trigger="mouseenter">
+                        <input type="checkbox" ng-model="accumulate" />
+                    </span>
+                    <span class="input-group-btn">
+                        <button class="btn btn-info" ng-click="drawCash(cashMode, accumulate, cashStartYear, cashStartQuarter, cashEndYear, cashEndQuarter)" type="button">
+                            <i class="fa fa-line-chart"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <canvas id="cashSum" class="chart chart-line" data="cashSumData" labels="cashSumLabels" legend="true" series="cashSumSeries"></canvas>
+        <canvas id="cash" class="chart chart-line" data="cashData" labels="cashLabels" legend="true" series="cashSeries"></canvas>
+        <canvas id="cashRatio" class="chart chart-line" data="cashRatioData" labels="cashRatioLabels" legend="true" series="cashRatioSeries"></canvas>
     </div>
 </section>

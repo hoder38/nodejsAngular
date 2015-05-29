@@ -2746,18 +2746,19 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
     });
 });
 
+/*
 app.get('/api/stock/init', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('stock init');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        /*api.getTwseXml(8213, 2014, 3, '/home/pi/test1.xml', function(err, xmlPath) {
+        api.getTwseXml(8213, 2014, 3, '/home/pi/test1.xml', function(err, xmlPath) {
             if (err) {
                 util.handleError(err, next, res);
             }
             res.json({apiOK: true});
-        });*/
+        });
         stockTool.initXml('/home/pi/tw-gaap-ci-8213-2012Q1-cr.xml', function (err, xml) {
             if (err) {
                 util.handleError(err, next, res);
@@ -2830,7 +2831,7 @@ app.get('/api/stock/init', function(req, res,next) {
             });
         });
     });
-});
+});*/
 
 app.get('/api/stock/query/:index', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
@@ -2893,7 +2894,7 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                         util.handleError({hoerror: 2, message: "xml sales parse error!!!"}, next, res);
                     }
                     is_start = true;
-                    if (year === 2014 && quarter === 2) {
+                    /*if (year === 2014 && quarter === 2) {
                         var cashStatus = stockTool.getCashStatus(cash, asset);
                         var assetStatus = stockTool.getAssetStatus(asset);
                         var salesStatus = stockTool.getSalesStatus(sales, asset);
@@ -2913,7 +2914,7 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                                     break;
                                 }
                         res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter});
-                    } else {
+                    } else {*/
                         wait = 0;
                         quarter--;
                         if (quarter < 1) {
@@ -2923,7 +2924,7 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                         setTimeout(function(){
                             recur_getTwseXml();
                         }, wait);
-                    }
+                    //}
                 });
             } else {
                 api.getTwseXml(index, year, quarter, xml_path, function(err, xmlPath) {
