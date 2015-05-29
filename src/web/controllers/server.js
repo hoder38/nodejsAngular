@@ -2900,7 +2900,19 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                         var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
                         var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
                         var managementStatus = stockTool.getManagementStatus(sales, asset);
-                        res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter});
+                        var earliestYear = 0;
+                                var earliestQuarter = 0;
+                                for (var i in cash) {
+                                    earliestYear = Number(i);
+                                    for (var j in cash[i]) {
+                                        if (cash[i][j]) {
+                                            earliestQuarter = Number(j) + 1;
+                                            break;
+                                        }
+                                    }
+                                    break;
+                                }
+                        res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter});
                     } else {
                         wait = 0;
                         quarter--;
@@ -2930,7 +2942,20 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                                 var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
                                 var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
                                 var managementStatus = stockTool.getManagementStatus(sales, asset);
-                                res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter});
+                                var earliestYear = 0;
+                                var earliestQuarter = 0;
+                                for (var i in cash) {
+                                    earliestYear = Number(i);
+                                    for (var j in cash[i]) {
+                                        if (cash[i][j]) {
+                                            earliestQuarter = Number(j) + 1;
+                                            break;
+                                        }
+                                    }
+                                    break;
+                                }
+
+                                res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter});
                             } else {
                                 console.log('not');
                                 quarter--;

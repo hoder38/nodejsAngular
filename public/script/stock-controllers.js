@@ -19,14 +19,17 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
     $scope.salesLabels = [];
     $scope.salesData = [];
     $scope.cashSumLabels = [];
-    $scope.cashSumData = [[], []];
-    $scope.cashSumSeries = [['profitBT'], ['real']];
+    $scope.cashSumData = [];
+    $scope.cashSumSeries = [];
     $scope.cashLabels = [];
-    $scope.cashData = [[], [], [], []];
-    $scope.cashSeries = [['operation'], ['invest'], ['without_dividends'], ['minor']];
-    //$scope.cashSeries = ['profitBT', 'real', 'dividends', 'real_dividends'];
+    $scope.cashData = [];
+    $scope.cashSeries = [];
     $scope.isParse = false;
+    $scope.parseYear = [];
+    $scope.parseQuarter = [{name: 'One', value: 1}, {name: 'Two', value: 2}, {name: 'Three', value: 3}, {name: 'Four', value: 4}];
+    $scope.parseCashMode = [{name: 'R,D,O,I', value: 1}, {name: 'R+D,O,I', value: 2}, {name: 'R,D,O+I', value: 3}, {name: 'R+D,O+I', value: 4}];
     $scope.parseResult = {};
+    $scope.accumulate = false;
     $scope.init = function(){
         /*var stockApi = $resource('/api/stock/init', {}, {
             'init': { method:'get' }
@@ -47,21 +50,236 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
             }
         });*/
     }
+    caculateDate = function(data, year, quarter, is_start) {
+        if (!quarter) {
+            if (is_start) {
+                quarter = data.earliestQuarter;
+            } else {
+                quarter = data.latestQuarter;
+            }
+        }
+        if (!year) {
+            if (is_start) {
+                year = data.earliestYear;
+            } else {
+                year = data.latestYear;
+            }
+        }
+        if (year > data.latestYear) {
+            year = data.latestYear;
+        } else if (year < data.earliestYear) {
+            year = data.earliestYear;
+        }
+        if (quarter > 4) {
+            quarter = 4;
+        } else if (quarter < 1) {
+            quarter = 1;
+        }
+        if (year === data.latestYear && quarter > data.latestQuarter) {
+            quarter = data.latestQuarter;
+        } else if (year === data.earliestYear && quarter < data.earliestQuarter) {
+            quarter = data.earliestQuarter;
+        }
+        return {year: year, quarter: quarter};
+    }
+    $scope.drawAsset = function(year, quarter) {
+        var assetDate = caculateDate(this.parseResult, year, quarter);
+        this.assetLabels = [];
+        this.assetData = [];
+        for(var i in this.parseResult.assetStatus[assetDate.year][assetDate.quarter-1]) {
+            if (i !== 'total') {
+                this.assetLabels.push(i + ':' + this.parseResult.assetStatus[assetDate.year][assetDate.quarter-1][i] + '%');
+                this.assetData.push(Math.ceil(this.parseResult.assetStatus[assetDate.year][assetDate.quarter-1][i] * this.parseResult.assetStatus[assetDate.year][assetDate.quarter-1].total / 100));
+            }
+        }
+        this.assetYear = assetDate.year;
+        this.assetQuarter = assetDate.quarter;
+    }
+    $scope.drawSales = function(year, quarter) {
+        var salesDate = caculateDate(this.parseResult, year, quarter);
+        this.salesLabels = [];
+        this.salesData = [];
+        for(var i in this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1]) {
+            if (i === 'cost' || i === 'expenses' || i === 'finance_cost') {
+                this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
+                this.salesData.push(Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
+            } else if (i === 'nonoperating_without_FC' || i === 'comprehensive') {
+                if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] < 0) {
+                    this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
+                    this.salesData.push(-Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
+                }
+            } else if (i === 'tax') {
+                if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] > 0) {
+                    this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
+                    this.salesData.push(Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
+                }
+            } else if (i === 'profit_comprehensive') {
+                this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
+                if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] > 0) {
+                    this.salesData.push(-Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
+                } else if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] < 0) {
+                    this.salesData.push(Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
+                }
+            }
+        }
+        this.salesLabels.push('revenue');
+        this.salesData.push(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue);
+        for(var i in this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1]) {
+            if (i === 'nonoperating_without_FC' || i === 'comprehensive') {
+                if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] > 0) {
+                    this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
+                    this.salesData.push(Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
+                }
+            } else if (i === 'tax') {
+                if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] < 0) {
+                    this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
+                    this.salesData.push(-Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
+                }
+            }
+        }
+        this.salesYear = salesDate.year;
+        this.salesQuarter = salesDate.quarter;
+    }
+    $scope.drawCash = function(mode, accumulate, startYear, startQuarter, endYear, endQuarter) {
+        var cashStartDate = caculateDate(this.parseResult, startYear, startQuarter, true);
+        var cashEndDate = caculateDate(this.parseResult, endYear, endQuarter);
+        if (cashStartDate.year > cashEndDate.year) {
+            cashEndDate.year = cashStartDate.year;
+        }
+        if (cashStartDate.year === cashEndDate.year && cashStartDate.quarter > cashEndDate.quarter) {
+            cashEndDate.quarter = cashStartDate.quarter;
+        }
+        this.cashLabels = [];
+        this.cashSumLabels = [];
+        console.log(cashStartDate);
+        console.log(cashEndDate);
+        switch(mode) {
+            case 2:
+            this.cashSumData = [[], []];
+            this.cashSumSeries = [['profitBT'], ['real+dividends']];
+            this.cashData = [[], [], [], []];
+            this.cashSeries = [['without_dividends'], ['minor'], ['operation'], ['invest']];
+            break;
+            case 3:
+            this.cashSumData = [[], [], []];
+            this.cashSumSeries = [['profitBT'], ['real'], ['dividends']];
+            this.cashData = [[], [], []];
+            this.cashSeries = [['without_dividends'], ['minor'], ['operation+invest']];
+            break;
+            case 4:
+            this.cashSumData = [[], []];
+            this.cashSumSeries = [['profitBT'], ['real+dividends']];
+            this.cashData = [[], [], []];
+            this.cashSeries = [['without_dividends'], ['minor'], ['operation+invest']];
+            break;
+            case 1:
+            default:
+            mode = 1;
+            this.cashSumData = [[], [], []];
+            this.cashSumSeries = [['profitBT'], ['real'], ['dividends']];
+            this.cashData = [[], [], [], []];
+            this.cashSeries = [['without_dividends'], ['minor'], ['operation'], ['invest']];
+        }
+        for(var i = cashStartDate.year; i<=cashEndDate.year; i++) {
+            for (var j in this.parseResult.cashStatus[i]) {
+                if (this.parseResult.cashStatus[i][j] && j < 4) {
+                    if ((i === cashStartDate.year && j < (cashStartDate.quarter-1)) || (i === cashEndDate.year && j > (cashEndDate.quarter-1))) {
+                        continue;
+                    }
+                    this.cashLabels.push(i.toString() + (Number(j)+1));
+                    this.cashSumLabels.push(i.toString() + (Number(j)+1));
+                    for (var k in this.parseResult.cashStatus[i][j]) {
+                        switch(k) {
+                            case 'profitBT':
+                            if (accumulate && this.cashSumData[0].length > 0) {
+                                this.cashSumData[0].push(this.cashSumData[0][this.cashSumData[0].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                            } else {
+                                this.cashSumData[0].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                            }
+                            break;
+                            case 'without_dividends':
+                            if (accumulate && this.cashData[0].length > 0) {
+                                this.cashData[0].push(this.cashData[0][this.cashData[0].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                            } else {
+                                this.cashData[0].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                            }
+                            break;
+                            case 'minor':
+                            if (accumulate && this.cashData[1].length > 0) {
+                                this.cashData[1].push(this.cashData[1][this.cashData[1].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                            } else {
+                                this.cashData[1].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                            }
+                            break;
+                            case 'real':
+                            if (mode === 1 || mode === 3) {
+                                if (accumulate && this.cashSumData[1].length > 0) {
+                                    this.cashSumData[1].push(this.cashSumData[1][this.cashSumData[1].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                } else {
+                                    this.cashSumData[1].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                }
+                            }
+                            break;
+                            case 'dividends':
+                            if (mode === 1 || mode === 3) {
+                                if (accumulate && this.cashSumData[2].length > 0) {
+                                    this.cashSumData[2].push(this.cashSumData[2][this.cashSumData[2].length -1] - Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                } else {
+                                    this.cashSumData[2].push(-Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                }
+                            }
+                            break;
+                            case 'operation':
+                            if (mode === 1 || mode === 2) {
+                                if (accumulate && this.cashData[2].length > 0) {
+                                    this.cashData[2].push(this.cashData[2][this.cashData[2].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                } else {
+                                    this.cashData[2].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                }
+                            }
+                            break;
+                            case 'invest':
+                            if (mode === 1 || mode === 2) {
+                                if (accumulate && this.cashData[3].length > 0) {
+                                    this.cashData[3].push(this.cashData[3][this.cashData[3].length -1] - Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                } else {
+                                    this.cashData[3].push(-Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    if (mode === 2 || mode === 4) {
+                        if (accumulate && this.cashSumData[1].length > 0) {
+                            this.cashSumData[1].push(this.cashSumData[1][this.cashSumData[1].length -1] + Math.ceil((this.parseResult.cashStatus[i][j].real - this.parseResult.cashStatus[i][j].dividends) * this.parseResult.cashStatus[i][j].begin/100000000));
+                        } else {
+                            this.cashSumData[1].push(Math.ceil((this.parseResult.cashStatus[i][j].real - this.parseResult.cashStatus[i][j].dividends) * this.parseResult.cashStatus[i][j].begin/100000000));
+                        }
+                    }
+                    if (mode === 3 || mode === 4) {
+                        if (accumulate && this.cashData[2].length > 0) {
+                            this.cashData[2].push(this.cashData[2][this.cashData[2].length -1] + Math.ceil((this.parseResult.cashStatus[i][j].operation - this.parseResult.cashStatus[i][j].invest) * this.parseResult.cashStatus[i][j].begin/100000000));
+                        } else {
+                            this.cashData[2].push(Math.ceil((this.parseResult.cashStatus[i][j].operation - this.parseResult.cashStatus[i][j].invest) * this.parseResult.cashStatus[i][j].begin/100000000));
+                        }
+                    }
+                }
+            }
+        }
+        this.cashStartYear = cashStartDate.year;
+        this.cashStartQuarter = cashStartDate.quarter;
+        this.cashEndYear = cashEndDate.year;
+        this.cashEndQuarter = cashEndDate.quarter;
+        this.cashMode = mode;
+    }
     $scope.submitIndex = function() {
         var this_obj = this;
         if (!this.inputIndex) {
             return false;
         }
-        this.assetLabels = [];
-        this.assetData = [];
-        this.salesLabels = [];
-        this.salesData = [];
-        this.cashData = [[], [], [], []];
-        this.cashLabels = [];
-        this.cashSumData = [[], []];
-        this.cashSumLabels = [];
         this.isParse = false;
         this.parseResult = {};
+        this.parseYear = [];
         var stockApi = $resource('/api/stock/query/' + Number(this.inputIndex), {}, {
             'query': { method:'get' }
         });
@@ -77,118 +295,18 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                 this_obj.parseResult.cashStatus = result.cashStatus;
                 this_obj.parseResult.latestYear = result.latestYear;
                 this_obj.parseResult.latestQuarter = result.latestQuarter;
+                this_obj.parseResult.earliestYear = result.earliestYear;
+                this_obj.parseResult.earliestQuarter = result.earliestQuarter;
+                for (var i = this_obj.parseResult.earliestYear; i <= this_obj.parseResult.latestYear; i++) {
+                    this_obj.parseYear.push({name: i, value: i});
+                }
                 this_obj.isParse = true;
                 //assetStatus
-                for(var i in result.assetStatus[result.latestYear][result.latestQuarter-1]) {
-                    if (i !== 'total') {
-                        this_obj.assetLabels.push(i + ':' + result.assetStatus[result.latestYear][result.latestQuarter-1][i] + '%');
-                        this_obj.assetData.push(Math.ceil(result.assetStatus[result.latestYear][result.latestQuarter-1][i] * result.assetStatus[result.latestYear][result.latestQuarter-1].total / 100));
-                    }
-                }
+                this_obj.drawAsset();
                 //salesStatus
-                for(var i in result.salesStatus[result.latestYear][result.latestQuarter-1]) {
-                    if (i === 'cost' || i === 'expenses' || i === 'finance_cost') {
-                        this_obj.salesLabels.push(i + ':' + result.salesStatus[result.latestYear][result.latestQuarter-1][i] + '%');
-                        this_obj.salesData.push(Math.ceil(result.salesStatus[result.latestYear][result.latestQuarter-1][i] * result.salesStatus[result.latestYear][result.latestQuarter-1].revenue / 100));
-                    } else if (i === 'nonoperating_without_FC' || i === 'comprehensive') {
-                        if (result.salesStatus[result.latestYear][result.latestQuarter-1][i] < 0) {
-                            this_obj.salesLabels.push(i + ':' + result.salesStatus[result.latestYear][result.latestQuarter-1][i] + '%');
-                            this_obj.salesData.push(-Math.ceil(result.salesStatus[result.latestYear][result.latestQuarter-1][i] * result.salesStatus[result.latestYear][result.latestQuarter-1].revenue / 100));
-                        }
-                    } else if (i === 'tax') {
-                        if (result.salesStatus[result.latestYear][result.latestQuarter-1][i] > 0) {
-                            this_obj.salesLabels.push(i + ':' + result.salesStatus[result.latestYear][result.latestQuarter-1][i] + '%');
-                            this_obj.salesData.push(Math.ceil(result.salesStatus[result.latestYear][result.latestQuarter-1][i] * result.salesStatus[result.latestYear][result.latestQuarter-1].revenue / 100));
-                        }
-                    } else if (i === 'profit_comprehensive') {
-                        this_obj.salesLabels.push(i + ':' + result.salesStatus[result.latestYear][result.latestQuarter-1][i] + '%');
-                        if (result.salesStatus[result.latestYear][result.latestQuarter-1][i] > 0) {
-                            this_obj.salesData.push(-Math.ceil(result.salesStatus[result.latestYear][result.latestQuarter-1][i] * result.salesStatus[result.latestYear][result.latestQuarter-1].revenue / 100));
-                        } else if (result.salesStatus[result.latestYear][result.latestQuarter-1][i] < 0) {
-                            this_obj.salesData.push(Math.ceil(result.salesStatus[result.latestYear][result.latestQuarter-1][i] * result.salesStatus[result.latestYear][result.latestQuarter-1].revenue / 100));
-                        }
-                    }
-                }
-                this_obj.salesLabels.push('revenue');
-                this_obj.salesData.push(result.salesStatus[result.latestYear][result.latestQuarter-1].revenue);
-                for(var i in result.salesStatus[result.latestYear][result.latestQuarter-1]) {
-                    if (i === 'nonoperating_without_FC' || i === 'comprehensive') {
-                        if (result.salesStatus[result.latestYear][result.latestQuarter-1][i] > 0) {
-                            this_obj.salesLabels.push(i + ':' + result.salesStatus[result.latestYear][result.latestQuarter-1][i] + '%');
-                            this_obj.salesData.push(Math.ceil(result.salesStatus[result.latestYear][result.latestQuarter-1][i] * result.salesStatus[result.latestYear][result.latestQuarter-1].revenue / 100));
-                        }
-                    } else if (i === 'tax') {
-                        if (result.salesStatus[result.latestYear][result.latestQuarter-1][i] < 0) {
-                            this_obj.salesLabels.push(i + ':' + result.salesStatus[result.latestYear][result.latestQuarter-1][i] + '%');
-                            this_obj.salesData.push(-Math.ceil(result.salesStatus[result.latestYear][result.latestQuarter-1][i] * result.salesStatus[result.latestYear][result.latestQuarter-1].revenue / 100));
-                        }
-                    }
-                }
+                this_obj.drawSales();
                 //cashStatus
-                var cashIndex = -1;
-                for(var i in result.cashStatus) {
-                    for (var j in result.cashStatus[i]) {
-                        if (result.cashStatus[i][j] && j < 4) {
-                            this_obj.cashLabels.push(i.toString() + (Number(j)+1));
-                            this_obj.cashSumLabels.push(i.toString() + (Number(j)+1));
-                            for (var k in result.cashStatus[i][j]) {
-                                cashIndex = -1;
-                                switch (k){
-                                    case 'operation':
-                                    cashIndex = 0;
-                                    break;
-                                    case 'invest':
-                                    cashIndex = 1;
-                                    break;
-                                    case 'without_dividends':
-                                    cashIndex = 2;
-                                    break;
-                                    case 'minor':
-                                    cashIndex = 3;
-                                    break;
-                                    case 'profitBT':
-                                    cashIndex = 4;
-                                    break;
-                                    case 'real':
-                                    cashIndex = 5;
-                                    break;
-                                }
-                                if (cashIndex >= 0) {
-                                    if (cashIndex === 1) {
-                                        this_obj.cashData[cashIndex].push(-Math.ceil(result.cashStatus[i][j][k] * result.cashStatus[i][j].begin/100000000));
-                                    } else if(cashIndex < 4) {
-                                        this_obj.cashData[cashIndex].push(Math.ceil(result.cashStatus[i][j][k] * result.cashStatus[i][j].begin/100000000));
-                                    } else {
-                                        this_obj.cashSumData[cashIndex-4].push(Math.ceil(result.cashStatus[i][j][k] * result.cashStatus[i][j].begin/100000000));
-                                    }
-                                }
-                            }
-                            /*
-                            for (var k in result.cashStatus[i][j]) {
-                                cashIndex = -1;
-                                switch (k){
-                                    case 'profitBT':
-                                    cashIndex = 0;
-                                    break;
-                                    case 'real':
-                                    cashIndex = 1;
-                                    break;
-                                    case 'dividends':
-                                    cashIndex = 2;
-                                    break;
-                                }
-                                if (cashIndex >= 0) {
-                                    if (cashIndex === 2) {
-                                        this_obj.cashData[cashIndex].push(-Math.ceil(result.cashStatus[i][j][k] * result.cashStatus[i][j].begin/100000000));
-                                    } else {
-                                        this_obj.cashData[cashIndex].push(Math.ceil(result.cashStatus[i][j][k] * result.cashStatus[i][j].begin/100000000));
-                                    }
-                                }
-                            }
-                            this_obj.cashData[3].push(Math.ceil((result.cashStatus[i][j].real - result.cashStatus[i][j].dividends) * result.cashStatus[i][j].begin/100000000));*/
-                        }
-                    }
-                }
+                this_obj.drawCash(1);
             }
         }, function(errorResult) {
             if (errorResult.status === 400) {
