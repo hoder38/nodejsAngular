@@ -16,7 +16,9 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
     $scope.stockIndex = '';
     $scope.assetLabels = [];
     $scope.assetData = [];
-    $scope.assetTotal = 0;
+    $scope.assetCompareLabels = [];
+    $scope.assetCompareData = [];
+    $scope.assetCompare = false;
     $scope.assetTotalCommas = '0';
     $scope.salesLabels = [];
     $scope.salesData = [];
@@ -38,6 +40,7 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
     $scope.parseCashMode = [{name: 'R,D,O,I', value: 1}, {name: 'R+D,O,I', value: 2}, {name: 'R,D,O+I', value: 3}, {name: 'R+D,O+I', value: 4}];
     $scope.parseResult = {};
     $scope.accumulate = false;
+    $scope.comprehensive = true;
     $scope.init = function(){
         /*var stockApi = $resource('/api/stock/init', {}, {
             'init': { method:'get' }
@@ -90,24 +93,97 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
         }
         return {year: year, quarter: quarter};
     }
-    $scope.drawAsset = function(year, quarter) {
-        var assetDate = caculateDate(this.parseResult, year, quarter);
+    $scope.drawAsset = function(startYear, startQuarter, endYear, endQuarter) {
+        var assetStartDate = caculateDate(this.parseResult, startYear, startQuarter);
+        var assetEndDate = caculateDate(this.parseResult, endYear, endQuarter);
+        if (assetStartDate.year > assetEndDate.year) {
+            assetEndDate.year = assetStartDate.year;
+        }
+        if (assetStartDate.year === assetEndDate.year && assetStartDate.quarter > assetEndDate.quarter) {
+            assetEndDate.quarter = assetStartDate.quarter;
+        }
         this.assetLabels = [];
         this.assetData = [];
-        this.assetTotal = 0;
+        this.assetCompareLabels = [];
+        this.assetCompareData = [];
+        this.assetCompare = false;
         this.assetTotalCommas = '0';
-        for(var i in this.parseResult.assetStatus[assetDate.year][assetDate.quarter-1]) {
-            if (i !== 'total') {
-                this.assetLabels.push(i + ':' + this.parseResult.assetStatus[assetDate.year][assetDate.quarter-1][i] + '%');
-                this.assetData.push(Math.ceil(this.parseResult.assetStatus[assetDate.year][assetDate.quarter-1][i] * this.parseResult.assetStatus[assetDate.year][assetDate.quarter-1].total / 100));
+        var diff = 0;
+        var diff_percent = 0;
+        var total_diff = 0;
+        if (assetStartDate.year !== assetEndDate.year || assetStartDate.quarter !== assetEndDate.quarter) {
+            this.assetCompare = true;
+        }
+        if (!this.assetCompare) {
+            for(var i in this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1]) {
+                if (i !== 'total') {
+                    this.assetLabels.push(i + ':' + this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1][i] + '%');
+                    this.assetData.push(Math.ceil(this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1][i] * this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1].total / 100));
+                }
+            }
+        } else {
+            total_diff = this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1].total - this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1].total;
+            if (total_diff < 0) {
+                this.assetLabels.push('total_diff');
+                this.assetData.push(total_diff);
+                this.assetCompareLabels.push('total_diff');
+                this.assetCompareData.push(total_diff);
+            }
+            for(var i in this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1]) {
+                if (i !== 'total') {
+                    diff = Math.ceil(this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1][i] * this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1].total / 100 - this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1][i] * this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1].total / 100);
+                    if (diff > 0) {
+                        diff_percent = Math.ceil(diff / Math.abs(total_diff) * 1000) / 10;
+                        if (i === 'receivable' || i === 'cash' || i === 'OCFA' || i === 'inventories' || i === 'property' || i === 'longterm' || i === 'other') {
+                            this.assetLabels.push(i + ':+' + diff_percent + '%');
+                            this.assetData.push(diff);
+                        } else {
+                            this.assetCompareLabels.push(i + ':+' + diff_percent + '%');
+                            this.assetCompareData.push(diff);
+                        }
+                    }
+                }
+            }
+            for(var i in this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1]) {
+                if (i !== 'total') {
+                    diff = Math.ceil(this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1][i] * this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1].total / 100 - this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1][i] * this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1].total / 100);
+                    if (diff < 0) {
+                        diff_percent = Math.ceil(diff / Math.abs(total_diff) * 1000) / 10;
+                        if (i === 'receivable' || i === 'cash' || i === 'OCFA' || i === 'inventories' || i === 'property' || i === 'longterm' || i === 'other') {
+                            this.assetLabels.push(i + ':' + diff_percent + '%');
+                            this.assetData.push(diff);
+                        } else {
+                            this.assetCompareLabels.push(i + ':' + diff_percent + '%');
+                            this.assetCompareData.push(diff);
+                        }
+                    }
+                }
+            }
+            if (total_diff > 0) {
+                this.assetLabels.push('total_diff');
+                this.assetData.push(total_diff);
+                this.assetCompareLabels.push('total_diff');
+                this.assetCompareData.push(total_diff);
             }
         }
-        this.assetTotal = this.parseResult.assetStatus[assetDate.year][assetDate.quarter-1].total;
-        this.assetYear = assetDate.year;
-        this.assetQuarter = assetDate.quarter;
-        this.assetTotalCommas = addCommas(this.assetTotal);
+
+        if (this.assetCompare) {
+            var total_diff_percent = Math.ceil(total_diff/this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1].total * 1000) / 10;
+            this.assetTotalCommas = addCommas(this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1].total);
+            if (total_diff > 0) {
+                this.assetTotalCommas = this.assetTotalCommas + ':+' + total_diff_percent + '%:+' + addCommas(total_diff);
+            } else {
+                this.assetTotalCommas = this.assetTotalCommas + ':' + total_diff_percent + '%:' + addCommas(total_diff);
+            }
+        } else {
+            this.assetTotalCommas = addCommas(this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1].total);
+        }
+        this.assetStartYear = assetStartDate.year;
+        this.assetStartQuarter = assetStartDate.quarter;
+        this.assetEndYear = assetEndDate.year;
+        this.assetEndQuarter = assetEndDate.quarter;
     }
-    $scope.drawSales = function(year, quarter) {
+    $scope.drawSales = function(comprehensive, year, quarter) {
         var salesDate = caculateDate(this.parseResult, year, quarter);
         this.salesLabels = [];
         this.salesData = [];
@@ -118,7 +194,7 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
             if (i === 'cost' || i === 'expenses' || i === 'finance_cost') {
                 this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
                 this.salesData.push(Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
-            } else if (i === 'nonoperating_without_FC' || i === 'comprehensive') {
+            } else if (i === 'nonoperating_without_FC' || (i === 'comprehensive' && comprehensive)) {
                 if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] < 0) {
                     this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
                     this.salesData.push(-Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
@@ -128,19 +204,19 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                     this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
                     this.salesData.push(Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
                 }
-            } else if (i === 'profit_comprehensive') {
+            } else if ((i === 'profit_comprehensive' && comprehensive) || (i === 'profit' && !comprehensive)) {
                 this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
                 if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] > 0) {
-                    this.salesData.push(-Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
-                } else if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] < 0) {
                     this.salesData.push(Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
+                } else if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] < 0) {
+                    this.salesData.push(-Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
                 }
             }
         }
         this.salesLabels.push('revenue');
         this.salesData.push(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue);
         for(var i in this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1]) {
-            if (i === 'nonoperating_without_FC' || i === 'comprehensive') {
+            if (i === 'nonoperating_without_FC' || (i === 'comprehensive' && comprehensive)) {
                 if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] > 0) {
                     this.salesTotal += Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100);
                     this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
@@ -333,9 +409,9 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                     //assetStatus
                     this_obj.drawAsset();
                     //salesStatus
-                    this_obj.drawSales();
+                    this_obj.drawSales(this_obj.comprehensive);
                     //cashStatus
-                    this_obj.drawCash(4);
+                    this_obj.drawCash(4, this_obj.accumulate);
                 }
             }, function(errorResult) {
                 if (errorResult.status === 400) {

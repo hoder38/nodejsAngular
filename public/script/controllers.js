@@ -2296,6 +2296,14 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         }
     }
 
+    $scope.prevImage = function() {
+        if (this.image.presentId === 1) {
+            this.mediaMove(-1, 'image');
+        } else {
+            this.imgMove(-1);
+        }
+    }
+
     $scope.mediaMove = function(number, type, end) {
         var preType = '', status = 0, isLoad = false, docRecord = 0;
         switch (type) {

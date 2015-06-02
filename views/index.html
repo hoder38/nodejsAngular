@@ -220,7 +220,11 @@
                 </section>
                 <section id="{{isFull && 'full-section'||'center-section'}}">
                     <section class="panel panel-warning {{(!isVisible&&isFull) && 'invisible-section' || ''}} {{isFull && 'panel-transparent' || ''}}" ng-show="mediaShow[0] === 'image'">
-                        <a href="#" id="transparent" class="{{(!isVisible&&isFull) && 'visible-section' || 'invisible-section'}}" ng-click="isVisible = !isVisible">
+                        <a href="#" id="transparent" class="{{(!isVisible&&isFull) && 'visible-section' || 'invisible-section'}} text-center" ng-click="prevImage()">
+                            {{image.showId}}
+                        </a>
+                        <a href="#" id="transparent-right" class="{{(!isVisible&&isFull) && 'visible-section' || 'invisible-section'}} text-center" ng-click="isVisible = !isVisible">
+                            ->
                         </a>
                         <div class="panel-heading" ng-click="mediaToggle('image')">
                             <h4 class="panel-title">
@@ -267,9 +271,7 @@
                             </nav>
                             <div ng-click="isVisible=false" id="non-blue">
                                 <div id="{{(isExtend&&isFull) && 'extend-image-screen' || ''}}">
-                                    <a href="#">
-                                        <img class="{{isFull && 'full-image-screen'||'image-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="nextImage()" ng-image-onload />
-                                    </a>
+                                    <img class="{{isFull && 'full-image-screen'||'image-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="nextImage()" ng-image-onload />
                                 </div>
                             </div>
                         </div>

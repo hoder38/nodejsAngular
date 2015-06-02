@@ -15,16 +15,27 @@
     </div>
     <div class="panel-body">
         <div class="row">
-            <div class="col-md-6">
-                <select class="form-control" ng-model="assetYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
+            <div class="col-md-2">
+                <select class="form-control" ng-model="assetStartYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
                 </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-3">
+                <select class="form-control" ng-model="assetStartQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-1 text-center">
+                <strong>To</strong>
+            </div>
+            <div class="col-md-3">
+                <select class="form-control" ng-model="assetEndYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-3">
                 <div class="input-group">
-                    <select class="form-control" ng-model="assetQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                    <select class="form-control" ng-model="assetEndQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
                     </select>
                     <span class="input-group-btn">
-                        <button class="btn btn-default" ng-click="drawAsset(assetYear, assetQuarter)" type="button">
+                        <button class="btn btn-default" ng-click="drawAsset(assetStartYear, assetStartQuarter, assetEndYear, assetEndQuarter)" type="button">
                             <i class="fa fa-pie-chart"></i>
                         </button>
                     </span>
@@ -33,6 +44,7 @@
         </div>
         <h3>Total: {{assetTotalCommas}}</h3>
         <canvas id="asset" class="chart chart-pie" data="assetData" labels="assetLabels"></canvas>
+        <canvas id="assetCompare" ng-show="assetCompare" class="chart chart-pie" data="assetCompareData" labels="assetCompareLabels"></canvas>
     </div>
 </section>
 <section class="panel panel-primary" ng-show="isParse">
@@ -49,8 +61,11 @@
                 <div class="input-group">
                     <select class="form-control" ng-model="salesQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
                     </select>
+                    <span class="input-group-addon" tooltip="comprehensive"  tooltip-trigger="mouseenter">
+                        <input type="checkbox" ng-model="comprehensive" />
+                    </span>
                     <span class="input-group-btn">
-                        <button class="btn btn-primary" ng-click="drawSales(salesYear, salesQuarter)" type="button">
+                        <button class="btn btn-primary" ng-click="drawSales(comprehensive, salesYear, salesQuarter)" type="button">
                             <i class="fa fa-pie-chart"></i>
                         </button>
                     </span>
