@@ -41,6 +41,23 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
     $scope.parseResult = {};
     $scope.accumulate = false;
     $scope.comprehensive = true;
+    $scope.safetyLabels = [];
+    $scope.safetyData = [[], [], []];
+    $scope.safetySeries = ['prMinusProfit', 'prRatio', 'shortCash'];
+    $scope.parseSafetyMode = [{name: 'CL&Invest', value: 1}, {name: 'Invest', value: 2}, {name: 'CL', value: 3}];
+    $scope.profitLabels = [];
+    $scope.profitData = [[], [], []];
+    $scope.profitSeries = ['Gross', 'Operating', 'Profit'];
+    $scope.profitTrioLabels = [];
+    $scope.profitTrioData = [[], [], []];
+    $scope.profitTrioSeries = ['leverage', 'turnover', 'Profit'];
+    $scope.profitROELabels = [];
+    $scope.profitROEData = [[], [], []];
+    $scope.profitROESeries = ['ROE', 'Asset Growth', 'Profit'];
+    $scope.profitSalesLabels = [];
+    $scope.profitSalesData = [[], []];
+    $scope.profitSalesSeries = ['salesPerShare', 'sales'];
+    $scope.parseProfitMode = [{name: 'Profit', value: 1}, {name: 'Operating', value: 2}, {name: 'O+I', value: 3}, {name: 'Real', value: 4}, {name: 'R+D', value: 5}];
     $scope.init = function(){
         /*var stockApi = $resource('/api/stock/init', {}, {
             'init': { method:'get' }
@@ -375,6 +392,157 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
         this.cashEndQuarter = cashEndDate.quarter;
         this.cashMode = mode;
     }
+    $scope.drawSafety = function(mode, startYear, startQuarter, endYear, endQuarter) {
+        var safetyStartDate = caculateDate(this.parseResult, startYear, startQuarter, true);
+        var safetyEndDate = caculateDate(this.parseResult, endYear, endQuarter);
+        if (safetyStartDate.year > safetyEndDate.year) {
+            safetyEndDate.year = safetyStartDate.year;
+        }
+        if (safetyStartDate.year === safetyEndDate.year && safetyStartDate.quarter > safetyEndDate.quarter) {
+            safetyEndDate.quarter = safetyStartDate.quarter;
+        }
+        this.safetyLabels = [];
+        this.safetyData = [[], [], []];
+        for(var i = safetyStartDate.year; i<=safetyEndDate.year; i++) {
+            for (var j in this.parseResult.safetyStatus[i]) {
+                if (this.parseResult.safetyStatus[i][j] && j < 4) {
+                    if ((i === safetyStartDate.year && j < (safetyStartDate.quarter-1)) || (i === safetyEndDate.year && j > (safetyEndDate.quarter-1))) {
+                        continue;
+                    }
+                    this.safetyLabels.push(i.toString() + (Number(j)+1));
+                    for (var k in this.parseResult.safetyStatus[i][j]) {
+                        switch(k) {
+                            case 'prMinusProfit':
+                            this.safetyData[0].push(this.parseResult.safetyStatus[i][j][k]);
+                            break;
+                            case 'prRatio':
+                            this.safetyData[1].push(this.parseResult.safetyStatus[i][j][k]);
+                            break;
+                            case 'shortCash':
+                            if (mode === 1) {
+                                this.safetyData[2].push(this.parseResult.safetyStatus[i][j][k]);
+                            }
+                            break;
+                            case 'shortCashWithoutCL':
+                            if (mode === 2) {
+                                this.safetyData[2].push(this.parseResult.safetyStatus[i][j][k]);
+                            }
+                            break;
+                            case 'shortCashWithoutInvest':
+                            if (mode === 3) {
+                                this.safetyData[2].push(this.parseResult.safetyStatus[i][j][k]);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        this.safetyStartYear = safetyStartDate.year;
+        this.safetyStartQuarter = safetyStartDate.quarter;
+        this.safetyEndYear = safetyEndDate.year;
+        this.safetyEndQuarter = safetyEndDate.quarter;
+        this.safetyMode = mode;
+    }
+    $scope.drawProfit = function(mode, startYear, startQuarter, endYear, endQuarter) {
+        var profitStartDate = caculateDate(this.parseResult, startYear, startQuarter, true);
+        var profitEndDate = caculateDate(this.parseResult, endYear, endQuarter);
+        if (profitStartDate.year > profitEndDate.year) {
+            profitEndDate.year = profitStartDate.year;
+        }
+        if (profitStartDate.year === profitEndDate.year && profitStartDate.quarter > profitEndDate.quarter) {
+            profitEndDate.quarter = profitStartDate.quarter;
+        }
+        this.profitLabels = [];
+        this.profitData = [[], [], []];
+        this.profitTrioLabels = [];
+        this.profitTrioData = [[], [], []];
+        this.profitROELabels = [];
+        this.profitROEData = [[], [], []];
+        this.profitSalesLabels = [];
+        this.profitSalesData = [[], [], []];
+        for(var i = profitStartDate.year; i<=profitEndDate.year; i++) {
+            for (var j in this.parseResult.profitStatus[i]) {
+                if (this.parseResult.profitStatus[i][j] && j < 4) {
+                    if ((i === profitStartDate.year && j < (profitStartDate.quarter-1)) || (i === profitEndDate.year && j > (profitEndDate.quarter-1))) {
+                        continue;
+                    }
+                    this.profitLabels.push(i.toString() + (Number(j)+1));
+                    this.profitTrioLabels.push(i.toString() + (Number(j)+1));
+                    this.profitROELabels.push(i.toString() + (Number(j)+1));
+                    this.profitSalesLabels.push(i.toString() + (Number(j)+1));
+                    for (var k in this.parseResult.profitStatus[i][j]) {
+                        switch(k) {
+                            case 'gross_profit':
+                            this.profitData[0].push(this.parseResult.profitStatus[i][j][k]);
+                            break;
+                            case 'operating_profit':
+                            this.profitData[1].push(this.parseResult.profitStatus[i][j][k]);
+                            break;
+                            case 'profit':
+                            if (mode === 1) {
+                                this.profitData[2].push(this.parseResult.profitStatus[i][j][k]);
+                                this.profitTrioData[2].push(this.parseResult.profitStatus[i][j][k]);
+                                this.profitROEData[2].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
+                            case 'leverage':
+                            this.profitTrioData[0].push(this.parseResult.profitStatus[i][j][k]*100);
+                            break;
+                            case 'turnover':
+                            this.profitTrioData[1].push(this.parseResult.profitStatus[i][j][k]*100);
+                            break;
+                            case 'roe':
+                            this.profitROEData[0].push(this.parseResult.profitStatus[i][j][k]);
+                            break;
+                            case 'asset_growth':
+                            this.profitROEData[1].push(this.parseResult.profitStatus[i][j][k]);
+                            break;
+                            case 'salesPerShare':
+                            this.profitSalesData[0].push(Math.ceil(this.parseResult.profitStatus[i][j][k]/1000000));
+                            break;
+                            case 'quarterSales':
+                            this.profitSalesData[1].push(Math.ceil(this.parseResult.profitStatus[i][j][k]/1000000));
+                            break;
+                            case 'operatingP':
+                            if (mode === 2) {
+                                this.profitData[2].push(this.parseResult.profitStatus[i][j][k]);
+                                this.profitTrioData[2].push(this.parseResult.profitStatus[i][j][k]);
+                                this.profitROEData[2].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
+                            case 'oiP':
+                            if (mode === 3) {
+                                this.profitData[2].push(this.parseResult.profitStatus[i][j][k]);
+                                this.profitTrioData[2].push(this.parseResult.profitStatus[i][j][k]);
+                                this.profitROEData[2].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
+                            case 'realP':
+                            if (mode === 4) {
+                                this.profitData[2].push(this.parseResult.profitStatus[i][j][k]);
+                                this.profitTrioData[2].push(this.parseResult.profitStatus[i][j][k]);
+                                this.profitROEData[2].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
+                            case 'realP_dividends':
+                            if (mode === 5) {
+                                this.profitData[2].push(this.parseResult.profitStatus[i][j][k]);
+                                this.profitTrioData[2].push(this.parseResult.profitStatus[i][j][k]);
+                                this.profitROEData[2].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        this.profitStartYear = profitStartDate.year;
+        this.profitStartQuarter = profitStartDate.quarter;
+        this.profitEndYear = profitEndDate.year;
+        this.profitEndQuarter = profitEndDate.quarter;
+        this.profitMode = mode;
+    }
     $scope.submitIndex = function() {
         var this_obj = this;
         if (!this.inputIndex) {
@@ -398,6 +566,8 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                     this_obj.parseResult.assetStatus = result.assetStatus;
                     this_obj.parseResult.salesStatus = result.salesStatus;
                     this_obj.parseResult.cashStatus = result.cashStatus;
+                    this_obj.parseResult.safetyStatus = result.safetyStatus;
+                    this_obj.parseResult.profitStatus = result.profitStatus;
                     this_obj.parseResult.latestYear = result.latestYear;
                     this_obj.parseResult.latestQuarter = result.latestQuarter;
                     this_obj.parseResult.earliestYear = result.earliestYear;
@@ -412,6 +582,8 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                     this_obj.drawSales(this_obj.comprehensive);
                     //cashStatus
                     this_obj.drawCash(4, this_obj.accumulate);
+                    this_obj.drawSafety(1);
+                    this_obj.drawProfit(1);
                 }
             }, function(errorResult) {
                 if (errorResult.status === 400) {

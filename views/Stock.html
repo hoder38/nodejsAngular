@@ -121,3 +121,86 @@
         <canvas id="cashRatio" class="chart chart-line" data="cashRatioData" labels="cashRatioLabels" legend="true" series="cashRatioSeries"></canvas>
     </div>
 </section>
+<section class="panel panel-warning" ng-show="isParse">
+    <div class="panel-heading">
+        <h2 class="panel-title">Safety:{{stockIndex}}</h2>
+    </div>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2">
+                <select class="form-control" ng-model="safetyStartYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" ng-model="safetyStartQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-1 text-center">
+                <strong>To</strong>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" ng-model="safetyEndYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" ng-model="safetyEndQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group">
+                    <select class="form-control" ng-model="safetyMode" ng-options="m.value as m.name for m in parseSafetyMode" convert-to-number>
+                    </select>
+                    <span class="input-group-btn">
+                        <button class="btn btn-info" ng-click="drawSafety(safetyMode, safetyStartYear, safetyStartQuarter, safetyEndYear, safetyEndQuarter)" type="button">
+                            <i class="fa fa-line-chart"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <canvas id="safety" class="chart chart-line" data="safetyData" labels="safetyLabels" legend="true" series="safetySeries"></canvas>
+    </div>
+</section>
+<section class="panel panel-danger" ng-show="isParse">
+    <div class="panel-heading">
+        <h2 class="panel-title">Profit:{{stockIndex}}</h2>
+    </div>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2">
+                <select class="form-control" ng-model="profitStartYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" ng-model="profitStartQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-1 text-center">
+                <strong>To</strong>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" ng-model="profitEndYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" ng-model="profitEndQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group">
+                    <select class="form-control" ng-model="profitMode" ng-options="m.value as m.name for m in parseProfitMode" convert-to-number>
+                    </select>
+                    <span class="input-group-btn">
+                        <button class="btn btn-info" ng-click="drawProfit(profitMode, profitStartYear, profitStartQuarter, profitEndYear, profitEndQuarter)" type="button">
+                            <i class="fa fa-line-chart"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <canvas id="profit" class="chart chart-line" data="profitData" labels="profitLabels" legend="true" series="profitSeries"></canvas>
+        <canvas id="profitTrio" class="chart chart-line" data="profitTrioData" labels="profitTrioLabels" legend="true" series="profitTrioSeries"></canvas>
+        <canvas id="profitROE" class="chart chart-line" data="profitROEData" labels="profitROELabels" legend="true" series="profitROESeries"></canvas>
+        <canvas id="profitSales" class="chart chart-line" data="profitSalesData" labels="profitSalesLabels" legend="true" series="profitSalesSeries"></canvas>
+    </div>
+</section>

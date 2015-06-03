@@ -2898,8 +2898,8 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                         var cashStatus = stockTool.getCashStatus(cash, asset);
                         var assetStatus = stockTool.getAssetStatus(asset);
                         var salesStatus = stockTool.getSalesStatus(sales, asset);
-                        var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset);
-                        var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
+                        var profitStatus = stockTool.getProfitStatus(salesStatus, cashStatus, asset);
+                        var safetyStatus = stockTool.getSafetyStatus(salesStatus, cashStatus, asset);
                         var managementStatus = stockTool.getManagementStatus(sales, asset);
                         var earliestYear = 0;
                                 var earliestQuarter = 0;
@@ -2940,8 +2940,8 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                                 var cashStatus = stockTool.getCashStatus(cash, asset);
                                 var assetStatus = stockTool.getAssetStatus(asset);
                                 var salesStatus = stockTool.getSalesStatus(sales, asset);
-                                var profitStatus = stockTool.getProfitStatus(salesStatus, cash, asset, sales);
-                                var safetyStatus = stockTool.getSafetyStatus(salesStatus, cash, asset);
+                                var profitStatus = stockTool.getProfitStatus(salesStatus, cashStatus, asset);
+                                var safetyStatus = stockTool.getSafetyStatus(salesStatus, cashStatus, asset);
                                 var managementStatus = stockTool.getManagementStatus(sales, asset);
                                 var earliestYear = 0;
                                 var earliestQuarter = 0;
