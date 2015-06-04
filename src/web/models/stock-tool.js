@@ -175,7 +175,7 @@ module.exports = {
                 }
             }
         } else {
-            asset[year][quarter-1] = {receivable: getParameter(xml, 'tw-gaap-ci:NetAccountsReceivable', 0) + getParameter(xml, 'tw-gaap-ci:OtherReceivables', 0) + getParameter(xml, 'tw-gaap-ci:NetNotesReceivable', 0), payable: getParameter(xml, 'tw-gaap-ci:AccountsPayable', 0) + getParameter(xml, 'tw-gaap-ci:NotesPayable', 0) + getParameter(xml, 'tw-gaap-ci:IncomeTaxPayable', 0) + getParameter(xml, 'tw-gaap-ci:AccruedExpenses', 0) + getParameter(xml, 'tw-gaap-ci:OtherPayables', 0), cash: getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 0), inventories: getParameter(xml, 'tw-gaap-ci:Inventories', 0), OCFA: 0, current_liabilities: getParameter(xml, 'tw-gaap-ci:CurrentLiabilities', 0), noncurrent_liabilities: getParameter(xml, 'tw-gaap-ci:LongtermBorrowings', 0) + getParameter(xml, 'tw-gaap-ci:OtherLiabilities', 0), equityParent: getParameter(xml, 'tw-gaap-ci:TotalParentCompanyStockholdersEquities', 0), equityChild: getParameter(xml, 'tw-gaap-ci:MinorityInterest', 0), share: getParameter(xml, 'tw-gaap-ci:Capital', 0), total: getParameter(xml, 'tw-gaap-ci:Assets', 0), longterm: getParameter(xml, 'tw-gaap-ci:LongtermInvestments', 0)};
+            asset[year][quarter-1] = {receivable: getParameter(xml, 'tw-gaap-ci:NetAccountsReceivable', 0) + getParameter(xml, 'tw-gaap-ci:OtherReceivables', 0) + getParameter(xml, 'tw-gaap-ci:NetNotesReceivable', 0), payable: getParameter(xml, 'tw-gaap-ci:AccountsPayable', 0) + getParameter(xml, 'tw-gaap-ci:NotesPayable', 0) + getParameter(xml, 'tw-gaap-ci:IncomeTaxPayable', 0) + getParameter(xml, 'tw-gaap-ci:AccruedExpenses', 0) + getParameter(xml, 'tw-gaap-ci:OtherPayables', 0), cash: getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 0), inventories: getParameter(xml, 'tw-gaap-ci:Inventories', 0), OCFA: 0, property: getParameter(xml, 'tw-gaap-ci:FixedAssets', 1), current_liabilities: getParameter(xml, 'tw-gaap-ci:CurrentLiabilities', 0), noncurrent_liabilities: getParameter(xml, 'tw-gaap-ci:LongtermBorrowings', 0) + getParameter(xml, 'tw-gaap-ci:OtherLiabilities', 0), equityParent: getParameter(xml, 'tw-gaap-ci:TotalParentCompanyStockholdersEquities', 0), equityChild: getParameter(xml, 'tw-gaap-ci:MinorityInterest', 0), share: getParameter(xml, 'tw-gaap-ci:Capital', 0), total: getParameter(xml, 'tw-gaap-ci:Assets', 0), longterm: getParameter(xml, 'tw-gaap-ci:LongtermInvestments', 0)};
             asset[year-1][quarter-1] = {receivable: getParameter(xml, 'tw-gaap-ci:NetAccountsReceivable', 1) + getParameter(xml, 'tw-gaap-ci:OtherReceivables', 1) + getParameter(xml, 'tw-gaap-ci:NetNotesReceivable', 1), payable: getParameter(xml, 'tw-gaap-ci:AccountsPayable', 1) + getParameter(xml, 'tw-gaap-ci:NotesPayable', 1) + getParameter(xml, 'tw-gaap-ci:IncomeTaxPayable', 1) + getParameter(xml, 'tw-gaap-ci:AccruedExpenses', 1) + getParameter(xml, 'tw-gaap-ci:OtherPayables', 1), cash: getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 1), inventories: getParameter(xml, 'tw-gaap-ci:Inventories', 1), OCFA: 0, property: getParameter(xml, 'tw-gaap-ci:FixedAssets', 1), current_liabilities: getParameter(xml, 'tw-gaap-ci:CurrentLiabilities', 1), noncurrent_liabilities: getParameter(xml, 'tw-gaap-ci:LongtermBorrowings', 1) + getParameter(xml, 'tw-gaap-ci:OtherLiabilities', 1), equityParent: getParameter(xml, 'tw-gaap-ci:TotalParentCompanyStockholdersEquities', 1), equityChild: getParameter(xml, 'tw-gaap-ci:MinorityInterest', 1), share: getParameter(xml, 'tw-gaap-ci:Capital', 1), total: getParameter(xml, 'tw-gaap-ci:Assets', 1), longterm: getParameter(xml, 'tw-gaap-ci:LongtermInvestments', 1)};
             if (quarterIsEmpty(asset[year][quarter-1])) {
                 asset[year].splice(quarter-1, 1);
@@ -272,7 +272,7 @@ module.exports = {
         for (var i in cash) {
             cashStatus[i] = [];
             for (var j in cash[i]) {
-                cashStatus[i][j] = {begin: cash[i][j].begin, end: Math.ceil(cash[i][j].end/cash[i][j].begin*100), asset: Math.ceil(cash[i][j].end/asset[i][j].total*100), equity: Math.ceil(cash[i][j].end/(asset[i][j].equityParent + asset[i][j].equityChild)*100)};
+                cashStatus[i][j] = {begin: cash[i][j].begin, end: Math.ceil(cash[i][j].end/cash[i][j].begin*100)};
                 if ((j === '1' || j === '2' || j === '3') && cash[i][Number(j)-1]) {
                     cashStatus[i][j].profitBT = Math.ceil((cash[i][j].profitBT - cash[i][Number(j)-1].profitBT)/cash[i][j].begin*100);
                     cashStatus[i][j].real = Math.ceil((cash[i][j].change - cash[i][Number(j)-1].change)/cash[i][j].begin*100);
@@ -313,7 +313,7 @@ module.exports = {
         for (var i in sales) {
             salesStatus[i] = [];
             for (var j in sales[i]) {
-                salesStatus[i][j] = {revenue: sales[i][j].revenue, cost: Math.ceil(sales[i][j].cost/sales[i][j].revenue*1000)/10, expenses: Math.ceil(sales[i][j].expenses/sales[i][j].revenue*1000)/10, finance_cost: Math.ceil(sales[i][j].finance_cost/sales[i][j].revenue*1000)/10, nonoperating_without_FC: Math.ceil((sales[i][j].nonoperating+sales[i][j].finance_cost)/sales[i][j].revenue*1000)/10, tax: Math.ceil(sales[i][j].tax/sales[i][j].revenue*1000)/10, comprehensive: Math.ceil(sales[i][j].comprehensive/sales[i][j].revenue*1000)/10, gross_profit: Math.ceil(sales[i][j].gross_profit/sales[i][j].revenue*1000)/10, operating: Math.ceil(sales[i][j].operating/sales[i][j].revenue*1000)/10, profit: Math.ceil(sales[i][j].profit/sales[i][j].revenue*1000)/10, profit_comprehensive: Math.ceil((sales[i][j].profit+sales[i][j].comprehensive)/sales[i][j].revenue*1000)/10, eps: sales[i][j].eps, salesPerAsset: Math.ceil(sales[i][j].revenue/asset[i][j].total*1000)/1000, salesPerInventories: Math.ceil(sales[i][j].revenue/asset[i][j].inventories*1000)/1000, salesPerProperty: Math.ceil(sales[i][j].revenue/asset[i][j].property*1000)/1000};
+                salesStatus[i][j] = {revenue: sales[i][j].revenue, cost: Math.ceil(sales[i][j].cost/sales[i][j].revenue*1000)/10, expenses: Math.ceil(sales[i][j].expenses/sales[i][j].revenue*1000)/10, finance_cost: Math.ceil(sales[i][j].finance_cost/sales[i][j].revenue*1000)/10, nonoperating_without_FC: Math.ceil((sales[i][j].nonoperating+sales[i][j].finance_cost)/sales[i][j].revenue*1000)/10, tax: Math.ceil(sales[i][j].tax/sales[i][j].revenue*1000)/10, comprehensive: Math.ceil(sales[i][j].comprehensive/sales[i][j].revenue*1000)/10, profit: Math.ceil(sales[i][j].profit/sales[i][j].revenue*1000)/10, profit_comprehensive: Math.ceil((sales[i][j].profit+sales[i][j].comprehensive)/sales[i][j].revenue*1000)/10, eps: sales[i][j].eps, salesPerAsset: Math.ceil(sales[i][j].revenue/asset[i][j].total*1000)/1000};
                 if ((j === '1' || j === '2' || j === '3') && sales[i][Number(j)-1]) {
                     salesStatus[i][j].quarterRevenue = sales[i][j].revenue - sales[i][Number(j)-1].revenue;
                     salesStatus[i][j].quarterGross = Math.ceil((sales[i][j].gross_profit - sales[i][Number(j)-1].gross_profit)/salesStatus[i][j].quarterRevenue*1000)/10;
@@ -342,17 +342,23 @@ module.exports = {
         }
         return profitStatus;
     },
+    getProfitIndex: function(profitStatus, year, quarter) {
+        return Math.ceil((profitStatus[year][quarter-1].profit+profitStatus[year][quarter-1].gross_profit+profitStatus[year][quarter-1].operating_profit)*profitStatus[year][quarter-1].turnover/profitStatus[year][quarter-1].leverage*1000)/1000;
+    },
     getSafetyStatus: function(salesStatus, cashStatus, asset) {
         var safetyStatus = {};
         for (var i in salesStatus) {
             safetyStatus[i] = [];
             for (var j in salesStatus[i]) {
-                safetyStatus[i][j] = {prMinusProfit: Math.ceil(asset[i][j].payable/asset[i][j].receivable*1000 - 1000 + salesStatus[i][j].quarterProfit*10)/10, prRatio: Math.ceil(asset[i][j].payable/asset[i][j].receivable*1000)/10, shortCash: Math.ceil((asset[i][j].receivable - asset[i][j].payable*2 + asset[i][j].current_liabilities - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100 - cashStatus[i][j].invest * cashStatus[i][j].begin / 100)/(asset[i][j].cash + asset[i][j].OCFA)*1000)/10, shortCashWithoutCL: Math.ceil((asset[i][j].receivable - asset[i][j].payable - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100 - cashStatus[i][j].invest * cashStatus[i][j].begin / 100)/(asset[i][j].cash + asset[i][j].OCFA)*100), shortCashWithoutInvest: Math.ceil((asset[i][j].receivable - asset[i][j].payable*2 + asset[i][j].current_liabilities - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100)/(asset[i][j].cash + asset[i][j].OCFA)*100), current_liabilitiesCashRatio: Math.ceil(asset[i][j].current_liabilities/asset[i][j].cash*100), current_liabilitiesCurrentRatio: Math.ceil(asset[i][j].current_liabilities/(asset[i][j].cash+asset[i][j].receivable)*100), liabilitiesCashRatio: Math.ceil((asset[i][j].current_liabilities + asset[i][j].noncurrent_liabilities)/asset[i][j].cash*100), liabilitiesCurrentRatio: Math.ceil((asset[i][j].current_liabilities + asset[i][j].noncurrent_liabilities)/(asset[i][j].cash+asset[i][j].receivable)*100)};
+                safetyStatus[i][j] = {prMinusProfit: Math.ceil(asset[i][j].payable/asset[i][j].receivable*1000 - 1000 + salesStatus[i][j].quarterProfit*10)/10, prRatio: Math.ceil(asset[i][j].payable/asset[i][j].receivable*1000)/10, shortCash: Math.ceil((asset[i][j].receivable - asset[i][j].payable*2 + asset[i][j].current_liabilities - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100 - cashStatus[i][j].invest * cashStatus[i][j].begin / 100)/(asset[i][j].cash + asset[i][j].OCFA)*1000)/10, shortCashWithoutCL: Math.ceil((asset[i][j].receivable - asset[i][j].payable - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100 - cashStatus[i][j].invest * cashStatus[i][j].begin / 100)/(asset[i][j].cash + asset[i][j].OCFA)*100), shortCashWithoutInvest: Math.ceil((asset[i][j].receivable - asset[i][j].payable*2 + asset[i][j].current_liabilities - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100)/(asset[i][j].cash + asset[i][j].OCFA)*100)};
             }
         }
         return safetyStatus;
     },
-    getManagementStatus: function(sales, asset) {
+    getSafetyIndex: function(safetyStatus, year, quarter) {
+        return -Math.ceil((safetyStatus[year][quarter-1].shortCash+safetyStatus[year][quarter-1].shortCashWithoutCL+safetyStatus[year][quarter-1].shortCashWithoutInvest)*1000)/1000;
+    },
+    getManagementStatus: function(salesStatus, asset) {
         var managementStatus = {};
         var revenue = [];
         var profit = [];
@@ -362,34 +368,50 @@ module.exports = {
         var payable = [];
         var startY = 0;
         var startQ = 0;
-        for (var i in sales) {
+        var realY = 0;
+        var realQ = 0;
+        for (var i in salesStatus) {
             managementStatus[i] = [];
-            for (var j in sales[i]) {
+            for (var j in salesStatus[i]) {
                 if (j < 4) {
-                    if (sales[i][j-1]) {
+                    if (salesStatus[i][j-1]) {
                         if (!startY && !startQ) {
                             startY = i;
                             startQ = j;
                         }
-                        revenue.push(sales[i][j].revenue - sales[i][j-1].revenue);
-                        profit.push(sales[i][j].profit - sales[i][j-1].profit);
+                        if (!realY && !realQ) {
+                            realY = Number(i);
+                            realQ = Number(j);
+                        }
+                        revenue.push(salesStatus[i][j].quarterRevenue);
+                        profit.push(Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100));
                         cash.push(asset[i][j].cash);
                         inventories.push(asset[i][j].inventories);
                         receivable.push(asset[i][j].receivable);
                         payable.push(asset[i][j].payable);
-                        managementStatus[i][j] = {revenue: sales[i][j].revenue - sales[i][j-1].revenue, profit: sales[i][j].profit - sales[i][j-1].profit, cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable};
+                        managementStatus[i][j] = {revenue: salesStatus[i][j].quarterRevenue, profit: Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100), cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable};
                     } else if (j === '0'){
                         if (!startY && !startQ) {
                             startY = i;
                             startQ = j;
                         }
-                        revenue.push(sales[i][j].revenue);
-                        profit.push(sales[i][j].profit);
+                        if (!realY && !realQ) {
+                            realY = Number(i);
+                            realQ = Number(j);
+                        }
+                        revenue.push(salesStatus[i][j].quarterRevenue);
+                        profit.push(Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100));
                         cash.push(asset[i][j].cash);
                         inventories.push(asset[i][j].inventories);
                         receivable.push(asset[i][j].receivable);
                         payable.push(asset[i][j].payable);
-                        managementStatus[i][j] = {revenue: sales[i][j].revenue, profit: sales[i][j].profit, cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable};
+                        managementStatus[i][j] = {revenue: salesStatus[i][j].quarterRevenue, profit: Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100), cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable};
+                    } else {
+                        if (!realY && !realQ) {
+                            realY = Number(i);
+                            realQ = Number(j);
+                        }
+                        managementStatus[i][j] = {revenue: salesStatus[i][j].quarterRevenue, profit: Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100), cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable};
                     }
                 }
             }
@@ -438,6 +460,15 @@ module.exports = {
             var Y = startY;
             var Q = startQ;
             var Relative = 0;
+            var bY = realY;
+            var bQ = realQ;
+            for (var i = 0; i < 4; i++) {
+                if (bQ > 3) {
+                    bQ = 0;
+                    bY++;
+                }
+                managementStatus[bY][bQ++][dataRelative] = 0;
+            }
             for (var i = 2; i < revenue.length; i++) {
                 if (Q > 3) {
                     Q = 0;
@@ -452,6 +483,9 @@ module.exports = {
             }
         }
         return managementStatus;
+    },
+    getManagementIndex: function(managementStatus, year, quarter) {
+        return Math.ceil((managementStatus[year][quarter-1].profitRelative+managementStatus[year][quarter-1].cashRelative+managementStatus[year][quarter-1].inventoriesRelative+managementStatus[year][quarter-1].receivableRelative+managementStatus[year][quarter-1].payableRelative)*1000)/1000;
     }
 };
 

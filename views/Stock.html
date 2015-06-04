@@ -158,6 +158,7 @@
                 </div>
             </div>
         </div>
+        <h3>Safety Index: {{safetyIndex}}</h3>
         <canvas id="safety" class="chart chart-line" data="safetyData" labels="safetyLabels" legend="true" series="safetySeries"></canvas>
     </div>
 </section>
@@ -198,9 +199,63 @@
                 </div>
             </div>
         </div>
+        <h3>Profit Index: {{profitIndex}}</h3>
         <canvas id="profit" class="chart chart-line" data="profitData" labels="profitLabels" legend="true" series="profitSeries"></canvas>
         <canvas id="profitTrio" class="chart chart-line" data="profitTrioData" labels="profitTrioLabels" legend="true" series="profitTrioSeries"></canvas>
         <canvas id="profitROE" class="chart chart-line" data="profitROEData" labels="profitROELabels" legend="true" series="profitROESeries"></canvas>
         <canvas id="profitSales" class="chart chart-line" data="profitSalesData" labels="profitSalesLabels" legend="true" series="profitSalesSeries"></canvas>
+    </div>
+</section>
+<section class="panel panel-default" ng-show="isParse">
+    <div class="panel-heading">
+        <h2 class="panel-title">Management:{{stockIndex}}</h2>
+    </div>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2">
+                <select class="form-control" ng-model="managementStartYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" ng-model="managementStartQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-1 text-center">
+                <strong>To</strong>
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" ng-model="managementEndYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <div class="input-group">
+                    <select class="form-control" ng-model="managementEndQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                    </select>
+                    <span class="input-group-addon" tooltip="profit"  tooltip-trigger="mouseenter">
+                        <input type="checkbox" ng-model="relative.profit" />
+                    </span>
+                    <span class="input-group-addon" tooltip="cash"  tooltip-trigger="mouseenter">
+                        <input type="checkbox" ng-model="relative.cash" />
+                    </span>
+                    <span class="input-group-addon" tooltip="inventories"  tooltip-trigger="mouseenter">
+                        <input type="checkbox" ng-model="relative.inventories" />
+                    </span>
+                    <span class="input-group-addon" tooltip="receivable"  tooltip-trigger="mouseenter">
+                        <input type="checkbox" ng-model="relative.receivable" />
+                    </span>
+                    <span class="input-group-addon" tooltip="payable"  tooltip-trigger="mouseenter">
+                        <input type="checkbox" ng-model="relative.payable" />
+                    </span>
+                    <span class="input-group-btn">
+                        <button class="btn btn-info" ng-click="drawManagement(relative, managementStartYear, managementStartQuarter, managementEndYear, managementEndQuarter)" type="button">
+                            <i class="fa fa-line-chart"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <h3>Management Index: {{managementIndex}}</h3>
+        <canvas id="management" class="chart chart-line" data="managementData" labels="managementLabels" legend="true" series="managementSeries"></canvas>
+        <canvas id="managementNumber" class="chart chart-line" data="managementNumberData" labels="managementNumberLabels" legend="true" series="managementNumberSeries"></canvas>
     </div>
 </section>

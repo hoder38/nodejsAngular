@@ -2894,27 +2894,30 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                         util.handleError({hoerror: 2, message: "xml sales parse error!!!"}, next, res);
                     }
                     is_start = true;
-                    if (year === 2014 && quarter === 2) {
+                    /*if (year === 2014 && quarter === 2) {
                         var cashStatus = stockTool.getCashStatus(cash, asset);
                         var assetStatus = stockTool.getAssetStatus(asset);
                         var salesStatus = stockTool.getSalesStatus(sales, asset);
                         var profitStatus = stockTool.getProfitStatus(salesStatus, cashStatus, asset);
                         var safetyStatus = stockTool.getSafetyStatus(salesStatus, cashStatus, asset);
-                        var managementStatus = stockTool.getManagementStatus(sales, asset);
+                        var managementStatus = stockTool.getManagementStatus(salesStatus, asset);
                         var earliestYear = 0;
-                                var earliestQuarter = 0;
-                                for (var i in cash) {
-                                    earliestYear = Number(i);
-                                    for (var j in cash[i]) {
-                                        if (cash[i][j]) {
-                                            earliestQuarter = Number(j) + 1;
-                                            break;
-                                        }
-                                    }
+                        var earliestQuarter = 0;
+                        var profitIndex = stockTool.getProfitIndex(profitStatus, latestYear, latestQuarter);
+                        var managementIndex = stockTool.getManagementIndex(managementStatus, latestYear, latestQuarter);
+                        var safetyIndex = stockTool.getSafetyIndex(safetyStatus, latestYear, latestQuarter);
+                        for (var i in cash) {
+                            earliestYear = Number(i);
+                            for (var j in cash[i]) {
+                                if (cash[i][j]) {
+                                    earliestQuarter = Number(j) + 1;
                                     break;
                                 }
-                        res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter});
-                    } else {
+                            }
+                            break;
+                        }
+                        res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter, profitIndex: profitIndex, managementIndex: managementIndex, safetyIndex: safetyIndex});
+                    } else {*/
                         wait = 0;
                         quarter--;
                         if (quarter < 1) {
@@ -2924,7 +2927,7 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                         setTimeout(function(){
                             recur_getTwseXml();
                         }, wait);
-                    }
+                    //}
                 });
             } else {
                 api.getTwseXml(index, year, quarter, xml_path, function(err, xmlPath) {
@@ -2942,7 +2945,10 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                                 var salesStatus = stockTool.getSalesStatus(sales, asset);
                                 var profitStatus = stockTool.getProfitStatus(salesStatus, cashStatus, asset);
                                 var safetyStatus = stockTool.getSafetyStatus(salesStatus, cashStatus, asset);
-                                var managementStatus = stockTool.getManagementStatus(sales, asset);
+                                var managementStatus = stockTool.getManagementStatus(salesStatus, asset);
+                                var profitIndex = stockTool.getProfitIndex(profitStatus, latestYear, latestQuarter);
+                                var managementIndex = stockTool.getManagementIndex(managementStatus, latestYear, latestQuarter);
+                                var safetyIndex = stockTool.getSafetyIndex(safetyStatus, latestYear, latestQuarter);
                                 var earliestYear = 0;
                                 var earliestQuarter = 0;
                                 for (var i in cash) {
@@ -2955,8 +2961,7 @@ app.get('/api/stock/query/:index', function(req, res,next) {
                                     }
                                     break;
                                 }
-
-                                res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter});
+                                res.json({cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter, profitIndex: profitIndex, managementIndex: managementIndex, safetyIndex: safetyIndex});
                             } else {
                                 console.log('not');
                                 quarter--;

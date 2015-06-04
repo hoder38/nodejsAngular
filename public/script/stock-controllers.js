@@ -58,6 +58,16 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
     $scope.profitSalesData = [[], []];
     $scope.profitSalesSeries = ['salesPerShare', 'sales'];
     $scope.parseProfitMode = [{name: 'Profit', value: 1}, {name: 'Operating', value: 2}, {name: 'O+I', value: 3}, {name: 'Real', value: 4}, {name: 'R+D', value: 5}];
+    $scope.managementLabels = [];
+    $scope.managementData = [];
+    $scope.managementSeries = [];
+    $scope.managementNumberLabels = [];
+    $scope.managementNumberData = [];
+    $scope.managementNumberSeries = [];
+    $scope.relative = {profit: true, cash: true, inventories: true, receivable: true, payable: true};
+    $scope.profitIndex = 0;
+    $scope.safetyIndex = 0;
+    $scope.managementIndex = 0;
     $scope.init = function(){
         /*var stockApi = $resource('/api/stock/init', {}, {
             'init': { method:'get' }
@@ -460,7 +470,7 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
         this.profitROELabels = [];
         this.profitROEData = [[], [], []];
         this.profitSalesLabels = [];
-        this.profitSalesData = [[], [], []];
+        this.profitSalesData = [[], []];
         for(var i = profitStartDate.year; i<=profitEndDate.year; i++) {
             for (var j in this.parseResult.profitStatus[i]) {
                 if (this.parseResult.profitStatus[i][j] && j < 4) {
@@ -487,16 +497,20 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                             }
                             break;
                             case 'leverage':
-                            this.profitTrioData[0].push(this.parseResult.profitStatus[i][j][k]*100);
+                            this.profitTrioData[0].push(Math.ceil(this.parseResult.profitStatus[i][j][k]*1000)/10);
                             break;
                             case 'turnover':
-                            this.profitTrioData[1].push(this.parseResult.profitStatus[i][j][k]*100);
+                            this.profitTrioData[1].push(Math.ceil(this.parseResult.profitStatus[i][j][k]*1000)/10);
                             break;
                             case 'roe':
-                            this.profitROEData[0].push(this.parseResult.profitStatus[i][j][k]);
+                            if (mode === 1) {
+                                this.profitROEData[0].push(this.parseResult.profitStatus[i][j][k]);
+                            }
                             break;
                             case 'asset_growth':
-                            this.profitROEData[1].push(this.parseResult.profitStatus[i][j][k]);
+                            if (mode === 1) {
+                                this.profitROEData[1].push(this.parseResult.profitStatus[i][j][k]);
+                            }
                             break;
                             case 'salesPerShare':
                             this.profitSalesData[0].push(Math.ceil(this.parseResult.profitStatus[i][j][k]/1000000));
@@ -504,11 +518,31 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                             case 'quarterSales':
                             this.profitSalesData[1].push(Math.ceil(this.parseResult.profitStatus[i][j][k]/1000000));
                             break;
+                            case 'operationRoe':
+                            if (mode === 2) {
+                                this.profitROEData[0].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
+                            case 'operationAG':
+                            if (mode === 2) {
+                                this.profitROEData[1].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
                             case 'operatingP':
                             if (mode === 2) {
                                 this.profitData[2].push(this.parseResult.profitStatus[i][j][k]);
                                 this.profitTrioData[2].push(this.parseResult.profitStatus[i][j][k]);
                                 this.profitROEData[2].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
+                            case 'oiRoe':
+                            if (mode === 3) {
+                                this.profitROEData[0].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
+                            case 'oiAG':
+                            if (mode === 3) {
+                                this.profitROEData[1].push(this.parseResult.profitStatus[i][j][k]);
                             }
                             break;
                             case 'oiP':
@@ -518,11 +552,31 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                                 this.profitROEData[2].push(this.parseResult.profitStatus[i][j][k]);
                             }
                             break;
+                            case 'realRoe':
+                            if (mode === 4) {
+                                this.profitROEData[0].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
+                            case 'realAG':
+                            if (mode === 4) {
+                                this.profitROEData[1].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
                             case 'realP':
                             if (mode === 4) {
                                 this.profitData[2].push(this.parseResult.profitStatus[i][j][k]);
                                 this.profitTrioData[2].push(this.parseResult.profitStatus[i][j][k]);
                                 this.profitROEData[2].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
+                            case 'realRoe_dividends':
+                            if (mode === 5) {
+                                this.profitROEData[0].push(this.parseResult.profitStatus[i][j][k]);
+                            }
+                            break;
+                            case 'realAG_dividends':
+                            if (mode === 5) {
+                                this.profitROEData[1].push(this.parseResult.profitStatus[i][j][k]);
                             }
                             break;
                             case 'realP_dividends':
@@ -543,6 +597,119 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
         this.profitEndQuarter = profitEndDate.quarter;
         this.profitMode = mode;
     }
+    $scope.drawManagement = function(mode, startYear, startQuarter, endYear, endQuarter) {
+        var managementStartDate = caculateDate(this.parseResult, startYear, startQuarter, true);
+        var managementEndDate = caculateDate(this.parseResult, endYear, endQuarter);
+        if (managementStartDate.year > managementEndDate.year) {
+            managementEndDate.year = managementStartDate.year;
+        }
+        if (managementStartDate.year === managementEndDate.year && managementStartDate.quarter > managementEndDate.quarter) {
+            managementEndDate.quarter = managementStartDate.quarter;
+        }
+        this.managementLabels = [];
+        this.managementData = [];
+        this.managementSeries = [];
+        this.managementNumberLabels = [];
+        this.managementNumberData = [];
+        this.managementNumberSeries = [];
+        for (var i in mode) {
+            if (mode[i]) {
+                this.managementSeries.push(i);
+                this.managementData.push([]);
+                this.managementNumberSeries.push(i);
+                this.managementNumberData.push([]);
+            }
+        }
+        this.managementNumberSeries.push('revenue');
+        this.managementNumberData.push([]);
+        var index = -1;
+        for(var i = managementStartDate.year; i<=managementEndDate.year; i++) {
+            for (var j in this.parseResult.managementStatus[i]) {
+                if (this.parseResult.managementStatus[i][j] && j < 4) {
+                    if ((i === managementStartDate.year && j < (managementStartDate.quarter-1)) || (i === managementEndDate.year && j > (managementEndDate.quarter-1))) {
+                        continue;
+                    }
+                    this.managementLabels.push(i.toString() + (Number(j)+1));
+                    this.managementNumberLabels.push(i.toString() + (Number(j)+1));
+                    for (var k in this.parseResult.managementStatus[i][j]) {
+                        switch(k) {
+                            case 'profitRelative':
+                            index = this.managementSeries.indexOf('profit');
+                            if (index !== -1) {
+                                this.managementData[index].push(this.parseResult.managementStatus[i][j][k]);
+                            }
+                            break;
+                            case 'cashRelative':
+                            index = this.managementSeries.indexOf('cash');
+                            if (index !== -1) {
+                                this.managementData[index].push(this.parseResult.managementStatus[i][j][k]);
+                            }
+                            break;
+                            case 'inventoriesRelative':
+                            index = this.managementSeries.indexOf('inventories');
+                            if (index !== -1) {
+                                this.managementData[index].push(this.parseResult.managementStatus[i][j][k]);
+                            }
+                            break;
+                            case 'receivableRelative':
+                            index = this.managementSeries.indexOf('receivable');
+                            if (index !== -1) {
+                                this.managementData[index].push(this.parseResult.managementStatus[i][j][k]);
+                            }
+                            break;
+                            case 'payableRelative':
+                            index = this.managementSeries.indexOf('payable');
+                            if (index !== -1) {
+                                this.managementData[index].push(this.parseResult.managementStatus[i][j][k]);
+                            }
+                            break;
+                            case 'profit':
+                            index = this.managementNumberSeries.indexOf('profit');
+                            if (index !== -1) {
+                                this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                            }
+                            break;
+                            case 'cash':
+                            index = this.managementNumberSeries.indexOf('cash');
+                            if (index !== -1) {
+                                this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                            }
+                            break;
+                            case 'inventories':
+                            index = this.managementNumberSeries.indexOf('inventories');
+                            if (index !== -1) {
+                                this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                            }
+                            break;
+                            case 'receivable':
+                            index = this.managementNumberSeries.indexOf('receivable');
+                            if (index !== -1) {
+                                this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                            }
+                            break;
+                            case 'payable':
+                            index = this.managementNumberSeries.indexOf('payable');
+                            if (index !== -1) {
+                                this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                            }
+                            break;
+                            case 'revenue':
+                            index = this.managementNumberSeries.indexOf('revenue');
+                            if (index !== -1) {
+                                this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        this.managementStartYear = managementStartDate.year;
+        this.managementStartQuarter = managementStartDate.quarter;
+        this.managementEndYear = managementEndDate.year;
+        this.managementEndQuarter = managementEndDate.quarter;
+    }
     $scope.submitIndex = function() {
         var this_obj = this;
         if (!this.inputIndex) {
@@ -562,16 +729,20 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    console.log(result);
+                    //console.log(result);
                     this_obj.parseResult.assetStatus = result.assetStatus;
                     this_obj.parseResult.salesStatus = result.salesStatus;
                     this_obj.parseResult.cashStatus = result.cashStatus;
                     this_obj.parseResult.safetyStatus = result.safetyStatus;
                     this_obj.parseResult.profitStatus = result.profitStatus;
+                    this_obj.parseResult.managementStatus = result.managementStatus;
                     this_obj.parseResult.latestYear = result.latestYear;
                     this_obj.parseResult.latestQuarter = result.latestQuarter;
                     this_obj.parseResult.earliestYear = result.earliestYear;
                     this_obj.parseResult.earliestQuarter = result.earliestQuarter;
+                    this_obj.profitIndex = result.profitIndex;
+                    this_obj.safetyIndex = result.safetyIndex;
+                    this_obj.managementIndex = result.managementIndex;
                     for (var i = this_obj.parseResult.earliestYear; i <= this_obj.parseResult.latestYear; i++) {
                         this_obj.parseYear.push({name: i, value: i});
                     }
@@ -584,6 +755,7 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                     this_obj.drawCash(4, this_obj.accumulate);
                     this_obj.drawSafety(1);
                     this_obj.drawProfit(1);
+                    this_obj.drawManagement(this_obj.relative);
                 }
             }, function(errorResult) {
                 if (errorResult.status === 400) {
