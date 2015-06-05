@@ -342,8 +342,18 @@ module.exports = {
         }
         return profitStatus;
     },
-    getProfitIndex: function(profitStatus, year, quarter) {
-        return Math.ceil((profitStatus[year][quarter-1].profit+profitStatus[year][quarter-1].gross_profit+profitStatus[year][quarter-1].operating_profit)*profitStatus[year][quarter-1].turnover/profitStatus[year][quarter-1].leverage*1000)/1000;
+    getProfitIndex: function(profitStatus, startYear, endYear) {
+        var index = 0;
+        var denominator = 1;
+        for (var i = endYear; i >= startYear; i--) {
+            for (var j = 3; j >=0; j--) {
+                if (profitStatus[i][j]) {
+                    index += (profitStatus[i][j].profit+profitStatus[i][j].gross_profit+profitStatus[i][j].operating_profit)*profitStatus[i][j].turnover/profitStatus[i][j].leverage/denominator;
+                    denominator++;
+                }
+            }
+        }
+        return Math.ceil(index*1000)/1000;
     },
     getSafetyStatus: function(salesStatus, cashStatus, asset) {
         var safetyStatus = {};
@@ -355,8 +365,21 @@ module.exports = {
         }
         return safetyStatus;
     },
-    getSafetyIndex: function(safetyStatus, year, quarter) {
-        return -Math.ceil((safetyStatus[year][quarter-1].shortCash+safetyStatus[year][quarter-1].shortCashWithoutCL+safetyStatus[year][quarter-1].shortCashWithoutInvest)*1000)/1000;
+    getSafetyIndex: function(safetyStatus) {
+        var index = 0;
+        var multiple = 0;
+        for (var i in safetyStatus) {
+            for (var j in safetyStatus[i]) {
+                if (safetyStatus[i][j]) {
+                    multiple++;
+                    index += (safetyStatus[i][j].shortCash+safetyStatus[i][j].shortCashWithoutCL+safetyStatus[i][j].shortCashWithoutInvest)*multiple;
+                    console.log(i);
+                    console.log(j);
+                    console.log(index);
+                }
+            }
+        }
+        return -Math.ceil(index/(1+multiple)/multiple*2000)/1000;
     },
     getManagementStatus: function(salesStatus, asset) {
         var managementStatus = {};
