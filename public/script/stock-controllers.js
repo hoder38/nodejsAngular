@@ -11,6 +11,7 @@ function addCommas(nStr) {
 }
 function StockCntl($route, $routeParams, $location, $resource, $scope, $location) {
     Chart.defaults.global.tooltipTemplate = "<%if (label){%><%=label%>: <%}%><%= addCommas(value) %>";
+    Chart.defaults.global.animation = false;
     $scope.$parent.currentPage = 2;
     $scope.$parent.collapse.nav = true;
     $scope.stockIndex = '';
@@ -316,58 +317,58 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                         switch(k) {
                             case 'profitBT':
                             if (accumulate && this.cashSumData[0].length > 0) {
-                                this.cashSumData[0].push(this.cashSumData[0][this.cashSumData[0].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                this.cashSumData[0].push(this.cashSumData[0][this.cashSumData[0].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                             } else {
-                                this.cashSumData[0].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                this.cashSumData[0].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                             }
                             break;
                             case 'without_dividends':
                             if (accumulate && this.cashData[0].length > 0) {
-                                this.cashData[0].push(this.cashData[0][this.cashData[0].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                this.cashData[0].push(this.cashData[0][this.cashData[0].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                             } else {
-                                this.cashData[0].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                this.cashData[0].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                             }
                             break;
                             case 'minor':
                             if (accumulate && this.cashData[1].length > 0) {
-                                this.cashData[1].push(this.cashData[1][this.cashData[1].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                this.cashData[1].push(this.cashData[1][this.cashData[1].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                             } else {
-                                this.cashData[1].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                this.cashData[1].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                             }
                             break;
                             case 'real':
                             if (mode === 1 || mode === 3) {
                                 if (accumulate && this.cashSumData[1].length > 0) {
-                                    this.cashSumData[1].push(this.cashSumData[1][this.cashSumData[1].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                    this.cashSumData[1].push(this.cashSumData[1][this.cashSumData[1].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                                 } else {
-                                    this.cashSumData[1].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                    this.cashSumData[1].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                                 }
                             }
                             break;
                             case 'dividends':
                             if (mode === 1 || mode === 3) {
                                 if (accumulate && this.cashSumData[2].length > 0) {
-                                    this.cashSumData[2].push(this.cashSumData[2][this.cashSumData[2].length -1] - Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                    this.cashSumData[2].push(this.cashSumData[2][this.cashSumData[2].length -1] - Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                                 } else {
-                                    this.cashSumData[2].push(-Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                    this.cashSumData[2].push(-Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                                 }
                             }
                             break;
                             case 'operation':
                             if (mode === 1 || mode === 2) {
                                 if (accumulate && this.cashData[2].length > 0) {
-                                    this.cashData[2].push(this.cashData[2][this.cashData[2].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                    this.cashData[2].push(this.cashData[2][this.cashData[2].length -1] + Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                                 } else {
-                                    this.cashData[2].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                    this.cashData[2].push(Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                                 }
                             }
                             break;
                             case 'invest':
                             if (mode === 1 || mode === 2) {
                                 if (accumulate && this.cashData[3].length > 0) {
-                                    this.cashData[3].push(this.cashData[3][this.cashData[3].length -1] - Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                    this.cashData[3].push(this.cashData[3][this.cashData[3].length -1] - Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                                 } else {
-                                    this.cashData[3].push(-Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].begin/100000000));
+                                    this.cashData[3].push(-Math.ceil(this.parseResult.cashStatus[i][j][k] * this.parseResult.cashStatus[i][j].end/100000000));
                                 }
                             }
                             break;
@@ -381,16 +382,16 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
                     }
                     if (mode === 2 || mode === 4) {
                         if (accumulate && this.cashSumData[1].length > 0) {
-                            this.cashSumData[1].push(this.cashSumData[1][this.cashSumData[1].length -1] + Math.ceil((this.parseResult.cashStatus[i][j].real - this.parseResult.cashStatus[i][j].dividends) * this.parseResult.cashStatus[i][j].begin/100000000));
+                            this.cashSumData[1].push(this.cashSumData[1][this.cashSumData[1].length -1] + Math.ceil((this.parseResult.cashStatus[i][j].real - this.parseResult.cashStatus[i][j].dividends) * this.parseResult.cashStatus[i][j].end/100000000));
                         } else {
-                            this.cashSumData[1].push(Math.ceil((this.parseResult.cashStatus[i][j].real - this.parseResult.cashStatus[i][j].dividends) * this.parseResult.cashStatus[i][j].begin/100000000));
+                            this.cashSumData[1].push(Math.ceil((this.parseResult.cashStatus[i][j].real - this.parseResult.cashStatus[i][j].dividends) * this.parseResult.cashStatus[i][j].end/100000000));
                         }
                     }
                     if (mode === 3 || mode === 4) {
                         if (accumulate && this.cashData[2].length > 0) {
-                            this.cashData[2].push(this.cashData[2][this.cashData[2].length -1] + Math.ceil((this.parseResult.cashStatus[i][j].operation + this.parseResult.cashStatus[i][j].invest) * this.parseResult.cashStatus[i][j].begin/100000000));
+                            this.cashData[2].push(this.cashData[2][this.cashData[2].length -1] + Math.ceil((this.parseResult.cashStatus[i][j].operation + this.parseResult.cashStatus[i][j].invest) * this.parseResult.cashStatus[i][j].end/100000000));
                         } else {
-                            this.cashData[2].push(Math.ceil((this.parseResult.cashStatus[i][j].operation + this.parseResult.cashStatus[i][j].invest) * this.parseResult.cashStatus[i][j].begin/100000000));
+                            this.cashData[2].push(Math.ceil((this.parseResult.cashStatus[i][j].operation + this.parseResult.cashStatus[i][j].invest) * this.parseResult.cashStatus[i][j].end/100000000));
                         }
                     }
                 }
@@ -718,6 +719,9 @@ function StockCntl($route, $routeParams, $location, $resource, $scope, $location
         this.isParse = false;
         this.parseResult = {};
         this.parseYear = [];
+        this.accumulate = false;
+        this.comprehensive = true;
+        this.relative = {profit: true, cash: true, inventories: true, receivable: true, payable: true};
         if (!isNaN(this.inputIndex)) {
             var stockApi = $resource('/api/stock/query/' + Number(this.inputIndex), {}, {
                 'query': { method:'get' }
