@@ -1,4 +1,6 @@
 var util = require("../util/utility.js");
+var mongo = require("../models/mongo-tool.js");
+var api = require("../models/api-tool.js");
 
 var xml2js = require('xml2js'),
     fs = require('fs');
@@ -509,6 +511,204 @@ module.exports = {
     },
     getManagementIndex: function(managementStatus, year, quarter) {
         return Math.ceil((managementStatus[year][quarter-1].profitRelative+managementStatus[year][quarter-1].cashRelative+managementStatus[year][quarter-1].inventoriesRelative+managementStatus[year][quarter-1].receivableRelative+managementStatus[year][quarter-1].payableRelative)*1000)/1000;
+    },
+    getSingleStock: function(index, callback, stage) {
+        var temp = {};
+        var cash = {};
+        var asset = {};
+        var sales = {};
+        var this_obj = this;
+        var date = new Date();
+        var year = date.getFullYear();
+        var month = date.getMonth();
+        var quarter = 3;
+        if (month < 4) {
+            quarter = 4;
+            year-- ;
+        } else if (month < 7) {
+            quarter = 1;
+        } else if (month < 10) {
+            quarter = 2;
+        }
+        var is_start = false;
+        var wait = 0;
+        var latestQuarter = 0;
+        var latestYear = 0;
+        if (!fs.existsSync('/mnt/stock/twse/' + index)) {
+            mkdirp('/mnt/stock/twse/' + index, function(err) {
+                if(err) {
+                    util.handleError(err, callback, callback);
+                }
+                recur_getTwseXml();
+            });
+        } else {
+            recur_getTwseXml();
+        }
+        function recur_getTwseXml() {
+            console.log(wait);
+            console.log(year);
+            console.log(quarter);
+            var xml_path = '/mnt/stock/twse/' + index + '/' + year + quarter + '.xml';
+            if (is_start && fs.existsSync(xml_path)) {
+                console.log('exist');
+                this_obj.initXml(xml_path, function (err, xml) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    cash = this_obj.getCashflow(xml, cash);
+                    if (!cash) {
+                        util.handleError({hoerror: 2, message: "xml cash parse error!!!"}, callback, callback);
+                    }
+                    asset = this_obj.getAsset(xml, asset);
+                    if (!asset) {
+                        util.handleError({hoerror: 2, message: "xml asset parse error!!!"}, callback, callback);
+                    }
+                    sales = this_obj.getSales(xml, sales);
+                    if (!sales) {
+                        util.handleError({hoerror: 2, message: "xml sales parse error!!!"}, callback, callback);
+                    }
+                    is_start = true;
+                    /*if (year === 2014 && quarter === 2) {
+                        var cashStatus = this_obj.getCashStatus(cash, asset);
+                        var assetStatus = this_obj.getAssetStatus(asset);
+                        var salesStatus = this_obj.getSalesStatus(sales, asset);
+                        var profitStatus = this_obj.getProfitStatus(salesStatus, cashStatus, asset);
+                        var safetyStatus = this_obj.getSafetyStatus(salesStatus, cashStatus, asset);
+                        var managementStatus = this_obj.getManagementStatus(salesStatus, asset);
+                        var earliestYear = 0;
+                        var earliestQuarter = 0;
+                        for (var i in cash) {
+                            earliestYear = Number(i);
+                            for (var j in cash[i]) {
+                                if (cash[i][j]) {
+                                    earliestQuarter = Number(j) + 1;
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        var profitIndex = this_obj.getProfitIndex(profitStatus, earliestYear, latestYear);
+                        var safetyIndex = this_obj.getSafetyIndex(safetyStatus, earliestYear, latestYear);
+                        var managementIndex = this_obj.getManagementIndex(managementStatus, latestYear, latestQuarter);
+                        setTimeout(function(){
+                                    callback(null, {cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter, profitIndex: profitIndex, managementIndex: managementIndex, safetyIndex: safetyIndex});
+                                }, 0);
+                    } else {*/
+                        wait = 0;
+                        quarter--;
+                        if (quarter < 1) {
+                            quarter = 4;
+                            year--;
+                        }
+                        setTimeout(function(){
+                            recur_getTwseXml();
+                        }, wait);
+                    //}
+                });
+            } else {
+                api.getTwseXml(index, year, quarter, xml_path, function(err, xmlPath) {
+                    if (err) {
+                        if (err.code !== 'HPE_INVALID_CONSTANT' && err.code !== 'ECONNREFUSED') {
+                            util.handleError(err, callback, callback);
+                        }
+                    }
+                    if (err) {
+                        util.handleError(err);
+                        if (err.code === 'HPE_INVALID_CONSTANT') {
+                            if (is_start) {
+                                var cashStatus = this_obj.getCashStatus(cash, asset);
+                                var assetStatus = this_obj.getAssetStatus(asset);
+                                var salesStatus = this_obj.getSalesStatus(sales, asset);
+                                var profitStatus = this_obj.getProfitStatus(salesStatus, cashStatus, asset);
+                                var safetyStatus = this_obj.getSafetyStatus(salesStatus, cashStatus, asset);
+                                var managementStatus = this_obj.getManagementStatus(salesStatus, asset);
+                                var earliestYear = 0;
+                                var earliestQuarter = 0;
+                                for (var i in cash) {
+                                    earliestYear = Number(i);
+                                    for (var j in cash[i]) {
+                                        if (cash[i][j]) {
+                                            earliestQuarter = Number(j) + 1;
+                                            break;
+                                        }
+                                    }
+                                    break;
+                                }
+                                var profitIndex = this_obj.getProfitIndex(profitStatus, earliestYear, latestYear);
+                                var safetyIndex = this_obj.getSafetyIndex(safetyStatus, earliestYear, latestYear);
+                                var managementIndex = this_obj.getManagementIndex(managementStatus, latestYear, latestQuarter);
+                                setTimeout(function(){
+                                    callback(null, {cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter, profitIndex: profitIndex, managementIndex: managementIndex, safetyIndex: safetyIndex});
+                                }, 0);
+                            } else {
+                                console.log('not');
+                                quarter--;
+                                if (quarter < 1) {
+                                    quarter = 4;
+                                    year--;
+                                }
+                                wait = 0;
+                                setTimeout(function(){
+                                    recur_getTwseXml();
+                                }, wait);
+                            }
+                        } else if (err.code === 'ECONNREFUSED') {
+                            wait += 10000;
+                            setTimeout(function(){
+                                recur_getTwseXml();
+                            }, wait);
+                        }
+                    } else {
+                        var stats = fs.statSync(xmlPath);
+                        console.log(stats.size);
+                        if (stats.size < 10000) {
+                            fs.unlink(xmlPath, function (err) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                wait += 10000;
+                                setTimeout(function(){
+                                    recur_getTwseXml();
+                                }, wait);
+                            });
+                        } else {
+                            console.log('ok');
+                            this_obj.initXml(xmlPath, function (err, xml) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                cash = this_obj.getCashflow(xml, cash);
+                                if (!cash) {
+                                    util.handleError({hoerror: 2, message: "xml cash parse error!!!"}, callback, callback);
+                                }
+                                asset = this_obj.getAsset(xml, asset);
+                                if (!asset) {
+                                    util.handleError({hoerror: 2, message: "xml asset parse error!!!"}, callback, callback);
+                                }
+                                sales = this_obj.getSales(xml, sales);
+                                if (!sales) {
+                                    util.handleError({hoerror: 2, message: "xml sales parse error!!!"}, callback, callback);
+                                }
+                                is_start = true;
+                                wait = 0;
+                                if (!latestQuarter && !latestYear) {
+                                    latestQuarter = quarter;
+                                    latestYear = year;
+                                }
+                                quarter--;
+                                if (quarter < 1) {
+                                    quarter = 4;
+                                    year--;
+                                }
+                                setTimeout(function(){
+                                    recur_getTwseXml();
+                                }, wait);
+                            });
+                        }
+                    }
+                });
+            }
+        }
     }
 };
 
