@@ -34,8 +34,8 @@
             <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
         </div>
     </script>
-    <body ng-controller="TodoCrtlRemovable" nv-file-drop="" uploader="uploader">
-        <div id="wrapper" class="{{(currentPage===1) && 'storage-wrapper' || ''}}">
+    <body ng-controller="mainCtrl" nv-file-drop="" uploader="uploader">
+        <div id="wrapper" class="{{isRight && 'storage-wrapper' || ''}}">
             <div id="alert-section">
                 <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
             </div>
@@ -49,6 +49,12 @@
                     </button>
                     <a class="navbar-brand" href="/">AnNoPiHo</a>
                     <button ng-show="currentPage===1" type="button" class="navbar-toggle" ng-click="collapse.storage = !collapse.storage">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <button ng-show="currentPage===2" type="button" class="navbar-toggle" ng-click="collapse.stock = !collapse.stock">
                         <span class="sr-only">Toggle navigation</span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>

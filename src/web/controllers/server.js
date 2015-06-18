@@ -22,6 +22,8 @@ var googleApi = require("../models/api-tool-google.js");
 
 var tagTool = require("../models/tag-tool.js")("storage");
 
+var stockTagTool = require("../models/tag-tool.js")("stock");
+
 var stockTool = require("../models/stock-tool.js");
 
 var util = require("../util/utility.js");
@@ -426,7 +428,7 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
         }
         var page = Number(req.params.page);
         if (page === 0 && req.params.name) {
-            var tags = tagTool.searchTags(req.session, 'parent');
+            var tags = tagTool.searchTags(req.session);
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
@@ -444,6 +446,43 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
                 util.handleError(err, next, res);
             }
             var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
+        });
+    });
+});
+
+app.get('/api/stock/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(\\d+)/:name?/:exactly(true|false)?/:index(\\d+)?', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("stock single");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var exactly = false;
+        res.cookie('stockSortName', req.params.sortName);
+        res.cookie('stockSortType', req.params.sortType);
+        if (req.params.exactly === 'true') {
+            exactly = true;
+        }
+        var page = Number(req.params.page);
+        if (page === 0 && req.params.name) {
+            var tags = stockTagTool.searchTags(req.session);
+            if (!tags) {
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
+            }
+            var name = util.isValidString(req.params.name, 'name');
+            if (req.params.name.match(/^>(\d+)$/)) {
+                name = req.params.name;
+            }
+            if (name === false) {
+                util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
+            }
+            tags.setSingleArray(name);
+        }
+        stockTagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            var itemList = getStockItem(req.user, result.items);
             res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
         });
     });
@@ -472,6 +511,30 @@ app.get('/api/storage/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(
     });
 });
 
+app.get('/api/stock/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(\\d+)/:name?/:exactly(true|false)?/:index(\\d+)?', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("stock");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var exactly = false;
+        res.cookie('stockSortName', req.params.sortName);
+        res.cookie('stockSortType', req.params.sortType);
+        if (req.params.exactly === 'true') {
+            exactly = true;
+        }
+        var page = Number(req.params.page);
+        stockTagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            console.log(result.items);
+            var itemList = getStockItem(req.user, result.items);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
+        });
+    });
+});
+
 app.get('/api/storage/single/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("storage single");
@@ -486,6 +549,26 @@ app.get('/api/storage/single/:uid', function(req, res, next){
                 res.json(result);
             } else {
                 var itemList = getStorageItem(req.user, [result.item], result.mediaHadle);
+                res.json({item: itemList[0], latest: result.latest, bookmarkID: result.bookmark});
+            }
+        });
+    });
+});
+
+app.get('/api/stock/single/:uid', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("stock single");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        stockTagTool.singleQuery(req.params.uid, req.user, req.session, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (result.empty) {
+                res.json(result);
+            } else {
+                var itemList = getStockItem(req.user, [result.item]);
                 res.json({item: itemList[0], latest: result.latest, bookmarkID: result.bookmark});
             }
         });
@@ -516,6 +599,30 @@ app.get('/api/storage/reset', function(req, res, next){
     });
 });
 
+app.get('/api/stock/reset', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("resetStock");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var sortName = 'name';
+        var sortType = 'desc';
+        if (req.cookies.stockSortName === 'name' || req.cookies.stockSortName === 'mtime') {
+            sortName = req.cookies.stockSortName;
+        }
+        if (req.cookies.stockSortType === 'desc' || req.cookies.stockSortType === 'asc') {
+            sortType = req.cookies.stockSortType;
+        }
+        stockTagTool.resetQuery(sortName, sortType, req.user, req.session, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            var itemList = getStockItem(req.user, result.items);
+            res.json({itemList: itemList, parentList: result.parentList});
+        });
+    });
+});
+
 app.put('/api/addTag/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("addTag");
@@ -527,6 +634,22 @@ app.put('/api/addTag/:uid', function(req, res, next){
                 util.handleError(err, next, res);
             }
             sendWs({type: 'file', data: result.id}, result.adultonly);
+            res.json(result);
+        });
+    });
+});
+
+app.put('/api/stock/addTag/:uid', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("stock addTag");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        stockTagTool.addTag(req.params.uid, req.body.tag, req.user, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            sendWs({type: 'stock', data: result.id}, 0, 1);
             res.json(result);
         });
     });
@@ -559,6 +682,22 @@ app.put('/api/delTag/:uid', function(req, res, next){
                 util.handleError(err, next, res);
             }
             sendWs({type: 'file', data: result.id}, result.adultonly);
+            res.json(result);
+        });
+    });
+});
+
+app.put('/api/stock/delTag/:uid', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("stock delTag");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        stockTagTool.delTag(req.params.uid, req.body.tag, req.user, next, function (err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            sendWs({type: 'stock', data: result.id}, 0, 1);
             res.json(result);
         });
     });
@@ -1117,19 +1256,24 @@ app.post('/upload/subtitle/:uid', function(req, res, next) {
                 stream.pipe(fs.createWriteStream(filePath + '.' + ext));
             }
             function SRT2VTT() {
-                fs.readFile(req.files.file.path, function (err,data) {
+                fs.unlink(req.files.file.path, function(err) {
                     if (err) {
                         util.handleError(err, next, res);
                     }
-                    data = util.bufferToString(data);
-                    var result = "WEBVTT\n\n";
-                    result = result + data.replace(/,/g, '.');
-                    fs.writeFile(filePath + '.vtt', result, 'utf8', function (err) {
+                    fs.readFile(filePath + '.' + ext, function (err,data) {
                         if (err) {
-                            console.log(filePath + '.vtt');
                             util.handleError(err, next, res);
                         }
-                        res.json({apiOK: true});
+                        data = util.bufferToString(data);
+                        var result = "WEBVTT\n\n";
+                        result = result + data.replace(/,/g, '.');
+                        fs.writeFile(filePath + '.vtt', result, 'utf8', function (err) {
+                            if (err) {
+                                console.log(filePath + '.vtt');
+                                util.handleError(err, next, res);
+                            }
+                            res.json({apiOK: true});
+                        });
                     });
                 });
             }
@@ -1213,7 +1357,7 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                     if (mediaTag.def.indexOf(normal) === -1) {
                         mediaTag.def.push(normal);
                     }
-                    var tags = tagTool.searchTags(req.session, 'parent');
+                    var tags = tagTool.searchTags(req.session);
                     if (tags) {
                         var parentList = tags.getArray();
                         for (var i in parentList.cur) {
@@ -2050,6 +2194,22 @@ app.get('/api/parent/list/:lang?', function(req, res, next) {
     });
 });
 
+app.get('/api/parent/stock/list/:lang?', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('stockparent list');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var lang = typeof req.params.lang !== 'undefined' ? req.params.lang : 'tw';
+        var list = stockTagTool.parentList();
+        var ret = [];
+        for (var i in list) {
+            ret.push({'name':list[i].name, 'show':list[i][lang]});
+        }
+        res.json({parentList: ret});
+    });
+});
+
 app.get('/api/parent/taglist/:name/:sortName(name|mtime)/:sortType(desc|asc)/:page(\\d+)', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("showTaglist");
@@ -2060,6 +2220,24 @@ app.get('/api/parent/taglist/:name/:sortName(name|mtime)/:sortType(desc|asc)/:pa
         res.cookie('dir' + req.params.name + 'SortName', req.params.sortName);
         res.cookie('dir' + req.params.name + 'SortType', req.params.sortType);
         tagTool.parentQuery(req.params.name, req.params.sortName, req.params.sortType, page, req.user, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json(result);
+        });
+    });
+});
+
+app.get('/api/parent/stock/taglist/:name/:sortName(name|mtime)/:sortType(desc|asc)/:page(\\d+)', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("stock showTaglist");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var page = Number(req.params.page);
+        res.cookie('dirStock' + req.params.name + 'SortName', req.params.sortName);
+        res.cookie('dirStock' + req.params.name + 'SortType', req.params.sortType);
+        stockTagTool.parentQuery(req.params.name, req.params.sortName, req.params.sortType, page, req.user, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -2083,6 +2261,21 @@ app.post('/api/parent/add', function(req, res,next) {
     });
 });
 
+app.post('/api/parent/stock/add', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("stock parentAdd");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        stockTagTool.addParent(req.body.name, req.body.tag, req.user, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json(result);
+        });
+    });
+});
+
 app.delete('/api/parent/del/:id', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("parentDel");
@@ -2094,6 +2287,25 @@ app.delete('/api/parent/del/:id', function(req, res, next) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         tagTool.delParent(id, req.user, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json(result);
+        });
+    });
+});
+
+app.delete('/api/parent/stock/del/:id', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("parentDel");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.id, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        stockTagTool.delParent(id, req.user, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -2125,6 +2337,34 @@ app.get('/api/parent/query/:id/:single?', function(req, res, next) {
                 util.handleError(err, next, res);
             }
             var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
+        });
+    });
+});
+
+app.get('/api/parent/stock/query/:id/:single?', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("stock parent query");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.id, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        var sortName = 'name';
+        var sortType = 'desc';
+        if (req.cookies.stockSortName === 'name' || req.cookies.stockSortName === 'mtime') {
+            sortName = req.cookies.stockSortName;
+        }
+        if (req.cookies.stockSortType === 'desc' || req.cookies.stockSortType === 'asc') {
+            sortType = req.cookies.stockSortType;
+        }
+        stockTagTool.queryParentTag(id, req.params.single, sortName, sortType, req.user, req.session, next, function(err, result) {
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            var itemList = getStockItem(req.user, result.items);
             res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
         });
     });
@@ -2257,6 +2497,23 @@ app.get('/api/bookmark/getList/:sortName(name|mtime)/:sortType(desc|asc)', funct
     });
 });
 
+app.get('/api/bookmark/stock/getList/:sortName(name|mtime)/:sortType(desc|asc)', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("stock get bookmark list");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        res.cookie('bookmarkStockSortName', req.params.sortName);
+        res.cookie('bookmarkStockSortType', req.params.sortType);
+        stockTagTool.getBookmarkList(req.params.sortName, req.params.sortType, req.user, next, function(err, result) {
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            res.json({bookmarkList: result.bookmarkList});
+        });
+    });
+});
+
 app.get('/api/bookmark/get/:id', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get bookmark");
@@ -2285,6 +2542,34 @@ app.get('/api/bookmark/get/:id', function (req, res, next) {
     });
 });
 
+app.get('/api/bookmark/stock/get/:id', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("get stock bookmark");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.id, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
+        }
+        var sortName = 'name';
+        var sortType = 'desc';
+        if (req.cookies.stockSortName === 'name' || req.cookies.stockSortName === 'mtime') {
+            sortName = req.cookies.stockSortName;
+        }
+        if (req.cookies.stockSortType === 'desc' || req.cookies.stockSortType === 'asc') {
+            sortType = req.cookies.stockSortType;
+        }
+        stockTagTool.getBookmark(id, sortName, sortType, req.user, req.session, next, function(err, result) {
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            var itemList = getStockItem(req.user, result.items);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
+        });
+    });
+});
+
 app.post('/api/bookmark/add', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("addbookmark");
@@ -2304,6 +2589,25 @@ app.post('/api/bookmark/add', function (req, res, next) {
     });
 });
 
+app.post('/api/bookmark/stock/add', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("stock addbookmark");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var name = util.isValidString(req.body.name, 'name');
+        if (name === false) {
+            util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
+        }
+        stockTagTool.addBookmark(name, req.user, req.session, next, function(err, result){
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            res.json(result);
+        });
+    });
+});
+
 app.delete('/api/bookmark/del/:id', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("del bookmark");
@@ -2315,6 +2619,25 @@ app.delete('/api/bookmark/del/:id', function (req, res, next) {
             util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
         tagTool.delBookmark(id, next, function(err, result){
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            res.json({id: result.id});
+        });
+    });
+});
+
+app.delete('/api/bookmark/stock/del/:id', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("del stock bookmark");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.id, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
+        }
+        stockTagTool.delBookmark(id, next, function(err, result){
             if(err) {
                 util.handleError(err, next, res);
             }
@@ -2379,7 +2702,7 @@ app.post('/api/media/saveParent', function(req, res, next) {
         if (name === false) {
             util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
         }
-        var tags = tagTool.searchTags(req.session, 'parent');
+        var tags = tagTool.searchTags(req.session);
         if (!tags) {
             util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
         }
@@ -2477,7 +2800,7 @@ app.get('/api/media/setTime/:id/:type', function(req, res, next){
         }
         if (type === 'url') {
             res.json({apiOK: true});
-            tagTool.setLatest('', id, req.session, next, function(err) {
+            tagTool.setLatest('', id, req.session, function(err) {
                 if (err) {
                     util.handleError(err);
                 }
@@ -2497,7 +2820,7 @@ app.get('/api/media/setTime/:id/:type', function(req, res, next){
                 } else {
                     res.json({time: items[0].recordTime});
                 }
-                tagTool.setLatest(type, id, req.session, next, function(err) {
+                tagTool.setLatest(type, id, req.session, function(err) {
                     if (err) {
                         util.handleError(err);
                     }
@@ -2583,7 +2906,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     if (mediaTag.def.indexOf('url upload') === -1) {
                         mediaTag.def.push('url upload');
                     }
-                    var tags = tagTool.searchTags(req.session, 'parent');
+                    var tags = tagTool.searchTags(req.session);
                     if (tags) {
                         var parentList = tags.getArray();
                         for (var i in parentList.cur) {
@@ -2693,7 +3016,7 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
             if (mediaTag.def.indexOf(normal) === -1) {
                 mediaTag.def.push(normal);
             }
-            var tags = tagTool.searchTags(req.session, 'parent');
+            var tags = tagTool.searchTags(req.session);
             if (tags) {
                 var parentList = tags.getArray();
                 for (var i in parentList.cur) {
@@ -2752,8 +3075,35 @@ app.get('/api/stock/query/:index', function(req, res,next) {
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var index = Number(req.params.index);
-        stockTool.getSingleStock(index, function(err, result) {
+        if (!util.checkAdmin(1 ,req.user)) {
+            util.handleError({hoerror: 2, message: "permission denied"}, next, res);
+        }
+        var index = req.params.index.match(/^\d+$/);
+        if (index) {
+            stockTool.getSingleStock('twse', index[0], function(err, result) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                sendWs({type: 'stock', data: result.id}, 0, 1);
+                res.json(result);
+            }, 1);
+        } else {
+            util.handleError({hoerror: 2, message: "invalid stock index"}, next, res);
+        }
+    });
+});
+
+app.get('/api/stock/querySimple/:uid', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('stock query simple');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        stockTool.getSingleStock(id, req.session, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -2806,7 +3156,7 @@ app.get('/download/:uid', function(req, res, next){
             if (!fs.existsSync(filePath)) {
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
-            tagTool.setLatest('', items[0]._id, req.session, next, function(err) {
+            tagTool.setLatest('', items[0]._id, req.session, function(err) {
                 if (err) {
                     util.handleError(err);
                 }
@@ -2914,7 +3264,7 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                 getImage(filePath);
             }
             function getImage(imageFilePath) {
-                /*tagTool.setLatest('image', items[0]._id, req.session, next, function(err) {
+                /*tagTool.setLatest('image', items[0]._id, req.session, function(err) {
                     if (err) {
                         util.handleError(err);
                     }
@@ -3124,7 +3474,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                         if (items[0].status === 6) {
                             saveType = 'present';
                         }
-                        tagTool.setLatest(saveType, items[0]._id, req.session, next, function(err) {
+                        tagTool.setLatest(saveType, items[0]._id, req.session, function(err) {
                             if (err) {
                                 util.handleError(err);
                             }
@@ -3203,7 +3553,7 @@ app.get('/video/:uid', function (req, res, next) {
                 if (items[0].status === 4) {
                     saveType = 'music';
                 }
-                tagTool.setLatest(saveType, items[0]._id, req.session, next, function(err) {
+                tagTool.setLatest(saveType, items[0]._id, req.session, function(err) {
                     if (err) {
                         util.handleError(err);
                     }
@@ -3608,6 +3958,20 @@ function getStorageItem(user, items, mediaHandle) {
                 }
                 itemList.push(data);
             }
+        }
+    }
+    return itemList;
+}
+
+function getStockItem(user, items) {
+    var itemList = [];
+    if (util.checkAdmin(1, user)) {
+        for (var i in items) {
+            if (items[i].important === 1) {
+                items[i].tags.push('important');
+            }
+            var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, profit: items[i].profitIndex, safety: items[i].safetyIndex, management: items[i].managementIndex, index: items[i].index, type: items[i].type};
+            itemList.push(data);
         }
     }
     return itemList;

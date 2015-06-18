@@ -13,6 +13,9 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
     }).when('/Stock', {
         templateUrl: '/views/Stock',
         controller: StockCntl
+    }).when('/StockQuery', {
+        templateUrl: '/views/StockQuery',
+        controller: StockCntl
     }).otherwise({ redirectTo: '/' });
     // configure html5 to get links working on jsfiddle
     $locationProvider.html5Mode(true);
@@ -208,6 +211,7 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
 
 function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $timeout) {
     $scope.$parent.currentPage = -1;
+    $scope.$parent.isRight = false;
     $scope.uInfo = [];
     $scope.password = "";
     $scope.timer = false;
@@ -472,43 +476,50 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
 
 function LoginCntl($route, $routeParams, $location, $resource, $scope, $location) {
     $scope.$parent.currentPage = 0;
+    $scope.$parent.isRight = false;
     $scope.$parent.collapse.nav = true;
 }
 
 function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $cookies, $filter, FileUploader) {
+    //left
     $scope.$parent.collapse.nav = true;
-    $scope.parentList = [];
-    $scope.historyList = [];
-    $scope.exactlyList = [];
-    $scope.itemList = [];
-    $scope.selectList = [];
-    $scope.tagList = [];
-    $scope.exceptList = [];
+    $scope.$parent.currentPage = 1;
+    //right
+    $scope.bookmarkCollpase = false;
+    $scope.bookmarkEdit = false;
+    $scope.$parent.isRight = true;
+    //list
     $scope.page = 0;
     $scope.more = true;
     $scope.moreDisabled = false;
+    $scope.itemList = [];
+    $scope.latest = '';
+    $scope.bookmarkID = '';
+    $scope.parentList = [];
+    $scope.historyList = [];
+    $scope.exactlyList = [];
+    $scope.searchBlur = false;
+    $scope.multiSearch = false;
+    $scope.toolList = {download: false, edit: false, upload:false, del: false, dir: false, item: null};
+    $scope.dropdown.item = false;
+    $scope.tagNew = false;
+    $scope.tagNewFocus = false;
+    $scope.selectList = [];
+    $scope.tagList = [];
+    $scope.exceptList = [];
     $scope.exactlyMatch = false;
-    $scope.bookmarkCollpase = false;
-    $scope.bookmarkNew = false;
-    $scope.bookmarkNewFocus = false;
     $scope.itemNameNew = false;
     $scope.itemNameNewFocus = false;
-    $scope.tagNew = false;
     $scope.uploadSub = false;
+    $scope.feedbackBlur = false;
+    $scope.bookmarkNew = false;
+    $scope.bookmarkNewFocus = false;
     $scope.bookmarkList = [];
     $scope.bookmarkName = '';
-    $scope.bookmarkID = '';
-    $scope.bookmarkEdit = false;
-    $scope.latest = '';
-    $scope.dropdown.item = false;
-    $scope.searchBlur = false;
-    $scope.feedbackBlur = false;
-    $scope.toolList = {download: false, edit: false, upload:false, del: false, item: null};
-    $scope.$parent.currentPage = 1;
+    //cookie
     $scope.fileSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
     $scope.dirSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
     $scope.bookmarkSort = {name:'', mtime: '', sort: 'name/asc'};
-    $scope.multiSearch = false;
     var lastRoute = $route.current;
     $scope.$on('$locationChangeSuccess', function(event) {
         if ($window.location.pathname === '/Storage') {
@@ -568,6 +579,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     });
     $scope.$on('file', function(e, d) {
         var id = JSON.parse(d);
+        var date;
         var index = arrayObjectIndexOf($scope.itemList, id, 'id');
         var storageApi = $resource('/api/storage/single/' + id, {}, {
             'single': { method:'get' }
@@ -591,7 +603,6 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                         result.item.utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                         $scope.itemList.splice(index, 1, result.item);
                     } else {
-                        var date;
                         result.item.select = false;
                         date = new Date(result.item.utime*1000);
                         result.item.utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
@@ -1690,29 +1701,55 @@ app.controller('ModalInstanceCtrl', function ($scope, $modalInstance, msg) {
     };
 });
 
-app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location', '$route', '$window', '$cookies', '$timeout', '$filter', '$modal', 'FileUploader', function($scope, $http, $resource, $location, $route, $window, $cookies, $timeout, $filter, $modal, FileUploader) {
-    $scope.newItem = "";
+app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route', '$window', '$cookies', '$timeout', '$filter', '$modal', 'FileUploader', function($scope, $http, $resource, $location, $route, $window, $cookies, $timeout, $filter, $modal, FileUploader) {
+    //login
     $scope.username = '';
     $scope.password = '';
+    $scope.id = 'guest';
+    $scope.loginFocus = {user: true, pwd:false};
+    $scope.isLogin = false;
+    //left
+    $scope.currentPage = 0;
     $scope.collapse= {};
     $scope.collapse.nav = true;
     $scope.collapse.storage = true;
+    $scope.collapse.stock = true;
+    $scope.navList = [{title: "homepage", hash: "/", css: "fa fa-fw fa-dashboard"}, {title: "Storage", hash: "/Storage", css: "fa fa-fw fa-desktop"}];
+    //right
+    $scope.dirList = [];
+    $scope.dirEdit = false;
+    $scope.isRight = false;
+    //feedback
+    $scope.dropdown = {};
+    $scope.dropdown.feedback = false;
+    $scope.feedbackDisabled = true;
+    $scope.feedbackSelectTag = '';
+    $scope.feedback = {uid: '', name: '', list: [], run: false, queue: [], history: [], other: []};
+    //dialog
     $scope.widget = {};
     $scope.widget.uploader = false;
     $scope.widget.feedback = false;
-    $scope.dropdown = {};
-    $scope.feedbackSelectTag = '';
     $scope.mediaMoreDisabled = false;
-    $scope.isLogin = false;
     $scope.isFull = false;
     $scope.isVisible = false;
     $scope.isExtend = false;
-    $scope.loginFocus = {user: true, pwd:false};
-    $scope.alerts = [];
-    $scope.currentPage = 0;
     $scope.adultonly = false;
-    $scope.feedbackDisabled = true;
+    $scope.mediaShow = [];
+    $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
+    $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, mode: false};
+    $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
+    $scope.inputUrl = '';
+    $scope.disableUrlUpload = false;
+    $scope.disableUrlSave = false;
+    $scope.isAdult = false;
+    //alert
+    $scope.alerts = [];
     var alertTime;
+
+    indexInit();
+
     addAlert = function(msg) {
         $scope.alerts.splice(0,0,{type: 'danger', msg: msg});
         $timeout.cancel(alertTime);
@@ -1816,23 +1853,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
             showFeedback(response);
         }
     };
-
-    $scope.addItem = function() {
-        if(this.newItem) {
-            this.todoList.push({label:this.newItem,isFinish:false});
-            this.newItem = "";
-        }
-    }
-    $scope.removeItem = function(item){
-        item.isFinish = true;
-    }
-    $scope.main_edit = function(item, type){
-        item[type+"Edit"] = true;
-    }
-    $scope.main_save = function(item, type){
-        this.editType = type;
-        delete item[type+"Edit"];
-    }
 
     $scope.doLogout = function(){
         var Users = $resource('/api/logout', {}, {
@@ -1976,24 +1996,6 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
         $scope.feedbackDisabled = false;
     };
 
-    $scope.id = 'guest';
-    $scope.feedback = {uid: '', name: '', list: [], run: false, queue: [], history: [], other: []};
-    $scope.mediaShow = [];
-    $scope.navList = [{title: "homepage", hash: "/", css: "fa fa-fw fa-dashboard"}, {title: "Storage", hash: "/Storage", css: "fa fa-fw fa-desktop"}];
-    $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
-    $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
-    $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
-    $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, mode: false};
-    $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
-    $scope.dirList = [];
-    $scope.dirEdit = false;
-    $scope.inputUrl = '';
-    $scope.disableUrlUpload = false;
-    $scope.disableUrlSave = false;
-    $scope.isAdult = false;
-
-    indexInit();
-
     function indexInit() {
         var Info = $resource('/api/getUser', {}, {
             'getUser': { method:'GET' }
@@ -2025,6 +2027,9 @@ app.controller('TodoCrtlRemovable', ['$scope', '$http', '$resource', '$location'
                     switch (wsmsg.type) {
                         case 'file':
                             $scope.$broadcast('file', JSON.stringify(wsmsg.data));
+                            break;
+                        case 'stock':
+                            $scope.$broadcast('stock', JSON.stringify(wsmsg.data));
                             break;
                         default:
                             console.log(wsmsg);

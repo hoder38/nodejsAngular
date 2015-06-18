@@ -1,9 +1,10 @@
 var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 
-var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item'];
+var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important'];
 
-var parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'publisher', 'tw': '出版社'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
+var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'publisher', 'tw': '出版社'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
+var stock_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'country', 'tw': '國家'}, {'name': 'market type', 'tw': '市場種類'}, {'name': 'category', 'tw': '產業分類'}];
 var adultonly_arr = [{'name': 'adult_command', 'tw': '18禁指令'}, {'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_author', 'tw': '18禁作者'}, {'name': 'adultonly_category', 'tw': '18禁分類'}, {'name': 'adultonly_producer', 'tw': '成人片商'}, {'name': 'adultonly_franchise', 'tw': '成人系列作'}];
 
 var queryLimit = 20;
@@ -21,8 +22,37 @@ var config_glb = require('../../../config/' + config_type.dev_type + '.js');
 var is_hint = config_glb.hint;
 
 module.exports = function(collection) {
+    var getQuerySql = null;
+    var getQueryTag = null;
+    var getSortName = null;
+    var parent_arr = [];
+    switch(collection) {
+        case 'storage':
+        getQuerySql = getStorageQuerySql;
+        getQueryTag = getStorageQueryTag;
+        parent_arr = storage_parent_arr;
+        getSortName = getStorageSortName;
+        break;
+        case 'stock':
+        getQuerySql = getStockQuerySql;
+        getQueryTag = getStockQueryTag;
+        parent_arr = stock_parent_arr;
+        getSortName = getStockSortName;
+        break;
+        default:
+        return false;
+    }
+    function inParentArray(parent) {
+        for (var i in parent_arr) {
+            if (parent_arr[i].name === parent) {
+                return true;
+            }
+        }
+        return false;
+    }
     return {
-        searchTags: function (search, name) {
+        searchTags: function (search) {
+            var name = collection;
             if (!search[name]) {
                 search[name] = {tags: [], exactly: [], index: 0, bookmark: '', markIndex: 0, save: {}};
             } else if (typeof search[name] !== 'object') {
@@ -148,12 +178,12 @@ module.exports = function(collection) {
                 },
                 setSingleArray: function(value) {
                     var normal = normalize(value);
-                    if (normal === 'all item' || normal === '18禁' || normal.match(/^>(\d+)$/)) {
+                    if (normal === 'all item' || normal === '18禁' || normal === 'important' || normal.match(/^>(\d+)$/)) {
                         return true;
                     } else {
                         for (var i = 0; i < search[name].index; i++) {
                             normal = search[name].tags[i];
-                            if (normal !== 'all item' && normal !== '18禁' && !normal.match(/^>(\d+)$/)) {
+                            if (normal !== 'all item' && normal !== '18禁' && normal !== 'important' && !normal.match(/^>(\d+)$/)) {
                                 search[name].tags = search[name].tags.slice(0, i);
                                 search[name].exactly = search[name].exactly.slice(0, i);
                                 search[name].index = search[name].tags.length;
@@ -398,16 +428,13 @@ module.exports = function(collection) {
             }
         },
         resetQuery: function(sortName, sortType, user, session, next, callback) {
-            var tags = this.searchTags(session, 'parent');
-            if (sortName === 'mtime') {
-                sortName = 'utime';
-            }
+            var tags = this.searchTags(session);
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
             }
             var parentList = tags.resetArray();
             var sql = getQuerySql(user, parentList.cur, parentList.exactly);
-            var options = {"limit": queryLimit, "sort": [[sortName, sortType]]};
+            var options = {"limit": queryLimit, "sort": [[getSortName(sortName), sortType]]};
             if (sql.hint) {
                 options["hint"] = sql.hint;
             }
@@ -423,12 +450,9 @@ module.exports = function(collection) {
         },
         tagQuery: function(page, tagName, exactly, index, sortName, sortType, user, session, next, callback) {
             var this_obj = this;
-            if (sortName === 'mtime') {
-                sortName = 'utime';
-            }
-            var options = {"limit": queryLimit, "skip" : page, "sort": [[sortName, sortType]]};
+            var options = {"limit": queryLimit, "skip" : page, "sort": [[getSortName(sortName), sortType]]};
             if (!tagName) {
-                var tags = this.searchTags(session, 'parent');
+                var tags = this.searchTags(session);
                 if (!tags) {
                     util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
@@ -479,7 +503,7 @@ module.exports = function(collection) {
                 if (name === false) {
                     util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
                 }
-                var tags = this_obj.searchTags(session, 'parent');
+                var tags = this_obj.searchTags(session);
                 if (!tags) {
                     util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
@@ -534,7 +558,7 @@ module.exports = function(collection) {
                 if (Pindex === false) {
                     util.handleError({hoerror: 2, message: "parentIndex is not vaild"}, next, callback);
                 }
-                var tags = this_obj.searchTags(session, 'parent');
+                var tags = this_obj.searchTags(session);
                 if (!tags) {
                     util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
@@ -583,7 +607,7 @@ module.exports = function(collection) {
             if (id === false) {
                 util.handleError({hoerror: 2, message: "uid is not vaild"}, next, callback);
             }
-            var tags = this.searchTags(session, 'parent');
+            var tags = this.searchTags(session);
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
             }
@@ -628,7 +652,7 @@ module.exports = function(collection) {
         },
         saveSql: function(page, saveName, back, user, session) {
             var this_obj = this;
-            var tags = this.searchTags(session, 'parent');
+            var tags = this.searchTags(session);
             if (!tags) {
                 return false;
             }
@@ -774,7 +798,7 @@ module.exports = function(collection) {
                     util.handleError({hoerror: 2, message: "can not find dir"}, next, callback);
                 } else {
                     if (single === 'single') {
-                        var tags = this_obj.searchTags(session, 'parent');
+                        var tags = this_obj.searchTags(session);
                         if (!tags) {
                             util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                         }
@@ -810,10 +834,10 @@ module.exports = function(collection) {
                 }, 0);
             });
         },
-        setLatest: function(saveName, latest, session, next, callback) {
-            var tags = this.searchTags(session, 'parent');
+        setLatest: function(saveName, latest, session, callback) {
+            var tags = this.searchTags(session);
             if (!tags) {
-                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, callback, callback);
             }
             var bookmark = '';
             if (saveName) {
@@ -827,7 +851,7 @@ module.exports = function(collection) {
             if (bookmark) {
                 mongo.orig("update", collection + "User", {_id: mongo.objectID(bookmark)}, {$set: {latest: latest}}, function(err, item){
                     if(err) {
-                        util.handleError(err, next, callback);
+                        util.handleError(err, callback, callback);
                     }
                     setTimeout(function(){
                         callback(null);
@@ -862,7 +886,7 @@ module.exports = function(collection) {
                 if (items.length === 0) {
                     util.handleError({hoerror: 2, message: "can not find bookmark!!!"}, next, callback);
                 }
-                var tags = this_obj.searchTags(session, 'parent');
+                var tags = this_obj.searchTags(session);
                 if (!tags) {
                     util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
@@ -888,7 +912,7 @@ module.exports = function(collection) {
             });
         },
         addBookmark: function(name, user, session, next, callback) {
-            var tags = this.searchTags(session, 'parent');
+            var tags = this.searchTags(session);
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
             }
@@ -953,15 +977,6 @@ module.exports = function(collection) {
     };
 };
 
-function inParentArray(parent) {
-    for (var i in parent_arr) {
-        if (parent_arr[i].name === parent) {
-            return true;
-        }
-    }
-    return false;
-}
-
 function inAdultonlyArray(parent) {
     for (var i in adultonly_arr) {
         if (adultonly_arr[i].name === parent) {
@@ -971,7 +986,7 @@ function inAdultonlyArray(parent) {
     return false;
 }
 
-function getQuerySql(user, tagList, exactly) {
+var getStorageQuerySql = function(user, tagList, exactly) {
     var nosql = {first: 1};
     var is_first = true;
     var is_adultonly = false;
@@ -1021,7 +1036,7 @@ function getQuerySql(user, tagList, exactly) {
                     console.log({recycle: {$ne: 0}, utime: {$lt: time}});
                     return {nosql: {recycle: {$ne: 0}, utime: {$lt: time}}};
                 }
-            } else if (index === 4) {
+            } else if (index === 4 || index === 6) {
             } else if (index === 5) {
                 delete nosql['first'];
                 is_first = false;
@@ -1072,7 +1087,66 @@ function getQuerySql(user, tagList, exactly) {
     return sql;
 }
 
-function getQueryTag(user, tag, del) {
+function getStockQuerySql(user, tagList, exactly) {
+    var nosql = {};
+    var is_tags = false;
+    var skip = 0;
+    if (tagList.length === 0) {
+    } else {
+        nosql['$and'] = [];
+        for (var i in tagList) {
+            var skip_number = tagList[i].match(/^>(\d+)$/);
+            if (skip_number) {
+                skip = Number(skip_number[1]);
+                continue;
+            }
+            var normal = normalize(tagList[i]);
+            var index = default_tags.indexOf(normal);
+            if (index === 0) {
+            } else if (index === 1) {
+            } else if (index === 2) {
+            } else if (index === 3) {
+            } else if (index === 4) {
+            } else if (index === 5) {
+            } else if (index === 6) {
+                if (util.checkAdmin(1, user)) {
+                    nosql['important'] = 1;
+                }
+            } else {
+                if (exactly[i]) {
+                    nosql.$and.push({tags: normal});
+                    is_tags = true;
+                } else {
+                    var es_reg = escapeRegExp(normal);
+                    nosql.$and.push({tags: { $regex: es_reg }});
+                }
+            }
+        }
+    }
+    console.log(nosql);
+    if (nosql.$and) {
+        console.log(nosql.$and);
+        if (nosql.$and.length === 0) {
+            delete(nosql.$and);
+        }
+    }
+    var hint = {};
+    if (is_tags) {
+        hint['tags'] = 1;
+    }
+    hint['name'] = 1;
+    var sql = {nosql: nosql};
+    /*if (is_hint) {
+        sql['hint'] = hint;
+    }*/
+    if (skip) {
+        console.log('skip:' + skip);
+        sql['skip'] = skip;
+    }
+    return sql;
+}
+
+function getStorageQueryTag(user, tag, del) {
     del = typeof del !== 'undefined' ? del : 1;
     var normal = normalize(tag);
     var index = default_tags.indexOf(normal);
@@ -1084,8 +1158,21 @@ function getQueryTag(user, tag, del) {
         }
     } else if (index === 4) {
         return {tag: {first: del}, type: 2, name: default_tags[4]};
-    } else if (index === 1 || index === 2 || index === 3 || index === 5) {
+    } else if (index === 1 || index === 2 || index === 3 || index === 5 || index === 6) {
         return {type: 0};
+    } else {
+        return {tag: {tags: normal}, type: 1};
+    }
+}
+
+function getStockQueryTag(user, tag, del) {
+    del = typeof del !== 'undefined' ? del : 1;
+    var normal = normalize(tag);
+    var index = default_tags.indexOf(normal);
+    if (index === 0 || index === 1 || index === 2 || index === 3 || index === 4 || index === 5) {
+        return {type: 0};
+    } else if (index === 6) {
+        return {tag: {important: del}, type: 2, name: default_tags[6]};
     } else {
         return {tag: {tags: normal}, type: 1};
     }
@@ -1154,6 +1241,28 @@ function CN2ArabNum(cn) {
         }
     }
     return arab;
+}
+
+function getStorageSortName(sortName) {
+    var sort = sortName;
+    if (sort === 'mtime') {
+        sort = 'utime';
+    }
+    return sort;
+}
+
+function getStockSortName(sortName) {
+    var sort = sortName;
+    if (sort === 'name') {
+        sort = 'profitIndex';
+    }
+    if (sort === 'mtime') {
+        sort = 'safetyIndex';
+    }
+    if (sort === 'count') {
+        sort = 'managementIndex';
+    }
+    return sort;
 }
 
 function escapeRegExp(str) {

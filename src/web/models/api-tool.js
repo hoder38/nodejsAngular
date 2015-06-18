@@ -277,11 +277,12 @@ module.exports = {
             req.end();
         });
     },
-    xuiteDownload: function(url, filePath, callback, threshold) {
+    xuiteDownload: function(url, filePath, callback, threshold, is_check) {
         if (!this.setApiQueue('xuiteDownload', [url, filePath, callback, threshold])) {
             return false;
         }
         threshold = typeof threshold !== 'undefined' ? threshold : null;
+        is_check = typeof is_check !== 'undefined' ? is_check : true;
         var urlParse = urlMod.parse(url);
         var options = {
             host: urlParse.hostname,
@@ -337,6 +338,15 @@ module.exports = {
                                     }
                                 }
                             });
+                        } else if (!is_check){
+                            var file_write =  fs.createWriteStream(filePath);
+                            res.pipe(file_write);
+                            file_write.on('finish', function(){
+                                console.log(filePath);
+                                setTimeout(function(){
+                                    callback(null, urlParse.pathname);
+                                }, 0);
+                            });
                         } else {
                             time = time * 2;
                             console.log(time);
@@ -369,7 +379,7 @@ module.exports = {
                             util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                         }
                         setTimeout(function(){
-                            this_obj.xuiteDownload(res.headers.location, filePath, callback);
+                            this_obj.xuiteDownload(res.headers.location, filePath, callback, threshold, is_check);
                         }, 0);
                     } else {
                         console.log(res);
