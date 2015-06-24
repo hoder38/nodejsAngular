@@ -339,6 +339,7 @@ module.exports = {
                                 }
                             });
                         } else if (!is_check){
+                            this_obj.getApiQueue();
                             var file_write =  fs.createWriteStream(filePath);
                             res.pipe(file_write);
                             file_write.on('finish', function(){

@@ -3994,7 +3994,7 @@ function loopUpdateStock(error, countdown) {
         util.handleError(error);
     }
     if (!countdown) {
-        countdown = 60000;
+        countdown = 120000;
     }
     console.log(countdown);
     setTimeout(function() {
