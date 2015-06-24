@@ -32,6 +32,8 @@ var mime = require('../util/mime.js');
 
 var drive_interval = 3600000;
 
+var stock_interval = 86400000;
+
 var drive_batch = 100;
 
 var http = require('http'),
@@ -470,7 +472,7 @@ app.get('/api/stock/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/:p
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
             var name = util.isValidString(req.params.name, 'name');
-            if (req.params.name.match(/^>(\d+)$/)) {
+            if (req.params.name.match(/^>\d+$/) || req.params.name.match(/^profit>\d+$/) || req.params.name.match(/^safety>-?\d+$/) || req.params.name.match(/^manag>\d+$/)) {
                 name = req.params.name;
             }
             if (name === false) {
@@ -3977,6 +3979,83 @@ function getStockItem(user, items) {
     return itemList;
 }
 
+if (config_glb.updateStock) {
+    loopUpdateStock();
+}
+
+if (config_glb.autoUpload) {
+    loopDrive();
+}
+
+function loopUpdateStock(error, countdown) {
+    console.log('loopUpdateStock');
+    console.log(new Date());
+    if (error) {
+        util.handleError(error);
+    }
+    if (!countdown) {
+        countdown = 60000;
+    }
+    console.log(countdown);
+    setTimeout(function() {
+        var day = new Date().getDate();
+        if (day === config_glb.updateStockDate[0]) {
+            console.log('update stock');
+            stockTool.getStockList('twse', function(err, stocklist){
+                if(err) {
+                    util.handleError(err);
+                    loopUpdateStock(null, stock_interval);
+                } else {
+                    if (stocklist.length < 1) {
+                        console.log('empty stock list');
+                        loopUpdateStock(null, stock_interval);
+                    } else {
+                        updateStock('twse', stocklist, 0, loopUpdateStock);
+                    }
+                }
+            });
+        } else if (config_glb.updateStockDate.indexOf(day)) {
+            console.log('update important stock');
+            mongo.orig("find", "stock", {important: 1}, function(err, items){
+                if(err) {
+                    util.handleError(err);
+                    loopUpdateStock(null, stock_interval);
+                } else {
+                    var stocklist = [];
+                    for (var i in items) {
+                        stocklist.push(items[i].index);
+                    }
+                    if (stocklist.length < 1) {
+                        console.log('empty stock list');
+                        loopUpdateStock(null, stock_interval);
+                    } else {
+                        updateStock('twse', stocklist, 0, loopUpdateStock);
+                    }
+                }
+            });
+        }
+    }, countdown);
+}
+
+function updateStock(type, stocklist, index, callback) {
+    console.log('updateStock');
+    console.log(new Date());
+    console.log(stocklist[index]);
+    stockTool.getSingleStock(type, stocklist[index], function(err) {
+        if (err) {
+            util.handleError(err, callback, callback, stock_interval);
+        }
+        index++;
+        if (index < stocklist.length) {
+            updateStock(type, stocklist, index, callback);
+        } else {
+            setTimeout(function(){
+                callback(null, stock_interval);
+            }, 0);
+        }
+    }, 1);
+}
+
 function loopDrive(error, countdown) {
     console.log('loopDrive');
     console.log(new Date());
@@ -3997,10 +4076,6 @@ function loopDrive(error, countdown) {
             }
         });
     }, countdown);
-}
-
-if (config_glb.autoUpload) {
-    loopDrive();
 }
 
 function userDrive(userlist, index, callback) {

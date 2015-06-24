@@ -155,30 +155,30 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
         this.more = true;
         if ($cookies.stockSortName === 'mtime') {
             this.fileSort.sort = 'mtime/';
-            if ($cookies.stockSortType === 'desc') {
-                this.fileSort.sort = this.fileSort.sort + 'desc';
-                this.fileSort.mtime = 'desc';
-            } else {
+            if ($cookies.stockSortType === 'asc') {
                 this.fileSort.sort = this.fileSort.sort + 'asc';
                 this.fileSort.mtime = 'asc';
+            } else {
+                this.fileSort.sort = this.fileSort.sort + 'desc';
+                this.fileSort.mtime = 'desc';
             }
         } else if ($cookies.stockSortName === 'count') {
             this.fileSort.sort = 'count/';
-            if ($cookies.stockSortType === 'desc') {
-                this.fileSort.sort = this.fileSort.sort + 'desc';
-                this.fileSort.count = 'desc';
-            } else {
+            if ($cookies.stockSortType === 'asc') {
                 this.fileSort.sort = this.fileSort.sort + 'asc';
                 this.fileSort.count = 'asc';
+            } else {
+                this.fileSort.sort = this.fileSort.sort + 'desc';
+                this.fileSort.count = 'desc';
             }
         } else {
             this.fileSort.sort = 'name/';
-            if ($cookies.stockSortType === 'desc') {
-                this.fileSort.sort = this.fileSort.sort + 'desc';
-                this.fileSort.name = 'desc';
-            } else {
+            if ($cookies.stockSortType === 'asc') {
                 this.fileSort.sort = this.fileSort.sort + 'asc';
                 this.fileSort.name = 'asc';
+            } else {
+                this.fileSort.sort = this.fileSort.sort + 'desc';
+                this.fileSort.name = 'desc';
             }
         }
         if ($cookies.bookmarkStockSortName === 'mtime') {
@@ -228,7 +228,7 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
                 });
             }
         } else if (name && !index) {
-            if (name.match(/^>\d+$/) || isValidString(name, 'name')) {
+            if (name.match(/^>\d+$/) || name.match(/^profit>\d+$/) || name.match(/^safety>-?\d+$/) || name.match(/^manag>\d+$/) || isValidString(name, 'name')) {
                 if (this_obj.multiSearch) {
                     Info = $resource('/api/stock/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly, {}, {
                         'stock': { method:'GET' }
@@ -246,7 +246,7 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
             addAlert("not enough parameter");
             return false;
         } else {
-            if ((name.match(/^>\d+$/) || isValidString(name, 'name')) && isValidString(index, 'parentIndex')) {
+            if ((name.match(/^>\d+$/) || name.match(/^profit>\d+$/) || name.match(/^safety>-?\d+$/) || name.match(/^manag>\d+$/) || isValidString(name, 'name')) && isValidString(index, 'parentIndex')) {
                 Info = $resource('/api/stock/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly + '/' + index, {}, {
                     'stock': { method:'GET' }
                 });
@@ -842,34 +842,34 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
         if (this[sort]) {
             if (name === 'name') {
                 this[sort].sort = 'name/';
-                if (this[sort].name === 'asc') {
-                    this[sort].name = 'desc';
-                    this[sort].sort = this[sort].sort + 'desc';
-                } else {
+                if (this[sort].name === 'desc') {
                     this[sort].name = 'asc';
                     this[sort].sort = this[sort].sort + 'asc';
+                } else {
+                    this[sort].name = 'desc';
+                    this[sort].sort = this[sort].sort + 'desc';
                 }
                 this[sort].mtime = '';
                 this[sort].count = '';
             } else if (name === 'mtime') {
                 this[sort].sort = 'mtime/';
-                if (this[sort].mtime === 'asc') {
-                    this[sort].mtime = 'desc';
-                    this[sort].sort = this[sort].sort + 'desc';
-                } else {
+                if (this[sort].mtime === 'desc') {
                     this[sort].mtime = 'asc';
                     this[sort].sort = this[sort].sort + 'asc';
+                } else {
+                    this[sort].mtime = 'desc';
+                    this[sort].sort = this[sort].sort + 'desc';
                 }
                 this[sort].name = '';
                 this[sort].count = '';
             } else if (name === 'count') {
                 this[sort].sort = 'count/';
-                if (this[sort].count === 'asc') {
-                    this[sort].count = 'desc';
-                    this[sort].sort = this[sort].sort + 'desc';
-                } else {
+                if (this[sort].count === 'desc') {
                     this[sort].count = 'asc';
                     this[sort].sort = this[sort].sort + 'asc';
+                } else {
+                    this[sort].count = 'desc';
+                    this[sort].sort = this[sort].sort + 'desc';
                 }
                 this[sort].name = '';
                 this[sort].mtime = '';
@@ -921,10 +921,10 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
         var assetStartDate = caculateDate(this.parseResult, startYear, startQuarter);
         var assetEndDate = caculateDate(this.parseResult, endYear, endQuarter);
         if (assetStartDate.year > assetEndDate.year) {
-            assetEndDate.year = assetStartDate.year;
+            assetStartDate.year = assetEndDate.year;
         }
         if (assetStartDate.year === assetEndDate.year && assetStartDate.quarter > assetEndDate.quarter) {
-            assetEndDate.quarter = assetStartDate.quarter;
+            assetStartDate.quarter = assetEndDate.quarter;
         }
         this.assetLabels = [];
         this.assetData = [];
@@ -1015,7 +1015,7 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
         this.salesTotalCommas = '0';
         this.eps = 0;
         for(var i in this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1]) {
-            if (i === 'cost' || i === 'expenses' || i === 'finance_cost') {
+            if (i === 'cost' || i === 'expenses') {
                 this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
                 this.salesData.push(Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
             } else if (i === 'nonoperating_without_FC' || (i === 'comprehensive' && comprehensive)) {
@@ -1023,7 +1023,7 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
                     this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
                     this.salesData.push(-Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
                 }
-            } else if (i === 'tax') {
+            } else if (i === 'tax' || i === 'finance_cost') {
                 if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] > 0) {
                     this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
                     this.salesData.push(Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
@@ -1046,7 +1046,7 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
                     this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');
                     this.salesData.push(Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100));
                 }
-            } else if (i === 'tax') {
+            } else if (i === 'tax' || i === 'finance_cost') {
                 if (this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] < 0) {
                     this.salesTotal -= Math.ceil(this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] * this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1].revenue / 100);
                     this.salesLabels.push(i + ':' + this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1][i] + '%');

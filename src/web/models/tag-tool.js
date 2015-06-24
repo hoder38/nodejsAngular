@@ -178,12 +178,12 @@ module.exports = function(collection) {
                 },
                 setSingleArray: function(value) {
                     var normal = normalize(value);
-                    if (normal === 'all item' || normal === '18禁' || normal === 'important' || normal.match(/^>(\d+)$/)) {
+                    if (normal === 'all item' || normal === '18禁' || normal === 'important' || normal.match(/^>\d+$/) || normal.match(/^profit>\d+$/) || normal.match(/^safety>-?\d+$/) || normal.match(/^manag>\d+$/)) {
                         return true;
                     } else {
                         for (var i = 0; i < search[name].index; i++) {
                             normal = search[name].tags[i];
-                            if (normal !== 'all item' && normal !== '18禁' && normal !== 'important' && !normal.match(/^>(\d+)$/)) {
+                            if (normal !== 'all item' && normal !== '18禁' && normal !== 'important' && !normal.match(/^>\d+$/) && !normal.match(/^profit>\d+$/) && !normal.match(/^safety>-?\d+$/) && !normal.match(/^manag>\d+$/)) {
                                 search[name].tags = search[name].tags.slice(0, i);
                                 search[name].exactly = search[name].exactly.slice(0, i);
                                 search[name].index = search[name].tags.length;
@@ -495,7 +495,9 @@ module.exports = function(collection) {
                 });
             } else if (!index) {
                 var name = false;
-                if (tagName.match(/^>\d+$/)) {
+                if (collection === 'stock' && (tagName.match(/^>\d+$/) || tagName.match(/^profit>\d+$/) || tagName.match(/^safety>-?\d+$/) || tagName.match(/^manag>\d+$/))) {
+                    name = tagName;
+                } else if (collection === 'storage' && tagName.match(/^>\d+$/)) {
                     name = tagName;
                 } else {
                     name = util.isValidString(tagName, 'name');
@@ -547,7 +549,9 @@ module.exports = function(collection) {
             } else {
                 var name = false,
                     Pindex = util.isValidString(index, 'parentIndex');
-                if (tagName.match(/^>\d+$/)) {
+                if (collection === 'stock' && (tagName.match(/^>\d+$/) || tagName.match(/^profit>\d+$/) || tagName.match(/^safety>-?\d+$/) || tagName.match(/^manag>\d+$/))) {
+                    name = tagName;
+                } else if (collection === 'storage' && tagName.match(/^>\d+$/)) {
                     name = tagName;
                 } else {
                     name = util.isValidString(tagName, 'name');
@@ -1098,6 +1102,21 @@ function getStockQuerySql(user, tagList, exactly) {
             var skip_number = tagList[i].match(/^>(\d+)$/);
             if (skip_number) {
                 skip = Number(skip_number[1]);
+                continue;
+            }
+            var profit_number = tagList[i].match(/^profit>(\d+)$/);
+            if (profit_number) {
+                nosql['profitIndex'] = {$gte: Number(profit_number[1])};
+                continue;
+            }
+            var safety_number = tagList[i].match(/^safety>(-?\d+)$/);
+            if (safety_number) {
+                nosql['safetyIndex'] = {$gte: Number(safety_number[1])};
+                continue;
+            }
+            var management_number = tagList[i].match(/^manag>(\d+)$/);
+            if (management_number) {
+                nosql['managementIndex'] = {$gte: Number(management_number[1])};
                 continue;
             }
             var normal = normalize(tagList[i]);

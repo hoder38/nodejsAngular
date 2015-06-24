@@ -18,5 +18,7 @@ module.exports = {
     nas_prefix: "/mnt/storage",
     hint: false,
     autoUpload: false,
+    updateStock: false,
+    updateStockDate: [24, 3, 10, 17],
     api_limit: 5
 };
