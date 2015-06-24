@@ -25,7 +25,12 @@ module.exports = {
     },
     getCashflow: function(xml, cash, no_cover) {
         if (!xml.xbrl) {
-            return false;
+            if (xml['xbrli:xbrl']) {
+                xml.xbrl = xml['xbrli:xbrl'];
+            } else {
+                console.log('xml lost');
+                return false;
+            }
         }
         if (!cash) {
             cash = {};
@@ -53,7 +58,6 @@ module.exports = {
                 quarter = 1;
             }
         } else if (xml.xbrl['tw-gaap-fh:CashCashEquivalents']){
-            console.log(456);
             var xml_date = xml.xbrl['tw-gaap-fh:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
             if (!xml_date) {
                 return false;
@@ -69,6 +73,7 @@ module.exports = {
                 quarter = 1;
             }
         } else {
+            console.log('umknown date');
             return false;
         }
         if (!cash[year]) {
@@ -120,7 +125,12 @@ module.exports = {
     },
     getAsset: function(xml, asset, no_cover) {
         if (!xml.xbrl) {
-            return false;
+            if (xml['xbrli:xbrl']) {
+                xml.xbrl = xml['xbrli:xbrl'];
+            } else {
+                console.log('xml lost');
+                return false;
+            }
         }
         if (!asset) {
             asset = {};
@@ -260,7 +270,12 @@ module.exports = {
     },
     getSales: function(xml, sales, no_cover) {
         if (!xml.xbrl) {
-            return false;
+            if (xml['xbrli:xbrl']) {
+                xml.xbrl = xml['xbrli:xbrl'];
+            } else {
+                console.log('xml lost');
+                return false;
+            }
         }
         if (!sales) {
             sales = {};
