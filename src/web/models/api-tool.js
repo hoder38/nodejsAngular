@@ -229,7 +229,7 @@ function postData(fields, files, options, headers, callback, filePath) {
     request.on('error', function(e) {
         console.log(post_options);
         request.abort();
-        if (e.code === 'HPE_INVALID_CONSTANT' || e.code === 'ECONNREFUSED') {
+        if (e.code === 'HPE_INVALID_CONSTANT' || e.code === 'ECONNREFUSED' || e.code === 'ENOTFOUND') {
             util.handleError(e, callback, callback, 400, null);
         } else {
             util.handleError(e);
