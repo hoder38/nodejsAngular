@@ -636,6 +636,7 @@ module.exports = {
             quarter = 2;
         }
         var is_start = false;
+        var not = 0;
         var id_db = null;
         var wait = 0;
         var latestQuarter = 0;
@@ -830,15 +831,22 @@ module.exports = {
                                 });
                             } else {
                                 console.log('not');
-                                quarter--;
-                                if (quarter < 1) {
-                                    quarter = 4;
-                                    year--;
+                                if (not > 4) {
+                                    setTimeout(function(){
+                                        callback(null, null);
+                                    }, 0);
+                                } else {
+                                    not++;
+                                    quarter--;
+                                    if (quarter < 1) {
+                                        quarter = 4;
+                                        year--;
+                                    }
+                                    wait = 0;
+                                    setTimeout(function(){
+                                        recur_getTwseXml();
+                                    }, wait);
                                 }
-                                wait = 0;
-                                setTimeout(function(){
-                                    recur_getTwseXml();
-                                }, wait);
                             }
                         } else if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
                             wait += 10000;

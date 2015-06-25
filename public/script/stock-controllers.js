@@ -1537,6 +1537,10 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
+                if (!result) {
+                    addAlert('empty stock parse!!!');
+                    return false;
+                }
                 this_obj.parseResult = {};
                 this_obj.parseYear = [];
                 this_obj.accumulate = false;
