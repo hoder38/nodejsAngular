@@ -25,9 +25,11 @@ module.exports = {
     },
     getCashflow: function(xml, cash, no_cover) {
         if (!xml.xbrl) {
-            if (xml['xbrli:xbrl']) {
-                xml.xbrl = xml['xbrli:xbrl'];
-            } else {
+            for (var i in xml) {
+                xml.xbrl = xml[i];
+                break;
+            }
+            if (!xml.xbrl) {
                 console.log('xml lost');
                 return false;
             }
@@ -125,9 +127,11 @@ module.exports = {
     },
     getAsset: function(xml, asset, no_cover) {
         if (!xml.xbrl) {
-            if (xml['xbrli:xbrl']) {
-                xml.xbrl = xml['xbrli:xbrl'];
-            } else {
+            for (var i in xml) {
+                xml.xbrl = xml[i];
+                break;
+            }
+            if (!xml.xbrl) {
                 console.log('xml lost');
                 return false;
             }
@@ -270,9 +274,11 @@ module.exports = {
     },
     getSales: function(xml, sales, no_cover) {
         if (!xml.xbrl) {
-            if (xml['xbrli:xbrl']) {
-                xml.xbrl = xml['xbrli:xbrl'];
-            } else {
+            for (var i in xml) {
+                xml.xbrl = xml[i];
+                break;
+            }
+            if (!xml.xbrl) {
                 console.log('xml lost');
                 return false;
             }
@@ -597,7 +603,10 @@ module.exports = {
                     bQ = 0;
                     bY++;
                 }
-                managementStatus[bY][bQ++][dataRelative] = 0;
+                if (managementStatus[bY][bQ]) {
+                    managementStatus[bY][bQ][dataRelative] = 0;
+                }
+                bQ++;
             }
             for (var i = 2; i < revenue.length; i++) {
                 if (Q > 3) {
@@ -608,7 +617,9 @@ module.exports = {
                 for (var j = 0; j <= i; j++) {
                     Relative += (revenue[j] - revenueEven[i-2]) * (data[j] - dataEven[i-2]);
                 }
-                managementStatus[Y][Q][dataRelative] = Math.ceil(Relative / dataVariance[i-2] / revenueVariance[i-2] * 1000) / 1000;
+                if (managementStatus[Y][Q]) {
+                    managementStatus[Y][Q][dataRelative] = Math.ceil(Relative / dataVariance[i-2] / revenueVariance[i-2] * 1000) / 1000;
+                }
                 Q++;
             }
         }
