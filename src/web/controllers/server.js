@@ -3999,7 +3999,7 @@ function loopUpdateStock(error, countdown) {
     console.log(countdown);
     setTimeout(function() {
         var day = new Date().getDate();
-        if (day === config_glb.updateStockDate[0]) {
+        if (day === config_type.updateStockDate[0]) {
             console.log('update stock');
             stockTool.getStockList('twse', function(err, stocklist){
                 if(err) {
@@ -4014,7 +4014,7 @@ function loopUpdateStock(error, countdown) {
                     }
                 }
             });
-        } else if (config_glb.updateStockDate.indexOf(day)) {
+        } else if (config_type.updateStockDate.indexOf(day) !== -1) {
             console.log('update important stock');
             mongo.orig("find", "stock", {important: 1}, function(err, items){
                 if(err) {
