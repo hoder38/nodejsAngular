@@ -4053,7 +4053,7 @@ function updateStock(type, stocklist, index, callback) {
                 callback(null, stock_interval);
             }, 0);
         }
-    }, 1);
+    }, config_type.updateStockMode);
 }
 
 function loopDrive(error, countdown) {
