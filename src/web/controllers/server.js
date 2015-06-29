@@ -2800,7 +2800,7 @@ app.get('/api/media/setTime/:id/:type', function(req, res, next){
         if (type === false) {
             util.handleError({hoerror: 2, message: "type is not vaild"}, next, res);
         }
-        if (type === 'url') {
+        if (type === 'url' || type === 'music') {
             res.json({apiOK: true});
             tagTool.setLatest('', id, req.session, function(err) {
                 if (err) {

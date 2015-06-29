@@ -1737,7 +1737,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.mediaShow = [];
     $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
     $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
-    $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', shuffle: false};
     $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, mode: false};
     $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
     $scope.inputUrl = '';
@@ -1767,14 +1767,14 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             vXmlhttp.setRequestHeader("Content-type", "application/json");
             vXmlhttp.send('');
         }
-        var mId = $scope.music.id;
+        /*var mId = $scope.music.id;
         if (mId) {
             var mTime = parseInt(music.currentTime);
             var mXmlhttp = new XMLHttpRequest();
             mXmlhttp.open("GET", "/api/media/record/" + mId + '/' + mTime, false);//the false is for making the call synchronous
             mXmlhttp.setRequestHeader("Content-type", "application/json");
             mXmlhttp.send('');
-        }
+        }*/
         var dId = $scope.doc.id;
         if (dId && $scope.doc.iframeOffset) {
             var dTime = $scope.doc.showId;
@@ -2178,9 +2178,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     time = parseInt(video.currentTime);
                 }
             } else if (type === 'music') {
-                if (!end) {
-                    time = parseInt(music.currentTime);
-                }
+                return false;
+                //music不記錄
+                //if (!end) {
+                //    time = parseInt(music.currentTime);
+                //}
             } else if (this[type].iframeOffset) {
                 if (record !== 1) {
                     time = record;
@@ -2376,14 +2378,17 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 this_obj[type].list = this_obj[type].list.concat(result.itemList);
                             }
                             if (length === this_obj[type].list.length) {
-                                this_obj[type].index = -this_obj[type].back;
+                                //this_obj[type].index = -this_obj[type].back;
                             } else {
                                 this_obj[type].front = this_obj[type].front + this_obj[type].list.length - length;
                             }
                             this_obj[type].frontPage = this_obj[type].frontPage + result.itemList.length;
                         } else {
                             $scope[type].end = true;
-                            this_obj[type].index = -this_obj[type].back;
+                            //this_obj[type].index = -this_obj[type].back;
+                        }
+                        if (this_obj[type].index >= this_obj[type].front) {
+                            this_obj[type].index = this_obj[type].index - this_obj[type].front - this_obj[type].back;
                         }
                         $scope.mediaMoreDisabled = false;
                         if (this_obj[type].id) {
@@ -2410,7 +2415,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     //video.play();
                                 } else if (this_obj[type].list.length === 1 && type === 'music') {
                                     music.currentTime = 0;
-                                    //music.play();
+                                    music.play();
                                 } else {
                                     this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                     if (type === 'doc') {
@@ -2487,14 +2492,17 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 this_obj[type].list = result.itemList.reverse().concat(this_obj[type].list);
                             }
                             if (length === this_obj[type].list.length) {
-                                this_obj[type].index = this_obj[type].front - 1;
+                                //this_obj[type].index = this_obj[type].front - 1;
                             } else {
                                 this_obj[type].back = this_obj[type].back + this_obj[type].list.length - length;
                             }
                             this_obj[type].backPage = this_obj[type].backPage + result.itemList.length;
                         } else {
-                            this_obj[type].index = this_obj[type].front - 1;
+                            //this_obj[type].index = this_obj[type].front - 1;
                             this_obj[type].end = true;
+                        }
+                        if (this_obj[type].index < -this_obj[type].back) {
+                            this_obj[type].index = this_obj[type].index - this_obj[type].back - this_obj[type].front - 1;
                         }
                         $scope.mediaMoreDisabled = false;
                         if (this_obj[type].id) {
@@ -2521,7 +2529,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     //video.play();
                                 } else if (this_obj[type].list.length === 1 && type === 'music') {
                                     music.currentTime = 0;
-                                    //music.play();
+                                    music.play();
                                 } else {
                                     this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                     if (type === 'doc') {
@@ -2596,7 +2604,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         //video.play();
                     } else if (this_obj[type].list.length === 1 && type === 'music') {
                         music.currentTime = 0;
-                        //music.play();
+                        music.play();
                     } else {
                         this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                         if (type === 'doc') {
@@ -2631,6 +2639,30 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     $window.location.href = $location.path();
                 }
             });
+        }
+    }
+    $scope.musicShuffle = function() {
+        var index = 0, isLoad = false;
+        var this_obj = this;
+        if (this.music.shuffle) {
+            if (this.music.end) {
+                console.log('end');
+                do {
+                    index = randomFloor(-this.music.back, +this.music.front);
+                } while(index === +this.music.index);
+            } else {
+                console.log('not');
+                do {
+                    index = randomFloor(-this.music.back - 20, +this.music.front + 20);
+                } while(index === +this.music.index);
+            }
+            console.log(this.music.front);
+            console.log(this.music.back);
+            console.log(index);
+            console.log(index - this.music.index);
+            this.mediaMove(index - this.music.index, 'music', true);
+        } else {
+            this.mediaMove(1, 'music', true);
         }
     }
     $scope.$watch("this.doc.mode", function(newVal, oldVal) {

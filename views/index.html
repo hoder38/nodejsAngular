@@ -338,8 +338,13 @@
                                         </a>
                                     </li>
                                 </ul>
+                                <ul class="pager nav-trim {{isFull && 'pull-right'||'pull-left'}}">
+                                    <li tooltip="Shuffle play"  tooltip-trigger="mouseenter">
+                                        <input type="checkbox" ng-model="music.shuffle"/>
+                                    </li>
+                                </ul>
                             </nav>
-                            <audio class="media-screen" ng-src="{{music.src}}" controls autoplay ng-music ng-ended="mediaMove(1, 'music', true)" ng-play="testLogin()" ng-pause="mediaRecord('music')">
+                            <audio class="media-screen" ng-src="{{music.src}}" controls autoplay ng-music ng-ended="musicShuffle()" ng-play="testLogin()" ng-pause="mediaRecord('music')">
                             </audio>
                         </div>
                     </section>
