@@ -44,39 +44,30 @@ module.exports = {
             type = 1;
             year = Number(xml.xbrl['tifrs-notes:Year'][0]['_']);
             quarter = Number(xml.xbrl['tifrs-notes:Quarter'][0]['_']);
-        } else if (xml.xbrl['tw-gaap-ci:CashCashEquivalents']){
-            var xml_date = xml.xbrl['tw-gaap-ci:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
-            if (!xml_date) {
-                return false;
-            }
-            year = Number(xml_date[1]);
-            if (xml_date[2] === '1231') {
-                quarter = 4;
-            } else if (xml_date[2] === '0930') {
-                quarter = 3;
-            } else if (xml_date[2] === '0630') {
-                quarter = 2;
-            } else {
-                quarter = 1;
-            }
-        } else if (xml.xbrl['tw-gaap-fh:CashCashEquivalents']){
-            var xml_date = xml.xbrl['tw-gaap-fh:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
-            if (!xml_date) {
-                return false;
-            }
-            year = Number(xml_date[1]);
-            if (xml_date[2] === '1231') {
-                quarter = 4;
-            } else if (xml_date[2] === '0930') {
-                quarter = 3;
-            } else if (xml_date[2] === '0630') {
-                quarter = 2;
-            } else {
-                quarter = 1;
-            }
         } else {
-            console.log('umknown date');
-            return false;
+            if (xml.xbrl['tw-gaap-ci:CashCashEquivalents']){
+                var xml_date = xml.xbrl['tw-gaap-ci:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
+            } else if (xml.xbrl['tw-gaap-fh:CashCashEquivalents']){
+                var xml_date = xml.xbrl['tw-gaap-fh:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
+            } else if (xml.xbrl['tw-gaap-mim:CashCashEquivalents']){
+                var xml_date = xml.xbrl['tw-gaap-mim:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
+            } else {
+                console.log('umknown date');
+                return false;
+            }
+            if (!xml_date) {
+                return false;
+            }
+            year = Number(xml_date[1]);
+            if (xml_date[2] === '1231') {
+                quarter = 4;
+            } else if (xml_date[2] === '0930') {
+                quarter = 3;
+            } else if (xml_date[2] === '0630') {
+                quarter = 2;
+            } else {
+                quarter = 1;
+            }
         }
         if (!cash[year]) {
             cash[year] = [];
@@ -94,20 +85,16 @@ module.exports = {
             if (quarter === 3 || quarter === 2) {
                 if (quarterIsEmpty(cash[year][quarter-1])) {
                     cash[year].splice(quarter-1, 1);
-                //} else {
-                //    cash[year][quarter+2] = cash[year][quarter-1];
                 }
                 if (quarterIsEmpty(cash[year-1][quarter-1])) {
                     cash[year-1].splice(quarter-1, 1);
-                //} else {
-                //   cash[year-1][quarter+2] = cash[year-1][quarter-1];
                 }
             }
         } else {
-            var cash1 = getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 1) + getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 1);
-            var cash2 = getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 2) + getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 2);
+            var cash1 = getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 1) + getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 1) + getParameter(xml, 'tw-gaap-mim:CashCashEquivalents', 1);
+            var cash2 = getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 2) + getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 2) + getParameter(xml, 'tw-gaap-mim:CashCashEquivalents', 2);
             if (!cash[year][quarter-1] || !no_cover) {
-                cash[year][quarter-1] = {profitBT: getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome_StatementCashFlows', 0) + getParameter(xml, 'tw-gaap-ci:IncomeTaxExpenseBenefit', 0) + getParameter(xml, 'tw-gaap-fh:CurrentConsolidatedTotalIncome', 0) - getParameter(xml, 'tw-gaap-fh:IncomeTaxExpenseBenefit', 0), operation: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedOperatingActivities', 0) + getParameter(xml, 'tw-gaap-fh:NetCashProvidedUsedOperatingActivities', 0), invest: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedInvestingActivities', 0) + getParameter(xml, 'tw-gaap-fh:NetCashProvidedUsedInvestingActivities', 0), finance: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedFinancingActivities', 0) + getParameter(xml, 'tw-gaap-fh:NetCashProvidedUsedFinancingActivities', 0), dividends: getParameter(xml, 'tw-gaap-ci:CashDividends', 0) + getParameter(xml, 'tw-gaap-fh:CashDividends', 0), change: getParameter(xml, 'tw-gaap-ci:NetChangesCashCashEquivalents', 0) + getParameter(xml, 'tw-gaap-fh:NetChangesCashCashEquivalents', 0), end: getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 0) + getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 0)};
+                cash[year][quarter-1] = {profitBT: getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome_StatementCashFlows', 0) + getParameter(xml, 'tw-gaap-ci:IncomeTaxExpenseBenefit', 0) + getParameter(xml, 'tw-gaap-fh:CurrentConsolidatedTotalIncome', 0) - getParameter(xml, 'tw-gaap-fh:IncomeTaxExpenseBenefit', 0) + getParameter(xml, 'tw-gaap-mim:ConsolidatedTotalIncome-CashFlowStatement', 0) + getParameter(xml, 'tw-gaap-mim:IncomeTaxExpenses', 0), operation: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedOperatingActivities', 0) + getParameter(xml, 'tw-gaap-fh:NetCashProvidedUsedOperatingActivities', 0) + getParameter(xml, 'tw-gaap-mim:NetCashProvidedUsedOperatingActivities', 0), invest: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedInvestingActivities', 0) + getParameter(xml, 'tw-gaap-fh:NetCashProvidedUsedInvestingActivities', 0) + getParameter(xml, 'tw-gaap-mim:NetCashProvidedUsedInvestingActivities', 0), finance: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedFinancingActivities', 0) + getParameter(xml, 'tw-gaap-fh:NetCashProvidedUsedFinancingActivities', 0) + getParameter(xml, 'tw-gaap-mim:NetCashProvidedUsedFinancingActivities', 0), dividends: getParameter(xml, 'tw-gaap-ci:CashDividends', 0) + getParameter(xml, 'tw-gaap-fh:CashDividends', 0) + getParameter(xml, 'tw-gaap-mim:CashDividends', 0), change: getParameter(xml, 'tw-gaap-ci:NetChangesCashCashEquivalents', 0) + getParameter(xml, 'tw-gaap-fh:NetChangesCashCashEquivalents', 0) + getParameter(xml, 'tw-gaap-mim:NetChangesCashCashEquivalents', 0), end: getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 0) + getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 0) + getParameter(xml, 'tw-gaap-mim:CashCashEquivalents', 0)};
                 if (cash1 > cash2) {
                     cash[year][quarter-1].begin = cash1;
                 } else {
@@ -115,7 +102,7 @@ module.exports = {
                 }
             }
             if (!cash[year-1][quarter-1] || !no_cover) {
-                cash[year-1][quarter-1] = {profitBT: getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome_StatementCashFlows', 1) + getParameter(xml, 'tw-gaap-ci:IncomeTaxExpenseBenefit', 1) + getParameter(xml, 'tw-gaap-fh:CurrentConsolidatedTotalIncome', 1) - getParameter(xml, 'tw-gaap-fh:IncomeTaxExpenseBenefit', 1), operation: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedOperatingActivities', 1) + getParameter(xml, 'tw-gaap-fh:NetCashProvidedUsedOperatingActivities', 1), invest: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedInvestingActivities', 1) + getParameter(xml, 'tw-gaap-fh:NetCashProvidedUsedInvestingActivities', 1), finance: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedFinancingActivities', 1) + getParameter(xml, 'tw-gaap-fh:NetCashProvidedUsedFinancingActivities', 1), dividends: getParameter(xml, 'tw-gaap-ci:CashDividends', 1) + getParameter(xml, 'tw-gaap-fh:CashDividends', 1), change: getParameter(xml, 'tw-gaap-ci:NetChangesCashCashEquivalents', 1) + getParameter(xml, 'tw-gaap-fh:NetChangesCashCashEquivalents', 1), begin: getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 3) + getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 3)};
+                cash[year-1][quarter-1] = {profitBT: getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome_StatementCashFlows', 1) + getParameter(xml, 'tw-gaap-ci:IncomeTaxExpenseBenefit', 1) + getParameter(xml, 'tw-gaap-fh:CurrentConsolidatedTotalIncome', 1) - getParameter(xml, 'tw-gaap-fh:IncomeTaxExpenseBenefit', 1) + getParameter(xml, 'tw-gaap-mim:ConsolidatedTotalIncome-CashFlowStatement', 1) + getParameter(xml, 'tw-gaap-mim:IncomeTaxExpenses', 1), operation: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedOperatingActivities', 1) + getParameter(xml, 'tw-gaap-fh:NetCashProvidedUsedOperatingActivities', 1) + getParameter(xml, 'tw-gaap-mim:NetCashProvidedUsedOperatingActivities', 1), invest: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedInvestingActivities', 1) + getParameter(xml, 'tw-gaap-fh:NetCashProvidedUsedInvestingActivities', 1) + getParameter(xml, 'tw-gaap-mim:NetCashProvidedUsedInvestingActivities', 1), finance: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedFinancingActivities', 1) + getParameter(xml, 'tw-gaap-fh:NetCashProvidedUsedFinancingActivities', 1) + getParameter(xml, 'tw-gaap-mim:NetCashProvidedUsedFinancingActivities', 1), dividends: getParameter(xml, 'tw-gaap-ci:CashDividends', 1) + getParameter(xml, 'tw-gaap-fh:CashDividends', 1) + getParameter(xml, 'tw-gaap-mim:CashDividends', 1), change: getParameter(xml, 'tw-gaap-ci:NetChangesCashCashEquivalents', 1) + getParameter(xml, 'tw-gaap-fh:NetChangesCashCashEquivalents', 1) + getParameter(xml, 'tw-gaap-mim:NetChangesCashCashEquivalents', 1), end: getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 3) + getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 3) + getParameter(xml, 'tw-gaap-mim:CashCashEquivalents', 3)};
                 if (cash1 > cash2) {
                     cash[year-1][quarter-1].end = cash2;
                 } else {
@@ -158,38 +145,30 @@ module.exports = {
             type = 1;
             year = Number(xml.xbrl['tifrs-notes:Year'][0]['_']);
             quarter = Number(xml.xbrl['tifrs-notes:Quarter'][0]['_']);
-        } else if (xml.xbrl['tw-gaap-ci:CashCashEquivalents']){
-            var xml_date = xml.xbrl['tw-gaap-ci:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
-            if (!xml_date) {
-                return false;
-            }
-            year = Number(xml_date[1]);
-            if (xml_date[2] === '1231') {
-                quarter = 4;
-            } else if (xml_date[2] === '0930') {
-                quarter = 3;
-            } else if (xml_date[2] === '0630') {
-                quarter = 2;
-            } else {
-                quarter = 1;
-            }
-        } else if (xml.xbrl['tw-gaap-fh:CashCashEquivalents']){
-            var xml_date = xml.xbrl['tw-gaap-fh:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
-            if (!xml_date) {
-                return false;
-            }
-            year = Number(xml_date[1]);
-            if (xml_date[2] === '1231') {
-                quarter = 4;
-            } else if (xml_date[2] === '0930') {
-                quarter = 3;
-            } else if (xml_date[2] === '0630') {
-                quarter = 2;
-            } else {
-                quarter = 1;
-            }
         } else {
-            return false;
+            if (xml.xbrl['tw-gaap-ci:CashCashEquivalents']){
+                var xml_date = xml.xbrl['tw-gaap-ci:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
+            } else if (xml.xbrl['tw-gaap-fh:CashCashEquivalents']){
+                var xml_date = xml.xbrl['tw-gaap-fh:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
+            } else if (xml.xbrl['tw-gaap-mim:CashCashEquivalents']){
+                var xml_date = xml.xbrl['tw-gaap-mim:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
+            } else {
+                console.log('umknown date');
+                return false;
+            }
+            if (!xml_date) {
+                return false;
+            }
+            year = Number(xml_date[1]);
+            if (xml_date[2] === '1231') {
+                quarter = 4;
+            } else if (xml_date[2] === '0930') {
+                quarter = 3;
+            } else if (xml_date[2] === '0630') {
+                quarter = 2;
+            } else {
+                quarter = 1;
+            }
         }
         if (!asset[year]) {
             asset[year] = [];
@@ -203,13 +182,91 @@ module.exports = {
         if (type === 1) {
             if (quarter === 4) {
                 if (!asset[year][quarter-1] || !no_cover) {
-                    asset[year][quarter-1] = {receivable: getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 0) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 0) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 0) + getParameter(xml, 'ifrs:FinancialAssetsAtFairValueThroughProfitOrLoss', 0) + getParameter(xml, 'tifrs-bsci-fh:AvailableForSaleFinancialAssetsNet', 0) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialAssetsForHedging', 0) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 0) + getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 0), payable: getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 0) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 0) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 0) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 0) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 0) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 0) + getParameter(xml, 'tifrs-bsci-fh:Payables', 0), cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 0), inventories: getParameter(xml, 'ifrs:Inventories', 0) + getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 0), OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 0), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 0), current_liabilities: getParameter(xml, 'ifrs:CurrentLiabilities', 0) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 0) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 0) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 0) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 0) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 0) + getParameter(xml, 'tifrs-bsci-fh:Payables', 0), noncurrent_liabilities: getParameter(xml, 'ifrs:Liabilities', 0) - getParameter(xml, 'ifrs:CurrentLiabilities', 0) - getParameter(xml, 'ifrs:CurrentTaxLiabilities', 0) - getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 0) - getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 0) - getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 0) - getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 0) - getParameter(xml, 'tifrs-bsci-fh:Payables', 0), equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 0), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 0), share: getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 0) + getParameter(xml, 'tifrs-bsci-fh:Capital', 0), total: getParameter(xml, 'ifrs:Assets', 0), longterm: getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 0) + getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 0)};
+                    asset[year][quarter-1] = {receivable: 0, payable: 0, cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 0), inventories: 0, OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 0), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 0), current_liabilities: 0, noncurrent_liabilities: 0, equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 0), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 0), share: 0, total: getParameter(xml, 'ifrs:Assets', 0), longterm: 0};
+                    if (getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 0)) {
+                        asset[year][quarter-1].share = getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 0);
+                        asset[year][quarter-1].inventories = getParameter(xml, 'ifrs:Inventories', 0);
+                        asset[year][quarter-1].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 0);
+                        asset[year][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 0) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 0);
+                        asset[year][quarter-1].payable = getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 0) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 0);
+                        asset[year][quarter-1].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 0);
+                        asset[year][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 0) - asset[year][quarter-1].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-fh:Capital', 0)) {
+                        asset[year][quarter-1].share = getParameter(xml, 'tifrs-bsci-fh:Capital', 0);
+                        asset[year][quarter-1].inventories = getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 0) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 0);
+                        asset[year][quarter-1].longterm = getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 0) + getParameter(xml, 'tifrs-bsci-fh:HeldToMaturityFinancialAssetsNet', 0) + getParameter(xml, 'tifrs-bsci-fh:ReinsuranceContractAssetsNet', 0);
+                        asset[year][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 0) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 0);
+                        asset[year][quarter-1].payable = getParameter(xml, 'tifrs-bsci-fh:Payables', 0) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 0) + getParameter(xml, 'tifrs-bsci-fh:Deposits', 0);
+                        asset[year][quarter-1].current_liabilities = asset[year][quarter-1].payable + getParameter(xml, 'tifrs-bsci-fh:DueToTheCentralBankAndBanks', 0) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 0) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 0) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 0) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialLiabilitiesForHedging', 0) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 0);
+                        asset[year][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 0) - asset[year][quarter-1].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-mim:Capital', 0)) {
+                        asset[year][quarter-1].share = getParameter(xml, 'tifrs-bsci-mim:Capital', 0);
+                        asset[year][quarter-1].inventories = getParameter(xml, 'ifrs:Inventories', 0) + getParameter(xml, 'tifrs-bsci-mim:SecuritiesPurchasedUnderResellAgreements', 0) + getParameter(xml, 'tifrs-bsci-mim:DiscountsAndLoansNet', 0);
+                        asset[year][quarter-1].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 0) + getParameter(xml, 'tifrs-bsci-mim:NoncurrentHeldToMaturityFinancialAssetsNet', 0);
+                        asset[year][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-mim:ReceivablesNet', 0) + getParameter(xml, 'tifrs-bsci-mim:ReceivablesDueFromRelatedParties', 0) + getParameter(xml, 'tifrs-bsci-mim:DueFromTheCentralBankAndCallLoansToBanks', 0);
+                        asset[year][quarter-1].payable = getParameter(xml, 'tifrs-bsci-mim:Payables', 0) + getParameter(xml, 'tifrs-bsci-mim:PayablesToRelatedParties', 0) + getParameter(xml, 'tifrs-bsci-mim:DepositsFromTheCentralBankAndBanks', 0) + getParameter(xml, 'tifrs-bsci-mim:DepositsAndRemittances', 0);
+                        asset[year][quarter-1].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 0);
+                        asset[year][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 0) - asset[year][quarter-1].current_liabilities;
+                    } else {
+                        console.log('unknown finance data');
+                        return false;
+                    }
                 }
                 if (!asset[year-1][quarter-1] || !no_cover) {
-                    asset[year-1][quarter-1] = {receivable: getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 1) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 1) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 1) + getParameter(xml, 'ifrs:FinancialAssetsAtFairValueThroughProfitOrLoss', 1) + getParameter(xml, 'tifrs-bsci-fh:AvailableForSaleFinancialAssetsNet', 1) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialAssetsForHedging', 1) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 1) + getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 1), payable: getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 1) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 1) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 1) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 1) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 1) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 1) + getParameter(xml, 'tifrs-bsci-fh:Payables', 1), cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 1), inventories: getParameter(xml, 'ifrs:Inventories', 1) + getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 1), OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 1), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 1), current_liabilities: getParameter(xml, 'ifrs:CurrentLiabilities', 1) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 1) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 1) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 1) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 1) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 1) + getParameter(xml, 'tifrs-bsci-fh:Payables', 1), noncurrent_liabilities: getParameter(xml, 'ifrs:Liabilities', 1) - getParameter(xml, 'ifrs:CurrentLiabilities', 1) - getParameter(xml, 'ifrs:CurrentTaxLiabilities', 1) - getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 1) - getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 1) - getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 1) - getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 1) - getParameter(xml, 'tifrs-bsci-fh:Payables', 1), equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 1), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 1), share: getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 1) + getParameter(xml, 'tifrs-bsci-fh:Capital', 1), total: getParameter(xml, 'ifrs:Assets', 1), longterm: getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 1) + getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 1)};
+                    asset[year-1][quarter-1] = {receivable: 0, payable: 0, cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 1), inventories: 0, OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 1), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 1), current_liabilities: 0, noncurrent_liabilities: 0, equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 1), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 1), share: 0, total: getParameter(xml, 'ifrs:Assets', 1), longterm: 0};
+                    if (getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 1)) {
+                        asset[year-1][quarter-1].share = getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 1);
+                        asset[year-1][quarter-1].inventories = getParameter(xml, 'ifrs:Inventories', 1);
+                        asset[year-1][quarter-1].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 1);
+                        asset[year-1][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 1) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 1);
+                        asset[year-1][quarter-1].payable = getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 1) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 1);
+                        asset[year-1][quarter-1].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 1);
+                        asset[year-1][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 1) - asset[year-1][quarter-1].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-fh:Capital', 1)) {
+                        asset[year-1][quarter-1].share = getParameter(xml, 'tifrs-bsci-fh:Capital', 1);
+                        asset[year-1][quarter-1].inventories = getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 1) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 1);
+                        asset[year-1][quarter-1].longterm = getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 1) + getParameter(xml, 'tifrs-bsci-fh:HeldToMaturityFinancialAssetsNet', 1) + getParameter(xml, 'tifrs-bsci-fh:ReinsuranceContractAssetsNet', 1);
+                        asset[year-1][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 1) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 1);
+                        asset[year-1][quarter-1].payable = getParameter(xml, 'tifrs-bsci-fh:Payables', 1) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 1) + getParameter(xml, 'tifrs-bsci-fh:Deposits', 1);
+                        asset[year-1][quarter-1].current_liabilities = asset[year-1][quarter-1].payable + getParameter(xml, 'tifrs-bsci-fh:DueToTheCentralBankAndBanks', 1) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 1) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 1) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 1) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialLiabilitiesForHedging', 1) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 1);
+                        asset[year-1][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 1) - asset[year-1][quarter-1].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-mim:Capital', 1)) {
+                        asset[year-1][quarter-1].share = getParameter(xml, 'tifrs-bsci-mim:Capital', 1);
+                        asset[year-1][quarter-1].inventories = getParameter(xml, 'ifrs:Inventories', 1) + getParameter(xml, 'tifrs-bsci-mim:SecuritiesPurchasedUnderResellAgreements', 1) + getParameter(xml, 'tifrs-bsci-mim:DiscountsAndLoansNet', 1);
+                        asset[year-1][quarter-1].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 1) + getParameter(xml, 'tifrs-bsci-mim:NoncurrentHeldToMaturityFinancialAssetsNet', 1);
+                        asset[year-1][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-mim:ReceivablesNet', 1) + getParameter(xml, 'tifrs-bsci-mim:ReceivablesDueFromRelatedParties', 1) + getParameter(xml, 'tifrs-bsci-mim:DueFromTheCentralBankAndCallLoansToBanks', 1);
+                        asset[year-1][quarter-1].payable = getParameter(xml, 'tifrs-bsci-mim:Payables', 1) + getParameter(xml, 'tifrs-bsci-mim:PayablesToRelatedParties', 1) + getParameter(xml, 'tifrs-bsci-mim:DepositsFromTheCentralBankAndBanks', 1) + getParameter(xml, 'tifrs-bsci-mim:DepositsAndRemittances', 1);
+                        asset[year][quarter-1].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 1);
+                        asset[year-1][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 1) - asset[year-1][quarter-1].current_liabilities;
+                    }
                 }
                 if (!asset[year-2][quarter-1] || !no_cover) {
-                    asset[year-2][quarter-1] = {receivable: getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 2) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 2) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 2) + getParameter(xml, 'ifrs:FinancialAssetsAtFairValueThroughProfitOrLoss', 2) + getParameter(xml, 'tifrs-bsci-fh:AvailableForSaleFinancialAssetsNet', 2) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialAssetsForHedging', 2) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 2) + getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 2), payable: getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 2) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 2) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 2) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 2) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 2) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 2) + getParameter(xml, 'tifrs-bsci-fh:Payables', 2), cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 2), inventories: getParameter(xml, 'ifrs:Inventories', 2) + getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 2), OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 2), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 2), current_liabilities: getParameter(xml, 'ifrs:CurrentLiabilities', 2) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 2) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 2) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 2) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 2) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 2) + getParameter(xml, 'tifrs-bsci-fh:Payables', 2), noncurrent_liabilities: getParameter(xml, 'ifrs:Liabilities', 2) - getParameter(xml, 'ifrs:CurrentLiabilities', 2) - getParameter(xml, 'ifrs:CurrentTaxLiabilities', 2) - getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 2) - getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 2) - getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 2) - getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 2) - getParameter(xml, 'tifrs-bsci-fh:Payables', 2), equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 2), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 2), share: getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 2) + getParameter(xml, 'tifrs-bsci-fh:Capital', 2), total: getParameter(xml, 'ifrs:Assets', 2), longterm: getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 2) + getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 2)};
+                    asset[year-2][quarter-1] = {receivable: 0, payable: 0, cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 2), inventories: 0, OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 2), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 2), current_liabilities: 0, noncurrent_liabilities: 0, equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 2), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 2), share: 0, total: getParameter(xml, 'ifrs:Assets', 2), longterm: 0};
+                    if (getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 2)) {
+                        asset[year-2][quarter-1].share = getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 2);
+                        asset[year-2][quarter-1].inventories = getParameter(xml, 'ifrs:Inventories', 2);
+                        asset[year-2][quarter-1].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 2);
+                        asset[year-2][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 2) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 2);
+                        asset[year-2][quarter-1].payable = getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 2) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 2);
+                        asset[year-2][quarter-1].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 2);
+                        asset[year-2][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 2) - asset[year-2][quarter-1].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-fh:Capital', 2)) {
+                        asset[year-2][quarter-1].share = getParameter(xml, 'tifrs-bsci-fh:Capital', 2);
+                        asset[year-2][quarter-1].inventories = getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 2) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 2);
+                        asset[year-2][quarter-1].longterm = getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 2) + getParameter(xml, 'tifrs-bsci-fh:HeldToMaturityFinancialAssetsNet', 2) + getParameter(xml, 'tifrs-bsci-fh:ReinsuranceContractAssetsNet', 2);
+                        asset[year-2][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 2) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 2);
+                        asset[year-2][quarter-1].payable = getParameter(xml, 'tifrs-bsci-fh:Payables', 2) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 2) + getParameter(xml, 'tifrs-bsci-fh:Deposits', 2);
+                        asset[year-2][quarter-1].current_liabilities = asset[year-2][quarter-1].payable + getParameter(xml, 'tifrs-bsci-fh:DueToTheCentralBankAndBanks', 2) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 2) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 2) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 2) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialLiabilitiesForHedging', 2) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 2);
+                        asset[year-2][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 2) - asset[year-2][quarter-1].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-mim:Capital', 2)) {
+                        asset[year-2][quarter-1].share = getParameter(xml, 'tifrs-bsci-mim:Capital', 2);
+                        asset[year-2][quarter-1].inventories = getParameter(xml, 'ifrs:Inventories', 2) + getParameter(xml, 'tifrs-bsci-mim:SecuritiesPurchasedUnderResellAgreements', 2) + getParameter(xml, 'tifrs-bsci-mim:DiscountsAndLoansNet', 2);
+                        asset[year-2][quarter-1].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 2) + getParameter(xml, 'tifrs-bsci-mim:NoncurrentHeldToMaturityFinancialAssetsNet', 2);
+                        asset[year-2][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-mim:ReceivablesNet', 2) + getParameter(xml, 'tifrs-bsci-mim:ReceivablesDueFromRelatedParties', 2) + getParameter(xml, 'tifrs-bsci-mim:DueFromTheCentralBankAndCallLoansToBanks', 2);
+                        asset[year-2][quarter-1].payable = getParameter(xml, 'tifrs-bsci-mim:Payables', 2) + getParameter(xml, 'tifrs-bsci-mim:PayablesToRelatedParties', 2) + getParameter(xml, 'tifrs-bsci-mim:DepositsFromTheCentralBankAndBanks', 2) + getParameter(xml, 'tifrs-bsci-mim:DepositsAndRemittances', 2);
+                        asset[year][quarter-1].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 2);
+                        asset[year-2][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 2) - asset[year-2][quarter-1].current_liabilities;
+                    }
                 }
                 if (quarterIsEmpty(asset[year][quarter-1])) {
                     asset[year].splice(quarter-1, 1);
@@ -222,27 +279,126 @@ module.exports = {
                 }
             } else {
                 if (!asset[year][quarter-1] || !no_cover) {
-                    asset[year][quarter-1] = {receivable: getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 0) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 0) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 0) + getParameter(xml, 'ifrs:FinancialAssetsAtFairValueThroughProfitOrLoss', 0) + getParameter(xml, 'tifrs-bsci-fh:AvailableForSaleFinancialAssetsNet', 0) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialAssetsForHedging', 0) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 0) + getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 0), payable: getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 0) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 0) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 0) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 0) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 0) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 0) + getParameter(xml, 'tifrs-bsci-fh:Payables', 0), cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 0), inventories: getParameter(xml, 'ifrs:Inventories', 0) + getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 0), OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 0), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 0), current_liabilities: getParameter(xml, 'ifrs:CurrentLiabilities', 0) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 0) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 0) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 0) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 0) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 0) + getParameter(xml, 'tifrs-bsci-fh:Payables', 0), noncurrent_liabilities: getParameter(xml, 'ifrs:Liabilities', 0) - getParameter(xml, 'ifrs:CurrentLiabilities', 0) - getParameter(xml, 'ifrs:CurrentTaxLiabilities', 0) - getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 0) - getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 0) - getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 0) - getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 0) - getParameter(xml, 'tifrs-bsci-fh:Payables', 0), equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 0), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 0), share: getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 0) + getParameter(xml, 'tifrs-bsci-fh:Capital', 0), total: getParameter(xml, 'ifrs:Assets', 0), longterm: getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 0) + getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 0)};
+                    asset[year][quarter-1] = {receivable: 0, payable: 0, cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 0), inventories: 0, OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 0), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 0), current_liabilities: 0, noncurrent_liabilities: 0, equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 0), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 0), share: 0, total: getParameter(xml, 'ifrs:Assets', 0), longterm: 0};
+                    if (getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 0)) {
+                        asset[year][quarter-1].share = getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 0);
+                        asset[year][quarter-1].inventories = getParameter(xml, 'ifrs:Inventories', 0);
+                        asset[year][quarter-1].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 0);
+                        asset[year][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 0) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 0);
+                        asset[year][quarter-1].payable = getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 0) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 0);
+                        asset[year][quarter-1].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 0);
+                        asset[year][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 0) - asset[year][quarter-1].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-fh:Capital', 0)) {
+                        asset[year][quarter-1].share = getParameter(xml, 'tifrs-bsci-fh:Capital', 0);
+                        asset[year][quarter-1].inventories = getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 0) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 0);
+                        asset[year][quarter-1].longterm = getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 0) + getParameter(xml, 'tifrs-bsci-fh:HeldToMaturityFinancialAssetsNet', 0) + getParameter(xml, 'tifrs-bsci-fh:ReinsuranceContractAssetsNet', 0);
+                        asset[year][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 0) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 0);
+                        asset[year][quarter-1].payable = getParameter(xml, 'tifrs-bsci-fh:Payables', 0) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 0) + getParameter(xml, 'tifrs-bsci-fh:Deposits', 0);
+                        asset[year][quarter-1].current_liabilities = asset[year][quarter-1].payable + getParameter(xml, 'tifrs-bsci-fh:DueToTheCentralBankAndBanks', 0) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 0) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 0) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 0) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialLiabilitiesForHedging', 0) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 0);
+                        asset[year][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 0) - asset[year][quarter-1].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-mim:Capital', 0)) {
+                        asset[year][quarter-1].share = getParameter(xml, 'tifrs-bsci-mim:Capital', 0);
+                        asset[year][quarter-1].inventories = getParameter(xml, 'ifrs:Inventories', 0) + getParameter(xml, 'tifrs-bsci-mim:SecuritiesPurchasedUnderResellAgreements', 0) + getParameter(xml, 'tifrs-bsci-mim:DiscountsAndLoansNet', 0);
+                        asset[year][quarter-1].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 0) + getParameter(xml, 'tifrs-bsci-mim:NoncurrentHeldToMaturityFinancialAssetsNet', 0);
+                        asset[year][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-mim:ReceivablesNet', 0) + getParameter(xml, 'tifrs-bsci-mim:ReceivablesDueFromRelatedParties', 0) + getParameter(xml, 'tifrs-bsci-mim:DueFromTheCentralBankAndCallLoansToBanks', 0);
+                        asset[year][quarter-1].payable = getParameter(xml, 'tifrs-bsci-mim:Payables', 0) + getParameter(xml, 'tifrs-bsci-mim:PayablesToRelatedParties', 0) + getParameter(xml, 'tifrs-bsci-mim:DepositsFromTheCentralBankAndBanks', 0) + getParameter(xml, 'tifrs-bsci-mim:DepositsAndRemittances', 0);
+                        asset[year][quarter-1].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 0);
+                        asset[year][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 0) - asset[year][quarter-1].current_liabilities;
+                    } else {
+                        console.log('unknown finance data');
+                        return false;
+                    }
                 }
                 if (!asset[year-1][3] || !no_cover) {
-                    asset[year-1][3] = {receivable: getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 1) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 1) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 1) + getParameter(xml, 'ifrs:FinancialAssetsAtFairValueThroughProfitOrLoss', 1) + getParameter(xml, 'tifrs-bsci-fh:AvailableForSaleFinancialAssetsNet', 1) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialAssetsForHedging', 1) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 1) + getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 1), payable: getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 1) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 1) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 1) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 1) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 1) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 1) + getParameter(xml, 'tifrs-bsci-fh:Payables', 1), cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 1), inventories: getParameter(xml, 'ifrs:Inventories', 1) + getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 1), OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 1), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 1), current_liabilities: getParameter(xml, 'ifrs:CurrentLiabilities', 1) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 1) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 1) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 1) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 1) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 1) + getParameter(xml, 'tifrs-bsci-fh:Payables', 1), noncurrent_liabilities: getParameter(xml, 'ifrs:Liabilities', 1) - getParameter(xml, 'ifrs:CurrentLiabilities', 1) - getParameter(xml, 'ifrs:CurrentTaxLiabilities', 1) - getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 1) - getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 1) - getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 1) - getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 1) - getParameter(xml, 'tifrs-bsci-fh:Payables', 1), equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 1), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 1), share: getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 1) + getParameter(xml, 'tifrs-bsci-fh:Capital', 1), total: getParameter(xml, 'ifrs:Assets', 1), longterm: getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 1) + getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 1)};
+                    asset[year-1][3] = {receivable: 0, payable: 0, cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 1), inventories: 0, OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 1), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 1), current_liabilities: 0, noncurrent_liabilities: 0, equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 1), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 1), share: 0, total: getParameter(xml, 'ifrs:Assets', 1), longterm: 0};
+                    if (getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 1)) {
+                        asset[year-1][3].share = getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 1);
+                        asset[year-1][3].inventories = getParameter(xml, 'ifrs:Inventories', 1);
+                        asset[year-1][3].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 1);
+                        asset[year-1][3].receivable = getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 1) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 1);
+                        asset[year-1][3].payable = getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 1) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 1);
+                        asset[year-1][3].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 1);
+                        asset[year-1][3].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 1) - asset[year-1][3].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-fh:Capital', 1)) {
+                        asset[year-1][3].share = getParameter(xml, 'tifrs-bsci-fh:Capital', 1);
+                        asset[year-1][3].inventories = getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 1) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 1);
+                        asset[year-1][3].longterm = getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 1) + getParameter(xml, 'tifrs-bsci-fh:HeldToMaturityFinancialAssetsNet', 1) + getParameter(xml, 'tifrs-bsci-fh:ReinsuranceContractAssetsNet', 1);
+                        asset[year-1][3].receivable = getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 1) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 1);
+                        asset[year-1][3].payable = getParameter(xml, 'tifrs-bsci-fh:Payables', 1) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 1) + getParameter(xml, 'tifrs-bsci-fh:Deposits', 1);
+                        asset[year-1][3].current_liabilities = asset[year-1][3].payable + getParameter(xml, 'tifrs-bsci-fh:DueToTheCentralBankAndBanks', 1) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 1) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 1) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 1) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialLiabilitiesForHedging', 1) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 1);
+                        asset[year-1][3].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 1) - asset[year-1][3].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-mim:Capital', 1)) {
+                        asset[year-1][3].share = getParameter(xml, 'tifrs-bsci-mim:Capital', 1);
+                        asset[year-1][3].inventories = getParameter(xml, 'ifrs:Inventories', 1) + getParameter(xml, 'tifrs-bsci-mim:SecuritiesPurchasedUnderResellAgreements', 1) + getParameter(xml, 'tifrs-bsci-mim:DiscountsAndLoansNet', 1);
+                        asset[year-1][3].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 1) + getParameter(xml, 'tifrs-bsci-mim:NoncurrentHeldToMaturityFinancialAssetsNet', 1);
+                        asset[year-1][3].receivable = getParameter(xml, 'tifrs-bsci-mim:ReceivablesNet', 1) + getParameter(xml, 'tifrs-bsci-mim:ReceivablesDueFromRelatedParties', 1) + getParameter(xml, 'tifrs-bsci-mim:DueFromTheCentralBankAndCallLoansToBanks', 1);
+                        asset[year-1][3].payable = getParameter(xml, 'tifrs-bsci-mim:Payables', 1) + getParameter(xml, 'tifrs-bsci-mim:PayablesToRelatedParties', 1) + getParameter(xml, 'tifrs-bsci-mim:DepositsFromTheCentralBankAndBanks', 1) + getParameter(xml, 'tifrs-bsci-mim:DepositsAndRemittances', 1);
+                        asset[year-1][3].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 1);
+                        asset[year-1][3].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 1) - asset[year-1][3].current_liabilities;
+                    }
                 }
                 if (!asset[year-1][quarter-1] || !no_cover) {
-                    asset[year-1][quarter-1] = {receivable: getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 2) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 2) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 2) + getParameter(xml, 'ifrs:FinancialAssetsAtFairValueThroughProfitOrLoss', 2) + getParameter(xml, 'tifrs-bsci-fh:AvailableForSaleFinancialAssetsNet', 2) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialAssetsForHedging', 2) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 2) + getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 2), payable: getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 2) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 2) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 2) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 2) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 2) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 2) + getParameter(xml, 'tifrs-bsci-fh:Payables', 2), cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 2), inventories: getParameter(xml, 'ifrs:Inventories', 2) + getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 2), OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 2), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 2), current_liabilities: getParameter(xml, 'ifrs:CurrentLiabilities', 2) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 2) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 2) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 2) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 2) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 2) + getParameter(xml, 'tifrs-bsci-fh:Payables', 2), noncurrent_liabilities: getParameter(xml, 'ifrs:Liabilities', 2) - getParameter(xml, 'ifrs:CurrentLiabilities', 2) - getParameter(xml, 'ifrs:CurrentTaxLiabilities', 2) - getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 2) - getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 2) - getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 2) - getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 2) - getParameter(xml, 'tifrs-bsci-fh:Payables', 2), equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 2), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 2), share: getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 2) + getParameter(xml, 'tifrs-bsci-fh:Capital', 2), total: getParameter(xml, 'ifrs:Assets', 2), longterm: getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 2) + getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 2)};
+                    asset[year-1][quarter-1] = {receivable: 0, payable: 0, cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 2), inventories: 0, OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 2), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 2), current_liabilities: 0, noncurrent_liabilities: 0, equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 2), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 2), share: 0, total: getParameter(xml, 'ifrs:Assets', 2), longterm: 0};
+                    if (getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 2)) {
+                        asset[year-1][quarter-1].share = getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 2);
+                        asset[year-1][quarter-1].inventories = getParameter(xml, 'ifrs:Inventories', 2);
+                        asset[year-1][quarter-1].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 2);
+                        asset[year-1][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 2) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 2);
+                        asset[year-1][quarter-1].payable = getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 2) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 2);
+                        asset[year-1][quarter-1].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 2);
+                        asset[year-1][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 2) - asset[year-1][quarter-1].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-fh:Capital', 2)) {
+                        asset[year-1][quarter-1].share = getParameter(xml, 'tifrs-bsci-fh:Capital', 2);
+                        asset[year-1][quarter-1].inventories = getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 2) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 2);
+                        asset[year-1][quarter-1].longterm = getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 2) + getParameter(xml, 'tifrs-bsci-fh:HeldToMaturityFinancialAssetsNet', 2) + getParameter(xml, 'tifrs-bsci-fh:ReinsuranceContractAssetsNet', 2);
+                        asset[year-1][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 2) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 2);
+                        asset[year-1][quarter-1].payable = getParameter(xml, 'tifrs-bsci-fh:Payables', 2) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 2) + getParameter(xml, 'tifrs-bsci-fh:Deposits', 2);
+                        asset[year-1][quarter-1].current_liabilities = asset[year-1][quarter-1].payable + getParameter(xml, 'tifrs-bsci-fh:DueToTheCentralBankAndBanks', 2) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 2) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 2) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 2) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialLiabilitiesForHedging', 2) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 2);
+                        asset[year-1][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 2) - asset[year-1][quarter-1].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-mim:Capital', 2)) {
+                        asset[year-1][quarter-1].share = getParameter(xml, 'tifrs-bsci-mim:Capital', 2);
+                        asset[year-1][quarter-1].inventories = getParameter(xml, 'ifrs:Inventories', 2) + getParameter(xml, 'tifrs-bsci-mim:SecuritiesPurchasedUnderResellAgreements', 2) + getParameter(xml, 'tifrs-bsci-mim:DiscountsAndLoansNet', 2);
+                        asset[year-1][quarter-1].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 2) + getParameter(xml, 'tifrs-bsci-mim:NoncurrentHeldToMaturityFinancialAssetsNet', 2);
+                        asset[year-1][quarter-1].receivable = getParameter(xml, 'tifrs-bsci-mim:ReceivablesNet', 2) + getParameter(xml, 'tifrs-bsci-mim:ReceivablesDueFromRelatedParties', 2) + getParameter(xml, 'tifrs-bsci-mim:DueFromTheCentralBankAndCallLoansToBanks', 2);
+                        asset[year-1][quarter-1].payable = getParameter(xml, 'tifrs-bsci-mim:Payables', 2) + getParameter(xml, 'tifrs-bsci-mim:PayablesToRelatedParties', 2) + getParameter(xml, 'tifrs-bsci-mim:DepositsFromTheCentralBankAndBanks', 2) + getParameter(xml, 'tifrs-bsci-mim:DepositsAndRemittances', 2);
+                        asset[year-1][quarter-1].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 2);
+                        asset[year-1][quarter-1].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 2) - asset[year-1][quarter-1].current_liabilities;
+                    }
                 }
                 if (!asset[year-2][3] || !no_cover) {
-                    asset[year-2][3] = {receivable: getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 3) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 3) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 3) + getParameter(xml, 'ifrs:FinancialAssetsAtFairValueThroughProfitOrLoss', 3) + getParameter(xml, 'tifrs-bsci-fh:AvailableForSaleFinancialAssetsNet', 3) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialAssetsForHedging', 3) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 3) + getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 3), payable: getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 3) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 3) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 3) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 3) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 3) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 3) + getParameter(xml, 'tifrs-bsci-fh:Payables', 3), cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 3), inventories: getParameter(xml, 'ifrs:Inventories', 3) + getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 3), OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 3), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 3), current_liabilities: getParameter(xml, 'ifrs:CurrentLiabilities', 3) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 3) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 3) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 3) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 3) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 3) + getParameter(xml, 'tifrs-bsci-fh:Payables', 3), noncurrent_liabilities: getParameter(xml, 'ifrs:Liabilities', 3) - getParameter(xml, 'ifrs:CurrentLiabilities', 3) - getParameter(xml, 'ifrs:CurrentTaxLiabilities', 3) - getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 3) - getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 3) - getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 3) - getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 3) - getParameter(xml, 'tifrs-bsci-fh:Payables', 3), equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 3), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 3), share: getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 3) + getParameter(xml, 'tifrs-bsci-fh:Capital', 3), total: getParameter(xml, 'ifrs:Assets', 3), longterm: getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 3) + getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 3)};
+                    asset[year-2][3] = {receivable: 0, payable: 0, cash: getParameter(xml, 'ifrs:CashAndCashEquivalents', 3), inventories: 0, OCFA: getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', 3), property: getParameter(xml, 'ifrs:PropertyPlantAndEquipment', 3), current_liabilities: 0, noncurrent_liabilities: 0, equityParent: getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', 3), equityChild: getParameter(xml, 'ifrs:NoncontrollingInterests', 3), share: 0, total: getParameter(xml, 'ifrs:Assets', 3), longterm: 0};
+                    if (getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 3)) {
+                        asset[year-2][3].share = getParameter(xml, 'tifrs-bsci-ci:CapitalStock', 3);
+                        asset[year-2][3].inventories = getParameter(xml, 'ifrs:Inventories', 3);
+                        asset[year-2][3].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 3);
+                        asset[year-2][3].receivable = getParameter(xml, 'tifrs-bsci-ci:AccountsReceivableNet', 3) + getParameter(xml, 'tifrs-bsci-ci:OtherReceivables', 3);
+                        asset[year-2][3].payable = getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', 3) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', 3);
+                        asset[year-2][3].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 3);
+                        asset[year-2][3].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 3) - asset[year-2][3].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-fh:Capital', 3)) {
+                        asset[year-2][3].share = getParameter(xml, 'tifrs-bsci-fh:Capital', 3);
+                        asset[year-2][3].inventories = getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', 3) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', 3);
+                        asset[year-2][3].longterm = getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', 3) + getParameter(xml, 'tifrs-bsci-fh:HeldToMaturityFinancialAssetsNet', 3) + getParameter(xml, 'tifrs-bsci-fh:ReinsuranceContractAssetsNet', 3);
+                        asset[year-2][3].receivable = getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', 3) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', 3);
+                        asset[year-2][3].payable = getParameter(xml, 'tifrs-bsci-fh:Payables', 3) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', 3) + getParameter(xml, 'tifrs-bsci-fh:Deposits', 3);
+                        asset[year-2][3].current_liabilities = asset[year-2][3].payable + getParameter(xml, 'tifrs-bsci-fh:DueToTheCentralBankAndBanks', 3) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', 3) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', 3) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', 3) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialLiabilitiesForHedging', 3) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', 3);
+                        asset[year-2][3].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 3) - asset[year-2][3].current_liabilities;
+                    } else if (getParameter(xml, 'tifrs-bsci-mim:Capital', 3)) {
+                        asset[year-2][3].share = getParameter(xml, 'tifrs-bsci-mim:Capital', 3);
+                        asset[year-2][3].inventories = getParameter(xml, 'ifrs:Inventories', 3) + getParameter(xml, 'tifrs-bsci-mim:SecuritiesPurchasedUnderResellAgreements', 3) + getParameter(xml, 'tifrs-bsci-mim:DiscountsAndLoansNet', 3);
+                        asset[year-2][3].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', 3) + getParameter(xml, 'tifrs-bsci-mim:NoncurrentHeldToMaturityFinancialAssetsNet', 3);
+                        asset[year-2][3].receivable = getParameter(xml, 'tifrs-bsci-mim:ReceivablesNet', 3) + getParameter(xml, 'tifrs-bsci-mim:ReceivablesDueFromRelatedParties', 3) + getParameter(xml, 'tifrs-bsci-mim:DueFromTheCentralBankAndCallLoansToBanks', 3);
+                        asset[year-2][3].payable = getParameter(xml, 'tifrs-bsci-mim:Payables', 3) + getParameter(xml, 'tifrs-bsci-mim:PayablesToRelatedParties', 3) + getParameter(xml, 'tifrs-bsci-mim:DepositsFromTheCentralBankAndBanks', 3) + getParameter(xml, 'tifrs-bsci-mim:DepositsAndRemittances', 3);
+                        asset[year-2][3].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', 3);
+                        asset[year-2][3].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', 3) - asset[year-2][3].current_liabilities;
+                    }
                 }
                 if (quarter === 3 || quarter === 2) {
                     if (quarterIsEmpty(asset[year][quarter-1])) {
                         asset[year].splice(quarter-1, 1);
-                    //} else {
-                    //    asset[year][quarter+2] = asset[year][quarter-1];
                     }
                     if (quarterIsEmpty(asset[year-1][quarter-1])) {
                         asset[year-1].splice(quarter-1, 1);
-                    //} else {
-                    //    asset[year-1][quarter+2] = asset[year-1][quarter-1];
                     }
                 } else {
                     if (quarterIsEmpty(asset[year][quarter-1])) {
@@ -261,10 +417,90 @@ module.exports = {
             }
         } else {
             if (!asset[year][quarter-1] || !no_cover) {
-                asset[year][quarter-1] = {receivable: getParameter(xml, 'tw-gaap-ci:NetAccountsReceivable', 0) + getParameter(xml, 'tw-gaap-ci:OtherReceivables', 0) + getParameter(xml, 'tw-gaap-ci:NetNotesReceivable', 0) + getParameter(xml, 'tw-gaap-fh:DueCentralBankCallLoansBanks', 0) + getParameter(xml, 'tw-gaap-fh:FinancialAssetsMeasuredFairValueProfitLoss', 0) + getParameter(xml, 'tw-gaap-fh:SecuritiesPurchasedResellAgreements', 0) + getParameter(xml, 'tw-gaap-fh:ReceivablesNet', 0), payable: getParameter(xml, 'tw-gaap-ci:AccountsPayable', 0) + getParameter(xml, 'tw-gaap-ci:NotesPayable', 0) + getParameter(xml, 'tw-gaap-ci:IncomeTaxPayable', 0) + getParameter(xml, 'tw-gaap-ci:AccruedExpenses', 0) + getParameter(xml, 'tw-gaap-ci:OtherPayables', 0) + getParameter(xml, 'tw-gaap-fh:DepositsCentralBankBanks', 0) + getParameter(xml, 'tw-gaap-fh:CommercialPapersIssued', 0) + getParameter(xml, 'tw-gaap-fh:FinancialLiabilitiesMeasuredFairValueProfitLoss', 0) + getParameter(xml, 'tw-gaap-fh:SecuritiesSoldRepurchaseAgreements', 0) + getParameter(xml, 'tw-gaap-fh:Payables', 0), cash: getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 0) + getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 0), inventories: getParameter(xml, 'tw-gaap-ci:Inventories', 0) + getParameter(xml, 'tw-gaap-fh:LoansDiscountedNet', 0), OCFA: 0, property: getParameter(xml, 'tw-gaap-ci:FixedAssets', 0) + getParameter(xml, 'tw-gaap-fh:FixAssetsNet', 0), current_liabilities: getParameter(xml, 'tw-gaap-ci:CurrentLiabilities', 0) + getParameter(xml, 'tw-gaap-fh:DepositsCentralBankBanks', 0) + getParameter(xml, 'tw-gaap-fh:CommercialPapersIssued', 0) + getParameter(xml, 'tw-gaap-fh:FinancialLiabilitiesMeasuredFairValueProfitLoss', 0) + getParameter(xml, 'tw-gaap-fh:SecuritiesSoldRepurchaseAgreements', 0) + getParameter(xml, 'tw-gaap-fh:Payables', 0), noncurrent_liabilities: getParameter(xml, 'tw-gaap-ci:LongtermBorrowings', 0) + getParameter(xml, 'tw-gaap-ci:OtherLiabilities', 0) + getParameter(xml, 'tw-gaap-fh:Liabilities', 0) - getParameter(xml, 'tw-gaap-fh:DepositsCentralBankBanks', 0) - getParameter(xml, 'tw-gaap-fh:CommercialPapersIssued', 0) - getParameter(xml, 'tw-gaap-fh:FinancialLiabilitiesMeasuredFairValueProfitLoss', 0) - getParameter(xml, 'tw-gaap-fh:SecuritiesSoldRepurchaseAgreements', 0) - getParameter(xml, 'tw-gaap-fh:Payables', 0), equityParent: getParameter(xml, 'tw-gaap-ci:TotalParentCompanyStockholdersEquities', 0) + getParameter(xml, 'tw-gaap-fh:StockholdersEquityParentCompany', 0), equityChild: getParameter(xml, 'tw-gaap-ci:MinorityInterest', 0) + getParameter(xml, 'tw-gaap-fh:OtherEquity-MinorityInterest', 0), share: getParameter(xml, 'tw-gaap-ci:Capital', 0) + getParameter(xml, 'tw-gaap-fh:Capital', 0), total: getParameter(xml, 'tw-gaap-ci:Assets', 0) + getParameter(xml, 'tw-gaap-fh:Assets', 0), longterm: getParameter(xml, 'tw-gaap-ci:LongtermInvestments', 0) + getParameter(xml, 'tw-gaap-fh:EquityInvestmentsEquityMethodNet', 0)};
+                asset[year][quarter-1] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                if (getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 0)) {
+                    asset[year][quarter-1].share = getParameter(xml, 'tw-gaap-ci:Capital', 0);
+                    asset[year][quarter-1].cash = getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 0);
+                    asset[year][quarter-1].property = getParameter(xml, 'tw-gaap-ci:FixedAssets', 0);
+                    asset[year][quarter-1].equityParent = getParameter(xml, 'tw-gaap-ci:TotalParentCompanyStockholdersEquities', 0);
+                    asset[year][quarter-1].equityChild = getParameter(xml, 'tw-gaap-ci:MinorityInterest', 0);
+                    asset[year][quarter-1].total = getParameter(xml, 'tw-gaap-ci:Assets', 0);
+                    asset[year][quarter-1].longterm = getParameter(xml, 'tw-gaap-ci:LongtermInvestments', 0);
+                    asset[year][quarter-1].receivable = getParameter(xml, 'tw-gaap-ci:NetAccountsReceivable', 0) + getParameter(xml, 'tw-gaap-ci:OtherReceivables', 0) + getParameter(xml, 'tw-gaap-ci:NetNotesReceivable', 0);
+                    asset[year][quarter-1].inventories = getParameter(xml, 'tw-gaap-ci:Inventories', 0);
+                    asset[year][quarter-1].payable = getParameter(xml, 'tw-gaap-ci:AccountsPayable', 0) + getParameter(xml, 'tw-gaap-ci:NotesPayable', 0) + getParameter(xml, 'tw-gaap-ci:IncomeTaxPayable', 0) + getParameter(xml, 'tw-gaap-ci:AccruedExpenses', 0) + getParameter(xml, 'tw-gaap-ci:OtherPayables', 0);
+                    asset[year][quarter-1].noncurrent_liabilities = getParameter(xml, 'tw-gaap-ci:LongTermLiabilities', 0);
+                    asset[year][quarter-1].current_liabilities = getParameter(xml, 'tw-gaap-ci:Liabilities', 0) - asset[year][quarter-1].noncurrent_liabilities;
+                } else if (getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 0)) {
+                    asset[year][quarter-1].share = getParameter(xml, 'tw-gaap-fh:Capital', 0);
+                    asset[year][quarter-1].cash = getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 0);
+                    asset[year][quarter-1].property = getParameter(xml, 'tw-gaap-fh:FixAssetsNet', 0);
+                    asset[year][quarter-1].equityParent = getParameter(xml, 'tw-gaap-fh:StockholdersEquityParentCompany', 0);
+                    asset[year][quarter-1].equityChild = getParameter(xml, 'tw-gaap-fh:OtherEquity-MinorityInterest', 0);
+                    asset[year][quarter-1].total = getParameter(xml, 'tw-gaap-fh:Assets', 0);
+                    asset[year][quarter-1].longterm = getParameter(xml, 'tw-gaap-fh:EquityInvestmentsEquityMethodNet', 0) + getParameter(xml, 'tw-gaap-fh:HeldMaturityFinancialAssetsNet', 0);
+                    asset[year][quarter-1].receivable = getParameter(xml, 'tw-gaap-fh:ReceivablesNet', 0) + getParameter(xml, 'tw-gaap-fh:DueCentralBankCallLoansBanks', 0);
+                    asset[year][quarter-1].inventories = getParameter(xml, 'tw-gaap-fh:LoansDiscountedNet', 0) + getParameter(xml, 'tw-gaap-fh:SecuritiesPurchasedResellAgreements', 0);
+                    asset[year][quarter-1].payable = getParameter(xml, 'tw-gaap-fh:DepositsCentralBankBanks', 0) + getParameter(xml, 'tw-gaap-fh:Deposits', 0) + getParameter(xml, 'tw-gaap-fh:Payables', 0);
+                    asset[year][quarter-1].current_liabilities = asset[year][quarter-1].payable + getParameter(xml, 'tw-gaap-fh:CommercialPapersIssued', 0) + getParameter(xml, 'tw-gaap-fh:FinancialLiabilitiesMeasuredFairValueProfitLoss', 0) + getParameter(xml, 'tw-gaap-fh:SecuritiesSoldRepurchaseAgreements', 0) + getParameter(xml, 'tw-gaap-fh:DueCentralBankOtherBanks', 0);
+                    asset[year][quarter-1].noncurrent_liabilities = getParameter(xml, 'tw-gaap-fh:Liabilities', 0) - asset[year][quarter-1].current_liabilities;
+                } else if (getParameter(xml, 'tw-gaap-mim:CashCashEquivalents', 0)) {
+                    asset[year][quarter-1].share = getParameter(xml, 'tw-gaap-mim:Capital', 0);
+                    asset[year][quarter-1].cash = getParameter(xml, 'tw-gaap-mim:CashCashEquivalents', 0);
+                    asset[year][quarter-1].property = getParameter(xml, 'tw-gaap-mim:FixedAssets', 0);
+                    asset[year][quarter-1].equityParent = getParameter(xml, 'tw-gaap-mim:TotalParentCompanyStockholdersEquities', 0);
+                    asset[year][quarter-1].equityChild = getParameter(xml, 'tw-gaap-mim:MinorityInterest', 0);
+                    asset[year][quarter-1].total = getParameter(xml, 'tw-gaap-mim:Assets', 0);
+                    asset[year][quarter-1].longterm = getParameter(xml, 'tw-gaap-mim:EquityInvestmentsEquityMethod', 0) + getParameter(xml, 'tw-gaap-mim:HeldMaturityFinancialAssetsNoncurrent', 0);
+                    asset[year][quarter-1].receivable = getParameter(xml, 'tw-gaap-mim:Receivables', 0) + getParameter(xml, 'tw-gaap-mim:DueCentralBankCallLoansBanks', 0);
+                    asset[year][quarter-1].inventories = getParameter(xml, 'tw-gaap-mim:Inventories', 0) + getParameter(xml, 'tw-gaap-mim:SecuritiesPurchasedResellAgreements', 0) + getParameter(xml, 'tw-gaap-mim:DiscountsLoansNet', 0);
+                    asset[year][quarter-1].payable = getParameter(xml, 'tw-gaap-mim:Payables', 0) + getParameter(xml, 'tw-gaap-mim:DepositsCentralBankBanks', 0) + getParameter(xml, 'tw-gaap-mim:DepositsRemittances', 0);
+                    asset[year][quarter-1].noncurrent_liabilities = getParameter(xml, 'tw-gaap-mim:LongtermLiabilities', 0);
+                    asset[year][quarter-1].current_liabilities = getParameter(xml, 'tw-gaap-mim:Liabilities', 0) - asset[year][quarter-1].noncurrent_liabilities;
+                }
             }
             if (!asset[year-1][quarter-1] || !no_cover) {
-                asset[year-1][quarter-1] = {receivable: getParameter(xml, 'tw-gaap-ci:NetAccountsReceivable', 1) + getParameter(xml, 'tw-gaap-ci:OtherReceivables', 1) + getParameter(xml, 'tw-gaap-ci:NetNotesReceivable', 1) + getParameter(xml, 'tw-gaap-fh:DueCentralBankCallLoansBanks', 1) + getParameter(xml, 'tw-gaap-fh:FinancialAssetsMeasuredFairValueProfitLoss', 1) + getParameter(xml, 'tw-gaap-fh:SecuritiesPurchasedResellAgreements', 1) + getParameter(xml, 'tw-gaap-fh:ReceivablesNet', 1), payable: getParameter(xml, 'tw-gaap-ci:AccountsPayable', 1) + getParameter(xml, 'tw-gaap-ci:NotesPayable', 1) + getParameter(xml, 'tw-gaap-ci:IncomeTaxPayable', 1) + getParameter(xml, 'tw-gaap-ci:AccruedExpenses', 1) + getParameter(xml, 'tw-gaap-ci:OtherPayables', 1) + getParameter(xml, 'tw-gaap-fh:DepositsCentralBankBanks', 1) + getParameter(xml, 'tw-gaap-fh:CommercialPapersIssued', 1) + getParameter(xml, 'tw-gaap-fh:FinancialLiabilitiesMeasuredFairValueProfitLoss', 1) + getParameter(xml, 'tw-gaap-fh:SecuritiesSoldRepurchaseAgreements', 1) + getParameter(xml, 'tw-gaap-fh:Payables', 1), cash: getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 1) + getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 1), inventories: getParameter(xml, 'tw-gaap-ci:Inventories', 1) + getParameter(xml, 'tw-gaap-fh:LoansDiscountedNet', 1), OCFA: 0, property: getParameter(xml, 'tw-gaap-ci:FixedAssets', 1) + getParameter(xml, 'tw-gaap-fh:FixAssetsNet', 1), current_liabilities: getParameter(xml, 'tw-gaap-ci:CurrentLiabilities', 1) + getParameter(xml, 'tw-gaap-fh:DepositsCentralBankBanks', 1) + getParameter(xml, 'tw-gaap-fh:CommercialPapersIssued', 1) + getParameter(xml, 'tw-gaap-fh:FinancialLiabilitiesMeasuredFairValueProfitLoss', 1) + getParameter(xml, 'tw-gaap-fh:SecuritiesSoldRepurchaseAgreements', 1) + getParameter(xml, 'tw-gaap-fh:Payables', 1), noncurrent_liabilities: getParameter(xml, 'tw-gaap-ci:LongtermBorrowings', 1) + getParameter(xml, 'tw-gaap-ci:OtherLiabilities', 1) + getParameter(xml, 'tw-gaap-fh:Liabilities', 1) - getParameter(xml, 'tw-gaap-fh:DepositsCentralBankBanks', 1) - getParameter(xml, 'tw-gaap-fh:CommercialPapersIssued', 1) - getParameter(xml, 'tw-gaap-fh:FinancialLiabilitiesMeasuredFairValueProfitLoss', 1) - getParameter(xml, 'tw-gaap-fh:SecuritiesSoldRepurchaseAgreements', 1) - getParameter(xml, 'tw-gaap-fh:Payables', 1), equityParent: getParameter(xml, 'tw-gaap-ci:TotalParentCompanyStockholdersEquities', 1) + getParameter(xml, 'tw-gaap-fh:StockholdersEquityParentCompany', 1), equityChild: getParameter(xml, 'tw-gaap-ci:MinorityInterest', 1) + getParameter(xml, 'tw-gaap-fh:OtherEquity-MinorityInterest', 1), share: getParameter(xml, 'tw-gaap-ci:Capital', 1) + getParameter(xml, 'tw-gaap-fh:Capital', 1), total: getParameter(xml, 'tw-gaap-ci:Assets', 1) + getParameter(xml, 'tw-gaap-fh:Assets', 1), longterm: getParameter(xml, 'tw-gaap-ci:LongtermInvestments', 1) + getParameter(xml, 'tw-gaap-fh:EquityInvestmentsEquityMethodNet', 1)};
+                asset[year-1][quarter-1] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                if (getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 1)) {
+                    asset[year-1][quarter-1].share = getParameter(xml, 'tw-gaap-ci:Capital', 1);
+                    asset[year-1][quarter-1].cash = getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', 1);
+                    asset[year-1][quarter-1].property = getParameter(xml, 'tw-gaap-ci:FixedAssets', 1);
+                    asset[year-1][quarter-1].equityParent = getParameter(xml, 'tw-gaap-ci:TotalParentCompanyStockholdersEquities', 1);
+                    asset[year-1][quarter-1].equityChild = getParameter(xml, 'tw-gaap-ci:MinorityInterest', 1);
+                    asset[year-1][quarter-1].total = getParameter(xml, 'tw-gaap-ci:Assets', 1);
+                    asset[year-1][quarter-1].longterm = getParameter(xml, 'tw-gaap-ci:LongtermInvestments', 1);
+                    asset[year-1][quarter-1].receivable = getParameter(xml, 'tw-gaap-ci:NetAccountsReceivable', 1) + getParameter(xml, 'tw-gaap-ci:OtherReceivables', 1) + getParameter(xml, 'tw-gaap-ci:NetNotesReceivable', 1);
+                    asset[year-1][quarter-1].inventories = getParameter(xml, 'tw-gaap-ci:Inventories', 1);
+                    asset[year-1][quarter-1].payable = getParameter(xml, 'tw-gaap-ci:AccountsPayable', 1) + getParameter(xml, 'tw-gaap-ci:NotesPayable', 1) + getParameter(xml, 'tw-gaap-ci:IncomeTaxPayable', 1) + getParameter(xml, 'tw-gaap-ci:AccruedExpenses', 1) + getParameter(xml, 'tw-gaap-ci:OtherPayables', 1);
+                    asset[year-1][quarter-1].noncurrent_liabilities = getParameter(xml, 'tw-gaap-ci:LongTermLiabilities', 1);
+                    asset[year-1][quarter-1].current_liabilities = getParameter(xml, 'tw-gaap-ci:Liabilities', 1) - asset[year-1][quarter-1].noncurrent_liabilities;
+                } else if (getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 1)) {
+                    asset[year-1][quarter-1].share = getParameter(xml, 'tw-gaap-fh:Capital', 1);
+                    asset[year-1][quarter-1].cash = getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', 1);
+                    asset[year-1][quarter-1].property = getParameter(xml, 'tw-gaap-fh:FixAssetsNet', 1);
+                    asset[year-1][quarter-1].equityParent = getParameter(xml, 'tw-gaap-fh:StockholdersEquityParentCompany', 1);
+                    asset[year-1][quarter-1].equityChild = getParameter(xml, 'tw-gaap-fh:OtherEquity-MinorityInterest', 1);
+                    asset[year-1][quarter-1].total = getParameter(xml, 'tw-gaap-fh:Assets', 1);
+                    asset[year-1][quarter-1].longterm = getParameter(xml, 'tw-gaap-fh:EquityInvestmentsEquityMethodNet', 1) + getParameter(xml, 'tw-gaap-fh:HeldMaturityFinancialAssetsNet', 1);
+                    asset[year-1][quarter-1].receivable = getParameter(xml, 'tw-gaap-fh:ReceivablesNet', 1) + getParameter(xml, 'tw-gaap-fh:DueCentralBankCallLoansBanks', 1);
+                    asset[year-1][quarter-1].inventories = getParameter(xml, 'tw-gaap-fh:LoansDiscountedNet', 1) + getParameter(xml, 'tw-gaap-fh:SecuritiesPurchasedResellAgreements', 1);
+                    asset[year-1][quarter-1].payable = getParameter(xml, 'tw-gaap-fh:DepositsCentralBankBanks', 1) + getParameter(xml, 'tw-gaap-fh:Deposits', 1) + getParameter(xml, 'tw-gaap-fh:Payables', 1);
+                    asset[year-1][quarter-1].current_liabilities = asset[year-1][quarter-1].payable + getParameter(xml, 'tw-gaap-fh:CommercialPapersIssued', 1) + getParameter(xml, 'tw-gaap-fh:FinancialLiabilitiesMeasuredFairValueProfitLoss', 1) + getParameter(xml, 'tw-gaap-fh:SecuritiesSoldRepurchaseAgreements', 1) + getParameter(xml, 'tw-gaap-fh:DueCentralBankOtherBanks', 1);
+                    asset[year-1][quarter-1].noncurrent_liabilities = getParameter(xml, 'tw-gaap-fh:Liabilities', 1) - asset[year-1][quarter-1].current_liabilities;
+                } else if (getParameter(xml, 'tw-gaap-mim:CashCashEquivalents', 1)) {
+                    asset[year-1][quarter-1].share = getParameter(xml, 'tw-gaap-mim:Capital', 1);
+                    asset[year-1][quarter-1].cash = getParameter(xml, 'tw-gaap-mim:CashCashEquivalents', 1);
+                    asset[year-1][quarter-1].property = getParameter(xml, 'tw-gaap-mim:FixedAssets', 1);
+                    asset[year-1][quarter-1].equityParent = getParameter(xml, 'tw-gaap-mim:TotalParentCompanyStockholdersEquities', 1);
+                    asset[year-1][quarter-1].equityChild = getParameter(xml, 'tw-gaap-mim:MinorityInterest', 1);
+                    asset[year-1][quarter-1].total = getParameter(xml, 'tw-gaap-mim:Assets', 1);
+                    asset[year-1][quarter-1].longterm = getParameter(xml, 'tw-gaap-mim:EquityInvestmentsEquityMethod', 1) + getParameter(xml, 'tw-gaap-mim:HeldMaturityFinancialAssetsNoncurrent', 1);
+                    asset[year-1][quarter-1].receivable = getParameter(xml, 'tw-gaap-mim:Receivables', 1) + getParameter(xml, 'tw-gaap-mim:DueCentralBankCallLoansBanks', 1);
+                    asset[year-1][quarter-1].inventories = getParameter(xml, 'tw-gaap-mim:Inventories', 1) + getParameter(xml, 'tw-gaap-mim:SecuritiesPurchasedResellAgreements', 1) + getParameter(xml, 'tw-gaap-mim:DiscountsLoansNet', 1);
+                    asset[year-1][quarter-1].payable = getParameter(xml, 'tw-gaap-mim:Payables', 1) + getParameter(xml, 'tw-gaap-mim:DepositsCentralBankBanks', 1) + getParameter(xml, 'tw-gaap-mim:DepositsRemittances', 1);
+                    asset[year-1][quarter-1].noncurrent_liabilities = getParameter(xml, 'tw-gaap-mim:LongtermLiabilities', 1);
+                    asset[year-1][quarter-1].current_liabilities = getParameter(xml, 'tw-gaap-mim:Liabilities', 1) - asset[year-1][quarter-1].noncurrent_liabilities;
+                }
             }
             if (quarterIsEmpty(asset[year][quarter-1])) {
                 asset[year].splice(quarter-1, 1);
@@ -305,38 +541,30 @@ module.exports = {
             type = 1;
             year = Number(xml.xbrl['tifrs-notes:Year'][0]['_']);
             quarter = Number(xml.xbrl['tifrs-notes:Quarter'][0]['_']);
-        } else if (xml.xbrl['tw-gaap-ci:CashCashEquivalents']){
-            var xml_date = xml.xbrl['tw-gaap-ci:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
-            if (!xml_date) {
-                return false;
-            }
-            year = Number(xml_date[1]);
-            if (xml_date[2] === '1231') {
-                quarter = 4;
-            } else if (xml_date[2] === '0930') {
-                quarter = 3;
-            } else if (xml_date[2] === '0630') {
-                quarter = 2;
-            } else {
-                quarter = 1;
-            }
-        } else if (xml.xbrl['tw-gaap-fh:CashCashEquivalents']){
-            var xml_date = xml.xbrl['tw-gaap-fh:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
-            if (!xml_date) {
-                return false;
-            }
-            year = Number(xml_date[1]);
-            if (xml_date[2] === '1231') {
-                quarter = 4;
-            } else if (xml_date[2] === '0930') {
-                quarter = 3;
-            } else if (xml_date[2] === '0630') {
-                quarter = 2;
-            } else {
-                quarter = 1;
-            }
         } else {
-            return false;
+            if (xml.xbrl['tw-gaap-ci:CashCashEquivalents']){
+                var xml_date = xml.xbrl['tw-gaap-ci:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
+            } else if (xml.xbrl['tw-gaap-fh:CashCashEquivalents']){
+                var xml_date = xml.xbrl['tw-gaap-fh:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
+            } else if (xml.xbrl['tw-gaap-mim:CashCashEquivalents']){
+                var xml_date = xml.xbrl['tw-gaap-mim:CashCashEquivalents'][0]['$']['contextRef'].match(/^AsOf(\d\d\d\d)(\d\d\d\d)$/);
+            } else {
+                console.log('umknown date');
+                return false;
+            }
+            if (!xml_date) {
+                return false;
+            }
+            year = Number(xml_date[1]);
+            if (xml_date[2] === '1231') {
+                quarter = 4;
+            } else if (xml_date[2] === '0930') {
+                quarter = 3;
+            } else if (xml_date[2] === '0630') {
+                quarter = 2;
+            } else {
+                quarter = 1;
+            }
         }
         if (!sales[year]) {
             sales[year] = [];
@@ -347,33 +575,215 @@ module.exports = {
         if (type === 1) {
             if (quarter === 4 || quarter === 1) {
                 if (!sales[year][quarter-1] || !no_cover) {
-                    sales[year][quarter-1] = {gross_profit: getParameter(xml, 'tifrs-bsci-ci:GrossProfitLossFromOperations', 0) + getParameter(xml, 'tifrs-bsci-fh:NetInterestIncomeExpense', 0) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 0) - getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 0), profit: getParameter(xml, 'ifrs:ProfitLoss', 0), comprehensive: getParameter(xml, 'ifrs:ComprehensiveIncome', 0), revenue: getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 0) + getParameter(xml, 'ifrs:RevenueFromInterest', 0) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 0), expenses: getParameter(xml, 'tifrs-bsci-ci:OperatingExpenses', 0) + getParameter(xml, 'tifrs-bsci-fh:OperatingExpenses', 0), tax: getParameter(xml, 'ifrs:IncomeTaxExpenseContinuingOperations', 0) - getParameter(xml, 'tifrs-bsci-fh:TaxExpenseIncome', 0), eps: getParameter(xml, 'ifrs:BasicEarningsLossPerShare', 0), nonoperating: getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 0) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossExceptInterest', 0) - getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 0) - getParameter(xml, 'tifrs-bsci-fh:BadDebtExpensesAndGuaranteeLiabilityProvisions', 0), finance_cost: getParameter(xml, 'ifrs:FinanceCosts', 0) + getParameter(xml, 'tifrs-bsci-fh:BadDebtExpensesAndGuaranteeLiabilityProvisions', 0), cost: getParameter(xml, 'tifrs-bsci-ci:OperatingCosts', 0) + getParameter(xml, 'ifrs:InterestExpense', 0) + getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 0), operating: getParameter(xml, 'tifrs-bsci-ci:NetOperatingIncomeLoss', 0) + getParameter(xml, 'tifrs-bsci-fh:NetInterestIncomeExpense', 0) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 0) - getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 0) - getParameter(xml, 'tifrs-bsci-fh:OperatingExpenses', 0)};
+                    sales[year][quarter-1] = {gross_profit: 0, profit: getParameter(xml, 'ifrs:ProfitLoss', 0), comprehensive: getParameter(xml, 'ifrs:OtherComprehensiveIncome', 0), revenue: 0, expenses: 0, tax: 0, eps: getParameter(xml, 'ifrs:BasicEarningsLossPerShare', 0), nonoperating: 0, finance_cost: 0, cost: 0, operating: 0};
+                    if (getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 0)) {
+                        sales[year][quarter-1].revenue = getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 0);
+                        sales[year][quarter-1].cost = getParameter(xml, 'tifrs-bsci-ci:OperatingCosts', 0);
+                        sales[year][quarter-1].gross_profit = getParameter(xml, 'tifrs-bsci-ci:GrossProfitLossFromOperations', 0);
+                        sales[year][quarter-1].expenses = getParameter(xml, 'tifrs-bsci-ci:OperatingExpenses', 0);
+                        sales[year][quarter-1].operating = getParameter(xml, 'tifrs-bsci-ci:NetOperatingIncomeLoss', 0);
+                        sales[year][quarter-1].finance_cost = getParameter(xml, 'ifrs:FinanceCosts', 0);
+                        sales[year][quarter-1].tax = getParameter(xml, 'ifrs:IncomeTaxExpenseContinuingOperations', 0);
+                        sales[year][quarter-1].nonoperating = getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 0);
+                    } else if (getParameter(xml, 'tifrs-bsci-fh:NetInterestIncomeExpense', 0)) {
+                        sales[year][quarter-1].revenue = getParameter(xml, 'ifrs:RevenueFromInterest', 0) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 0) + getParameter(xml, 'tifrs-bsci-fh:NetServiceFeeChargeAndCommissionsIncomeLoss', 0);
+                        sales[year][quarter-1].cost = getParameter(xml, 'ifrs:InterestExpense', 0) + getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 0);
+                        sales[year][quarter-1].gross_profit = sales[year][quarter-1].revenue - sales[year][quarter-1].cost;
+                        sales[year][quarter-1].expenses = getParameter(xml, 'tifrs-bsci-fh:OperatingExpenses', 0);
+                        sales[year][quarter-1].operating = sales[year][quarter-1].gross_profit - sales[year][quarter-1].expenses;
+                        sales[year][quarter-1].finance_cost = getParameter(xml, 'tifrs-bsci-fh:BadDebtExpensesAndGuaranteeLiabilityProvisions', 0);
+                        sales[year][quarter-1].tax = -getParameter(xml, 'tifrs-bsci-fh:TaxExpenseIncome', 0);
+                        sales[year][quarter-1].nonoperating = sales[year][quarter-1].profit + sales[year][quarter-1].tax - sales[year][quarter-1].operating;
+                    } else if (getParameter(xml, 'ifrs:Revenue', 0)) {
+                        sales[year][quarter-1].revenue = getParameter(xml, 'ifrs:RevenueFromInterest', 0) + getParameter(xml, 'tifrs-bsci-mim:FeeIncome', 0) + getParameter(xml, 'ifrs:RevenueFromSaleOfGoods', 0) + getParameter(xml, 'ifrs:RevenueFromRenderingOfServices', 0);
+                        sales[year][quarter-1].cost = getParameter(xml, 'ifrs:InterestExpense', 0) + getParameter(xml, 'tifrs-bsci-mim:FeeExpense', 0) + getParameter(xml, 'ifrs:CostOfSales', 0) + getParameter(xml, 'tifrs-bsci-mim:CostOfServices', 0);
+                        sales[year][quarter-1].gross_profit = sales[year][quarter-1].revenue - sales[year][quarter-1].cost;
+                        sales[year][quarter-1].expenses = getParameter(xml, 'tifrs-bsci-mim:OperatingExpenses', 0);
+                        sales[year][quarter-1].operating = sales[year][quarter-1].gross_profit - sales[year][quarter-1].expenses;
+                        sales[year][quarter-1].finance_cost = getParameter(xml, 'tifrs-bsci-mim:BadDebtExpensesAndGuaranteeLiabilityProvisions', 0);
+                        sales[year][quarter-1].tax = getParameter(xml, 'ifrs:TaxExpenseIncome', 0);
+                        sales[year][quarter-1].nonoperating = getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 0);
+                        sales[year][quarter-1].nonoperating = sales[year][quarter-1].profit + sales[year][quarter-1].tax - sales[year][quarter-1].operating;
+                    } else {
+                        console.log('unknown finance data');
+                        return false;
+                    }
                 }
                 if (!sales[year-1][quarter-1] || !no_cover) {
-                    sales[year-1][quarter-1] = {gross_profit: getParameter(xml, 'tifrs-bsci-ci:GrossProfitLossFromOperations', 1) + getParameter(xml, 'tifrs-bsci-fh:NetInterestIncomeExpense', 1) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 1) - getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 1), profit: getParameter(xml, 'ifrs:ProfitLoss', 1), comprehensive: getParameter(xml, 'ifrs:ComprehensiveIncome', 1), revenue: getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 1) + getParameter(xml, 'ifrs:RevenueFromInterest', 1) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 1), expenses: getParameter(xml, 'tifrs-bsci-ci:OperatingExpenses', 1) + getParameter(xml, 'tifrs-bsci-fh:OperatingExpenses', 1), tax: getParameter(xml, 'ifrs:IncomeTaxExpenseContinuingOperations', 1) - getParameter(xml, 'tifrs-bsci-fh:TaxExpenseIncome', 1), eps: getParameter(xml, 'ifrs:BasicEarningsLossPerShare', 1), nonoperating: getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 1) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossExceptInterest', 1) - getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 1) - getParameter(xml, 'tifrs-bsci-fh:BadDebtExpensesAndGuaranteeLiabilityProvisions', 1), finance_cost: getParameter(xml, 'ifrs:FinanceCosts', 1) + getParameter(xml, 'tifrs-bsci-fh:BadDebtExpensesAndGuaranteeLiabilityProvisions', 1), cost: getParameter(xml, 'tifrs-bsci-ci:OperatingCosts', 1) + getParameter(xml, 'ifrs:InterestExpense', 1) + getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 1), operating: getParameter(xml, 'tifrs-bsci-ci:NetOperatingIncomeLoss', 1) + getParameter(xml, 'tifrs-bsci-fh:NetInterestIncomeExpense', 1) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 1) - getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 1) - getParameter(xml, 'tifrs-bsci-fh:OperatingExpenses', 1)};
+                    sales[year-1][quarter-1] = {gross_profit: 0, profit: getParameter(xml, 'ifrs:ProfitLoss', 1), comprehensive: getParameter(xml, 'ifrs:OtherComprehensiveIncome', 1), revenue: 0, expenses: 0, tax: 0, eps: getParameter(xml, 'ifrs:BasicEarningsLossPerShare', 1), nonoperating: 0, finance_cost: 0, cost: 0, operating: 0};
+                    if (getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 1)) {
+                        sales[year-1][quarter-1].revenue = getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 1);
+                        sales[year-1][quarter-1].cost = getParameter(xml, 'tifrs-bsci-ci:OperatingCosts', 1);
+                        sales[year-1][quarter-1].gross_profit = getParameter(xml, 'tifrs-bsci-ci:GrossProfitLossFromOperations', 1);
+                        sales[year-1][quarter-1].expenses = getParameter(xml, 'tifrs-bsci-ci:OperatingExpenses', 1);
+                        sales[year-1][quarter-1].operating = getParameter(xml, 'tifrs-bsci-ci:NetOperatingIncomeLoss', 1);
+                        sales[year-1][quarter-1].finance_cost = getParameter(xml, 'ifrs:FinanceCosts', 1);
+                        sales[year-1][quarter-1].tax = getParameter(xml, 'ifrs:IncomeTaxExpenseContinuingOperations', 1);
+                        sales[year-1][quarter-1].nonoperating = getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 1);
+                    } else if (getParameter(xml, 'tifrs-bsci-fh:NetInterestIncomeExpense', 1)) {
+                        sales[year-1][quarter-1].revenue = getParameter(xml, 'ifrs:RevenueFromInterest', 1) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 1) + getParameter(xml, 'tifrs-bsci-fh:NetServiceFeeChargeAndCommissionsIncomeLoss', 1);
+                        sales[year-1][quarter-1].cost = getParameter(xml, 'ifrs:InterestExpense', 1) + getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 1);
+                        sales[year-1][quarter-1].gross_profit = sales[year-1][quarter-1].revenue - sales[year-1][quarter-1].cost;
+                        sales[year-1][quarter-1].expenses = getParameter(xml, 'tifrs-bsci-fh:OperatingExpenses', 1);
+                        sales[year-1][quarter-1].operating = sales[year-1][quarter-1].gross_profit - sales[year-1][quarter-1].expenses;
+                        sales[year-1][quarter-1].finance_cost = getParameter(xml, 'tifrs-bsci-fh:BadDebtExpensesAndGuaranteeLiabilityProvisions', 1);
+                        sales[year-1][quarter-1].tax = -getParameter(xml, 'tifrs-bsci-fh:TaxExpenseIncome', 1);
+                        sales[year-1][quarter-1].nonoperating = sales[year-1][quarter-1].profit + sales[year-1][quarter-1].tax - sales[year-1][quarter-1].operating;
+                    } else if (getParameter(xml, 'ifrs:Revenue', 1)) {
+                        sales[year-1][quarter-1].revenue = getParameter(xml, 'ifrs:RevenueFromInterest', 1) + getParameter(xml, 'tifrs-bsci-mim:FeeIncome', 1) + getParameter(xml, 'ifrs:RevenueFromSaleOfGoods', 1) + getParameter(xml, 'ifrs:RevenueFromRenderingOfServices', 1);
+                        sales[year-1][quarter-1].cost = getParameter(xml, 'ifrs:InterestExpense', 1) + getParameter(xml, 'tifrs-bsci-mim:FeeExpense', 1) + getParameter(xml, 'ifrs:CostOfSales', 1) + getParameter(xml, 'tifrs-bsci-mim:CostOfServices', 1);
+                        sales[year-1][quarter-1].gross_profit = sales[year-1][quarter-1].revenue - sales[year-1][quarter-1].cost;
+                        sales[year-1][quarter-1].expenses = getParameter(xml, 'tifrs-bsci-mim:OperatingExpenses', 1);
+                        sales[year-1][quarter-1].operating = sales[year-1][quarter-1].gross_profit - sales[year-1][quarter-1].expenses;
+                        sales[year-1][quarter-1].finance_cost = getParameter(xml, 'tifrs-bsci-mim:BadDebtExpensesAndGuaranteeLiabilityProvisions', 1);
+                        sales[year-1][quarter-1].tax = getParameter(xml, 'ifrs:TaxExpenseIncome', 1);
+                        sales[year-1][quarter-1].nonoperating = getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 1);
+                        sales[year-1][quarter-1].nonoperating = sales[year-1][quarter-1].profit + sales[year-1][quarter-1].tax - sales[year-1][quarter-1].operating;
+                    }
                 }
             } else if (quarter === 3 || quarter === 2) {
-                //sales[year][quarter+2] = {gross_profit: getParameter(xml, 'tifrs-bsci-ci:GrossProfitLossFromOperations', 0), profit: getParameter(xml, 'ifrs:ProfitLoss', 0), comprehensive: getParameter(xml, 'ifrs:ComprehensiveIncome', 0), revenue: getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 0), expenses: getParameter(xml, 'tifrs-bsci-ci:OperatingExpenses', 0), tax: getParameter(xml, 'ifrs:IncomeTaxExpenseContinuingOperations', 0), eps: getParameter(xml, 'ifrs:BasicEarningsLossPerShare', 0), nonoperating: getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 0), finance_cost: getParameter(xml, 'ifrs:FinanceCosts', 0), cost: getParameter(xml, 'tifrs-bsci-ci:OperatingCosts', 0), operating: getParameter(xml, 'tifrs-bsci-ci:NetOperatingIncomeLoss', 0)};
-                //sales[year-1][quarter+2] = {gross_profit: getParameter(xml, 'tifrs-bsci-ci:GrossProfitLossFromOperations', 1), profit: getParameter(xml, 'ifrs:ProfitLoss', 1), comprehensive: getParameter(xml, 'ifrs:ComprehensiveIncome', 1), revenue: getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 1), expenses: getParameter(xml, 'tifrs-bsci-ci:OperatingExpenses', 1), tax: getParameter(xml, 'ifrs:IncomeTaxExpenseContinuingOperations', 1), eps: getParameter(xml, 'ifrs:BasicEarningsLossPerShare', 1), nonoperating: getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 1), finance_cost: getParameter(xml, 'ifrs:FinanceCosts', 1), cost: getParameter(xml, 'tifrs-bsci-ci:OperatingCosts', 1), operating: getParameter(xml, 'tifrs-bsci-ci:NetOperatingIncomeLoss', 1)};
                 if (!sales[year][quarter-1] || !no_cover) {
-                    sales[year][quarter-1] = {gross_profit: getParameter(xml, 'tifrs-bsci-ci:GrossProfitLossFromOperations', 2) + getParameter(xml, 'tifrs-bsci-fh:NetInterestIncomeExpense', 2) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 2) - getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 2), profit: getParameter(xml, 'ifrs:ProfitLoss', 2), comprehensive: getParameter(xml, 'ifrs:ComprehensiveIncome', 2), revenue: getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 2) + getParameter(xml, 'ifrs:RevenueFromInterest', 2) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 2), expenses: getParameter(xml, 'tifrs-bsci-ci:OperatingExpenses', 2) + getParameter(xml, 'tifrs-bsci-fh:OperatingExpenses', 2), tax: getParameter(xml, 'ifrs:IncomeTaxExpenseContinuingOperations', 2) - getParameter(xml, 'tifrs-bsci-fh:TaxExpenseIncome', 2), eps: getParameter(xml, 'ifrs:BasicEarningsLossPerShare', 2), nonoperating: getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 2) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossExceptInterest', 2) - getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 2) - getParameter(xml, 'tifrs-bsci-fh:BadDebtExpensesAndGuaranteeLiabilityProvisions', 2), finance_cost: getParameter(xml, 'ifrs:FinanceCosts', 2) + getParameter(xml, 'tifrs-bsci-fh:BadDebtExpensesAndGuaranteeLiabilityProvisions', 2), cost: getParameter(xml, 'tifrs-bsci-ci:OperatingCosts', 2) + getParameter(xml, 'ifrs:InterestExpense', 2) + getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 2), operating: getParameter(xml, 'tifrs-bsci-ci:NetOperatingIncomeLoss', 2) + getParameter(xml, 'tifrs-bsci-fh:NetInterestIncomeExpense', 2) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 2) - getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 2) - getParameter(xml, 'tifrs-bsci-fh:OperatingExpenses', 2)};
+                    sales[year][quarter-1] = {gross_profit: 0, profit: getParameter(xml, 'ifrs:ProfitLoss', 2), comprehensive: getParameter(xml, 'ifrs:OtherComprehensiveIncome', 2), revenue: 0, expenses: 0, tax: 0, eps: getParameter(xml, 'ifrs:BasicEarningsLossPerShare', 2), nonoperating: 0, finance_cost: 0, cost: 0, operating: 0};
+                    if (getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 2)) {
+                        sales[year][quarter-1].revenue = getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 2);
+                        sales[year][quarter-1].cost = getParameter(xml, 'tifrs-bsci-ci:OperatingCosts', 2);
+                        sales[year][quarter-1].gross_profit = getParameter(xml, 'tifrs-bsci-ci:GrossProfitLossFromOperations', 2);
+                        sales[year][quarter-1].expenses = getParameter(xml, 'tifrs-bsci-ci:OperatingExpenses', 2);
+                        sales[year][quarter-1].operating = getParameter(xml, 'tifrs-bsci-ci:NetOperatingIncomeLoss', 1);
+                        sales[year][quarter-1].finance_cost = getParameter(xml, 'ifrs:FinanceCosts', 1);
+                        sales[year][quarter-1].tax = getParameter(xml, 'ifrs:IncomeTaxExpenseContinuingOperations', 2);
+                        sales[year][quarter-1].nonoperating = getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 2);
+                    } else if (getParameter(xml, 'tifrs-bsci-fh:NetInterestIncomeExpense', 2)) {
+                        sales[year][quarter-1].revenue = getParameter(xml, 'ifrs:RevenueFromInterest', 2) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 2) + getParameter(xml, 'tifrs-bsci-fh:NetServiceFeeChargeAndCommissionsIncomeLoss', 2);
+                        sales[year][quarter-1].cost = getParameter(xml, 'ifrs:InterestExpense', 2) + getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 2);
+                        sales[year][quarter-1].gross_profit = sales[year][quarter-1].revenue - sales[year][quarter-1].cost;
+                        sales[year][quarter-1].expenses = getParameter(xml, 'tifrs-bsci-fh:OperatingExpenses', 2);
+                        sales[year][quarter-1].operating = sales[year][quarter-1].gross_profit - sales[year][quarter-1].expenses;
+                        sales[year][quarter-1].finance_cost = getParameter(xml, 'tifrs-bsci-fh:BadDebtExpensesAndGuaranteeLiabilityProvisions', 2);
+                        sales[year][quarter-1].tax = -getParameter(xml, 'tifrs-bsci-fh:TaxExpenseIncome', 2);
+                        sales[year][quarter-1].nonoperating = sales[year][quarter-1].profit + sales[year][quarter-1].tax - sales[year][quarter-1].operating;
+                    } else if (getParameter(xml, 'ifrs:Revenue', 2)) {
+                        sales[year][quarter-1].revenue = getParameter(xml, 'ifrs:RevenueFromInterest', 2) + getParameter(xml, 'tifrs-bsci-mim:FeeIncome', 2) + getParameter(xml, 'ifrs:RevenueFromSaleOfGoods', 2) + getParameter(xml, 'ifrs:RevenueFromRenderingOfServices', 2);
+                        sales[year][quarter-1].cost = getParameter(xml, 'ifrs:InterestExpense', 2) + getParameter(xml, 'tifrs-bsci-mim:FeeExpense', 2) + getParameter(xml, 'ifrs:CostOfSales', 2) + getParameter(xml, 'tifrs-bsci-mim:CostOfServices', 2);
+                        sales[year][quarter-1].gross_profit = sales[year][quarter-1].revenue - sales[year][quarter-1].cost;
+                        sales[year][quarter-1].expenses = getParameter(xml, 'tifrs-bsci-mim:OperatingExpenses', 2);
+                        sales[year][quarter-1].operating = sales[year][quarter-1].gross_profit - sales[year][quarter-1].expenses;
+                        sales[year][quarter-1].finance_cost = getParameter(xml, 'tifrs-bsci-mim:BadDebtExpensesAndGuaranteeLiabilityProvisions', 2);
+                        sales[year][quarter-1].tax = getParameter(xml, 'ifrs:TaxExpenseIncome', 2);
+                        sales[year][quarter-1].nonoperating = getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 2);
+                        sales[year][quarter-1].nonoperating = sales[year][quarter-1].profit + sales[year][quarter-1].tax - sales[year][quarter-1].operating;
+                    }
                 }
                 if (!sales[year-1][quarter-1] || !no_cover) {
-                    sales[year-1][quarter-1] = {gross_profit: getParameter(xml, 'tifrs-bsci-ci:GrossProfitLossFromOperations', 3) + getParameter(xml, 'tifrs-bsci-fh:NetInterestIncomeExpense', 3) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 3) - getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 3), profit: getParameter(xml, 'ifrs:ProfitLoss', 3), comprehensive: getParameter(xml, 'ifrs:ComprehensiveIncome', 3), revenue: getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 3) + getParameter(xml, 'ifrs:RevenueFromInterest', 3) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 3), expenses: getParameter(xml, 'tifrs-bsci-ci:OperatingExpenses', 3) + getParameter(xml, 'tifrs-bsci-fh:OperatingExpenses', 3), tax: getParameter(xml, 'ifrs:IncomeTaxExpenseContinuingOperations', 3) - getParameter(xml, 'tifrs-bsci-fh:TaxExpenseIncome', 3), eps: getParameter(xml, 'ifrs:BasicEarningsLossPerShare', 3), nonoperating: getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 3) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossExceptInterest', 3) - getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 3) - getParameter(xml, 'tifrs-bsci-fh:BadDebtExpensesAndGuaranteeLiabilityProvisions', 3), finance_cost: getParameter(xml, 'ifrs:FinanceCosts', 3) + getParameter(xml, 'tifrs-bsci-fh:BadDebtExpensesAndGuaranteeLiabilityProvisions', 3), cost: getParameter(xml, 'tifrs-bsci-ci:OperatingCosts', 3) + getParameter(xml, 'ifrs:InterestExpense', 3) + getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 3), operating: getParameter(xml, 'tifrs-bsci-ci:NetOperatingIncomeLoss', 3) + getParameter(xml, 'tifrs-bsci-fh:NetInterestIncomeExpense', 3) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 3) - getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 3) - getParameter(xml, 'tifrs-bsci-fh:OperatingExpenses', 3)};
+                    sales[year-1][quarter-1] = {gross_profit: 0, profit: getParameter(xml, 'ifrs:ProfitLoss', 3), comprehensive: getParameter(xml, 'ifrs:OtherComprehensiveIncome', 3), revenue: 0, expenses: 0, tax: 0, eps: getParameter(xml, 'ifrs:BasicEarningsLossPerShare', 3), nonoperating: 0, finance_cost: 0, cost: 0, operating: 0};
+                    if (getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 3)) {
+                        sales[year-1][quarter-1].revenue = getParameter(xml, 'tifrs-bsci-ci:OperatingRevenue', 3);
+                        sales[year-1][quarter-1].cost = getParameter(xml, 'tifrs-bsci-ci:OperatingCosts', 3);
+                        sales[year-1][quarter-1].gross_profit = getParameter(xml, 'tifrs-bsci-ci:GrossProfitLossFromOperations', 3);
+                        sales[year-1][quarter-1].expenses = getParameter(xml, 'tifrs-bsci-ci:OperatingExpenses', 3);
+                        sales[year-1][quarter-1].operating = getParameter(xml, 'tifrs-bsci-ci:NetOperatingIncomeLoss', 3);
+                        sales[year-1][quarter-1].finance_cost = getParameter(xml, 'ifrs:FinanceCosts', 3);
+                        sales[year-1][quarter-1].tax = getParameter(xml, 'ifrs:IncomeTaxExpenseContinuingOperations', 3);
+                        sales[year-1][quarter-1].nonoperating = getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 3);
+                    } else if (getParameter(xml, 'tifrs-bsci-fh:NetInterestIncomeExpense', 3)) {
+                        sales[year-1][quarter-1].revenue = getParameter(xml, 'ifrs:RevenueFromInterest', 3) + getParameter(xml, 'tifrs-bsci-fh:NetIncomeLossOfInsuranceOperations', 3) + getParameter(xml, 'tifrs-bsci-fh:NetServiceFeeChargeAndCommissionsIncomeLoss', 3);
+                        sales[year-1][quarter-1].cost = getParameter(xml, 'ifrs:InterestExpense', 3) + getParameter(xml, 'tifrs-bsci-fh:NetChangeInProvisionsForInsuranceLiabilities', 3);
+                        sales[year-1][quarter-1].gross_profit = sales[year-1][quarter-1].revenue - sales[year-1][quarter-1].cost;
+                        sales[year-1][quarter-1].expenses = getParameter(xml, 'tifrs-bsci-fh:OperatingExpenses', 3);
+                        sales[year-1][quarter-1].operating = sales[year-1][quarter-1].gross_profit - sales[year-1][quarter-1].expenses;
+                        sales[year-1][quarter-1].finance_cost = getParameter(xml, 'tifrs-bsci-fh:BadDebtExpensesAndGuaranteeLiabilityProvisions', 3);
+                        sales[year-1][quarter-1].tax = -getParameter(xml, 'tifrs-bsci-fh:TaxExpenseIncome', 3);
+                        sales[year-1][quarter-1].nonoperating = sales[year-1][quarter-1].profit + sales[year-1][quarter-1].tax - sales[year-1][quarter-1].operating;
+                    } else if (getParameter(xml, 'ifrs:Revenue', 3)) {
+                        sales[year-1][quarter-1].revenue = getParameter(xml, 'ifrs:RevenueFromInterest', 3) + getParameter(xml, 'tifrs-bsci-mim:FeeIncome', 3) + getParameter(xml, 'ifrs:RevenueFromSaleOfGoods', 3) + getParameter(xml, 'ifrs:RevenueFromRenderingOfServices', 3);
+                        sales[year-1][quarter-1].cost = getParameter(xml, 'ifrs:InterestExpense', 3) + getParameter(xml, 'tifrs-bsci-mim:FeeExpense', 3) + getParameter(xml, 'ifrs:CostOfSales', 3) + getParameter(xml, 'tifrs-bsci-mim:CostOfServices', 3);
+                        sales[year-1][quarter-1].gross_profit = sales[year-1][quarter-1].revenue - sales[year-1][quarter-1].cost;
+                        sales[year-1][quarter-1].expenses = getParameter(xml, 'tifrs-bsci-mim:OperatingExpenses', 3);
+                        sales[year-1][quarter-1].operating = sales[year-1][quarter-1].gross_profit - sales[year-1][quarter-1].expenses;
+                        sales[year-1][quarter-1].finance_cost = getParameter(xml, 'tifrs-bsci-mim:BadDebtExpensesAndGuaranteeLiabilityProvisions', 3);
+                        sales[year-1][quarter-1].tax = getParameter(xml, 'ifrs:TaxExpenseIncome', 3);
+                        sales[year-1][quarter-1].nonoperating = getParameter(xml, 'tifrs-bsci-ci:NonoperatingIncomeAndExpenses', 3);
+                        sales[year-1][quarter-1].nonoperating = sales[year-1][quarter-1].profit + sales[year-1][quarter-1].tax - sales[year-1][quarter-1].operating;
+                    }
                 }
-                /*if (quarterIsEmpty(sales[year][quarter+2])) {
-                    sales[year].splice(quarter+2, 1);
-                }
-                if (quarterIsEmpty(sales[year-1][quarter+2])) {
-                    sales[year-1].splice(quarter+2, 1);
-                }*/
             }
         } else {
             if (!sales[year][quarter-1] || !no_cover) {
-                sales[year][quarter-1] = {gross_profit: getParameter(xml, 'tw-gaap-ci:GrossProfitLossOperations', 0) + getParameter(xml, 'tw-gaap-fh:InterestIncomes', 0) - getParameter(xml, 'tw-gaap-fh:InterestExpenses', 0) + getParameter(xml, 'tw-gaap-fh:NetIncomeLossInsuranceOperations', 0) + getParameter(xml, 'tw-gaap-fh:NetChangeInReservesForLiabilities', 0) + getParameter(xml, 'tw-gaap-fh:RecoveredProvisionMiscellaneousInsuranceReserve', 0) + getParameter(xml, 'tw-gaap-fh:DividendRevenue', 0), profit: getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', 0) + getParameter(xml, 'tw-gaap-fh:ConsolidatedIncomeLossContinuingOperationsNetIncomeTax', 0), comprehensive: 0, revenue: getParameter(xml, 'tw-gaap-ci:OperatingRevenue', 0) + getParameter(xml, 'tw-gaap-fh:InterestIncomes', 0) + getParameter(xml, 'tw-gaap-fh:NetIncomeLossInsuranceOperations', 0) + getParameter(xml, 'tw-gaap-fh:DividendRevenue', 0), expenses: getParameter(xml, 'tw-gaap-ci:OperatingExpenses', 0) + getParameter(xml, 'tw-gaap-fh:OperatingExpenses', 0), tax: getParameter(xml, 'tw-gaap-ci:IncomeTaxExpenseBenefit', 0) - getParameter(xml, 'tw-gaap-fh:IncomeTaxExpenseBenefit', 0), eps: getParameter(xml, 'tw-gaap-ci:PrimaryEarningsPerShare', 0) + getParameter(xml, 'tw-gaap-fh:PrimaryEarningsPerShare', 0), nonoperating: getParameter(xml, 'tw-gaap-ci:NonOperatingExpenses', 0) + getParameter(xml, 'tw-gaap-fh:ConsolidatedIncomeLossContinuingOperationsNetIncomeTax', 0) - getParameter(xml, 'tw-gaap-fh:InterestIncomes', 0) + getParameter(xml, 'tw-gaap-fh:InterestExpenses', 0) - getParameter(xml, 'tw-gaap-fh:NetIncomeLossInsuranceOperations', 0) - getParameter(xml, 'tw-gaap-fh:NetChangeInReservesForLiabilities', 0) - getParameter(xml, 'tw-gaap-fh:RecoveredProvisionMiscellaneousInsuranceReserve', 0) - getParameter(xml, 'tw-gaap-fh:DividendRevenue', 0) + getParameter(xml, 'tw-gaap-fh:OperatingExpenses', 0) - getParameter(xml, 'tw-gaap-fh:IncomeTaxExpenseBenefit', 0), finance_cost: getParameter(xml, 'tw-gaap-ci:InterestExpense', 0) + getParameter(xml, 'tw-gaap-fh:BadDebtExpensesLoan', 0), cost: getParameter(xml, 'tw-gaap-ci:OperatingCosts', 0) + getParameter(xml, 'tw-gaap-fh:InterestExpenses', 0) - getParameter(xml, 'tw-gaap-fh:NetChangeInReservesForLiabilities', 0) - getParameter(xml, 'tw-gaap-fh:RecoveredProvisionMiscellaneousInsuranceReserve', 0), operating: getParameter(xml, 'tw-gaap-ci:OperatingIncomeLoss', 0) + getParameter(xml, 'tw-gaap-fh:InterestIncomes', 0) - getParameter(xml, 'tw-gaap-fh:InterestExpenses', 0) + getParameter(xml, 'tw-gaap-fh:NetIncomeLossInsuranceOperations', 0) + getParameter(xml, 'tw-gaap-fh:NetChangeInReservesForLiabilities', 0) + getParameter(xml, 'tw-gaap-fh:RecoveredProvisionMiscellaneousInsuranceReserve', 0) + getParameter(xml, 'tw-gaap-fh:DividendRevenue', 0) - getParameter(xml, 'tw-gaap-fh:OperatingExpenses', 0)};
+                sales[year][quarter-1] = {gross_profit: 0, profit: 0, comprehensive: 0, revenue: 0, expenses: 0, tax: 0, eps: 0, nonoperating: 0, finance_cost: 0, cost: 0, operating: 0};
+                if (getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', 0)) {
+                    sales[year][quarter-1].revenue = getParameter(xml, 'tw-gaap-ci:OperatingRevenue', 0);
+                    sales[year][quarter-1].cost = getParameter(xml, 'tw-gaap-ci:OperatingCosts', 0);
+                    sales[year][quarter-1].gross_profit = getParameter(xml, 'tw-gaap-ci:GrossProfitLossOperations', 0);
+                    sales[year][quarter-1].expenses = getParameter(xml, 'tw-gaap-ci:OperatingExpenses', 0);
+                    sales[year][quarter-1].operating = getParameter(xml, 'tw-gaap-ci:OperatingIncomeLoss', 0);
+                    sales[year][quarter-1].profit = getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', 0);
+                    sales[year][quarter-1].tax = getParameter(xml, 'tw-gaap-ci:IncomeTaxExpenseBenefit', 0);
+                    sales[year][quarter-1].nonoperating = getParameter(xml, 'tw-gaap-ci:NonOperatingIncomeGains', 0) - getParameter(xml, 'tw-gaap-ci:NonOperatingExpenses', 0);
+                    sales[year][quarter-1].eps = getParameter(xml, 'tw-gaap-ci:PrimaryEarningsPerShare', 0);
+                    sales[year][quarter-1].finance_cost = getParameter(xml, 'tw-gaap-ci:InterestExpense', 0);
+                } else if (getParameter(xml, 'tw-gaap-fh:ConsolidatedIncomeLossContinuingOperationsNetIncomeTax', 0)) {
+                    sales[year][quarter-1].revenue = getParameter(xml, 'tw-gaap-fh:InterestIncomes', 0) + getParameter(xml, 'tw-gaap-fh:NetIncomeLossInsuranceOperations', 0) + getParameter(xml, 'tw-gaap-fh:NetServiceFeeChargeCommissionsIncomeLoss', 0);
+                    sales[year][quarter-1].cost = getParameter(xml, 'tw-gaap-fh:InterestExpenses', 0) - getParameter(xml, 'tw-gaap-fh:NetChangeInReservesForLiabilities', 0) - getParameter(xml, 'tw-gaap-fh:RecoveredProvisionMiscellaneousInsuranceReserve', 0);
+                    sales[year][quarter-1].gross_profit = sales[year][quarter-1].revenue - sales[year][quarter-1].cost;
+                    sales[year][quarter-1].expenses = getParameter(xml, 'tw-gaap-fh:OperatingExpenses', 0);
+                    sales[year][quarter-1].operating = sales[year][quarter-1].gross_profit - sales[year][quarter-1].expenses;
+                    sales[year][quarter-1].profit = getParameter(xml, 'tw-gaap-fh:ConsolidatedIncomeLossContinuingOperationsNetIncomeTax', 0);
+                    sales[year][quarter-1].tax = -getParameter(xml, 'tw-gaap-fh:IncomeTaxExpenseBenefit', 0);
+                    sales[year][quarter-1].nonoperating = sales[year][quarter-1].profit + sales[year][quarter-1].tax - sales[year][quarter-1].operating;
+                    sales[year][quarter-1].eps = getParameter(xml, 'tw-gaap-fh:PrimaryEarningsPerShare', 0);
+                    sales[year][quarter-1].finance_cost = getParameter(xml, 'tw-gaap-fh:BadDebtExpensesLoan', 0);
+                } else if (getParameter(xml, 'tw-gaap-mim:ConsolidatedTotalIncome-IncomeStatement', 0)) {
+                    sales[year][quarter-1].revenue = getParameter(xml, 'tw-gaap-mim:InterestIncomes', 0) + getParameter(xml, 'tw-gaap-mim:ServiceFee', 0) + getParameter(xml, 'tw-gaap-mim:NetSales', 0);
+                    sales[year][quarter-1].cost = getParameter(xml, 'tw-gaap-mim:InterestExpenses', 0) + getParameter(xml, 'tw-gaap-mim:CostSales', 0);
+                    sales[year][quarter-1].gross_profit = sales[year][quarter-1].revenue - sales[year][quarter-1].cost;
+                    sales[year][quarter-1].expenses = getParameter(xml, 'tw-gaap-mim:OperatingExpenses', 0);
+                    sales[year][quarter-1].operating = sales[year][quarter-1].gross_profit - sales[year][quarter-1].expenses;
+                    sales[year][quarter-1].profit = getParameter(xml, 'tw-gaap-mim:ConsolidatedTotalIncome-IncomeStatement', 0);
+                    sales[year][quarter-1].tax = getParameter(xml, 'tw-gaap-mim:IncomeTaxExpenses', 0);
+                    sales[year][quarter-1].nonoperating = sales[year][quarter-1].profit + sales[year][quarter-1].tax - sales[year][quarter-1].operating;
+                    sales[year][quarter-1].eps = getParameter(xml, 'tw-gaap-mim:PrimaryEarningsPerShare', 0);
+                    sales[year][quarter-1].finance_cost = getParameter(xml, 'tw-gaap-mim:BadDebtExpensesLoan', 0);
+                } else {
+                    console.log('unknown finance data');
+                    return false;
+                }
             }
             if (!sales[year-1][quarter-1] || !no_cover) {
-                sales[year-1][quarter-1] = {gross_profit: getParameter(xml, 'tw-gaap-ci:GrossProfitLossOperations', 1) + getParameter(xml, 'tw-gaap-fh:InterestIncomes', 1) - getParameter(xml, 'tw-gaap-fh:InterestExpenses', 1) + getParameter(xml, 'tw-gaap-fh:NetIncomeLossInsuranceOperations', 1) + getParameter(xml, 'tw-gaap-fh:NetChangeInReservesForLiabilities', 1) + getParameter(xml, 'tw-gaap-fh:RecoveredProvisionMiscellaneousInsuranceReserve', 1) + getParameter(xml, 'tw-gaap-fh:DividendRevenue', 1), profit: getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', 1) + getParameter(xml, 'tw-gaap-fh:ConsolidatedIncomeLossContinuingOperationsNetIncomeTax', 1), comprehensive: 0, revenue: getParameter(xml, 'tw-gaap-ci:OperatingRevenue', 1) + getParameter(xml, 'tw-gaap-fh:InterestIncomes', 1) + getParameter(xml, 'tw-gaap-fh:NetIncomeLossInsuranceOperations', 1) + getParameter(xml, 'tw-gaap-fh:DividendRevenue', 1), expenses: getParameter(xml, 'tw-gaap-ci:OperatingExpenses', 1) + getParameter(xml, 'tw-gaap-fh:OperatingExpenses', 1), tax: getParameter(xml, 'tw-gaap-ci:IncomeTaxExpenseBenefit', 1) - getParameter(xml, 'tw-gaap-fh:IncomeTaxExpenseBenefit', 1), eps: getParameter(xml, 'tw-gaap-ci:PrimaryEarningsPerShare', 1) + getParameter(xml, 'tw-gaap-fh:PrimaryEarningsPerShare', 1), nonoperating: getParameter(xml, 'tw-gaap-ci:NonOperatingExpenses', 1) + getParameter(xml, 'tw-gaap-fh:ConsolidatedIncomeLossContinuingOperationsNetIncomeTax', 1) - getParameter(xml, 'tw-gaap-fh:InterestIncomes', 1) + getParameter(xml, 'tw-gaap-fh:InterestExpenses', 1) - getParameter(xml, 'tw-gaap-fh:NetIncomeLossInsuranceOperations', 1) - getParameter(xml, 'tw-gaap-fh:NetChangeInReservesForLiabilities', 1) - getParameter(xml, 'tw-gaap-fh:RecoveredProvisionMiscellaneousInsuranceReserve', 1) - getParameter(xml, 'tw-gaap-fh:DividendRevenue', 1) + getParameter(xml, 'tw-gaap-fh:OperatingExpenses', 1) - getParameter(xml, 'tw-gaap-fh:IncomeTaxExpenseBenefit', 1), finance_cost: getParameter(xml, 'tw-gaap-ci:InterestExpense', 1) + getParameter(xml, 'tw-gaap-fh:BadDebtExpensesLoan', 1), cost: getParameter(xml, 'tw-gaap-ci:OperatingCosts', 1) + getParameter(xml, 'tw-gaap-fh:InterestExpenses', 1) - getParameter(xml, 'tw-gaap-fh:NetChangeInReservesForLiabilities', 1) - getParameter(xml, 'tw-gaap-fh:RecoveredProvisionMiscellaneousInsuranceReserve', 1), operating: getParameter(xml, 'tw-gaap-ci:OperatingIncomeLoss', 1) + getParameter(xml, 'tw-gaap-fh:InterestIncomes', 1) - getParameter(xml, 'tw-gaap-fh:InterestExpenses', 1) + getParameter(xml, 'tw-gaap-fh:NetIncomeLossInsuranceOperations', 1) + getParameter(xml, 'tw-gaap-fh:NetChangeInReservesForLiabilities', 1) + getParameter(xml, 'tw-gaap-fh:RecoveredProvisionMiscellaneousInsuranceReserve', 1) + getParameter(xml, 'tw-gaap-fh:DividendRevenue', 1) - getParameter(xml, 'tw-gaap-fh:OperatingExpenses', 1)};
+                sales[year-1][quarter-1] = {gross_profit: 0, profit: 0, comprehensive: 0, revenue: 0, expenses: 0, tax: 0, eps: 0, nonoperating: 0, finance_cost: 0, cost: 0, operating: 0};
+                if (getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', 1)) {
+                    sales[year-1][quarter-1].revenue = getParameter(xml, 'tw-gaap-ci:OperatingRevenue', 1);
+                    sales[year-1][quarter-1].cost = getParameter(xml, 'tw-gaap-ci:OperatingCosts', 1);
+                    sales[year-1][quarter-1].gross_profit = getParameter(xml, 'tw-gaap-ci:GrossProfitLossOperations', 1);
+                    sales[year-1][quarter-1].expenses = getParameter(xml, 'tw-gaap-ci:OperatingExpenses', 1);
+                    sales[year-1][quarter-1].operating = getParameter(xml, 'tw-gaap-ci:OperatingIncomeLoss', 1);
+                    sales[year-1][quarter-1].profit = getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', 1);
+                    sales[year-1][quarter-1].tax = getParameter(xml, 'tw-gaap-ci:IncomeTaxExpenseBenefit', 1);
+                    sales[year-1][quarter-1].nonoperating = getParameter(xml, 'tw-gaap-ci:NonOperatingIncomeGains', 1) - getParameter(xml, 'tw-gaap-ci:NonOperatingExpenses', 1);
+                    sales[year-1][quarter-1].eps = getParameter(xml, 'tw-gaap-ci:PrimaryEarningsPerShare', 1);
+                    sales[year-1][quarter-1].finance_cost = getParameter(xml, 'tw-gaap-ci:InterestExpense', 1);
+                } else if (getParameter(xml, 'tw-gaap-fh:ConsolidatedIncomeLossContinuingOperationsNetIncomeTax', 1)) {
+                    sales[year-1][quarter-1].revenue = getParameter(xml, 'tw-gaap-fh:InterestIncomes', 1) + getParameter(xml, 'tw-gaap-fh:NetIncomeLossInsuranceOperations', 1) + getParameter(xml, 'tw-gaap-fh:NetServiceFeeChargeCommissionsIncomeLoss', 1);
+                    sales[year-1][quarter-1].cost = getParameter(xml, 'tw-gaap-fh:InterestExpenses', 1) - getParameter(xml, 'tw-gaap-fh:NetChangeInReservesForLiabilities', 1) - getParameter(xml, 'tw-gaap-fh:RecoveredProvisionMiscellaneousInsuranceReserve', 1);
+                    sales[year-1][quarter-1].gross_profit = sales[year-1][quarter-1].revenue - sales[year-1][quarter-1].cost;
+                    sales[year-1][quarter-1].expenses = getParameter(xml, 'tw-gaap-fh:OperatingExpenses', 1);
+                    sales[year-1][quarter-1].operating = sales[year-1][quarter-1].gross_profit - sales[year-1][quarter-1].expenses;
+                    sales[year-1][quarter-1].profit = getParameter(xml, 'tw-gaap-fh:ConsolidatedIncomeLossContinuingOperationsNetIncomeTax', 1);
+                    sales[year-1][quarter-1].tax = -getParameter(xml, 'tw-gaap-fh:IncomeTaxExpenseBenefit', 1);
+                    sales[year-1][quarter-1].nonoperating = sales[year-1][quarter-1].profit + sales[year-1][quarter-1].tax - sales[year-1][quarter-1].operating;
+                    sales[year-1][quarter-1].eps = getParameter(xml, 'tw-gaap-fh:PrimaryEarningsPerShare', 1);
+                    sales[year-1][quarter-1].finance_cost = getParameter(xml, 'tw-gaap-fh:BadDebtExpensesLoan', 1);
+                } else if (getParameter(xml, 'tw-gaap-mim:ConsolidatedTotalIncome-IncomeStatement', 1)) {
+                    sales[year-1][quarter-1].revenue = getParameter(xml, 'tw-gaap-mim:InterestIncomes', 1) + getParameter(xml, 'tw-gaap-mim:ServiceFee', 1) + getParameter(xml, 'tw-gaap-mim:NetSales', 1);
+                    sales[year-1][quarter-1].cost = getParameter(xml, 'tw-gaap-mim:InterestExpenses', 1) + getParameter(xml, 'tw-gaap-mim:CostSales', 1);
+                    sales[year-1][quarter-1].gross_profit = sales[year-1][quarter-1].revenue - sales[year-1][quarter-1].cost;
+                    sales[year-1][quarter-1].expenses = getParameter(xml, 'tw-gaap-mim:OperatingExpenses', 1);
+                    sales[year-1][quarter-1].operating = sales[year-1][quarter-1].gross_profit - sales[year-1][quarter-1].expenses;
+                    sales[year-1][quarter-1].profit = getParameter(xml, 'tw-gaap-mim:ConsolidatedTotalIncome-IncomeStatement', 1);
+                    sales[year-1][quarter-1].tax = getParameter(xml, 'tw-gaap-mim:IncomeTaxExpenses', 1);
+                    sales[year-1][quarter-1].nonoperating = sales[year-1][quarter-1].profit + sales[year-1][quarter-1].tax - sales[year-1][quarter-1].operating;
+                    sales[year-1][quarter-1].eps = getParameter(xml, 'tw-gaap-mim:PrimaryEarningsPerShare', 1);
+                    sales[year-1][quarter-1].finance_cost = getParameter(xml, 'tw-gaap-mim:BadDebtExpensesLoan', 1);
+                }
             }
         }
         if (quarterIsEmpty(sales[year][quarter-1])) {
