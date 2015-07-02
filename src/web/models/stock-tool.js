@@ -1069,8 +1069,6 @@ module.exports = {
     getProfitIndex: function(profitStatus, startYear, endYear) {
         var index = 0;
         var denominator = 1;
-        console.log(startYear);
-        console.log(endYear);
         for (var i = endYear; i >= startYear; i--) {
             for (var j = 3; j >=0; j--) {
                 if (profitStatus[i] && profitStatus[i][j]) {
@@ -1232,7 +1230,11 @@ module.exports = {
         return managementStatus;
     },
     getManagementIndex: function(managementStatus, year, quarter) {
-        return Math.ceil((managementStatus[year][quarter-1].profitRelative+managementStatus[year][quarter-1].cashRelative+managementStatus[year][quarter-1].inventoriesRelative+managementStatus[year][quarter-1].receivableRelative+managementStatus[year][quarter-1].payableRelative)*1000)/1000;
+        if (managementStatus) {
+            return Math.ceil((managementStatus[year][quarter-1].profitRelative+managementStatus[year][quarter-1].cashRelative+managementStatus[year][quarter-1].inventoriesRelative+managementStatus[year][quarter-1].receivableRelative+managementStatus[year][quarter-1].payableRelative)*1000)/1000;
+        } else {
+            return 0;
+        }
     },
     getSingleStock: function(type, index, callback, stage) {
         stage = typeof stage !== 'undefined' ? stage : 0;
