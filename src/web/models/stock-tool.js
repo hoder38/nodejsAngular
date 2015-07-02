@@ -1263,6 +1263,7 @@ module.exports = {
                             } else {
                                 console.log('not');
                                 if (not > 4) {
+                                    console.log('stock finance data not exist');
                                     setTimeout(function(){
                                         callback(null, null);
                                     }, 0);
