@@ -13,6 +13,8 @@ var mongo = require("../models/mongo-tool.js");
 
 var util = require("../util/utility.js");
 
+var mime = require('../util/mime.js');
+
 var http = require('http'),
     express = require('express'),
     crypto = require('crypto'),
@@ -32,6 +34,95 @@ app.use(express.session(sessionStore.config));
 app.use(require('connect-multiparty')({ uploadDir: config_glb.nas_tmp }));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Accept");
+    if (req.method === 'OPTIONS') {
+        res.json({apiOK: true});
+    } else {
+        next();
+    }
+});
+
+app.post('/upload/subtitle/:uid', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('upload substitle');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.files);
+        if (req.files.file.size > (10 * 1024 * 1024)) {
+            util.handleError({hoerror: 2, message: "size too large!!!"}, next, res);
+        }
+        var ext = mime.isSub(req.files.file.name);
+        if (!ext) {
+            util.handleError({hoerror: 2, message: "not valid subtitle!!!"}, next, res);
+        }
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        mongo.orig("find", "storage", { _id: id }, {limit: 1}, function(err, items){
+            if(err) {
+                util.handleError(err, next, callback);
+            }
+            if (items.length === 0 ) {
+                util.handleError({hoerror: 2, message: 'file not exist!!!'}, next, callback);
+            }
+            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            var folderPath = path.dirname(filePath);
+            if (!fs.existsSync(folderPath)) {
+                mkdirp(folderPath, function(err) {
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (fs.existsSync(filePath + '.' + ext)) {
+                        fs.renameSync(filePath + '.' + ext, filePath + '.' + ext + '1');
+                    }
+                    var stream = fs.createReadStream(req.files.file.path);
+                    stream.on('error', function(err){
+                        console.log('save file error!!!');
+                        util.handleError(err, next, res);
+                    });
+                    stream.on('close', SRT2VTT);
+                    stream.pipe(fs.createWriteStream(filePath + '.' + ext));
+                });
+            } else {
+                if (fs.existsSync(filePath + '.' + ext)) {
+                    fs.renameSync(filePath + '.' + ext, filePath + '.' + ext + '1');
+                }
+                var stream = fs.createReadStream(req.files.file.path);
+                stream.on('error', function(err){
+                    console.log('save file error!!!');
+                    util.handleError(err, next, res);
+                });
+                stream.on('close', SRT2VTT);
+                stream.pipe(fs.createWriteStream(filePath + '.' + ext));
+            }
+            function SRT2VTT() {
+                fs.unlink(req.files.file.path, function(err) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    fs.readFile(filePath + '.' + ext, function (err,data) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        data = util.bufferToString(data);
+                        var result = "WEBVTT\n\n";
+                        result = result + data.replace(/,/g, '.');
+                        fs.writeFile(filePath + '.vtt', result, 'utf8', function (err) {
+                            if (err) {
+                                console.log(filePath + '.vtt');
+                                util.handleError(err, next, res);
+                            }
+                            res.json({apiOK: true});
+                        });
+                    });
+                });
+            }
+        });
+    });
+});
 
 app.get('/api/logout', function(req, res, next) {
     console.log("logout");

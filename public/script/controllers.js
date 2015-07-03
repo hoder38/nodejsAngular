@@ -1854,15 +1854,25 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
     };
 
-    $scope.doLogout = function(){
-        var Users = $resource('/api/logout', {}, {
+    $scope.doLogout = function(login_url){
+        login_url = typeof login_url !== 'undefined' ? login_url : '';
+        var Users = $resource(login_url + '/api/logout', {}, {
             'logout': { method:'GET' }
         });
+        var this_obj = this;
         Users.logout({}, function (user) {
             if (user.loginOK) {
-                $window.location.href = $location.path();
+                if (user.url) {
+                    this_obj.doLogin(user.url);
+                } else {
+                    $window.location.href = $location.path();
+                }
             } else {
-                $window.location.href = $location.path();
+                if (user.url) {
+                    this_obj.doLogout(user.url);
+                } else {
+                    $window.location.href = $location.path();
+                }
             }
         }, function(errorResult) {
             if (errorResult.status === 400) {
@@ -1874,15 +1884,20 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             }
         });
     }
-    $scope.doLogin = function() {
+    $scope.doLogin = function(login_url) {
+        login_url = typeof login_url !== 'undefined' ? login_url : '';
         if (isValidString(this.username, 'name') && isValidString(this.password, 'passwd')) {
-            var Users = $resource('/api', {}, {
+            var Users = $resource(login_url + '/api', {}, {
                 'login': { method:'POST' }
             });
-
+            var this_obj = this;
             Users.login({ username: this.username, password: this.password}, function (user) {
                 if (user.loginOK) {
-                    $window.location.href = $location.path();
+                    if (user.url) {
+                        this_obj.doLogin(user.url);
+                    } else {
+                        $window.location.href = $location.path();
+                    }
                 }
             }, function (errorResult) {
                 if (errorResult.status === 400) {
