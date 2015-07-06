@@ -330,9 +330,6 @@ module.exports = {
                     console.log('unknown finance data');
                     return false;
                 }
-                console.log('sub');
-                console.log(year);
-                console.log(quarter-1);
             }
             if (!asset[year-1][quarter-1] || !no_cover) {
                 asset[year-1][quarter-1] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
@@ -404,9 +401,6 @@ module.exports = {
                     asset[year-1][quarter-1].noncurrent_liabilities = getParameter(xml, 'tw-gaap-mim:LongtermLiabilities', 1);
                     asset[year-1][quarter-1].current_liabilities = getParameter(xml, 'tw-gaap-mim:Liabilities', 1) - asset[year-1][quarter-1].noncurrent_liabilities;
                 }
-                console.log('sub');
-                    console.log(year-1);
-                    console.log(quarter-1);
             }
             if (quarterIsEmpty(asset[year][quarter-1])) {
                 asset[year].splice(quarter-1, 1);
@@ -586,9 +580,6 @@ module.exports = {
             }
         } else {
             if (!sales[year][quarter-1] || !no_cover) {
-                if (!califrsSales(year, quarter-1, 0, 1)) {
-                    return false;
-                }
                 sales[year][quarter-1] = {gross_profit: 0, profit: 0, comprehensive: 0, revenue: 0, expenses: 0, tax: 0, eps: 0, nonoperating: 0, finance_cost: 0, cost: 0, operating: 0};
                 if (getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', 0)) {
                     sales[year][quarter-1].revenue = getParameter(xml, 'tw-gaap-ci:OperatingRevenue', 0);
