@@ -432,6 +432,33 @@ var exports = module.exports = {
                         });
                         req.on('error', function(e) {
                             util.handleError(e);
+                            if (e.code === 'ECONNREFUSED' || e.code === 'ENOTFOUND' || e.code === 'ETIMEDOUT') {
+                                time = time * 2;
+                                console.log(time);
+                                if (threshold) {
+                                    if (time < threshold) {
+                                        setTimeout(function(){
+                                            recur_download(time);
+                                        }, 0);
+                                    } else {
+                                        console.log(options);
+                                        this_obj.getApiQueue();
+                                        util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
+                                    }
+                                } else {
+                                    if (time < 600000) {
+                                        setTimeout(function(){
+                                            recur_download(time);
+                                        }, 0);
+                                    } else {
+                                        console.log(options);
+                                        this_obj.getApiQueue();
+                                        util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
+                                    }
+                                }
+                            } else if (e.code === 'HPE_INVALID_CONSTANT'){
+                                util.handleError(e, callback, callback, 400, null);
+                            }
                         });
                         req.end();
                     });

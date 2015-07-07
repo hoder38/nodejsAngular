@@ -228,7 +228,6 @@ function postData(fields, files, options, headers, callback, filePath) {
     }
     request.on('error', function(e) {
         console.log(post_options);
-        request.abort();
         if (e.code === 'HPE_INVALID_CONSTANT' || e.code === 'ECONNREFUSED' || e.code === 'ENOTFOUND' || e.code === 'ETIMEDOUT') {
             util.handleError(e, callback, callback, 400, null);
         } else {
@@ -393,6 +392,33 @@ module.exports = {
                 });
                 req.on('error', function(e) {
                     util.handleError(e);
+                    if (e.code === 'ECONNREFUSED' || e.code === 'ENOTFOUND' || e.code === 'ETIMEDOUT') {
+                        time = time * 2;
+                        console.log(time);
+                        if (threshold) {
+                            if (time < threshold) {
+                                setTimeout(function(){
+                                    recur_download(time);
+                                }, 0);
+                            } else {
+                                console.log(options);
+                                this_obj.getApiQueue();
+                                util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
+                            }
+                        } else {
+                            if (time < 600000) {
+                                setTimeout(function(){
+                                    recur_download(time);
+                                }, 0);
+                            } else {
+                                console.log(options);
+                                this_obj.getApiQueue();
+                                util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
+                            }
+                        }
+                    } else if (e.code === 'HPE_INVALID_CONSTANT') {
+                        util.handleError(e, callback, callback, 400, null);
+                    }
                 });
                 req.end();
             }, time);

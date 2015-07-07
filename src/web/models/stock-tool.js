@@ -1186,7 +1186,7 @@ module.exports = {
             } else {
                 api.getTwseXml(index, year, quarter, xml_path, function(err, xmlPath) {
                     if (err) {
-                        if (err.code !== 'HPE_INVALID_CONSTANT' && err.code !== 'ECONNREFUSED' && err.code !== 'ENOTFOUND') {
+                        if (err.code !== 'HPE_INVALID_CONSTANT' && err.code !== 'ECONNREFUSED' && err.code !== 'ENOTFOUND' && e.code !== 'ETIMEDOUT') {
                             util.handleError(err, callback, callback);
                         }
                     }
@@ -1267,7 +1267,7 @@ module.exports = {
                                     }, wait);
                                 }
                             }
-                        } else if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+                        } else if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || e.code === 'ETIMEDOUT') {
                             wait += 10000;
                             setTimeout(function(){
                                 recur_getTwseXml();
