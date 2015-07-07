@@ -35,7 +35,8 @@ app.use(require('connect-multiparty')({ uploadDir: config_glb.nas_tmp }));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Credentials', true);
+    res.header("Access-Control-Allow-Origin", req.headers.origin);
     res.header("Access-Control-Allow-Headers", "Content-Type, Accept");
     if (req.method === 'OPTIONS') {
         res.json({apiOK: true});

@@ -529,13 +529,14 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     //$scope.navList.splice(0,1);
     //console.log($routeParams);
     var miscUploader = $scope.miscUploader = new FileUploader({
-        url: 'upload/subtitle'
+        url: 'http://114.32.213.158:3389/upload/subtitle',
+        withCredentials : true
     });
 
     miscUploader.onAfterAddingFile = function(fileItem) {
         //console.info('onAfterAddingFile', fileItem);
         if ($scope.toolList.item) {
-            fileItem.url = 'upload/subtitle/' + $scope.toolList.item.id;
+            fileItem.url = 'http://114.32.213.158:3389/upload/subtitle/' + $scope.toolList.item.id;
             this.uploadAll();
         } else {
             addAlert('Select item first!!!');
@@ -1857,7 +1858,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.doLogout = function(login_url){
         login_url = typeof login_url !== 'undefined' ? login_url : '';
         var Users = $resource(login_url + '/api/logout', {}, {
-            'logout': { method:'GET' }
+            'logout': { method:'GET', withCredentials: true }
         });
         var this_obj = this;
         Users.logout({}, function (user) {
@@ -1888,7 +1889,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         login_url = typeof login_url !== 'undefined' ? login_url : '';
         if (isValidString(this.username, 'name') && isValidString(this.password, 'passwd')) {
             var Users = $resource(login_url + '/api', {}, {
-                'login': { method:'POST' }
+                'login': { method:'POST', withCredentials: true }
             });
             var this_obj = this;
             Users.login({ username: this.username, password: this.password}, function (user) {
