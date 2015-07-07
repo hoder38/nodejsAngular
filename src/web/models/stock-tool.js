@@ -569,12 +569,16 @@ module.exports = {
             } else if (quarter === 3 || quarter === 2) {
                 if (!sales[year][quarter-1] || !no_cover) {
                     if (!califrsSales(year, quarter-1, 2, 1)) {
-                        return false;
+                        if (!califrsSales(year, quarter-1, 0, 1)) {
+                            return false;
+                        }
                     }
                 }
                 if (!sales[year-1][quarter-1] || !no_cover) {
-                    if (!califrsSales(year-1, quarter-1, 3)) {
-                        return false;
+                    if (!califrsSales(year-1, quarter-1, 3, 1)) {
+                        if (!califrsSales(year, quarter-1, 1)) {
+                            return false;
+                        }
                     }
                 }
             }
