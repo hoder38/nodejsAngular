@@ -9,6 +9,7 @@
         <script type="text/javascript" src="script/angular-route.min.js"></script>
         <script type="text/javascript" src="script/angular-resource.min.js"></script>
         <script type="text/javascript" src="script/angular-cookies.min.js"></script>
+        <script type="text/javascript" src="script/angular-sanitize.min.js"></script>
         <script type="text/javascript" src="script/angular-file-upload.js"></script>
         <script type="text/javascript" src="script/Chart.min.js"></script>
         <script type="text/javascript" src="script/angular-chart.min.js"></script>
@@ -277,7 +278,7 @@
                             </nav>
                             <div ng-click="isVisible=false" id="non-blue">
                                 <div id="{{(isExtend&&isFull) && 'extend-image-screen' || ''}}">
-                                    <img class="{{isFull && 'full-image-screen'||'image-screen'}}" ng-src="{{image.src}}" alt="{{image.name}}" ng-click="nextImage()" ng-image-onload />
+                                    <img class="{{isFull && 'full-image-screen'||'image-screen'}}" ng-src="{{image.src | trusted}}" alt="{{image.name}}" ng-click="nextImage()" ng-image-onload />
                                 </div>
                             </div>
                         </div>
@@ -285,7 +286,7 @@
                     <section class="panel panel-success" ng-show="mediaShow[0] === 'video'">
                         <div class="panel-heading" ng-click="mediaToggle('video')">
                             <h4 class="panel-title">
-                                {{(video.index) >= 0 && (video.index+1) || video.index}} : {{video.name}}<i class="pull-right glyphicon glyphichttps://114.32.213.158:8080/Storage#on-remove"></i>
+                                {{(video.index) >= 0 && (video.index+1) || video.index}} : {{video.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="panel-body media-trim">
@@ -308,8 +309,8 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <video class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{video.src}}" controls autoplay ng-video ng-ended="mediaMove(1, 'video', true)" ng-play="testLogin()" ng-pause="mediaRecord('video')">
-                                <track label="English" kind="subtitle" srclang="en-US" ng-src="{{video.sub}}"  default="" />
+                            <video class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{video.src | trusted}}" controls autoplay ng-video ng-ended="mediaMove(1, 'video', true)" ng-play="testLogin()" ng-pause="mediaRecord('video')" crossorigin="use-credentials">
+                                <track label="English" kind="subtitle" srclang="en-US" ng-src="{{video.sub | trusted}}"  default="" />
                             </video>
                         </div>
                     </section>
@@ -344,7 +345,7 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <audio class="media-screen" ng-src="{{music.src}}" controls autoplay ng-music ng-ended="musicShuffle()" ng-play="testLogin()" ng-pause="mediaRecord('music')">
+                            <audio class="media-screen" ng-src="{{music.src | trusted}}" controls autoplay ng-music ng-ended="musicShuffle()" ng-play="testLogin()" ng-pause="mediaRecord('music')">
                             </audio>
                         </div>
                     </section>
@@ -395,10 +396,7 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <iframe ng-iframe-bigpic class="doc-screen" ng-src="{{doc.src}}" style="border: 0;"></iframe>
-                            <!--object class="{{isFull && 'full-doc-screen'||'doc-screen'}}" data="{{doc.src}}" type="application/pdf">
-                                <embed ng-src="{{doc.src}}" type="application/pdf" />
-                            </object-->
+                            <iframe ng-iframe-bigpic class="doc-screen" ng-src="{{doc.src | trusted}}" style="border: 0;"></iframe>
                         </div>
                     </section>
                     <section class="panel panel-info" ng-show="mediaShow[0] === 'present'">
@@ -440,7 +438,7 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <iframe class="doc-screen" ng-src="{{present.src}}" style="border: 0;"></iframe>
+                            <iframe class="doc-screen" ng-src="{{present.src | trusted}}" style="border: 0;"></iframe>
                         </div>
                     </section>
                 </section>

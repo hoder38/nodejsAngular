@@ -109,7 +109,11 @@ app.get('/api/logout', function(req, res, next) {
         req.session.destroy();
     }
     //res.clearCookie('id');
-    res.json({apiOK: true, url: 'http://114.32.213.158:3389'});
+    var url = 'http://114.32.213.158:3390';
+    if (req.secure) {
+        url = 'https://114.32.213.158:3389';
+    }
+    res.json({apiOK: true, url: url});
 });
 
 app.get('/api/userinfo', function (req, res, next) {
@@ -3132,7 +3136,11 @@ app.get('/api/getUser', function(req, res, next){
         if (util.checkAdmin(2 ,req.user)) {
             isAdult = true;
         }
-        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav});
+        var file_url = 'http://114.32.213.158:3390';
+        if (req.secure) {
+            file_url = 'https://114.32.213.158:3389';
+        }
+        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav, file_url: file_url});
     });
 });
 
@@ -3651,7 +3659,11 @@ passport.deserializeUser(function(id, done) {
 app.post('/api*', passport.authenticate('local', { failureRedirect: '/api' }),
     function(req, res) {
         console.log("auth ok");
-        res.json({loginOK: true, id: req.user.username, url: 'http://114.32.213.158:3389'});
+        var url = 'http://114.32.213.158:3390';
+        if (req.secure) {
+            url = 'https://114.32.213.158:3389';
+        }
+        res.json({loginOK: true, id: req.user.username, url: url});
 });
 
 app.all('/api*', function(req, res, next) {

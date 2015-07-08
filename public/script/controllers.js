@@ -1,5 +1,5 @@
 var video, music, subtitles, videoStart=0, musicStart=0;
-var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularFileUpload', 'ui.bootstrap', 'chart.js'], function($routeProvider, $locationProvider) {
+var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSanitize', 'angularFileUpload', 'ui.bootstrap', 'chart.js'], function($routeProvider, $locationProvider) {
     $routeProvider.when('/', {
         templateUrl: '/views/homepage',
         controller: LoginCntl//,
@@ -207,7 +207,11 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'angularF
             });
         }
     };
-});
+}).filter('trusted', ['$sce', function ($sce) {
+    return function(url) {
+        return $sce.trustAsResourceUrl(url);
+    };
+}]);
 
 function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $timeout) {
     $scope.$parent.currentPage = -1;
@@ -529,14 +533,14 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     //$scope.navList.splice(0,1);
     //console.log($routeParams);
     var miscUploader = $scope.miscUploader = new FileUploader({
-        url: 'http://114.32.213.158:3389/upload/subtitle',
+        url: '/upload/subtitle',
         withCredentials : true
     });
 
     miscUploader.onAfterAddingFile = function(fileItem) {
         //console.info('onAfterAddingFile', fileItem);
         if ($scope.toolList.item) {
-            fileItem.url = 'http://114.32.213.158:3389/upload/subtitle/' + $scope.toolList.item.id;
+            fileItem.url = $scope.file_url + '/upload/subtitle/' + $scope.toolList.item.id;
             this.uploadAll();
         } else {
             addAlert('Select item first!!!');
@@ -1403,9 +1407,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                         }
                         if (type === 'doc') {
                             this_obj.$parent[type].iframeOffset = null;
-                            this_obj.$parent[type].src = '/' + preType + '/' + item.id + '/doc';
+                            this_obj.$parent[type].src = $scope.file_url + '/' + preType + '/' + item.id + '/doc';
                         } else {
-                            this_obj.$parent[type].src = '/' + preType + '/' + item.id;
+                            this_obj.$parent[type].src = $scope.file_url + '/' + preType + '/' + item.id;
                         }
                         this_obj.$parent[type].maxId = item.present;
                         if (type === 'video') {
@@ -1418,7 +1422,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                                     }
                                 }
                             }
-                            this_obj.$parent[type].sub = '/subtitle/' + item.id;
+                            this_obj.$parent[type].sub = $scope.file_url + '/subtitle/' + item.id;
                         }
                         var tempList = $filter("filter")(this_obj.itemList, {status: status});
                         this_obj.$parent[type].name = item.name;
@@ -1707,6 +1711,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.username = '';
     $scope.password = '';
     $scope.id = 'guest';
+    $scope.file_url = '';
     $scope.loginFocus = {user: true, pwd:false};
     $scope.isLogin = false;
     //left
@@ -2027,6 +2032,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
                 $scope.isLogin = true;
                 $scope.id = result.id;
+                $scope.file_url = result.file_url;
                 $scope.isAdult = result.isAdult;
                 if (window.MozWebSocket) {
                     window.WebSocket = window.MozWebSocket;
@@ -2262,7 +2268,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 return false;
             }
         }
-        this.present.src = '/preview/' + this.present.list[this.present.index + this.present.back].id + '/' + this.present.presentId;
+        this.present.src = this.file_url + '/preview/' + this.present.list[this.present.index + this.present.back].id + '/' + this.present.presentId;
     }
 
     $scope.docMove = function(number) {
@@ -2286,7 +2292,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         if (this.doc.iframeOffset) {
             this.doc.win.scrollTo(0, this.doc.iframeOffset[this.doc.presentId-1]);
         } else {
-            this.doc.src = '/preview/' + this.doc.list[this.doc.index + this.doc.back].id + '/' + this.doc.presentId;
+            this.doc.src = this.file_url + '/preview/' + this.doc.list[this.doc.index + this.doc.back].id + '/' + this.doc.presentId;
         }
     }
 
@@ -2308,7 +2314,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 return false;
             }
         }
-        this.image.src = '/image/' + this.image.list[this.image.index + this.image.back].id + '/' + this.image.presentId;
+        this.image.src = this.file_url + '/image/' + this.image.list[this.image.index + this.image.back].id + '/' + this.image.presentId;
     }
 
     $scope.nextImage = function() {
@@ -2436,9 +2442,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                     if (type === 'doc') {
                                         this_obj[type].iframeOffset = null;
-                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                        this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                     } else {
-                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
                                     if (type === 'video') {
                                         var track = video.textTracks[0];
@@ -2450,7 +2456,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                 }
                                             }
                                         }
-                                        this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        this_obj[type].sub = $scope.file_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
                                 }
                                 this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -2550,9 +2556,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                     if (type === 'doc') {
                                         this_obj[type].iframeOffset = null;
-                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                        this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                     } else {
-                                        this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
                                     if (type === 'video') {
                                         var track = video.textTracks[0];
@@ -2564,7 +2570,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                 }
                                             }
                                         }
-                                        this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        this_obj[type].sub = $scope.file_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
                                 }
                                 this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -2625,9 +2631,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                         if (type === 'doc') {
                             this_obj[type].iframeOffset = null;
-                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                            this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                         } else {
-                            this_obj[type].src = '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                            this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         }
                         if (type === 'video') {
                             var track = video.textTracks[0];
@@ -2639,7 +2645,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     }
                                 }
                             }
-                            this_obj[type].sub = '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                            this_obj[type].sub = $scope.file_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         }
                     }
                     this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
