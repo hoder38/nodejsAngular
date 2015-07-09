@@ -1828,7 +1828,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         $scope.dropdown[type] = true;
     };
     var uploader = $scope.uploader = new FileUploader({
-        url: 'upload/file'
+        url: 'upload/file',
+        withCredentials : true
     });
     uploader.onAfterAddingFile = function(fileItem) {
         $scope.widget.uploader = true;
@@ -1836,9 +1837,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     };
     uploader.onBeforeUploadItem = function(item) {
         if ($scope.adultonly) {
-            item.url = 'upload/file/1';
+            item.url = $scope.file_url + '/upload/file/1';
         } else {
-            item.url = 'upload/file';
+            item.url = $scope.file_url + '/upload/file';
         }
         //console.info('onBeforeUploadItem', item);
     };

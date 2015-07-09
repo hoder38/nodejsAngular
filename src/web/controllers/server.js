@@ -109,9 +109,9 @@ app.get('/api/logout', function(req, res, next) {
         req.session.destroy();
     }
     //res.clearCookie('id');
-    var url = 'http://114.32.213.158:3390';
+    var url = 'http://' + config_glb.file_ip + ':' + config_glb.file_http_port;
     if (req.secure) {
-        url = 'https://114.32.213.158:3389';
+        url = 'https://' + config_glb.file_ip + ':' + config_glb.file_port;
     }
     res.json({apiOK: true, url: url});
 });
@@ -3136,9 +3136,9 @@ app.get('/api/getUser', function(req, res, next){
         if (util.checkAdmin(2 ,req.user)) {
             isAdult = true;
         }
-        var file_url = 'http://114.32.213.158:3390';
+        var file_url = 'http://' + config_glb.file_ip + ':' + config_glb.file_http_port;
         if (req.secure) {
-            file_url = 'https://114.32.213.158:3389';
+            file_url = 'https://' + config_glb.file_ip + ':' + config_glb.file_port;
         }
         res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav, file_url: file_url});
     });
@@ -3659,9 +3659,9 @@ passport.deserializeUser(function(id, done) {
 app.post('/api*', passport.authenticate('local', { failureRedirect: '/api' }),
     function(req, res) {
         console.log("auth ok");
-        var url = 'http://114.32.213.158:3390';
+        var url = 'http://' + config_glb.file_ip + ':' + config_glb.file_http_port;
         if (req.secure) {
-            url = 'https://114.32.213.158:3389';
+            url = 'https://' + config_glb.file_ip + ':' + config_glb.file_port;
         }
         res.json({loginOK: true, id: req.user.username, url: url});
 });
