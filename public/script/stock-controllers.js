@@ -923,6 +923,7 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
         if (assetStartDate.year > assetEndDate.year) {
             assetStartDate.year = assetEndDate.year;
         }
+        assetStartDate = caculateDate(this.parseResult, assetStartDate.year, assetStartDate.quarter);
         if (assetStartDate.year === assetEndDate.year && assetStartDate.quarter > assetEndDate.quarter) {
             assetStartDate.quarter = assetEndDate.quarter;
         }
