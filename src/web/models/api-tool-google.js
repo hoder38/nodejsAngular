@@ -43,7 +43,7 @@ function sendAPI(method, data, callback) {
         }
         param['fileId'] = data['fileId'];
         drive.files.get(param, function(err, metadata) {
-            if (err) {
+            if (err && err.code !== 'ECONNRESET') {
                 util.handleError(err, callback, callback, null);
             }
             setTimeout(function(){
@@ -104,7 +104,7 @@ function sendAPI(method, data, callback) {
         function uploadMul() {
             drive.files.insert(param, function(err, metadata) {
                 retry--;
-                if (err) {
+                if (err && err.code !== 'ECONNRESET') {
                     if (retry === 0) {
                         exports.getApiQueue();
                         util.handleError(err, callback, callback, null);
@@ -146,7 +146,7 @@ function sendAPI(method, data, callback) {
             max = data['max'];
         }
         drive.files.list({q: "'" + data['folderId'] + "' in parents and trashed = false and mimeType != 'application/vnd.google-apps.folder'", maxResults: max}, function(err, metadata) {
-            if (err) {
+            if (err && err.code !== 'ECONNRESET') {
                 util.handleError(err, callback, callback, null);
             }
             setTimeout(function(){
@@ -167,7 +167,7 @@ function sendAPI(method, data, callback) {
             max = data['max'];
         }
         drive.files.list({q: "'" + data['folderId'] + "' in parents and trashed = false and mimeType = 'application/vnd.google-apps.folder'" + find_name, maxResults: max}, function(err, metadata) {
-            if (err) {
+            if (err && err.code !== 'ECONNRESET') {
                 util.handleError(err, callback, callback, null);
             }
             setTimeout(function(){
@@ -183,7 +183,7 @@ function sendAPI(method, data, callback) {
         param['removeParents'] = data['rmFolderId'];
         param['addParents'] = data['addFolderId'];
         drive.files.patch(param, function(err) {
-            if (err) {
+            if (err && err.code !== 'ECONNRESET') {
                 util.handleError(err, callback, callback, null);
             }
             setTimeout(function(){
@@ -197,7 +197,7 @@ function sendAPI(method, data, callback) {
         }
         param['fileId'] = data['fileId'];
         drive.files.copy(param, function(err, metadata) {
-            if (err) {
+            if (err && err.code !== 'ECONNRESET') {
                 util.handleError(err, callback, callback, null);
             }
             setTimeout(function(){
@@ -211,7 +211,7 @@ function sendAPI(method, data, callback) {
         }
         param['fileId'] = data['fileId'];
         drive.files.trash(param, function(err) {
-            if (err) {
+            if (err && err.code !== 'ECONNRESET') {
                 util.handleError(err, callback, callback, null);
             }
             setTimeout(function(){

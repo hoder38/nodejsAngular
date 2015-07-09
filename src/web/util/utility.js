@@ -174,7 +174,13 @@ module.exports = {
                         throw new Error('terminal');
                     }
                 } else {
-                    next(err);
+                    var args = Array.prototype.slice.call(arguments, 3);
+                    if (args.length > 0 ) {
+                        args.splice(0, 0, err);
+                        next.apply(this, args);
+                    } else {
+                        next(err);
+                    }
                     throw new Error('terminal');
                 }
             }
