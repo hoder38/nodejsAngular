@@ -120,7 +120,7 @@ module.exports = {
             var temp = 0;
             var y = 0,q = 0;
             var i = 0;
-            if (xmlDate = getXmlDate(xml, 'tw-gaap-ci:NetCashProvidedUsedOperatingActivities', ci)) {
+            if ((xmlDate = getXmlDate(xml, 'tw-gaap-ci:ConsolidatedTotalIncome_StatementCashFlows', ci)) || (xmlDate = getXmlDate(xml, 'tw-gaap-ci:NetIncomeLoss_StatementCashFlows', ci))) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!cash[y]) {
@@ -157,7 +157,7 @@ module.exports = {
                         delete cash[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-fh:NetCashProvidedUsedOperatingActivities', ci)) {
+            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-fh:CurrentConsolidatedTotalIncome', ci)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!cash[y]) {
@@ -194,7 +194,7 @@ module.exports = {
                         delete cash[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-basi:NetCashProvidedUsedOperatingActivities', ci)) {
+            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-basi:ConsolidatedTotalIncome_StatementCashFlows', ci)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!cash[y]) {
@@ -231,7 +231,7 @@ module.exports = {
                         delete cash[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-mim:NetCashProvidedUsedOperatingActivities', ci)) {
+            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-mim:ConsolidatedTotalIncome-CashFlowStatement', ci)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!cash[y]) {
@@ -268,7 +268,7 @@ module.exports = {
                         delete cash[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-bd:NetCashProvidedUsedOperatingActivities', ci)) {
+            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-bd:ConsolidatedTotalIncome_StatementCashFlows', ci)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!cash[y]) {
@@ -873,7 +873,7 @@ module.exports = {
         function calgaapSales(si, no_cover) {
             var xmlDate = {};
             var y = 0,q = 0;
-            if (xmlDate = getXmlDate(xml, 'tw-gaap-ci:PrimaryEarningsPerShare', si)) {
+            if ((xmlDate = getXmlDate(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', si)) || (xmlDate = getXmlDate(xml, 'tw-gaap-ci:NetIncomeLoss', si))) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!sales[y]) {
@@ -898,7 +898,7 @@ module.exports = {
                         delete sales[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-fh:PrimaryEarningsPerShare', si)) {
+            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-fh:ConsolidatedIncomeLossContinuingOperationsNetIncomeTax', si)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!sales[y]) {
@@ -923,7 +923,7 @@ module.exports = {
                         delete sales[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-basi:PrimaryEarningsPerShare', si)) {
+            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-basi:IncomeLossContinuingOperations', si)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!sales[y]) {
@@ -948,7 +948,7 @@ module.exports = {
                         delete sales[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-bd:PrimaryEarningsPerShare', si)) {
+            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-bd:ConsolidatedNetIncome', si)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!sales[y]) {
@@ -973,7 +973,7 @@ module.exports = {
                         delete sales[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-mim:PrimaryEarningsPerShare', si)) {
+            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-mim:ConsolidatedTotalIncome-IncomeStatement', si)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!sales[y]) {
