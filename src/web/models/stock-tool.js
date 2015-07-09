@@ -81,10 +81,10 @@ module.exports = {
                     }
                 }
             }
-            if (!isOk) {
-                console.log('unknown finance data');
-                return false;
-            }
+        }
+        if (!isOk) {
+            console.log('unknown finance data');
+            return false;
         }
         return cash;
         function califrsCash(ci, no_cover) {
