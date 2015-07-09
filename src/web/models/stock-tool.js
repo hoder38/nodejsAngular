@@ -873,7 +873,7 @@ module.exports = {
         function calgaapSales(si, no_cover) {
             var xmlDate = {};
             var y = 0,q = 0;
-            if (xmlDate = getXmlDate(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', si)) {
+            if (xmlDate = getXmlDate(xml, 'tw-gaap-ci:PrimaryEarningsPerShare', si)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!sales[y]) {
@@ -886,7 +886,7 @@ module.exports = {
                     sales[y][q].gross_profit = getParameter(xml, 'tw-gaap-ci:GrossProfitLossOperations', si);
                     sales[y][q].expenses = getParameter(xml, 'tw-gaap-ci:OperatingExpenses', si);
                     sales[y][q].operating = getParameter(xml, 'tw-gaap-ci:OperatingIncomeLoss', si);
-                    sales[y][q].profit = getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', si);
+                    sales[y][q].profit = getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', si) + getParameter(xml, 'tw-gaap-ci:NetIncomeLoss', si);
                     sales[y][q].tax = getParameter(xml, 'tw-gaap-ci:IncomeTaxExpenseBenefit', si);
                     sales[y][q].nonoperating = getParameter(xml, 'tw-gaap-ci:NonOperatingIncomeGains', si) - getParameter(xml, 'tw-gaap-ci:NonOperatingExpenses', si);
                     sales[y][q].eps = getParameter(xml, 'tw-gaap-ci:PrimaryEarningsPerShare', si);
@@ -898,7 +898,7 @@ module.exports = {
                         delete sales[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-fh:ConsolidatedIncomeLossContinuingOperationsNetIncomeTax', si)) {
+            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-fh:PrimaryEarningsPerShare', si)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!sales[y]) {
@@ -923,7 +923,7 @@ module.exports = {
                         delete sales[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-basi:IncomeLossContinuingOperations', si)) {
+            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-basi:PrimaryEarningsPerShare', si)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!sales[y]) {
@@ -948,7 +948,7 @@ module.exports = {
                         delete sales[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-bd:ConsolidatedNetIncome', si)) {
+            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-bd:PrimaryEarningsPerShare', si)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!sales[y]) {
@@ -973,7 +973,7 @@ module.exports = {
                         delete sales[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-mim:ConsolidatedTotalIncome-IncomeStatement', si)) {
+            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-mim:PrimaryEarningsPerShare', si)) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!sales[y]) {
