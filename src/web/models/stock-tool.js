@@ -120,14 +120,14 @@ module.exports = {
             var temp = 0;
             var y = 0,q = 0;
             var i = 0;
-            if ((xmlDate = getXmlDate(xml, 'tw-gaap-ci:ConsolidatedTotalIncome_StatementCashFlows', ci)) || (xmlDate = getXmlDate(xml, 'tw-gaap-ci:NetIncomeLoss_StatementCashFlows', ci))) {
+            if ((xmlDate = getXmlDate(xml, 'tw-gaap-ci:ConsolidatedTotalIncome_StatementCashFlows', ci)) || (xmlDate = getXmlDate(xml, 'tw-gaap-ci:NetIncomeLoss_StatementCashFlows', ci)) || (xmlDate = getXmlDate(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', ci))) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!cash[y]) {
                     cash[y] = [];
                 }
                 if (!cash[y][q] || !no_cover) {
-                    cash[y][q] = {profitBT: getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome_StatementCashFlows', ci) + getParameter(xml, 'tw-gaap-ci:NetIncomeLoss_StatementCashFlows', ci) + getParameter(xml, 'tw-gaap-ci:IncomeTaxExpenseBenefit', ci), operation: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedOperatingActivities', ci), invest: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedInvestingActivities', ci), finance: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedFinancingActivities', ci), dividends: getParameter(xml, 'tw-gaap-ci:CashDividends', ci), change: getParameter(xml, 'tw-gaap-ci:NetChangesCashCashEquivalents', ci), begin: 0, end: 0};
+                    cash[y][q] = {profitBT: getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome', ci) + getParameter(xml, 'tw-gaap-ci:ConsolidatedTotalIncome_StatementCashFlows', ci) + getParameter(xml, 'tw-gaap-ci:NetIncomeLoss_StatementCashFlows', ci) + getParameter(xml, 'tw-gaap-ci:IncomeTaxExpenseBenefit', ci), operation: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedOperatingActivities', ci), invest: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedInvestingActivities', ci), finance: getParameter(xml, 'tw-gaap-ci:NetCashProvidedUsedFinancingActivities', ci), dividends: getParameter(xml, 'tw-gaap-ci:CashDividends', ci), change: getParameter(xml, 'tw-gaap-ci:NetChangesCashCashEquivalents', ci), begin: 0, end: 0};
                     cashDate = getXmlDate(xml, 'tw-gaap-ci:CashCashEquivalents', i);
                     while (cashDate) {
                         if (cashDate.year === y) {
