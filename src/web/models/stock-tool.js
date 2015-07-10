@@ -194,14 +194,14 @@ module.exports = {
                         delete cash[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-basi:ConsolidatedTotalIncome_StatementCashFlows', ci)) {
+            } else if ((xmlDate = getXmlDate(xml, 'tw-gaap-basi:ConsolidatedTotalIncome_StatementCashFlows', ci)) || (xmlDate = getXmlDate(xml, 'tw-gaap-basi:NetIncomeLoss_StatementCashFlows', ci))) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!cash[y]) {
                     cash[y] = [];
                 }
                 if (!cash[y][q] || !no_cover) {
-                    cash[y][q] = {profitBT: getParameter(xml, 'tw-gaap-basi:ConsolidatedTotalIncome_StatementCashFlows', ci) - getParameter(xml, 'tw-gaap-basi:IncomeTaxExpenseBenefitContinuingOperations', ci), operation: getParameter(xml, 'tw-gaap-basi:NetCashProvidedUsedOperatingActivities', ci), invest: getParameter(xml, 'tw-gaap-basi:NetCashProvidedUsedInvestingActivities', ci), finance: getParameter(xml, 'tw-gaap-basi:NetCashProvidedUsedFinancingActivities', ci), dividends: getParameter(xml, 'tw-gaap-basi:CashDividends', ci), change: getParameter(xml, 'tw-gaap-basi:NetChangesCashCashEquivalents', ci), begin: 0, end: 0};
+                    cash[y][q] = {profitBT: getParameter(xml, 'tw-gaap-basi:ConsolidatedTotalIncome_StatementCashFlows', ci) + getParameter(xml, 'tw-gaap-basi:NetIncomeLoss_StatementCashFlows', ci) - getParameter(xml, 'tw-gaap-basi:IncomeTaxExpenseBenefitContinuingOperations', ci), operation: getParameter(xml, 'tw-gaap-basi:NetCashProvidedUsedOperatingActivities', ci), invest: getParameter(xml, 'tw-gaap-basi:NetCashProvidedUsedInvestingActivities', ci), finance: getParameter(xml, 'tw-gaap-basi:NetCashProvidedUsedFinancingActivities', ci), dividends: getParameter(xml, 'tw-gaap-basi:CashDividends', ci), change: getParameter(xml, 'tw-gaap-basi:NetChangesCashCashEquivalents', ci), begin: 0, end: 0};
                     cashDate = getXmlDate(xml, 'tw-gaap-basi:CashCashEquivalents', i);
                     while (cashDate) {
                         if (cashDate.year === y) {
