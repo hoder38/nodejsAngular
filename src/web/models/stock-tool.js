@@ -268,14 +268,14 @@ module.exports = {
                         delete cash[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-bd:ConsolidatedTotalIncome_StatementCashFlows', ci)) {
+            } else if ((xmlDate = getXmlDate(xml, 'tw-gaap-bd:ConsolidatedTotalIncome_StatementCashFlows', ci)) || (xmlDate = getXmlDate(xml, 'tw-gaap-bd:NetIncomeLoss-CashFlowStatement', ci))) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!cash[y]) {
                     cash[y] = [];
                 }
                 if (!cash[y][q] || !no_cover) {
-                    cash[y][q] = {profitBT: getParameter(xml, 'tw-gaap-bd:ConsolidatedTotalIncome_StatementCashFlows', ci) + getParameter(xml, 'tw-gaap-bd:IncomeTaxExpense', ci), operation: getParameter(xml, 'tw-gaap-bd:NetCashProvidedUsedOperatingActivities', ci), invest: getParameter(xml, 'tw-gaap-bd:NetCashProvidedUsedInvestingActivities', ci), finance: getParameter(xml, 'tw-gaap-bd:NetCashProvidedUsedFinancingActivities', ci), dividends: getParameter(xml, 'tw-gaap-bd:CashDividends', ci), change: getParameter(xml, 'tw-gaap-bd:NetChangesCashCashEquivalents', ci), begin: 0, end: 0};
+                    cash[y][q] = {profitBT: getParameter(xml, 'tw-gaap-bd:NetIncomeLoss-CashFlowStatement', ci) + getParameter(xml, 'tw-gaap-bd:ConsolidatedTotalIncome_StatementCashFlows', ci) + getParameter(xml, 'tw-gaap-bd:IncomeTaxExpense', ci), operation: getParameter(xml, 'tw-gaap-bd:NetCashProvidedUsedOperatingActivities', ci), invest: getParameter(xml, 'tw-gaap-bd:NetCashProvidedUsedInvestingActivities', ci), finance: getParameter(xml, 'tw-gaap-bd:NetCashProvidedUsedFinancingActivities', ci), dividends: getParameter(xml, 'tw-gaap-bd:CashDividends', ci), change: getParameter(xml, 'tw-gaap-bd:NetChangesCashCashEquivalents', ci), begin: 0, end: 0};
                     cashDate = getXmlDate(xml, 'tw-gaap-bd:CashCashEquivalents', i);
                     while (cashDate) {
                         if (cashDate.year === y) {
