@@ -927,6 +927,10 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
         if (assetStartDate.year === assetEndDate.year && assetStartDate.quarter > assetEndDate.quarter) {
             assetStartDate.quarter = assetEndDate.quarter;
         }
+        if (!this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1] || !this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1] ) {
+            addAlert('no this date data!!!');
+            return false;
+        }
         this.assetLabels = [];
         this.assetData = [];
         this.assetCompareLabels = [];
@@ -1010,6 +1014,10 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
     }
     $scope.drawSales = function(comprehensive, year, quarter) {
         var salesDate = caculateDate(this.parseResult, year, quarter);
+        if (!this.parseResult.salesStatus[salesDate.year][salesDate.quarter-1]) {
+            addAlert('no this date data!!!');
+            return false;
+        }
         this.salesLabels = [];
         this.salesData = [];
         this.salesTotal = 0;

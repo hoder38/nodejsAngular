@@ -146,7 +146,7 @@ module.exports = {
                         i++;
                         cashDate = getXmlDate(xml, 'tw-gaap-ci:CashCashEquivalents', i);
                     }
-                    if (cashBegin && cashEnd) {
+                    if ((cashBegin && cashEnd) || cash[y][q].change) {
                         cash[y][q].begin = cashBegin;
                         cash[y][q].end = cashEnd;
                     }
@@ -183,7 +183,7 @@ module.exports = {
                         i++;
                         cashDate = getXmlDate(xml, 'tw-gaap-fh:CashCashEquivalents', i);
                     }
-                    if (cashBegin && cashEnd) {
+                    if ((cashBegin && cashEnd) || cash[y][q].change) {
                         cash[y][q].begin = cashBegin;
                         cash[y][q].end = cashEnd;
                     }
@@ -220,7 +220,7 @@ module.exports = {
                         i++;
                         cashDate = getXmlDate(xml, 'tw-gaap-basi:CashCashEquivalents', i);
                     }
-                    if (cashBegin && cashEnd) {
+                    if ((cashBegin && cashEnd) || cash[y][q].change) {
                         cash[y][q].begin = cashBegin;
                         cash[y][q].end = cashEnd;
                     }
@@ -257,7 +257,7 @@ module.exports = {
                         i++;
                         cashDate = getXmlDate(xml, 'tw-gaap-mim:CashCashEquivalents', i);
                     }
-                    if (cashBegin && cashEnd) {
+                    if ((cashBegin && cashEnd) || cash[y][q].change) {
                         cash[y][q].begin = cashBegin;
                         cash[y][q].end = cashEnd;
                     }
@@ -294,7 +294,7 @@ module.exports = {
                         i++;
                         cashDate = getXmlDate(xml, 'tw-gaap-bd:CashCashEquivalents', i);
                     }
-                    if (cashBegin && cashEnd) {
+                    if ((cashBegin && cashEnd) || cash[y][q].change) {
                         cash[y][q].begin = cashBegin;
                         cash[y][q].end = cashEnd;
                     }
@@ -537,8 +537,8 @@ module.exports = {
                     asset[y][q].share = getParameter(xml, 'tw-gaap-ci:Capital', ai);
                     asset[y][q].cash = getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', ai);
                     asset[y][q].property = getParameter(xml, 'tw-gaap-ci:FixedAssets', ai);
-                    asset[y][q].equityParent = getParameter(xml, 'tw-gaap-ci:TotalParentCompanyStockholdersEquities', ai);
                     asset[y][q].equityChild = getParameter(xml, 'tw-gaap-ci:MinorityInterest', ai);
+                    asset[y][q].equityParent = getParameter(xml, 'tw-gaap-ci:StockholdersEquities', ai) - asset[y][q].equityChild;
                     asset[y][q].total = getParameter(xml, 'tw-gaap-ci:Assets', ai);
                     asset[y][q].longterm = getParameter(xml, 'tw-gaap-ci:LongtermInvestments', ai);
                     asset[y][q].receivable = getParameter(xml, 'tw-gaap-ci:NetAccountsReceivable', ai) + getParameter(xml, 'tw-gaap-ci:OtherReceivables', ai) + getParameter(xml, 'tw-gaap-ci:NetNotesReceivable', ai) + getParameter(xml, 'tw-gaap-ci:NetAccountsReceivableRelatedParties', ai) + getParameter(xml, 'tw-gaap-ci:OtherReceivablesRelatedParties', ai) + getParameter(xml, 'tw-gaap-ci:NetNotesReceivableRelatedParties', ai) + getParameter(xml, 'tw-gaap-ci:OtherPrepayments', ai);
@@ -564,8 +564,8 @@ module.exports = {
                     asset[y][q].share = getParameter(xml, 'tw-gaap-fh:Capital', ai);
                     asset[y][q].cash = getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', ai);
                     asset[y][q].property = getParameter(xml, 'tw-gaap-fh:FixAssetsNet', ai);
-                    asset[y][q].equityParent = getParameter(xml, 'tw-gaap-fh:StockholdersEquityParentCompany', ai);
                     asset[y][q].equityChild = getParameter(xml, 'tw-gaap-fh:OtherEquity-MinorityInterest', ai);
+                    asset[y][q].equityParent = getParameter(xml, 'tw-gaap-fh:StockholdersEquity', ai) - asset[y][q].equityChild;
                     asset[y][q].total = getParameter(xml, 'tw-gaap-fh:Assets', ai);
                     asset[y][q].longterm = getParameter(xml, 'tw-gaap-fh:EquityInvestmentsEquityMethodNet', ai) + getParameter(xml, 'tw-gaap-fh:HeldMaturityFinancialAssetsNet', ai);
                     asset[y][q].receivable = getParameter(xml, 'tw-gaap-fh:ReceivablesNet', ai) + getParameter(xml, 'tw-gaap-fh:DueCentralBankCallLoansBanks', ai);
@@ -591,8 +591,8 @@ module.exports = {
                     asset[y][q].share = getParameter(xml, 'tw-gaap-basi:Capital', ai);
                     asset[y][q].cash = getParameter(xml, 'tw-gaap-basi:CashCashEquivalents', ai);
                     asset[y][q].property = getParameter(xml, 'tw-gaap-basi:FixedAssets-Net', ai);
-                    asset[y][q].equityParent = getParameter(xml, 'tw-gaap-basi:StockholdersEquityParentCompany', ai);
                     asset[y][q].equityChild = getParameter(xml, 'tw-gaap-basi:MinorityInterest', ai);
+                    asset[y][q].equityParent = getParameter(xml, 'tw-gaap-basi:StockholdersEquity', ai) - asset[y][q].equityChild;
                     asset[y][q].total = getParameter(xml, 'tw-gaap-basi:Assets', ai);
                     asset[y][q].longterm = getParameter(xml, 'tw-gaap-basi:HeldMaturityFinancialAssetsNet', ai);
                     asset[y][q].receivable = getParameter(xml, 'tw-gaap-basi:ReceivablesNet', ai) + getParameter(xml, 'tw-gaap-basi:DueTheCentralBankCallLoansBanks-BalanceSheet', ai);
@@ -618,8 +618,8 @@ module.exports = {
                     asset[y][q].share = getParameter(xml, 'tw-gaap-bd:CapitalStock', ai);
                     asset[y][q].cash = getParameter(xml, 'tw-gaap-bd:CashCashEquivalents', ai);
                     asset[y][q].property = getParameter(xml, 'tw-gaap-bd:FixedAssets', ai);
-                    asset[y][q].equityParent = getParameter(xml, 'tw-gaap-bd:TotalParentCompanyStockholdersEquities', ai);
                     asset[y][q].equityChild = getParameter(xml, 'tw-gaap-bd:MinorityInterest', ai);
+                    asset[y][q].equityParent = getParameter(xml, 'tw-gaap-bd:StockholdersEquities', ai) - asset[y][q].equityChild;
                     asset[y][q].total = getParameter(xml, 'tw-gaap-bd:Assets', ai);
                     asset[y][q].longterm = getParameter(xml, 'tw-gaap-bd:FundsLongTermInvestments', ai);
                     asset[y][q].OCFA = getParameter(xml, 'tw-gaap-bd:CustomerMarginAccount', ai);
@@ -646,8 +646,8 @@ module.exports = {
                     asset[y][q].share = getParameter(xml, 'tw-gaap-mim:Capital', ai);
                     asset[y][q].cash = getParameter(xml, 'tw-gaap-mim:CashCashEquivalents', ai);
                     asset[y][q].property = getParameter(xml, 'tw-gaap-mim:FixedAssets', ai);
-                    asset[y][q].equityParent = getParameter(xml, 'tw-gaap-mim:TotalParentCompanyStockholdersEquities', ai);
                     asset[y][q].equityChild = getParameter(xml, 'tw-gaap-mim:MinorityInterest', ai);
+                    asset[y][q].equityParent = getParameter(xml, 'tw-gaap-mim:StockholdersEquity', ai) - asset[y][q].equityChild;
                     asset[y][q].total = getParameter(xml, 'tw-gaap-mim:Assets', ai);
                     asset[y][q].longterm = getParameter(xml, 'tw-gaap-mim:EquityInvestmentsEquityMethod', ai) + getParameter(xml, 'tw-gaap-mim:HeldMaturityFinancialAssetsNoncurrent', ai);
                     asset[y][q].receivable = getParameter(xml, 'tw-gaap-mim:Receivables', ai) + getParameter(xml, 'tw-gaap-mim:DueCentralBankCallLoansBanks', ai) + getParameter(xml, 'tw-gaap-ci:OtherPrepayments', ai);
@@ -1055,9 +1055,15 @@ module.exports = {
             salesStatus[i] = [];
             for (var j in sales[i]) {
                 if (sales[i][j]) {
+                    if (!sales[i][j].revenue) {
+                        sales[i][j].revenue = 1;
+                    }
                     salesStatus[i][j] = {revenue: sales[i][j].revenue, cost: Math.ceil(sales[i][j].cost/sales[i][j].revenue*1000)/10, expenses: Math.ceil(sales[i][j].expenses/sales[i][j].revenue*1000)/10, finance_cost: Math.ceil(sales[i][j].finance_cost/sales[i][j].revenue*1000)/10, nonoperating_without_FC: Math.ceil((sales[i][j].nonoperating+sales[i][j].finance_cost)/sales[i][j].revenue*1000)/10, tax: Math.ceil(sales[i][j].tax/sales[i][j].revenue*1000)/10, comprehensive: Math.ceil(sales[i][j].comprehensive/sales[i][j].revenue*1000)/10, profit: Math.ceil(sales[i][j].profit/sales[i][j].revenue*1000)/10, profit_comprehensive: Math.ceil((sales[i][j].profit+sales[i][j].comprehensive)/sales[i][j].revenue*1000)/10, eps: sales[i][j].eps};
                     if ((j === '1' || j === '2' || j === '3') && sales[i][Number(j)-1]) {
                         salesStatus[i][j].quarterRevenue = sales[i][j].revenue - sales[i][Number(j)-1].revenue;
+                        if (!salesStatus[i][j].quarterRevenue) {
+                            salesStatus[i][j].quarterRevenue = 1;
+                        }
                         salesStatus[i][j].quarterGross = Math.ceil((sales[i][j].gross_profit - sales[i][Number(j)-1].gross_profit)/salesStatus[i][j].quarterRevenue*1000)/10;
                         salesStatus[i][j].quarterOperating = Math.ceil((sales[i][j].operating - sales[i][Number(j)-1].operating)/salesStatus[i][j].quarterRevenue*1000)/10;
                         salesStatus[i][j].quarterProfit = Math.ceil((sales[i][j].profit - sales[i][Number(j)-1].profit)/salesStatus[i][j].quarterRevenue*1000)/10;
@@ -1140,10 +1146,6 @@ module.exports = {
                         startY = i;
                         startQ = j;
                     }
-                    if (!realY && !realQ) {
-                        realY = Number(i);
-                        realQ = Number(j);
-                    }
                     revenue.push(salesStatus[i][j].quarterRevenue);
                     profit.push(Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100));
                     cash.push(asset[i][j].cash);
@@ -1156,10 +1158,6 @@ module.exports = {
                         startY = i;
                         startQ = j;
                     }
-                    if (!realY && !realQ) {
-                        realY = Number(i);
-                        realQ = Number(j);
-                    }
                     revenue.push(salesStatus[i][j].quarterRevenue);
                     profit.push(Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100));
                     cash.push(asset[i][j].cash);
@@ -1168,17 +1166,21 @@ module.exports = {
                     payable.push(asset[i][j].payable);
                     managementStatus[i][j] = {revenue: salesStatus[i][j].quarterRevenue, profit: Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100), cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable};
                 } else {
-                    if (!realY && !realQ) {
-                        realY = Number(i);
-                        realQ = Number(j);
-                    }
-                    managementStatus[i][j] = {revenue: salesStatus[i][j].quarterRevenue, profit: Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100), cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable};
+                    startY = 0;
+                    startQ = 0;
+                    revenue = [];
+                    profit = [];
+                    cash = [];
+                    inventories = [];
+                    receivable = [];
+                    payable = [];
+                    managementStatus[i] = [];
+                    delete managementStatus[i-1];
                 }
             }
         }
-        if (revenue.length < 3) {
-            return false;
-        }
+        realY = Number(startY);
+        realQ = Number(startQ);
         if (startQ === '0') {
             startQ = 2;
             startY = Number(startY);
@@ -1222,12 +1224,12 @@ module.exports = {
             var Relative = 0;
             var bY = realY;
             var bQ = realQ;
-            for (var i = 0; i < 4; i++) {
+            for (var i = 0; i < 8; i++) {
                 if (bQ > 3) {
                     bQ = 0;
                     bY++;
                 }
-                if (managementStatus[bY][bQ]) {
+                if (managementStatus[bY] && managementStatus[bY][bQ]) {
                     managementStatus[bY][bQ][dataRelative] = 0;
                 }
                 bQ++;
@@ -1237,16 +1239,18 @@ module.exports = {
                     Q = 0;
                     Y++;
                 }
-                Relative = 0;
-                for (var j = 0; j <= i; j++) {
-                    Relative += (revenue[j] - revenueEven[i-2]) * (data[j] - dataEven[i-2]);
-                }
                 if (managementStatus[Y][Q]) {
+                    Relative = 0;
+                    for (var j = 0; j <= i; j++) {
+                        Relative += (revenue[j] - revenueEven[i-2]) * (data[j] - dataEven[i-2]);
+                    }
                     if (dataVariance[i-2] && revenueVariance[i-2]) {
                         managementStatus[Y][Q][dataRelative] = Math.ceil(Relative / dataVariance[i-2] / revenueVariance[i-2] * 1000) / 1000;
                     } else {
                         managementStatus[Y][Q][dataRelative] = 0;
                     }
+                } else {
+                    i--;
                 }
                 Q++;
             }
@@ -1257,7 +1261,7 @@ module.exports = {
         if (managementStatus) {
             return Math.ceil((managementStatus[year][quarter-1].profitRelative+managementStatus[year][quarter-1].cashRelative+managementStatus[year][quarter-1].inventoriesRelative+managementStatus[year][quarter-1].receivableRelative+managementStatus[year][quarter-1].payableRelative)*1000)/1000;
         } else {
-            return 0;
+            return -10;
         }
     },
     getSingleStock: function(type, index, callback, stage) {
