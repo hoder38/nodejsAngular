@@ -36,8 +36,7 @@ var stock_interval = 86400000;
 
 var drive_batch = 100;
 
-var http = require('http'),
-    https = require('https'),
+var https = require('https'),
     privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
     certificate = fs.readFileSync(config_type.certificate, 'utf8'),
     credentials = {key: privateKey, cert: certificate},
@@ -52,7 +51,6 @@ var http = require('http'),
     app = express(),
     server = https.createServer(credentials, app),
     //port = 443,
-    serverHttp = http.createServer(app),
     //port = 80,
     mkdirp = require('mkdirp'),
     encode = "utf8",
@@ -109,11 +107,7 @@ app.get('/api/logout', function(req, res, next) {
         req.session.destroy();
     }
     //res.clearCookie('id');
-    var url = 'http://' + config_glb.file_ip + ':' + config_glb.file_http_port;
-    if (req.secure) {
-        url = 'https://' + config_glb.file_ip + ':' + config_glb.file_port;
-    }
-    res.json({apiOK: true, url: url});
+    res.json({apiOK: true, url: 'https://' + config_glb.file_ip + ':' + config_glb.file_port});
 });
 
 app.get('/api/userinfo', function (req, res, next) {
@@ -3136,11 +3130,7 @@ app.get('/api/getUser', function(req, res, next){
         if (util.checkAdmin(2 ,req.user)) {
             isAdult = true;
         }
-        var file_url = 'http://' + config_glb.file_ip + ':' + config_glb.file_http_port;
-        if (req.secure) {
-            file_url = 'https://' + config_glb.file_ip + ':' + config_glb.file_port;
-        }
-        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav, file_url: file_url});
+        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav, file_url: 'http://' + config_glb.file_ip + ':' + config_glb.file_http_port, main_url: 'https://' + config_glb.file_ip + ':' + config_glb.file_port});
     });
 });
 
@@ -3659,11 +3649,7 @@ passport.deserializeUser(function(id, done) {
 app.post('/api*', passport.authenticate('local', { failureRedirect: '/api' }),
     function(req, res) {
         console.log("auth ok");
-        var url = 'http://' + config_glb.file_ip + ':' + config_glb.file_http_port;
-        if (req.secure) {
-            url = 'https://' + config_glb.file_ip + ':' + config_glb.file_port;
-        }
-        res.json({loginOK: true, id: req.user.username, url: url});
+        res.json({loginOK: true, id: req.user.username, url: 'https://' + config_glb.file_ip + ':' + config_glb.file_port});
 });
 
 app.all('/api*', function(req, res, next) {
@@ -3853,8 +3839,6 @@ function sendWs(data, adultonly, auth) {
 }
 
 server.listen(config_glb.port, config_glb.ip);
-
-serverHttp.listen(config_glb.http_port, config_glb.ip);
 
 wssServer.on('connection', function(ws) {
     ws.on('message', onWsConnMessage);
@@ -4719,7 +4703,5 @@ function singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, nex
 }
 
 console.log('start express server\n');
-
-console.log("Server running at http://" + config_glb.ip + ":" + config_glb.http_port + ' ' + new Date());
 
 console.log("Server running at https://" + config_glb.ip + ":" + config_glb.port + ' ' + new Date());

@@ -507,11 +507,13 @@ var exports = module.exports = {
                                             if (doc_index === 1) {
                                                 if (!fs.existsSync(filePath + '_doc/doc.html')) {
                                                     fs.renameSync(curPath, filePath + '_doc/doc.html');
+                                                    fs.appendFileSync(filePath + '_doc/doc.html', '<script type="text/javascript" charset="utf-8">document.domain = document.domain;</script></body></html>', 'utf-8');
                                                     break;
                                                 }
                                             } else {
                                                 if (!fs.existsSync(filePath + '_doc/doc' + doc_index + '.html')) {
                                                     fs.renameSync(curPath, filePath + '_doc/doc' + doc_index + '.html');
+                                                    fs.appendFileSync(filePath + '_doc/doc' + doc_index + '.html', '<script type="text/javascript" charset="utf-8">document.domain = document.domain;</script></body></html>', 'utf-8');
                                                     break;
                                                 }
                                             }

@@ -540,7 +540,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     miscUploader.onAfterAddingFile = function(fileItem) {
         //console.info('onAfterAddingFile', fileItem);
         if ($scope.toolList.item) {
-            fileItem.url = $scope.file_url + '/upload/subtitle/' + $scope.toolList.item.id;
+            fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.toolList.item.id;
             this.uploadAll();
         } else {
             addAlert('Select item first!!!');
@@ -1254,8 +1254,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             item = this.toolList.item;
         }
         var this_itemList = this.itemList;
-        var Info = $resource('/api/delFile/' + item.id + '/' + item.recycle, {}, {
-            'delFile': { method:'DELETE' }
+        var Info = $resource(this.main_url + '/api/delFile/' + item.id + '/' + item.recycle, {}, {
+            'delFile': { method:'DELETE', withCredentials: true }
         });
         Info.delFile({}, function (result) {
             if (result.loginOK) {
@@ -1407,7 +1407,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                         }
                         if (type === 'doc') {
                             this_obj.$parent[type].iframeOffset = null;
-                            this_obj.$parent[type].src = $scope.file_url + '/' + preType + '/' + item.id + '/doc';
+                            this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id + '/doc';
+                        } else if (type === 'present') {
+                            this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id;
                         } else {
                             this_obj.$parent[type].src = $scope.file_url + '/' + preType + '/' + item.id;
                         }
@@ -1422,7 +1424,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
                                     }
                                 }
                             }
-                            this_obj.$parent[type].sub = $scope.file_url + '/subtitle/' + item.id;
+                            this_obj.$parent[type].sub = $scope.main_url + '/subtitle/' + item.id;
                         }
                         var tempList = $filter("filter")(this_obj.itemList, {status: status});
                         this_obj.$parent[type].name = item.name;
@@ -1712,6 +1714,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.password = '';
     $scope.id = 'guest';
     $scope.file_url = '';
+    $scope.main_url = '';
     $scope.loginFocus = {user: true, pwd:false};
     $scope.isLogin = false;
     //left
@@ -1837,9 +1840,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     };
     uploader.onBeforeUploadItem = function(item) {
         if ($scope.adultonly) {
-            item.url = $scope.file_url + '/upload/file/1';
+            item.url = $scope.main_url + '/upload/file/1';
         } else {
-            item.url = $scope.file_url + '/upload/file';
+            item.url = $scope.main_url + '/upload/file';
         }
         //console.info('onBeforeUploadItem', item);
     };
@@ -2033,6 +2036,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
                 $scope.isLogin = true;
                 $scope.id = result.id;
+                $scope.main_url = result.main_url;
+                document.domain = document.domain;
                 $scope.file_url = result.file_url;
                 $scope.isAdult = result.isAdult;
                 if (window.MozWebSocket) {
@@ -2269,7 +2274,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 return false;
             }
         }
-        this.present.src = this.file_url + '/preview/' + this.present.list[this.present.index + this.present.back].id + '/' + this.present.presentId;
+        this.present.src = this.main_url + '/preview/' + this.present.list[this.present.index + this.present.back].id + '/' + this.present.presentId;
     }
 
     $scope.docMove = function(number) {
@@ -2293,7 +2298,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         if (this.doc.iframeOffset) {
             this.doc.win.scrollTo(0, this.doc.iframeOffset[this.doc.presentId-1]);
         } else {
-            this.doc.src = this.file_url + '/preview/' + this.doc.list[this.doc.index + this.doc.back].id + '/' + this.doc.presentId;
+            this.doc.src = this.main_url + '/preview/' + this.doc.list[this.doc.index + this.doc.back].id + '/' + this.doc.presentId;
         }
     }
 
@@ -2443,7 +2448,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                     if (type === 'doc') {
                                         this_obj[type].iframeOffset = null;
-                                        this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                        this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                    } else if (type === 'present') {
+                                        this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     } else {
                                         this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
@@ -2457,7 +2464,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                 }
                                             }
                                         }
-                                        this_obj[type].sub = $scope.file_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        this_obj[type].sub = $scope.main_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
                                 }
                                 this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -2557,7 +2564,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                     if (type === 'doc') {
                                         this_obj[type].iframeOffset = null;
-                                        this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                        this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                    } else if (type === 'present') {
+                                        this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     } else {
                                         this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
@@ -2571,7 +2580,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                 }
                                             }
                                         }
-                                        this_obj[type].sub = $scope.file_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        this_obj[type].sub = $scope.main_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
                                 }
                                 this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -2632,7 +2641,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                         if (type === 'doc') {
                             this_obj[type].iframeOffset = null;
-                            this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                            this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                        } else if (type === 'present') {
+                            this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         } else {
                             this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         }
@@ -2646,7 +2657,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     }
                                 }
                             }
-                            this_obj[type].sub = $scope.file_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                            this_obj[type].sub = $scope.main_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         }
                     }
                     this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;

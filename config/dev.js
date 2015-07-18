@@ -4,7 +4,6 @@ module.exports = {
     port: 8080,
     file_port: 8088,
     file_http_port: 8089,
-    http_port: 8087,
     wss_port: 8084,
     ws_port: 8085,
     wsj_port: 8086,

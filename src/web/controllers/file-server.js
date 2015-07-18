@@ -53,6 +53,7 @@ app.use(function(req, res, next) {
     res.header('Access-Control-Allow-Credentials', true);
     res.header("Access-Control-Allow-Origin", req.headers.origin);
     res.header("Access-Control-Allow-Headers", "Content-Type, Accept");
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
     if (req.method === 'OPTIONS') {
         res.json({apiOK: true});
     } else {
@@ -633,6 +634,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                             }
                         });
                     }*/
+                    console.log(filePath);
                     if (!fs.existsSync(filePath + docExt)) {
                         console.log(filePath + docExt);
                         util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
@@ -736,6 +738,138 @@ app.get('/subtitle/:uid', function(req, res, next){
                 });
             } else {
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+            }
+        });
+    });
+});
+
+app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("delFile");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items){
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (items.length === 0) {
+                util.handleError({hoerror: 2, message: 'file can not be fund!!!'}, next, res);
+            }
+            var recycle = 1;
+            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            if (req.params.recycle === '4' && util.checkAdmin(1, req.user)) {
+                if (items[0].recycle !== 4) {
+                    util.handleError({hoerror: 2, message: 'recycle file first!!!'}, next, res);
+                }
+                if (items[0].status === 7) {
+                    mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
+                        if(err) {
+                            util.handleError(err, next, res);
+                        }
+                        console.log('perm delete file');
+                        //sendWs({type: 'file', data: items[0]._id}, 1, 1);
+                        res.json({apiOK: true});
+                    });
+                } else {
+                    var del_arr = [filePath];
+                    if (fs.existsSync(filePath + '.jpg')) {
+                        del_arr.push(filePath + '.jpg');
+                    }
+                    if (fs.existsSync(filePath + '_s.jpg')) {
+                        del_arr.push(filePath + '_s.jpg');
+                    }
+                    if (fs.existsSync(filePath + '.srt')) {
+                        del_arr.push(filePath + '.srt');
+                    }
+                    if (fs.existsSync(filePath + '.srt1')) {
+                        del_arr.push(filePath + '.srt1');
+                    }
+                    if (fs.existsSync(filePath + '.vtt')) {
+                        del_arr.push(filePath + '.vtt');
+                    }
+                    var index = 0;
+                    console.log(del_arr);
+                    deleteFolderRecursive(filePath + '_doc');
+                    deleteFolderRecursive(filePath + '_img');
+                    deleteFolderRecursive(filePath + '_present');
+                    recur_del(del_arr[0]);
+                    function recur_del(delPath) {
+                        fs.unlink(delPath, function (err) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            index++;
+                            if (index < del_arr.length) {
+                                setTimeout(function(){
+                                    recur_del(del_arr[index]);
+                                }, 0);
+                            } else {
+                                mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
+                                    if(err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    console.log('perm delete file');
+                                    //sendWs({type: 'file', data: items[0]._id}, 1, 1);
+                                    res.json({apiOK: true});
+                                });
+                            }
+                        });
+                    }
+                }
+            } else if (req.params.recycle === '0'){
+                if (!util.checkAdmin(1, req.user) && !req.user._id.equals(items[0].owner)) {
+                    util.handleError({hoerror: 2, message: 'file is not yours!!!'}, next, res);
+                }
+                mongo.orig("update", "storage", { _id: id }, {$set: {recycle: recycle, utime: Math.round(new Date().getTime() / 1000)}}, function(err, item2){
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
+                    //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                    res.json({apiOK: true});
+                    recur_backup();
+                });
+            } else {
+                if (!util.checkAdmin(1, req.user)) {
+                    util.handleError({hoerror: 2, message: 'permission dined!!!'}, next, res);
+                }
+                recycle = items[0].recycle;
+                res.json({apiOK: true});
+                recur_backup();
+            }
+            function recur_backup() {
+                if (items[0].status === 7) {
+                    mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 4}}, function(err, item3){
+                        if(err) {
+                            util.handleError(err);
+                        }
+                        //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                    });
+                } else {
+                    googleApi.googleBackup(items[0]._id, items[0].name, filePath, items[0].tags, recycle, function(err) {
+                        if(err) {
+                            util.handleError(err);
+                        } else {
+                            recycle++;
+                            mongo.orig("update", "storage", { _id: id }, {$set: {recycle: recycle}}, function(err, item3){
+                                if(err) {
+                                    util.handleError(err);
+                                } else {
+                                    //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                    if (recycle < 4) {
+                                        setTimeout(function(){
+                                            recur_backup();
+                                        }, 0);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
             }
         });
     });
