@@ -152,6 +152,8 @@ module.exports = {
                     if ((cashBegin && cashEnd) || cash[y][q].change) {
                         cash[y][q].begin = cashBegin;
                         cash[y][q].end = cashEnd;
+                    } else {
+                        cash[y][q] = null;
                     }
                     if (quarterIsEmpty(cash[y][q])) {
                         cash[y][q] = null;
@@ -189,6 +191,8 @@ module.exports = {
                     if ((cashBegin && cashEnd) || cash[y][q].change) {
                         cash[y][q].begin = cashBegin;
                         cash[y][q].end = cashEnd;
+                    } else {
+                        cash[y][q] = null;
                     }
                     if (quarterIsEmpty(cash[y][q])) {
                         cash[y][q] = null;
@@ -226,6 +230,8 @@ module.exports = {
                     if ((cashBegin && cashEnd) || cash[y][q].change) {
                         cash[y][q].begin = cashBegin;
                         cash[y][q].end = cashEnd;
+                    } else {
+                        cash[y][q] = null;
                     }
                     if (quarterIsEmpty(cash[y][q])) {
                         cash[y][q] = null;
@@ -263,6 +269,8 @@ module.exports = {
                     if ((cashBegin && cashEnd) || cash[y][q].change) {
                         cash[y][q].begin = cashBegin;
                         cash[y][q].end = cashEnd;
+                    } else {
+                        cash[y][q] = null;
                     }
                     if (quarterIsEmpty(cash[y][q])) {
                         cash[y][q] = null;
@@ -300,6 +308,8 @@ module.exports = {
                     if ((cashBegin && cashEnd) || cash[y][q].change) {
                         cash[y][q].begin = cashBegin;
                         cash[y][q].end = cashEnd;
+                    } else {
+                        cash[y][q] = null;
                     }
                     if (quarterIsEmpty(cash[y][q])) {
                         cash[y][q] = null;
@@ -337,6 +347,8 @@ module.exports = {
                     if ((cashBegin && cashEnd) || cash[y][q].change) {
                         cash[y][q].begin = cashBegin;
                         cash[y][q].end = cashEnd;
+                    } else {
+                        cash[y][q] = null;
                     }
                     if (quarterIsEmpty(cash[y][q])) {
                         cash[y][q] = null;
@@ -433,7 +445,7 @@ module.exports = {
                     asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai);
                     asset[y][q].property = getParameter(xml, 'ifrs:PropertyPlantAndEquipment', ai);
                     asset[y][q].total = getParameter(xml, 'ifrs:Assets', ai);
-                    asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai);
+                    asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai) + getParameter(xml, 'tifrs-bsci-ci:EquityAttributableToFomerOwnerOfBusinessCombinationUnderCommonControl', ai);
                     asset[y][q].equityChild = getParameter(xml, 'ifrs:NoncontrollingInterests', ai);
                     asset[y][q].share = getParameter(xml, 'tifrs-bsci-ci:CapitalStock', ai);
                     asset[y][q].inventories = getParameter(xml, 'ifrs:Inventories', ai);
@@ -463,7 +475,7 @@ module.exports = {
                     asset[y][q].equityChild = getParameter(xml, 'ifrs:NoncontrollingInterests', ai);
                     asset[y][q].share = getParameter(xml, 'tifrs-bsci-fh:Capital', ai);
                     asset[y][q].total = getParameter(xml, 'ifrs:Assets', ai);
-                    asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai);
+                    asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai) + getParameter(xml, 'tifrs-bsci-ci:EquityAttributableToFomerOwnerOfBusinessCombinationUnderCommonControl', ai);
                     asset[y][q].inventories = getParameter(xml, 'ifrs:FinancialAssetsAtFairValueThroughProfitOrLoss', ai) + getParameter(xml, 'tifrs-bsci-fh:AvailableForSaleFinancialAssetsNet', ai) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesPurchasedUnderResellAgreements', ai) + getParameter(xml, 'tifrs-bsci-fh:LoansDiscountedNet', ai);
                     asset[y][q].longterm = getParameter(xml, 'tifrs-bsci-fh:ReinsuranceContractAssetsNet', ai) + getParameter(xml, 'tifrs-bsci-fh:HeldToMaturityFinancialAssetsNet', ai) + getParameter(xml, 'tifrs-bsci-fh:InvestmentsAccountedForUsingEquityMethodNet', ai) + getParameter(xml, 'ifrs:OtherFinancialAssets', ai) + getParameter(xml, 'ifrs:InvestmentProperty', ai);
                     asset[y][q].receivable = getParameter(xml, 'tifrs-bsci-fh:ReceivablesNet', ai) + getParameter(xml, 'tifrs-bsci-fh:DueFromTheCentralBankAndCallLoansToBanks', ai);
@@ -490,7 +502,7 @@ module.exports = {
                     asset[y][q].property = getParameter(xml, 'ifrs:PropertyPlantAndEquipment', ai);
                     asset[y][q].share = getParameter(xml, 'tifrs-bsci-basi:Capital', ai);
                     asset[y][q].total = getParameter(xml, 'ifrs:Assets', ai);
-                    asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai);
+                    asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai) + getParameter(xml, 'tifrs-bsci-ci:EquityAttributableToFomerOwnerOfBusinessCombinationUnderCommonControl', ai);
                     asset[y][q].equityChild = getParameter(xml, 'ifrs:NoncontrollingInterests', ai);
                     asset[y][q].inventories = getParameter(xml, 'tifrs-bsci-basi:DiscountsAndLoansNet', ai) + getParameter(xml, 'ifrs:FinancialAssetsAtFairValueThroughProfitOrLoss', ai) + getParameter(xml, 'ifrs:FinancialAssetsAvailableforsale', ai);
                     asset[y][q].longterm = getParameter(xml, 'tifrs-bsci-basi:HeldToMaturityFinancialAssets', ai) + getParameter(xml, 'ifrs:OtherFinancialAssets', ai) + getParameter(xml, 'ifrs:InvestmentProperty', ai);
@@ -519,7 +531,7 @@ module.exports = {
                     asset[y][q].share = getParameter(xml, 'tifrs-bsci-bd:CapitalStock', ai);
                     asset[y][q].total = getParameter(xml, 'ifrs:Assets', ai);
                     asset[y][q].equityChild = getParameter(xml, 'ifrs:NoncontrollingInterests', ai);
-                    asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai);
+                    asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai) + getParameter(xml, 'tifrs-bsci-ci:EquityAttributableToFomerOwnerOfBusinessCombinationUnderCommonControl', ai);
                     asset[y][q].inventories = getParameter(xml, 'tifrs-bsci-bd:CurrentFinancialAssetsAtFairValueThroughProfitOrLoss', ai) + getParameter(xml, 'tifrs-bsci-bd:AvailableForSaleCurrentFinancialAssets', ai) + getParameter(xml, 'tifrs-bsci-bd:BondInvestmentsUnderResaleAgreements', ai);
                     asset[y][q].longterm = getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', ai) + getParameter(xml, 'tifrs-bsci-bd:NoncurrentFinancialAssetsAtFairValueThroughProfitOrLoss', ai) + getParameter(xml, 'tifrs-bsci-bd:NoncurrentFinancialAssetsAtCost', ai) + getParameter(xml, 'tifrs-bsci-bd:AvailableForSaleNoncurrentFinancialAssets', ai) + getParameter(xml, 'ifrs:InvestmentProperty', ai);
                     asset[y][q].receivable = getParameter(xml, 'tifrs-bsci-bd:MarginLoansReceivable', ai) + getParameter(xml, 'tifrs-bsci-bd:NotesReceivable', ai) + getParameter(xml, 'tifrs-bsci-bd:AccountsReceivable', ai) + getParameter(xml, 'tifrs-bsci-bd:Prepayments', ai) + getParameter(xml, 'tifrs-bsci-bd:OtherReceivables', ai) + getParameter(xml, 'tifrs-bsci-bd:SecurityBorrowingCollateralPrice', ai) + getParameter(xml, 'tifrs-bsci-bd:SecurityBorrowingMargin', ai) + getParameter(xml, 'tifrs-bsci-bd:RefinancingMargin', ai) + getParameter(xml, 'tifrs-bsci-bd:RefinancingCollateralReceivable', ai);
@@ -547,7 +559,7 @@ module.exports = {
                     asset[y][q].share = getParameter(xml, 'tifrs-bsci-mim:Capital', ai);
                     asset[y][q].total = getParameter(xml, 'ifrs:Assets', ai);
                     asset[y][q].equityChild = getParameter(xml, 'ifrs:NoncontrollingInterests', ai);
-                    asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai);
+                    asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai) + getParameter(xml, 'tifrs-bsci-ci:EquityAttributableToFomerOwnerOfBusinessCombinationUnderCommonControl', ai);
                     asset[y][q].inventories = getParameter(xml, 'tifrs-bsci-mim:CurrentFinancialAssetsAtFairValueThroughProfitOrLoss', ai) + getParameter(xml, 'ifrs:Inventories', ai) + getParameter(xml, 'tifrs-bsci-mim:SecuritiesPurchasedUnderResellAgreements', ai) + getParameter(xml, 'tifrs-bsci-mim:DiscountsAndLoansNet', ai) + getParameter(xml, 'tifrs-bsci-mim:NoncurrentAssetsClassifiedAsHeldForSaleNet', ai);
                     asset[y][q].longterm = getParameter(xml, 'tifrs-bsci-mim:NoncurrentAvailableForSaleFinancialAssetsNet', ai) + getParameter(xml, 'tifrs-bsci-mim:NoncurrentHeldToMaturityFinancialAssetsNet', ai) + getParameter(xml, 'tifrs-bsci-mim:NoncurrentFinancialAssetsAtCostNet', ai) + getParameter(xml, 'ifrs:InvestmentAccountedForUsingEquityMethod', ai) + getParameter(xml, 'ifrs:InvestmentProperty', ai);
                     asset[y][q].receivable = getParameter(xml, 'tifrs-bsci-mim:ReceivablesNet', ai) + getParameter(xml, 'tifrs-bsci-mim:ReceivablesDueFromRelatedParties', ai) + getParameter(xml, 'tifrs-bsci-mim:DueFromTheCentralBankAndCallLoansToBanks', ai) + getParameter(xml, 'tifrs-bsci-mim:Prepayments', ai);
@@ -575,7 +587,7 @@ module.exports = {
                     asset[y][q].share = getParameter(xml, 'tifrs-bsci-ins:ShareCapital', ai);
                     asset[y][q].total = getParameter(xml, 'ifrs:Assets', ai);
                     asset[y][q].equityChild = getParameter(xml, 'ifrs:NoncontrollingInterests', ai);
-                    asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai);
+                    asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai) + getParameter(xml, 'tifrs-bsci-ci:EquityAttributableToFomerOwnerOfBusinessCombinationUnderCommonControl', ai);
                     asset[y][q].inventories = getParameter(xml, 'tifrs-bsci-ins:Loans', ai) + getParameter(xml, 'tifrs-bsci-ins:InvestmentsInNotesAndBondsWithResaleAgreement', ai) + getParameter(xml, 'ifrs:FinancialAssetsAtFairValueThroughProfitOrLoss', ai);
                     asset[y][q].longterm = getParameter(xml, 'tifrs-bsci-ins:Investments', ai) - asset[y][q].inventories + getParameter(xml, 'tifrs-bsci-ins:ReinsuranceAssets', ai);
                     asset[y][q].receivable = getParameter(xml, 'tifrs-bsci-ins:Receivables', ai) + getParameter(xml, 'tifrs-bsci-ins:Prepayments', ai) + getParameter(xml, 'tifrs-bsci-ins:GuaranteeDepositsPaid', ai) + getParameter(xml, 'tifrs-bsci-ins:ReinsuranceLiabilityReserveContributed', ai);
@@ -617,7 +629,7 @@ module.exports = {
                     asset[y][q].payable = getParameter(xml, 'tw-gaap-ci:AccountsPayable', ai) + getParameter(xml, 'tw-gaap-ci:NotesPayable', ai) + getParameter(xml, 'tw-gaap-ci:IncomeTaxPayable', ai) + getParameter(xml, 'tw-gaap-ci:AccruedExpenses', ai) + getParameter(xml, 'tw-gaap-ci:OtherPayables', ai) + getParameter(xml, 'tw-gaap-ci:BillingsConstructionProcess_2264yy', ai) + getParameter(xml, 'tw-gaap-ci:AdvanceReceipts', ai) + getParameter(xml, 'tw-gaap-ci:AccountsPayableRelatedParties', ai) + getParameter(xml, 'tw-gaap-ci:NotesPayableRelatedParties', ai) + getParameter(xml, 'tw-gaap-ci:ReceiptsCustody', ai);
                     asset[y][q].noncurrent_liabilities = getParameter(xml, 'tw-gaap-ci:LongTermLiabilities', ai);
                     asset[y][q].current_liabilities = getParameter(xml, 'tw-gaap-ci:Liabilities', ai) - asset[y][q].noncurrent_liabilities;
-                    if (quarterIsEmpty(asset[y][q])) {
+                    if (asset[y][q].total === 0) {
                         asset[y][q] = null;
                     }
                     if (quarterIsEmpty(asset[y])) {
@@ -671,7 +683,7 @@ module.exports = {
                     asset[y][q].payable = getParameter(xml, 'tw-gaap-basi:DepositsTheCentralBankBanks', ai) + getParameter(xml, 'tw-gaap-basi:DepositsRemittances', ai) + getParameter(xml, 'tw-gaap-basi:Payables', ai);
                     asset[y][q].current_liabilities = asset[y][q].payable + getParameter(xml, 'tw-gaap-basi:FinancialLiabilitiesMeasuredFairValueProfitLoss', ai) + getParameter(xml, 'tw-gaap-basi:NotesBondsIssuedRepurchaseAgreement', ai);
                     asset[y][q].noncurrent_liabilities = getParameter(xml, 'tw-gaap-basi:Liabilities', ai) - asset[y][q].current_liabilities;
-                    if (quarterIsEmpty(asset[y][q])) {
+                    if (asset[y][q].total === 0) {
                         asset[y][q] = null;
                     }
                     if (quarterIsEmpty(asset[y])) {
@@ -699,7 +711,7 @@ module.exports = {
                     asset[y][q].payable = getParameter(xml, 'tw-gaap-bd:CommercialPaperPayable', ai) + getParameter(xml, 'tw-gaap-bd:SecuritiesFinancingRefundableDeposits', ai) + getParameter(xml, 'tw-gaap-bd:DepositsPayableSecuritiesFinancing', ai) + getParameter(xml, 'tw-gaap-bd:SecuritiesLendingRefundableDeposits', ai) + getParameter(xml, 'tw-gaap-bd:AccountsPayable', ai) + getParameter(xml, 'tw-gaap-bd:AmountsReceivedAdvance', ai) + getParameter(xml, 'tw-gaap-bd:ReceiptsCustody', ai) + getParameter(xml, 'tw-gaap-bd:OtherPayable', ai);
                     asset[y][q].noncurrent_liabilities = getParameter(xml, 'tw-gaap-bd:LongTermLiability', ai);
                     asset[y][q].current_liabilities = getParameter(xml, 'tw-gaap-bd:Liabilities', ai) - asset[y][q].noncurrent_liabilities;
-                    if (quarterIsEmpty(asset[y][q])) {
+                    if (asset[y][q].total === 0) {
                         asset[y][q] = null;
                     }
                     if (quarterIsEmpty(asset[y])) {
@@ -726,7 +738,7 @@ module.exports = {
                     asset[y][q].payable = getParameter(xml, 'tw-gaap-mim:Payables', ai) + getParameter(xml, 'tw-gaap-mim:DepositsCentralBankBanks', ai) + getParameter(xml, 'tw-gaap-mim:DepositsRemittances', ai);
                     asset[y][q].noncurrent_liabilities = getParameter(xml, 'tw-gaap-mim:LongtermLiabilities', ai);
                     asset[y][q].current_liabilities = getParameter(xml, 'tw-gaap-mim:Liabilities', ai) - asset[y][q].noncurrent_liabilities;
-                    if (quarterIsEmpty(asset[y][q])) {
+                    if (asset[y][q].total === 0) {
                         asset[y][q] = null;
                     }
                     if (quarterIsEmpty(asset[y])) {
@@ -760,7 +772,7 @@ module.exports = {
                         asset[y][q].noncurrent_liabilities = getParameter(xml, 'tw-gaap-ins:ReserveOperationsLiabilities', ai) + getParameter(xml, 'tw-gaap-ins:LongTermLiabilities', ai);
                     }
                     asset[y][q].current_liabilities = getParameter(xml, 'tw-gaap-ins:Liabilities', ai) - asset[y][q].noncurrent_liabilities;
-                    if (quarterIsEmpty(asset[y][q])) {
+                    if (asset[y][q].total === 0) {
                         asset[y][q] = null;
                     }
                     if (quarterIsEmpty(asset[y])) {
@@ -773,7 +785,7 @@ module.exports = {
             return xmlDate;
         }
     },
-    getSales: function(xml, sales, no_cover) {
+    getSales: function(xml, sales, cash, no_cover) {
         if (!xml.xbrl) {
             for (var i in xml) {
                 xml.xbrl = xml[i];
@@ -1025,7 +1037,7 @@ module.exports = {
                     sales[y][q].nonoperating = getParameter(xml, 'tw-gaap-ci:NonOperatingIncomeGains', si) - getParameter(xml, 'tw-gaap-ci:NonOperatingExpenses', si);
                     sales[y][q].eps = getParameter(xml, 'tw-gaap-ci:PrimaryEarningsPerShare', si);
                     sales[y][q].finance_cost = getParameter(xml, 'tw-gaap-ci:InterestExpense', si);
-                    if (quarterIsEmpty(sales[y][q])) {
+                    if (quarterIsEmpty(sales[y][q]) || quarterIsEmpty(cash[y][q])) {
                         sales[y][q] = null;
                     }
                     if (quarterIsEmpty(sales[y])) {
@@ -1050,7 +1062,7 @@ module.exports = {
                     sales[y][q].nonoperating = sales[y][q].profit + sales[y][q].tax - sales[y][q].operating;
                     sales[y][q].eps = getParameter(xml, 'tw-gaap-fh:PrimaryEarningsPerShare', si);
                     sales[y][q].finance_cost = getParameter(xml, 'tw-gaap-fh:BadDebtExpensesLoan', si);
-                    if (quarterIsEmpty(sales[y][q])) {
+                    if (quarterIsEmpty(sales[y][q]) || quarterIsEmpty(cash[y][q])) {
                         sales[y][q] = null;
                     }
                     if (quarterIsEmpty(sales[y])) {
@@ -1075,7 +1087,7 @@ module.exports = {
                     sales[y][q].nonoperating = sales[y][q].profit + sales[y][q].tax - sales[y][q].operating;
                     sales[y][q].eps = getParameter(xml, 'tw-gaap-basi:PrimaryEarningsPerShare', si);
                     sales[y][q].finance_cost = getParameter(xml, 'tw-gaap-basi:BadDebtExpensesLoan', si);
-                    if (quarterIsEmpty(sales[y][q])) {
+                    if (quarterIsEmpty(sales[y][q]) || quarterIsEmpty(cash[y][q])) {
                         sales[y][q] = null;
                     }
                     if (quarterIsEmpty(sales[y])) {
@@ -1100,7 +1112,7 @@ module.exports = {
                     sales[y][q].nonoperating = sales[y][q].profit + sales[y][q].tax - sales[y][q].operating;
                     sales[y][q].eps = getParameter(xml, 'tw-gaap-bd:PrimaryEarningsPerShare', si);
                     sales[y][q].finance_cost = getParameter(xml, 'tw-gaap-bd:InterestExpenses', si);
-                    if (quarterIsEmpty(sales[y][q])) {
+                    if (quarterIsEmpty(sales[y][q]) || quarterIsEmpty(asset[y][q])) {
                         sales[y][q] = null;
                     }
                     if (quarterIsEmpty(sales[y])) {
@@ -1125,7 +1137,7 @@ module.exports = {
                     sales[y][q].nonoperating = sales[y][q].profit + sales[y][q].tax - sales[y][q].operating;
                     sales[y][q].eps = getParameter(xml, 'tw-gaap-mim:PrimaryEarningsPerShare', si);
                     sales[y][q].finance_cost = getParameter(xml, 'tw-gaap-mim:BadDebtExpensesLoan', si);
-                    if (quarterIsEmpty(sales[y][q])) {
+                    if (quarterIsEmpty(sales[y][q]) || quarterIsEmpty(cash[y][q])) {
                         sales[y][q] = null;
                     }
                     if (quarterIsEmpty(sales[y])) {
@@ -1150,7 +1162,7 @@ module.exports = {
                     sales[y][q].nonoperating = sales[y][q].profit + sales[y][q].tax - sales[y][q].operating;
                     sales[y][q].eps = getParameter(xml, 'tw-gaap-ins:EarningsPerShare', si);
                     sales[y][q].finance_cost = getParameter(xml, 'tw-gaap-ins:InterestExpense', si);
-                    if (quarterIsEmpty(sales[y][q])) {
+                    if (quarterIsEmpty(sales[y][q]) || quarterIsEmpty(cash[y][q])) {
                         sales[y][q] = null;
                     }
                     if (quarterIsEmpty(sales[y])) {
@@ -1554,7 +1566,7 @@ module.exports = {
                         if (!asset) {
                             util.handleError({hoerror: 2, message: "xml asset parse error!!!"}, callback, callback);
                         }
-                        sales = this_obj.getSales(xml, sales, is_start);
+                        sales = this_obj.getSales(xml, sales, cash, is_start);
                         if (!sales) {
                             util.handleError({hoerror: 2, message: "xml sales parse error!!!"}, callback, callback);
                         }
@@ -1687,7 +1699,7 @@ module.exports = {
                                 if (!asset) {
                                     util.handleError({hoerror: 2, message: "xml asset parse error!!!"}, callback, callback);
                                 }
-                                sales = this_obj.getSales(xml, sales, is_start);
+                                sales = this_obj.getSales(xml, sales, cash, is_start);
                                 if (!sales) {
                                     util.handleError({hoerror: 2, message: "xml sales parse error!!!"}, callback, callback);
                                 }
