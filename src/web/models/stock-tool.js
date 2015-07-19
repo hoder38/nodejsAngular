@@ -1112,7 +1112,7 @@ module.exports = {
                     sales[y][q].nonoperating = sales[y][q].profit + sales[y][q].tax - sales[y][q].operating;
                     sales[y][q].eps = getParameter(xml, 'tw-gaap-bd:PrimaryEarningsPerShare', si);
                     sales[y][q].finance_cost = getParameter(xml, 'tw-gaap-bd:InterestExpenses', si);
-                    if (quarterIsEmpty(sales[y][q]) || quarterIsEmpty(asset[y][q])) {
+                    if (quarterIsEmpty(sales[y][q]) || quarterIsEmpty(cash[y][q])) {
                         sales[y][q] = null;
                     }
                     if (quarterIsEmpty(sales[y])) {
