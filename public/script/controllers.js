@@ -179,7 +179,6 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
                 } else {
                     var lastchild = childnode[childnode.length-2];
                     var iframelength = lastchild.offsetTop + lastchild.offsetHeight;
-                    console.log(lastchild);
                     for (var i = 0; i < iframelength; i+=850) {
                         iframeOffset.push(i);
                     }
@@ -2738,6 +2737,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             this.doc.win.scrollTo(0, this.doc.iframeOffset[this.doc.presentId-1]);
         } else {
             this.doc.iframeOffset = typeof iframeOffset !== 'undefined' ? iframeOffset : this.doc.iframeOffset;
+            if (this.doc.win) {
+                this.doc.win.scrollTo(0, this.doc.iframeOffset[this.doc.presentId-1]);
+            }
         }
         if (this.doc.iframeOffset) {
             this.doc.maxId = this.doc.iframeOffset.length-1;
