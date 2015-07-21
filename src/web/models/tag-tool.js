@@ -1094,6 +1094,7 @@ var getStorageQuerySql = function(user, tagList, exactly) {
 function getStockQuerySql(user, tagList, exactly) {
     var nosql = {};
     var is_tags = false;
+    var is_important = false;
     var skip = 0;
     if (tagList.length === 0) {
     } else {
@@ -1130,6 +1131,7 @@ function getStockQuerySql(user, tagList, exactly) {
             } else if (index === 6) {
                 if (util.checkAdmin(1, user)) {
                     nosql['important'] = 1;
+                    is_important = true;
                 }
             } else {
                 if (exactly[i]) {
@@ -1153,11 +1155,14 @@ function getStockQuerySql(user, tagList, exactly) {
     if (is_tags) {
         hint['tags'] = 1;
     }
-    hint['name'] = 1;
+    if (is_important) {
+        hint['important'] = 1;
+    }
+    hint['profitIndex'] = 1;
     var sql = {nosql: nosql};
-    /*if (is_hint) {
+    if (is_hint) {
         sql['hint'] = hint;
-    }*/
+    }
     if (skip) {
         console.log('skip:' + skip);
         sql['skip'] = skip;
