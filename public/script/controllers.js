@@ -1278,8 +1278,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             item = this.toolList.item;
         }
         if (isValidString(this.newItemName, 'name')) {
-            var editFile = $resource('/api/editFile/' + item.id, {}, {
-                'editfile': { method:'PUT' }
+            var editFile = $resource(this.main_url + '/api/editFile/' + item.id, {}, {
+                'editfile': { method:'PUT', withCredentials: true }
             });
             var this_obj = this;
             editFile.editfile({name: this.newItemName}, function(result) {
@@ -1470,7 +1470,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
         if ($scope.bookmarkID) {
             $scope.latest = id;
         }
-        $window.location.href = '/download/' + id;
+        $window.location.href = this.file_url + '/download/' + id;
     }
 
     $scope.handleMedia = function(action, item) {
@@ -1478,8 +1478,8 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             item = this.toolList.item;
         }
         if (action == 'act'|| action == 'vlog' || action == 'del') {
-            var handleMedia = $resource('/api/handleMedia/' + item.id + '/' + action, {}, {
-                'handlemedia': { method:'GET' }
+            var handleMedia = $resource(this.main_url + '/api/handleMedia/' + item.id + '/' + action, {}, {
+                'handlemedia': { method:'GET', withCredentials: true }
             });
             handleMedia.handlemedia({}, function(result) {
                 if (result.loginOK) {
@@ -2030,7 +2030,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 $window.location.href = $location.path();
             } else {
                 getParentlist();
-                getFeedbacks(1);
                 for (var i in result.nav) {
                     $scope.navList.push(result.nav[i]);
                 }
@@ -2040,6 +2039,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 document.domain = document.domain;
                 $scope.file_url = result.file_url;
                 $scope.isAdult = result.isAdult;
+                getFeedbacks(1);
                 if (window.MozWebSocket) {
                     window.WebSocket = window.MozWebSocket;
                 }
@@ -2079,12 +2079,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         this.inputUrl = '';
         if (isValidString(url, 'url') && !this.disableUrlUpload) {
             this.disableUrlUpload = true;
-            var uploadurl = '/api/upload/url';
+            var uploadurl = this.main_url + '/api/upload/url';
             if (this.adultonly) {
-                uploadurl = '/api/upload/url/1';
+                uploadurl = this.main_url + '/api/upload/url/1';
             }
             var api = $resource(uploadurl, {}, {
-                'uploadUrl': { method:'POST' }
+                'uploadUrl': { method:'POST', withCredentials: true }
             });
             api.uploadUrl({url: url}, function (result) {
                 this_obj.disableUrlUpload = false;
@@ -2128,12 +2128,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         var this_obj = this;
         if (isValidString(url, 'url') && !this.disableUrlSave) {
             this.disableUrlSave = true;
-            var addurl = '/api/addurl';
+            var addurl = this.main_url + '/api/addurl';
             if (this.adultonly) {
-                addurl = '/api/addurl/1';
+                addurl = this.main_url + '/api/addurl/1';
             }
             var api = $resource(addurl, {}, {
-                'addurl': { method:'POST' }
+                'addurl': { method:'POST', withCredentials: true }
             });
             api.addurl({url: url}, function (result) {
                 this_obj.disableUrlSave = false;
@@ -2172,8 +2172,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
 
     function getFeedbacks(init) {
         init = typeof init !== 'undefined' ? init : 0;
-        var Info = $resource('/api/feedback', {}, {
-            'getFeedback': { method:'GET' }
+        var Info = $resource($scope.main_url + '/api/feedback', {}, {
+            'getFeedback': { method:'GET', withCredentials: true }
         });
         Info.getFeedback({}, function (result) {
             if (result.loginOK) {

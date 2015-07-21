@@ -1,6 +1,7 @@
 var crypto = require('crypto'),
     path = require('path'),
-    MobileDetect = require('mobile-detect');
+    MobileDetect = require('mobile-detect'),
+    fs = require("fs");
 var mongo = require("../models/mongo-tool.js"),
     charsetDetector = require("node-icu-charset-detector");
 var config_type = require('../../../ver.js');
@@ -215,6 +216,19 @@ module.exports = {
             var Iconv = require("iconv").Iconv;
             var charsetConverter = new Iconv(charset, "utf8");
             return charsetConverter.convert(buffer).toString();
+        }
+    },
+    deleteFolderRecursive: function(path) {
+        if(fs.existsSync(path)) {
+            fs.readdirSync(path).forEach(function(file,index){
+                var curPath = path + "/" + file;
+                if(fs.lstatSync(curPath).isDirectory()) { // recurse
+                    deleteFolderRecursive(curPath);
+                } else { // delete file
+                    fs.unlinkSync(curPath);
+                }
+            });
+            fs.rmdirSync(path);
         }
     }
 };
