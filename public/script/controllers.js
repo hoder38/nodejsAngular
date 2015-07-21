@@ -172,13 +172,14 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
                             }
                         }
                     }
-                    textNode.offset.push(childnode[childnode.length-1].offsetTop + childnode[childnode.length-1].offsetHeight - imgNode.offset[imgNode.offset.length-1]);
+                    textNode.offset.push(childnode[childnode.length-2].offsetTop + childnode[childnode.length-2].offsetHeight - imgNode.offset[imgNode.offset.length-1]);
                     scope.$apply(function (){
                         scope.setDoc(iframeWin, imgNode, textNode);
                     });
                 } else {
-                    var lastchild = childnode[childnode.length-1];
+                    var lastchild = childnode[childnode.length-2];
                     var iframelength = lastchild.offsetTop + lastchild.offsetHeight;
+                    console.log(lastchild);
                     for (var i = 0; i < iframelength; i+=850) {
                         iframeOffset.push(i);
                     }
