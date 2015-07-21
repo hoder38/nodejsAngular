@@ -1082,6 +1082,7 @@ var getStorageQuerySql = function(user, tagList, exactly) {
     hint['name'] = 1;
     var sql = {nosql: nosql};
     if (is_hint) {
+        console.log(hint);
         sql['hint'] = hint;
     }
     if (skip) {
@@ -1161,6 +1162,7 @@ function getStockQuerySql(user, tagList, exactly) {
     hint['profitIndex'] = 1;
     var sql = {nosql: nosql};
     if (is_hint) {
+        console.log(hint);
         sql['hint'] = hint;
     }
     if (skip) {
