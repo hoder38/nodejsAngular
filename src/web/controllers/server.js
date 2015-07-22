@@ -1119,7 +1119,7 @@ app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, re
             util.handleError({hoerror: 2, message: "query error"}, next, res);
         }
         sql.nosql['status'] = type;
-        mongo.orig("find", "storage", sql.nosql, sql.options, function(err, items){
+        mongo.orig("find", "storage", sql.nosql, sql.select, sql.options, function(err, items){
             if(err) {
                 util.handleError(err, next, res);
             }

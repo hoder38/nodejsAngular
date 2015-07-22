@@ -438,8 +438,12 @@ module.exports = function(collection) {
             if (sql.hint) {
                 options["hint"] = sql.hint;
             }
+            var select = {};
+            if (sql.select) {
+                select = sql.select;
+            }
             delete tags;
-            mongo.orig("find", collection, sql.nosql, options, function(err, items){
+            mongo.orig("find", collection, sql.nosql, select, options, function(err, items){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
@@ -464,8 +468,12 @@ module.exports = function(collection) {
                 if (sql.hint) {
                     options["hint"] = sql.hint;
                 }
+                var select = {};
+                if (sql.select) {
+                    select = sql.select;
+                }
                 delete tags;
-                mongo.orig("find", collection, sql.nosql, options, function(err, items){
+                mongo.orig("find", collection, sql.nosql, select, options, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback);
                     }
@@ -517,8 +525,12 @@ module.exports = function(collection) {
                 if (sql.hint) {
                     options["hint"] = sql.hint;
                 }
+                var select = {};
+                if (sql.select) {
+                    select = sql.select;
+                }
                 delete tags;
-                mongo.orig("find", collection, sql.nosql, options, function(err, items){
+                mongo.orig("find", collection, sql.nosql, select, options, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback);
                     }
@@ -574,8 +586,12 @@ module.exports = function(collection) {
                 if (sql.hint) {
                     options["hint"] = sql.hint;
                 }
+                var select = {};
+                if (sql.select) {
+                    select = sql.select;
+                }
                 delete tags;
-                mongo.orig("find", collection, sql.nosql, options, function(err, items){
+                mongo.orig("find", collection, sql.nosql, select, options, function(err, items){
                     if(err) {
                         util.handleError(err, next, callback);
                     }
@@ -618,8 +634,12 @@ module.exports = function(collection) {
             var parentList = tags.getArray();
             var sql = getQuerySql(user, parentList.cur, parentList.exactly);
             sql.nosql['_id'] = id;
+            var select = {};
+            if (sql.select) {
+                select = sql.select;
+            }
             delete tags;
-            mongo.orig("find", collection, sql.nosql, {limit: 1, hint: {_id: 1}}, function(err, items){
+            mongo.orig("find", collection, sql.nosql, select, {limit: 1, hint: {_id: 1}}, function(err, items){
                 if(err) {
                     util.handleError(err, next, callback);
                 }
@@ -679,8 +699,12 @@ module.exports = function(collection) {
             if (sql.hint) {
                 options["hint"] = sql.hint;
             }
+            var select = {};
+            if (sql.select) {
+                select = sql.select;
+            }
             delete tags;
-            return {nosql: sql.nosql, options: options};
+            return {nosql: sql.nosql, options: options, select: select};
         },
         normalizeTag: function(tag) {
             return normalize(tag);
@@ -1082,7 +1106,6 @@ var getStorageQuerySql = function(user, tagList, exactly) {
     hint['name'] = 1;
     var sql = {nosql: nosql};
     if (is_hint) {
-        console.log(hint);
         sql['hint'] = hint;
     }
     if (skip) {
@@ -1162,9 +1185,9 @@ function getStockQuerySql(user, tagList, exactly) {
     hint['profitIndex'] = 1;
     var sql = {nosql: nosql};
     if (is_hint) {
-        console.log(hint);
         sql['hint'] = hint;
     }
+    sql['select'] = {cash: 0, asset: 0, sales: 0};
     if (skip) {
         console.log('skip:' + skip);
         sql['skip'] = skip;
