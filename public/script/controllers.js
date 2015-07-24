@@ -1028,6 +1028,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             $scope.exceptList = [];
             $scope.relativeList = [];
             $scope.isRelative = false;
+            $scope.tagNew = false;
         }
     }, true);
 

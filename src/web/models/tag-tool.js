@@ -1010,7 +1010,7 @@ module.exports = function(collection) {
                 return 0;
             }
         },
-        getRelativeTag: function(tag, next, callback) {
+        getRelativeTag: function(tag, user, next, callback) {
             var name = util.isValidString(tag, 'name');
             if (name === false) {
                 setTimeout(function(){
@@ -1027,12 +1027,12 @@ module.exports = function(collection) {
                 return false;
             }
             var hint = {};
-            var options = {"limit": search_limit, "sort": [[getSortName('name'), 'desc']]};
-            hint[getSortName('name')] = 1;
-            if (is_hint) {
-                options["hint"] = hint;
+            var options = {"limit": queryLimit, "sort": [[getSortName('name'), 'desc']]};
+            var sql = getQuerySql(user, [normal, 'all item'], [true, false]);
+            if (sql.hint) {
+                options["hint"] = sql.hint;
             }
-            mongo.orig("find", collection, {tags: normal}, {_id: 0, tags: 1, name: 1}, options, function(err, items){
+            mongo.orig("find", collection, sql.nosql, {_id: 0, tags: 1, name: 1}, options, function(err, items){
                 if(err) {
                     util.handleError(err, next, callback);
                 }

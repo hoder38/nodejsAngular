@@ -192,7 +192,7 @@
                 <i ng-show="fileSort.name" class="{{(fileSort.name === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
             </a>
         </li>
-        <li class="pull-right item-tool {{!selectList.length && 'active' || ''}}" tooltip="{{selectList.length && '新增共同TAG，共同TAG顯示在列表上半部' || '設定，點選下方的expand可以開啟功能列'}}" tooltip-trigger="mouseenter" tooltip-placement="left">
+        <li class="pull-right item-tool {{!selectList.length && 'active' || ''}}" tooltip="{{selectList.length && '編輯共同TAG' || '設定，點選下方的expand可以開啟功能列'}}" tooltip-trigger="mouseenter" tooltip-placement="left">
             <a ng-click="openNewTag()" href="#">
                 <i class="glyphicon {{selectList.length && 'glyphicon-plus' || 'glyphicon-cog'}}"></i>
             </a>
@@ -244,7 +244,7 @@
         <table class="table table-hover">
             <tbody>
                 <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'warning' || ''}} {{item.recycle === 4 && 'danger' || ''}}" ng-if="$index <= dirLocation">
-                    <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG，顯示在列表上半部" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
+                    <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
                     <td class="item-name" ng-if="item.media" confirmed-click="handleMedia('act', item)" ng-confirm-click="Would you sure to handle this media?">
                         {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}} {{item.media.split}}
                     </td>
@@ -350,7 +350,7 @@
                     </td>
                 </tr>
                 <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'warning' || ''}} {{item.recycle === 4 && 'danger' || ''}}" ng-if="$index > dirLocation">
-                    <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG，顯示在列表上半部" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
+                    <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
                     <td class="item-name" ng-if="item.media" confirmed-click="handleMedia('act', item)" ng-confirm-click="Would you sure to handle this media?">
                         {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}} {{item.media.split}}
                     </td>

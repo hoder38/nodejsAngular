@@ -1301,7 +1301,7 @@ app.get('/api/getRelativeTag/:tag', function(req, res,next) {
         if (tag === false) {
             util.handleError({hoerror: 2, message: "tag is not vaild"}, next, res);
         }
-        tagTool.getRelativeTag(tag, next, function(err, relative) {
+        tagTool.getRelativeTag(tag, req.user, next, function(err, relative) {
             if (err) {
                 util.handleError(err, next, res);
             }

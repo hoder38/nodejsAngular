@@ -1548,7 +1548,7 @@ function getFeedback(item, callback, user) {
         });
         recur_relative(0, relative_arr);
         function recur_relative(index, tags) {
-            tagTool.getRelativeTag(tags[index], callback, function(err, relative) {
+            tagTool.getRelativeTag(tags[index], user, callback, function(err, relative) {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
