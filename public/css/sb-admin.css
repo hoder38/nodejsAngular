@@ -740,3 +740,7 @@ audio.media-screen {
 .history-point:hover, .history-point:link, .history-point:visited, .history-point:active {
     color: #777;
 }
+
+.relative-point:hover, .relative-point:link, .relative-point:visited, .relative-point:active {
+    color: #8B0000;
+}

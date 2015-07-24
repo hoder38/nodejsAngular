@@ -520,6 +520,9 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.bookmarkNewFocus = false;
     $scope.bookmarkList = [];
     $scope.bookmarkName = '';
+    $scope.dirLocation = 0;
+    $scope.isRelative = false;
+    $scope.relativeList = [];
     //cookie
     $scope.fileSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
     $scope.dirSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
@@ -993,18 +996,71 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     }
 
     $scope.$watch("itemList", function(newVal, oldVal) {
+        var new_location = false;
+        if ($scope.selectList.length === 0) {
+            new_location = true;
+        }
         $scope.selectList = $filter("filter")(newVal, {select:true});
         if ($scope.selectList.length > 0) {
+            var tempList = $scope.tagList;
+            if (new_location) {
+                for (var i = 0; i < newVal.length; i++) {
+                    if (newVal[i].select) {
+                        if (i === 0) {
+                            $scope.dirLocation = -1;
+                        } else if ((i+1) < newVal.length) {
+                            $scope.dirLocation = i+1;
+                        } else {
+                            $scope.dirLocation = i;
+                        }
+                        break;
+                    }
+                }
+            }
             $scope.tagList = $scope.selectList[0].tags;
             $scope.exceptList = [];
             for (var i = 1; i < $scope.selectList.length; i++) {
                 $scope.tagList = intersect($scope.tagList, $scope.selectList[i].tags, $scope.exceptList);
             }
+            getRelativeTag(tempList);
         } else {
             $scope.tagList = [];
             $scope.exceptList = [];
+            $scope.relativeList = [];
+            $scope.isRelative = false;
         }
     }, true);
+
+    getRelativeTag = function(oldList) {
+        if ($scope.isRelative) {
+            for (var i in $scope.tagList) {
+                if (oldList.indexOf($scope.tagList[i]) === -1) {
+                    var Info = $resource('/api/getRelativeTag/' + $scope.tagList[i], {}, {
+                        'relativeTag': { method:'GET' }
+                    });
+                    Info.relativeTag({}, function (result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        } else {
+                            for (var j in result.relative) {
+                                if ($scope.relativeList.indexOf(result.relative[j]) === -1 && $scope.tagList.indexOf(result.relative[j]) === -1 && $scope.exceptList.indexOf(result.relative[j]) === -1 && $scope.isRelative) {
+                                    $scope.relativeList.push(result.relative[j]);
+                                }
+                            }
+                        }
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
+                }
+            }
+        }
+    }
 
     $scope.submitTag = function() {
         if (this.newTagName) {
@@ -1566,6 +1622,12 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
             this.newTagName = '';
             this.tagNew = true;
             this.tagNewFocus = true;
+            var oldList = [];
+            if (this.isRelative) {
+                oldList = this.tagList;
+            }
+            this.isRelative = true;
+            getRelativeTag(oldList);
         }
         return false;
     }
@@ -1928,16 +1990,46 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         if (this.feedbackInput) {
             if (!isValidString(this.feedbackInput, 'name')) {
                 addAlert('feedback name is not valid!!!');
+                this.feedbackInput = '';
+                this.feedbackBlur = true;
             } else {
+                var this_obj = this;
                 var index = arrayObjectIndexOf(this.feedback.list, this.feedbackInput, 'tag');
                 if (index === -1) {
                     this.feedback.list.splice(0, 0, {tag: this.feedbackInput, select: true});
+                    var Info = $resource('/api/getRelativeTag/' + this.feedbackInput, {}, {
+                        'relativeTag': { method:'GET' }
+                    });
+                    Info.relativeTag({}, function (result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        } else {
+                            for (var i in result.relative) {
+                                index = arrayObjectIndexOf(this_obj.feedback.list, result.relative[i], 'tag');
+                                if (index === -1) {
+                                    this_obj.feedback.list.push({tag: result.relative[i], select: false});
+                                }
+                            }
+                            this_obj.feedbackInput = '';
+                            this_obj.feedbackBlur = true;
+                        }
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                        this_obj.feedbackInput = '';
+                        this_obj.feedbackBlur = true;
+                    });
                 } else {
                     this.feedback.list[index].select = true;
+                    this.feedbackInput = '';
+                    this.feedbackBlur = true;
                 }
             }
-            this.feedbackInput = '';
-            this.feedbackBlur = true;
         }
         return false;
     }

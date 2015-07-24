@@ -1291,6 +1291,25 @@ app.get('/api/stock/querySimple/:uid', function(req, res,next) {
     });
 });
 
+app.get('/api/getRelativeTag/:tag', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('get relative tag');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var tag = util.isValidString(req.params.tag, 'name');
+        if (tag === false) {
+            util.handleError({hoerror: 2, message: "tag is not vaild"}, next, res);
+        }
+        tagTool.getRelativeTag(tag, next, function(err, relative) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json({relative: relative});
+        });
+    });
+});
+
 app.get('/api/getUser', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get user');

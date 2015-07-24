@@ -1539,21 +1539,47 @@ function getFeedback(item, callback, user) {
                 temp_tag.push('18禁');
             }
         }
-        if (!util.checkAdmin(1, user)) {
-            var index_tag = 0;
-            for (var i in item[user._id.toString()]) {
-                index_tag = item.tags.indexOf(item[user._id.toString()][i]);
-                if (index_tag !== -1) {
-                    item.tags.splice(index_tag, 1);
+        var relative_arr = [];
+        item.tags.forEach(function (e) {
+            relative_arr.push(e);
+        });
+        temp_tag.forEach(function (e) {
+            relative_arr.push(e);
+        });
+        recur_relative(0, relative_arr);
+        function recur_relative(index, tags) {
+            tagTool.getRelativeTag(tags[index], callback, function(err, relative) {
+                if (err) {
+                    util.handleError(err, callback, callback);
                 }
-            }
-            setTimeout(function(){
-                callback(null, {id: item._id, name: item.name, select: item[user._id.toString()], option: temp_tag, other: item.tags});
-            }, 0);
-        } else {
-            setTimeout(function(){
-                callback(null, {id: item._id, name: item.name, select: item.tags, option: temp_tag, other: []});
-            }, 0);
+                //push tag
+                for (var i in relative) {
+                    if (item.tags.indexOf(relative[i]) === -1 && temp_tag.indexOf(relative[i]) === -1) {
+                        temp_tag.push(relative[i]);
+                    }
+                }
+                index++;
+                if (index < tags.length) {
+                    recur_relative(index, tags);
+                } else {
+                    if (!util.checkAdmin(1, user)) {
+                        var index_tag = 0;
+                        for (var i in item[user._id.toString()]) {
+                            index_tag = item.tags.indexOf(item[user._id.toString()][i]);
+                            if (index_tag !== -1) {
+                                item.tags.splice(index_tag, 1);
+                            }
+                        }
+                        setTimeout(function(){
+                            callback(null, {id: item._id, name: item.name, select: item[user._id.toString()], option: temp_tag, other: item.tags});
+                        }, 0);
+                    } else {
+                        setTimeout(function(){
+                            callback(null, {id: item._id, name: item.name, select: item.tags, option: temp_tag, other: []});
+                        }, 0);
+                    }
+                }
+            });
         }
     });
 }

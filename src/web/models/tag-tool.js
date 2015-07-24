@@ -15,6 +15,11 @@ var handleTime = 7200,
 
 var bookmarkLimit = 50;
 
+//relative
+var search_limit = 100;
+var union_number = 2;
+var inter_number = 3;
+
 var config_type = require('../../../ver.js');
 
 var config_glb = require('../../../config/' + config_type.dev_type + '.js');
@@ -969,6 +974,9 @@ module.exports = function(collection) {
                     });
                 } else {
                     mongo.orig("count", collection + "User", {userId: user._id}, function(err, count){
+                        if(err) {
+                            util.handleError(err, next, callback);
+                        }
                         if (count >= bookmarkLimit) {
                             console.log(count);
                             util.handleError({hoerror: 2, message: 'too much bookmark!!!'}, next, callback);
@@ -1001,6 +1009,104 @@ module.exports = function(collection) {
             } else {
                 return 0;
             }
+        },
+        getRelativeTag: function(tag, next, callback) {
+            var name = util.isValidString(tag, 'name');
+            if (name === false) {
+                setTimeout(function(){
+                    callback(null, []);
+                }, 0);
+                return false;
+            }
+            var normal = normalize(tag);
+            var index = default_tags.indexOf(normal);
+            if (index !== -1) {
+                setTimeout(function(){
+                    callback(null, []);
+                }, 0);
+                return false;
+            }
+            var hint = {};
+            var options = {"limit": search_limit, "sort": [[getSortName('name'), 'desc']]};
+            hint[getSortName('name')] = 1;
+            if (is_hint) {
+                options["hint"] = hint;
+            }
+            mongo.orig("find", collection, {tags: normal}, {_id: 0, tags: 1, name: 1}, options, function(err, items){
+                if(err) {
+                    util.handleError(err, next, callback);
+                }
+                var relative_arr = [];
+                if (items.length > 0) {
+                    var u = union_number;
+                    var t = inter_number;
+                    var nIndex = -1;
+                    var counter_arr = [];
+                    var temp = [];
+                    nIndex = items[0].tags.indexOf(normalize(items[0].name));
+                    if (nIndex !== -1) {
+                        items[0].tags.splice(nIndex, 1);
+                    }
+                    items[0].tags.forEach(function (e) {
+                        relative_arr.push(e);
+                        counter_arr.push(0);
+                    });
+                    for (var i = 1; i < items.length; i++) {
+                        if (t) {
+                            nIndex = items[i].tags.indexOf(normalize(items[i].name));
+                            if (nIndex !== -1) {
+                                items[i].tags.splice(nIndex, 1);
+                            }
+                            items[i].tags.forEach(function (e) {
+                                nIndex = relative_arr.indexOf(e);
+                                if (nIndex === -1) {
+                                    relative_arr.push(e);
+                                    counter_arr.push(0);
+                                } else {
+                                    counter_arr[nIndex]++;
+                                }
+                            });
+                            t--;
+                        } else {
+                            break;
+                        }
+                    }
+                    for (var i = inter_number+1; i < items.length; i++) {
+                        nIndex = items[i].tags.indexOf(normalize(items[i].name));
+                        if (nIndex !== -1) {
+                            items[i].tags.splice(nIndex, 1);
+                        }
+                        temp = [];
+                        relative_arr = relative_arr.filter(function (e, j) {
+                            if (items[i].tags.indexOf(e) !== -1) {
+                                temp.push(counter_arr[j]+1);
+                                return true;
+                            } else {
+                                if ((counter_arr[j] + inter_number) >= i) {
+                                    temp.push(counter_arr[j]);
+                                    return true;
+                                }
+                            }
+                        });
+                        counter_arr = temp;
+                    }
+                    for (var i in items) {
+                        if (u) {
+                            items[i].tags.forEach(function (e) {
+                                if (relative_arr.indexOf(e) === -1) {
+                                    relative_arr.push(e);
+                                }
+                            });
+                            u--;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, relative_arr);
+                }, 0);
+            });
         }
     };
 };

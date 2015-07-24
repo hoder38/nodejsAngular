@@ -243,47 +243,7 @@
     <div class="table-responsive">
         <table class="table table-hover">
             <tbody>
-                <tr ng-repeat="tag in tagList">
-                    <td class="item-check text-center" >
-                        <button confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to DELETE this tag? You can only delete tag which you added." type="button" class="btn btn-default" tooltip="刪除此共同TAG，需持有權限" tooltip-trigger="mouseenter" tooltip-placement="right">
-                            <i class="glyphicon glyphicon-remove-sign"></i>
-                        </button>
-                    </td>
-                    <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">
-                        <a href="#" class="item-point">
-                            <i class="glyphicon glyphicon-folder-open item-icon"></i>
-                            {{tag}}
-                        </a>
-                    </td>
-                    <td class="item-mtime"></td>
-                    <td class="item-count"></td>
-                    <td class="item-tool">
-                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false" tooltip="增加此TAG到預設分類裡" tooltip-trigger="mouseenter" tooltip-placement="left">
-                            <span class="caret"></span>
-                        </button>
-                    </td>
-                </tr>
-                <tr ng-repeat="tag in exceptList">
-                    <td class="item-check text-center">
-                        <button confirmed-click="addTag(tag)" ng-confirm-click="Would you sure to ADD this tag?" type="button" class="btn btn-default" tooltip="增加此TAG為共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right">
-                            <i class="glyphicon glyphicon-plus-sign"></i>
-                        </button>
-                    </td>
-                    <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">
-                        <a href="#" class="history-point">
-                            <i class="glyphicon glyphicon-folder-open item-icon except-tag"></i>
-                            {{tag}}
-                        </a>
-                    </td>
-                    <td class="item-mtime"></td>
-                    <td class="item-count"></td>
-                    <td class="item-tool">
-                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false" tooltip="增加此TAG到預設分類裡" tooltip-trigger="mouseenter" tooltip-placement="left">
-                            <span class="caret"></span>
-                        </button>
-                    </td>
-                </tr>
-                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'warning' || ''}} {{item.recycle === 4 && 'danger' || ''}}">
+                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'warning' || ''}} {{item.recycle === 4 && 'danger' || ''}}" ng-if="$index <= dirLocation">
                     <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG，顯示在列表上半部" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
                     <td class="item-name" ng-if="item.media" confirmed-click="handleMedia('act', item)" ng-confirm-click="Would you sure to handle this media?">
                         {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}} {{item.media.split}}
@@ -328,7 +288,112 @@
                             <span class="caret"></span>
                         </button>
                     </td>
-                <tr>
+                </tr>
+                <tr ng-repeat="tag in tagList">
+                    <td class="item-check text-center" >
+                        <button confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to DELETE this tag? You can only delete tag which you added." type="button" class="btn btn-default" tooltip="刪除此共同TAG，需持有權限" tooltip-trigger="mouseenter" tooltip-placement="right">
+                            <i class="glyphicon glyphicon-remove-sign"></i>
+                        </button>
+                    </td>
+                    <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">
+                        <a href="#" class="item-point">
+                            <i class="glyphicon glyphicon-folder-open item-icon"></i>
+                            {{tag}}
+                        </a>
+                    </td>
+                    <td class="item-mtime"></td>
+                    <td class="item-count"></td>
+                    <td class="item-tool">
+                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false" tooltip="增加此TAG到預設分類裡" tooltip-trigger="mouseenter" tooltip-placement="left">
+                            <span class="caret"></span>
+                        </button>
+                    </td>
+                </tr>
+                <tr ng-repeat="tag in exceptList">
+                    <td class="item-check text-center">
+                        <button confirmed-click="addTag(tag)" ng-confirm-click="Would you sure to ADD this tag?" type="button" class="btn btn-default" tooltip="增加此TAG為共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right">
+                            <i class="glyphicon glyphicon-plus-sign"></i>
+                        </button>
+                    </td>
+                    <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">
+                        <a href="#" class="history-point">
+                            <i class="glyphicon glyphicon-folder-open item-icon"></i>
+                            {{tag}}
+                        </a>
+                    </td>
+                    <td class="item-mtime"></td>
+                    <td class="item-count"></td>
+                    <td class="item-tool">
+                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false" tooltip="增加此TAG到預設分類裡" tooltip-trigger="mouseenter" tooltip-placement="left">
+                            <span class="caret"></span>
+                        </button>
+                    </td>
+                </tr>
+                <tr ng-repeat="tag in relativeList">
+                    <td class="item-check text-center">
+                        <button confirmed-click="addTag(tag)" ng-confirm-click="Would you sure to ADD this tag?" type="button" class="btn btn-default" tooltip="增加此TAG為共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right">
+                            <i class="glyphicon glyphicon-plus-sign"></i>
+                        </button>
+                    </td>
+                    <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">
+                        <a href="#" class="relative-point">
+                            <i class="glyphicon glyphicon-folder-open item-icon"></i>
+                            {{tag}}
+                        </a>
+                    </td>
+                    <td class="item-mtime"></td>
+                    <td class="item-count"></td>
+                    <td class="item-tool">
+                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false" tooltip="增加此TAG到預設分類裡" tooltip-trigger="mouseenter" tooltip-placement="left">
+                            <span class="caret"></span>
+                        </button>
+                    </td>
+                </tr>
+                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'warning' || ''}} {{item.recycle === 4 && 'danger' || ''}}" ng-if="$index > dirLocation">
+                    <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG，顯示在列表上半部" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
+                    <td class="item-name" ng-if="item.media" confirmed-click="handleMedia('act', item)" ng-confirm-click="Would you sure to handle this media?">
+                        {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}} {{item.media.split}}
+                    </td>
+                    <td class="item-name" ng-if="item.status < 2 && !item.media" confirmed-click="downloadFile(item.id)" ng-confirm-click="Would you sure to download this file?">
+                        <a href="#" class="item-point"><i class="glyphicon glyphicon-question-sign item-icon"></i>{{item.name}}</a>
+                    </td>
+                    <td class="item-name" ng-if="item.status === 2 && !item.media" ng-click="showMedia(item, 'image')">
+                        <a href="#" class="item-point">
+                            <span class="preload-img">
+                                <i class="glyphicon glyphicon-picture item-icon"></i>
+                                <img ng-src="{{file_url + '/preview/' + item.id | trusted}}" alt="{{item.name}}" class="item-image" />
+                            </span>
+                            {{item.name}}
+                        </a>
+                    </td>
+                    <td class="item-name" ng-if="item.status === 3 && !item.media" ng-click="showMedia(item, 'video')">
+                        <a href="#" class="item-point">
+                            <span class="preload-img">
+                                <i class="glyphicon glyphicon-facetime-video item-icon"></i>
+                                <img ng-src="{{file_url + '/preview/' + item.id | trusted}}" alt="{{item.name}}" class="item-image" />
+                            </span>
+                            {{item.name}}
+                        </a>
+                    </td>
+                    <td class="item-name" ng-if="item.status === 4 && !item.media" ng-click="showMedia(item, 'music')">
+                        <a href="#" class="item-point"><i class="glyphicon glyphicon-headphones item-icon"></i>{{item.name}}</a>
+                    </td>
+                    <td class="item-name" ng-if="item.status === 5 && !item.media" ng-click="showMedia(item, 'doc')">
+                        <a href="#" class="item-point"><i class="glyphicon glyphicon-file item-icon"></i>{{item.name}}</a>
+                    </td>
+                    <td class="item-name" ng-if="item.status === 6 && !item.media" ng-click="showMedia(item, 'present')">
+                        <a href="#" class="item-point"><i class="glyphicon glyphicon-list-alt item-icon"></i>{{item.name}}</a>
+                    </td>
+                    <td class="item-name" ng-if="item.status === 7 && !item.media" ng-click="showUrl(item)">
+                        <a href="#" class="item-point"><i class="glyphicon glyphicon-bookmark item-icon"></i>{{item.name}}</a>
+                    </td>
+                    <td class="item-mtime">{{item.utime}}</td>
+                    <td class="item-count">{{item.count}}</td>
+                    <td class="item-tool">
+                        <button ng-click="selectItem($event, item)" type="button" class="btn btn-default" aria-expanded="false" tooltip="開啟功能列" tooltip-trigger="mouseenter" tooltip-placement="left">
+                            <span class="caret"></span>
+                        </button>
+                    </td>
                 </tr>
                 <tr>
                     <td class="item-check text-center"></td>
