@@ -289,6 +289,26 @@
                         </button>
                     </td>
                 </tr>
+                <tr ng-repeat="tag in relativeList">
+                    <td class="item-check text-center">
+                        <button confirmed-click="addTag(tag)" ng-confirm-click="Would you sure to ADD this tag?" type="button" class="btn btn-default" tooltip="增加此TAG為共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right">
+                            <i class="glyphicon glyphicon-plus-sign"></i>
+                        </button>
+                    </td>
+                    <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">
+                        <a href="#" class="relative-point">
+                            <i class="glyphicon glyphicon-folder-open item-icon"></i>
+                            {{tag}}
+                        </a>
+                    </td>
+                    <td class="item-mtime"></td>
+                    <td class="item-count"></td>
+                    <td class="item-tool">
+                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false" tooltip="增加此TAG到預設分類裡" tooltip-trigger="mouseenter" tooltip-placement="left">
+                            <span class="caret"></span>
+                        </button>
+                    </td>
+                </tr>
                 <tr ng-repeat="tag in tagList">
                     <td class="item-check text-center" >
                         <button confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to DELETE this tag? You can only delete tag which you added." type="button" class="btn btn-default" tooltip="刪除此共同TAG，需持有權限" tooltip-trigger="mouseenter" tooltip-placement="right">
@@ -317,26 +337,6 @@
                     </td>
                     <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">
                         <a href="#" class="history-point">
-                            <i class="glyphicon glyphicon-folder-open item-icon"></i>
-                            {{tag}}
-                        </a>
-                    </td>
-                    <td class="item-mtime"></td>
-                    <td class="item-count"></td>
-                    <td class="item-tool">
-                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false" tooltip="增加此TAG到預設分類裡" tooltip-trigger="mouseenter" tooltip-placement="left">
-                            <span class="caret"></span>
-                        </button>
-                    </td>
-                </tr>
-                <tr ng-repeat="tag in relativeList">
-                    <td class="item-check text-center">
-                        <button confirmed-click="addTag(tag)" ng-confirm-click="Would you sure to ADD this tag?" type="button" class="btn btn-default" tooltip="增加此TAG為共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right">
-                            <i class="glyphicon glyphicon-plus-sign"></i>
-                        </button>
-                    </td>
-                    <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">
-                        <a href="#" class="relative-point">
                             <i class="glyphicon glyphicon-folder-open item-icon"></i>
                             {{tag}}
                         </a>
