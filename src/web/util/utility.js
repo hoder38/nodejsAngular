@@ -92,7 +92,7 @@ module.exports = {
                     }
                     break;
                 case 'passwd':
-                    if (str.match(/^(?=.*\d+)(?=.*[a-zA-Z])[0-9a-zA-Z!@#$%\!]{6,20}$/)) {
+                    if (str.match(/^(?=.*\d+)(?=.*[a-zA-Z])[0-9a-zA-Z!@#$%]{6,20}$/)) {
                         return str;
                     }
                     break;
