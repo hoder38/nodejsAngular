@@ -22,6 +22,12 @@ var stockTagTool = require("../models/tag-tool.js")("stock");
 
 var stockTool = require("../models/stock-tool.js");
 
+var pwTool = require("../models/password-tool.js");
+
+console.log(pwTool.generatePW());
+console.log(pwTool.generatePW());
+console.log(pwTool.generatePW());
+
 var util = require("../util/utility.js");
 
 var https = require('https'),
