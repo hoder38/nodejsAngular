@@ -87,7 +87,7 @@ app.get('/api/logout', function(req, res, next) {
         req.session.destroy();
     }
     //res.clearCookie('id');
-    res.json({apiOK: true, url: 'https://' + config_glb.file_ip + ':' + config_glb.file_port});
+    res.json({apiOK: true, url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.file_port});
 });
 
 app.get('/api/userinfo', function (req, res, next) {
@@ -1317,18 +1317,18 @@ app.get('/api/getUser', function(req, res, next){
         console.log(req.url);
         console.log(req.body);
         var nav = [];
-        var ws_url = 'wss://' + config_glb.ip + ':' + config_glb.wsj_port;
+        var ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.wsj_port;
         if (util.checkAdmin(1, req.user)) {
-            ws_url = 'wss://' + config_glb.ip + ':' + config_glb.wss_port;
+            ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.wss_port;
             nav = [{title: "Stock", hash: "/Stock", css: "fa fa-fw fa-line-chart"}];
         } else if (util.checkAdmin(2, req.user)) {
-            ws_url = 'wss://' + config_glb.ip + ':' + config_glb.ws_port;
+            ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port;
         }
         var isAdult = false;
         if (util.checkAdmin(2 ,req.user)) {
             isAdult = true;
         }
-        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav, file_url: 'http://' + config_glb.file_ip + ':' + config_glb.file_http_port, main_url: 'https://' + config_glb.file_ip + ':' + config_glb.file_port});
+        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav, file_url: 'http://' + config_glb.extent_file_ip + ':' + config_glb.file_http_port, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.file_port});
     });
 });
 
@@ -1385,7 +1385,7 @@ passport.deserializeUser(function(id, done) {
 app.post('/api*', passport.authenticate('local', { failureRedirect: '/api' }),
     function(req, res) {
         console.log("auth ok");
-        res.json({loginOK: true, id: req.user.username, url: 'https://' + config_glb.file_ip + ':' + config_glb.file_port});
+        res.json({loginOK: true, id: req.user.username, url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.file_port});
 });
 
 app.all('/api*', function(req, res, next) {
@@ -1658,4 +1658,4 @@ function getStockItem(user, items) {
 
 console.log('start express server\n');
 
-console.log("Server running at https://" + config_glb.ip + ":" + config_glb.port + ' ' + new Date());
+console.log("Server running at https://" + config_glb.extent_ip + ":" + config_glb.port + ' ' + new Date());

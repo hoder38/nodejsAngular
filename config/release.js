@@ -1,4 +1,6 @@
 module.exports = {
+    extent_ip: '114.32.213.158',
+    extent_file_ip: '114.32.213.158',
     ip: '114.32.213.158',
     file_ip: '114.32.213.158',
     port: 443,
