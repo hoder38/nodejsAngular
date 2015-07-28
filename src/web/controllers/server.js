@@ -1291,6 +1291,44 @@ app.get('/api/stock/querySimple/:uid', function(req, res,next) {
     });
 });
 
+app.get('/api/stock/getPER/:uid', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('stock get per');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        stockTool.getStockPER(id, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json({per:result});
+        });
+    });
+});
+
+app.get('/api/stock/getYield/:uid', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('stock get yield');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        stockTool.getStockYield(id, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json({yield:result});
+        });
+    });
+});
+
 app.get('/api/getRelativeTag/:tag', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get relative tag');
@@ -1302,6 +1340,25 @@ app.get('/api/getRelativeTag/:tag', function(req, res,next) {
             util.handleError({hoerror: 2, message: "tag is not vaild"}, next, res);
         }
         tagTool.getRelativeTag(tag, req.user, next, function(err, relative) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json({relative: relative});
+        });
+    });
+});
+
+app.get('/api/stock/getRelativeTag/:tag', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('get relative tag');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var tag = util.isValidString(req.params.tag, 'name');
+        if (tag === false) {
+            util.handleError({hoerror: 2, message: "tag is not vaild"}, next, res);
+        }
+        stockTagTool.getRelativeTag(tag, req.user, next, function(err, relative) {
             if (err) {
                 util.handleError(err, next, res);
             }

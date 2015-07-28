@@ -1103,6 +1103,15 @@ module.exports = function(collection) {
                         }
                     }
                 }
+                if (collection === 'storage') {
+                    if (relative_arr.indexOf('first item') === -1) {
+                        relative_arr.push('first item');
+                    }
+                } else if (collection === 'stock') {
+                    if (relative_arr.indexOf('important') === -1) {
+                        relative_arr.push('important');
+                    }
+                }
                 setTimeout(function(){
                     callback(null, relative_arr);
                 }, 0);
