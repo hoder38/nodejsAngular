@@ -1,6 +1,8 @@
 module.exports = {
-    ip: '114.32.213.158',
-    file_ip: '114.32.213.158',
+    extent_ip: '114.32.213.158',
+    extent_file_ip: '114.32.213.158',
+    ip: '192.168.1.100',
+    file_ip: '192.168.1.100',
     port: 8080,
     file_port: 8081,
     file_http_port: 8082,

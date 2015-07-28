@@ -122,14 +122,14 @@
             </span>
         </div>
     </form>
-    <form ng-submit="submitIndex()" id="parse-index" ng-show="parseIndex&&dirEdit">
+    <form ng-submit="parseIndex = false" id="parse-index" ng-show="parseIndex">
         <div class="input-group">
             <span class="input-group-btn">
                 <button class="btn btn-warning" ng-click="parseIndex = false" type="button">
                     <i class="glyphicon glyphicon-remove"></i>
                 </button>
             </span>
-            <input type="text" class="form-control" ng-model="inputIndex" placeholder="Parse Index" focus-me="parseIndexFocus" />
+            <input type="text" class="form-control" readonly ng-model="inputIndex" placeholder="Parse Index" focus-me="parseIndexFocus" />
             <span class="input-group-btn">
                 <button class="btn btn-warning" type="submit">
                     <span class="glyphicon glyphicon-ok"></span>
@@ -182,7 +182,7 @@
         <li>
             <a href="#">name</a>
         </li>
-        <li class="pull-right item-tool {{!selectList.length && 'active' || ''}}" tooltip="{{selectList.length && '新增共同TAG，共同TAG顯示在列表上半部' || '設定，點選下方的expand可以開啟功能列'}}" tooltip-trigger="mouseenter" tooltip-placement="left">
+        <li class="pull-right item-tool {{!selectList.length && 'active' || ''}}" tooltip="{{selectList.length && '編輯共同TAG' || '設定，點選下方的expand可以開啟功能列'}}" tooltip-trigger="mouseenter" tooltip-placement="left">
             <a ng-click="openNewTag()" href="#">
                 <i class="glyphicon {{selectList.length && 'glyphicon-plus' || 'glyphicon-cog'}}"></i>
             </a>
@@ -208,6 +208,12 @@
     </ul>
     <div class="dropdown" dropdown="" is-open="dropdown.item">
         <ul class="dropdown-menu" id="tool-list">
+            <li ng-show="toolList.per">
+                <a ng-click="stockPer()" href="#">PER</a>
+            </li>
+            <li ng-show="toolList.yield">
+                <a ng-click="stockYield()" href="#">YIELD</a>
+            </li>
             <li ng-show="toolList.dir" ng-repeat="item in stockDirList">
                 <a confirmed-click="add2Parent(item)" ng-confirm-click="Would you sure to add this tag to Dir?" href="#">{{item.show}}</a>
             </li>
@@ -218,6 +224,41 @@
     <div class="table-responsive">
         <table class="table table-hover">
             <tbody>
+                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{item.important === 1 && 'danger' || ''}}" ng-if="$index <= dirLocation">
+                    <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
+                    <td class="item-name" ng-click="submitIndex(item)">
+                        <a href="#" class="item-point">{{item.type}}{{item.index}}{{item.name}}</a>
+                    </td>
+                    <td class="item-profit">{{item.profit}}</td>
+                    <td class="item-safety">{{item.safety}}</td>
+                    <td class="item-management">{{item.management}}</td>
+                    <td class="item-tool">
+                        <button ng-click="selectItem($event, item)" type="button" class="btn btn-default" aria-expanded="false" tooltip="開啟功能列" tooltip-trigger="mouseenter" tooltip-placement="left">
+                            <span class="caret"></span>
+                        </button>
+                    </td>
+                </tr>
+                <tr ng-repeat="tag in relativeList">
+                    <td class="item-check text-center">
+                        <button confirmed-click="addTag(tag)" ng-confirm-click="Would you sure to ADD this tag?" type="button" class="btn btn-default" tooltip="增加此TAG為共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right">
+                            <i class="glyphicon glyphicon-plus-sign"></i>
+                        </button>
+                    </td>
+                    <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">
+                        <a href="#" class="relative-point">
+                            <i class="glyphicon glyphicon-folder-open item-icon"></i>
+                            {{tag}}
+                        </a>
+                    </td>
+                    <td class="item-profit"></td>
+                    <td class="item-safety"></td>
+                    <td class="item-management"></td>
+                    <td class="item-tool">
+                        <button ng-click="selectItem($event, tag)" type="button" class="btn btn-default" aria-expanded="false" tooltip="增加此TAG到預設分類裡" tooltip-trigger="mouseenter" tooltip-placement="left">
+                            <span class="caret"></span>
+                        </button>
+                    </td>
+                </tr>
                 <tr ng-repeat="tag in tagList">
                     <td class="item-check text-center" >
                         <button confirmed-click="delTag(tag)" ng-confirm-click="Would you sure to DELETE this tag? You can only delete tag which you added." type="button" class="btn btn-default" tooltip="刪除此共同TAG，需持有權限" tooltip-trigger="mouseenter" tooltip-placement="right">
@@ -247,7 +288,7 @@
                     </td>
                     <td class="item-name" ng-click="exactlyStorage($parent.this, tag)">
                         <a href="#" class="history-point">
-                            <i class="glyphicon glyphicon-folder-open item-icon except-tag"></i>
+                            <i class="glyphicon glyphicon-folder-open item-icon"></i>
                             {{tag}}
                         </a>
                     </td>
@@ -260,8 +301,8 @@
                         </button>
                     </td>
                 </tr>
-                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{item.important === 1 && 'danger' || ''}}">
-                    <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG，顯示在列表上半部" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
+                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{item.important === 1 && 'danger' || ''}}" ng-if="$index > dirLocation">
+                    <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
                     <td class="item-name" ng-click="submitIndex(item)">
                         <a href="#" class="item-point">{{item.type}}{{item.index}}{{item.name}}</a>
                     </td>
@@ -269,11 +310,10 @@
                     <td class="item-safety">{{item.safety}}</td>
                     <td class="item-management">{{item.management}}</td>
                     <td class="item-tool">
-                        <button type="button" class="btn btn-default" aria-expanded="false" tooltip="暫無功能" tooltip-trigger="mouseenter" tooltip-placement="left">
+                        <button ng-click="selectItem($event, item)" type="button" class="btn btn-default" aria-expanded="false" tooltip="開啟功能列" tooltip-trigger="mouseenter" tooltip-placement="left">
                             <span class="caret"></span>
                         </button>
                     </td>
-                <tr>
                 </tr>
                 <tr>
                     <td class="item-check text-center"></td>

@@ -93,7 +93,7 @@ app.get('/api/logout', function(req, res, next) {
         req.session.destroy();
     }
     //res.clearCookie('id');
-    res.json({apiOK: true, url: 'https://' + config_glb.file_ip + ':' + config_glb.file_port});
+    res.json({apiOK: true, url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.file_port});
 });
 
 app.get('/api/userinfo', function (req, res, next) {
@@ -1297,6 +1297,44 @@ app.get('/api/stock/querySimple/:uid', function(req, res,next) {
     });
 });
 
+app.get('/api/stock/getPER/:uid', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('stock get per');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        stockTool.getStockPER(id, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json({per:result});
+        });
+    });
+});
+
+app.get('/api/stock/getYield/:uid', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('stock get yield');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        stockTool.getStockYield(id, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json({yield:result});
+        });
+    });
+});
+
 app.get('/api/getRelativeTag/:tag', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get relative tag');
@@ -1316,6 +1354,25 @@ app.get('/api/getRelativeTag/:tag', function(req, res,next) {
     });
 });
 
+app.get('/api/stock/getRelativeTag/:tag', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('get relative tag');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var tag = util.isValidString(req.params.tag, 'name');
+        if (tag === false) {
+            util.handleError({hoerror: 2, message: "tag is not vaild"}, next, res);
+        }
+        stockTagTool.getRelativeTag(tag, req.user, next, function(err, relative) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json({relative: relative});
+        });
+    });
+});
+
 app.get('/api/getUser', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get user');
@@ -1323,18 +1380,18 @@ app.get('/api/getUser', function(req, res, next){
         console.log(req.url);
         console.log(req.body);
         var nav = [];
-        var ws_url = 'wss://' + config_glb.ip + ':' + config_glb.wsj_port;
+        var ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.wsj_port;
         if (util.checkAdmin(1, req.user)) {
-            ws_url = 'wss://' + config_glb.ip + ':' + config_glb.wss_port;
+            ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.wss_port;
             nav = [{title: "Stock", hash: "/Stock", css: "fa fa-fw fa-line-chart"}];
         } else if (util.checkAdmin(2, req.user)) {
-            ws_url = 'wss://' + config_glb.ip + ':' + config_glb.ws_port;
+            ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port;
         }
         var isAdult = false;
         if (util.checkAdmin(2 ,req.user)) {
             isAdult = true;
         }
-        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav, file_url: 'http://' + config_glb.file_ip + ':' + config_glb.file_http_port, main_url: 'https://' + config_glb.file_ip + ':' + config_glb.file_port});
+        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav, file_url: 'http://' + config_glb.extent_file_ip + ':' + config_glb.file_http_port, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.file_port});
     });
 });
 
@@ -1391,7 +1448,7 @@ passport.deserializeUser(function(id, done) {
 app.post('/api*', passport.authenticate('local', { failureRedirect: '/api' }),
     function(req, res) {
         console.log("auth ok");
-        res.json({loginOK: true, id: req.user.username, url: 'https://' + config_glb.file_ip + ':' + config_glb.file_port});
+        res.json({loginOK: true, id: req.user.username, url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.file_port});
 });
 
 app.all('/api*', function(req, res, next) {
@@ -1664,4 +1721,4 @@ function getStockItem(user, items) {
 
 console.log('start express server\n');
 
-console.log("Server running at https://" + config_glb.ip + ":" + config_glb.port + ' ' + new Date());
+console.log("Server running at https://" + config_glb.extent_ip + ":" + config_glb.port + ' ' + new Date());

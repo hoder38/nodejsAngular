@@ -187,7 +187,7 @@ function postData(fields, files, options, headers, callback, filePath) {
                         callback(null);
                     }, 0);
                 });
-            } else if (res.statusCode === 302){
+            } else if (res.statusCode === 301 || res.statusCode === 302){
                 if (!response.headers.location) {
                     console.log(response.headers);
                     util.handleError({hoerror: 1, message: response.statusCode + ': download do not complete'}, callback, callback, 400, null);
@@ -276,12 +276,13 @@ module.exports = {
             req.end();
         });
     },
-    xuiteDownload: function(url, filePath, callback, threshold, is_check) {
+    xuiteDownload: function(url, filePath, callback, threshold, is_check, is_file) {
         if (!this.setApiQueue('xuiteDownload', [url, filePath, callback, threshold])) {
             return false;
         }
         threshold = typeof threshold !== 'undefined' ? threshold : null;
         is_check = typeof is_check !== 'undefined' ? is_check : true;
+        is_file = typeof is_file !== 'undefined' ? is_file : true;
         var urlParse = urlMod.parse(url);
         var options = {
             host: urlParse.hostname,
@@ -299,9 +300,10 @@ module.exports = {
         function recur_download(time) {
             setTimeout(function(){
                 var req = http.request(options, function(res) {
+                    res.body = '';
                     var length = 0;
                     if (res.statusCode === 200) {
-                        if (res.headers['content-length']) {
+                        if (res.headers['content-length'] && is_file) {
                             length = Number(res.headers['content-length']);
                             //complete = true;
                             var file_write =  fs.createWriteStream(filePath);
@@ -337,16 +339,18 @@ module.exports = {
                                     }
                                 }
                             });
-                        } else if (!is_check){
-                            this_obj.getApiQueue();
-                            var file_write =  fs.createWriteStream(filePath);
-                            res.pipe(file_write);
-                            file_write.on('finish', function(){
-                                console.log(filePath);
-                                setTimeout(function(){
-                                    callback(null, urlParse.pathname);
-                                }, 0);
-                            });
+                        } else if (!is_check) {
+                            if (is_file) {
+                                this_obj.getApiQueue();
+                                var file_write =  fs.createWriteStream(filePath);
+                                res.pipe(file_write);
+                                file_write.on('finish', function(){
+                                    console.log(filePath);
+                                    setTimeout(function(){
+                                        callback(null, urlParse.pathname);
+                                    }, 0);
+                                });
+                            }
                         } else {
                             time = time * 2;
                             console.log(time);
@@ -372,7 +376,7 @@ module.exports = {
                                 }
                             }
                         }
-                    } else if (res.statusCode === 302){
+                    } else if (res.statusCode === 301 || res.statusCode === 302){
                         this_obj.getApiQueue();
                         if (!res.headers.location) {
                             console.log(res.headers);
@@ -386,9 +390,21 @@ module.exports = {
                         this_obj.getApiQueue();
                         util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                     }
-                    res.on('end', function() {
-                        console.log('res end');
-                    });
+                    if (is_file) {
+                        res.on('end', function() {
+                            console.log('res end');
+                        });
+                    } else {
+                        res.on('data', function(chunk){
+                            res.body += chunk;
+                        });
+                        res.on('end', function() {
+                            this_obj.getApiQueue();
+                            setTimeout(function(){
+                                callback(null, res.body);
+                            }, 0);
+                        });
+                    }
                 });
                 req.on('error', function(e) {
                     util.handleError(e);

@@ -387,7 +387,7 @@ var exports = module.exports = {
                                         }
                                     }
                                 });
-                            } else if (res.statusCode === 302){
+                            } else if (res.statusCode === 301 || res.statusCode === 302){
                                 this_obj.getApiQueue();
                                 if (!res.headers.location) {
                                     console.log(res.headers);

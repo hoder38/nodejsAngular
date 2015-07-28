@@ -1846,63 +1846,151 @@ module.exports = {
             default:
             util.handleError({hoerror: 2, message: "stock type unknown!!!"}, callback, callback);
         }
-    }
+    },
+    getStockPER: function(id, callback) {
+        mongo.orig("find", "stock", {_id: id}, {limit: 1}, function(err, items){
+            if(err) {
+                util.handleError(err, callback, callback);
+            }
+            if (items.length === 0) {
+                util.handleError({hoerror: 2, message: "can not find stock!!!"}, callback, callback);
+            }
+            sales = items[0].sales;
+            var date = new Date();
+            var year = date.getFullYear();
+            while (!sales[year] && year > 2000) {
+                year--;
+            }
+            var yearEPS = 0
+            for (var i = 3; i >=0; i--) {
+                if (sales[year][i]) {
+                    if (i === 3) {
+                        yearEPS = sales[year][i].eps
+                    } else {
+                        if (sales[year-1] && sales[year-1][3] && sales[year-1][i]) {
+                            yearEPS = sales[year][i].eps + sales[year-1][3].eps - sales[year-1][i].eps;
+                        }
+                    }
+                }
+            }
+            getStockPrice(items[0].type, items[0].index, function(err, price) {
+                if(err) {
+                    util.handleError(err, callback, callback);
+                }
+                var per = 0;
+                if (yearEPS > 0) {
+                    per = Math.ceil(price/yearEPS*1000)/1000;
+                }
+                setTimeout(function(){
+                    callback(null, per);
+                }, 0);
+            });
+        });
+    },
+    getStockYield: function(id, callback) {
+        mongo.orig("find", "stock", {_id: id}, {limit: 1}, function(err, items){
+            if(err) {
+                util.handleError(err, callback, callback);
+            }
+            if (items.length === 0) {
+                util.handleError({hoerror: 2, message: "can not find stock!!!"}, callback, callback);
+            }
+            switch(items[0].type) {
+                case 'twse':
+                var url = 'http://mops.twse.com.tw/mops/web/ajax_t05st09?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=' + items[0].index + '&code1=&TYPEK2=&checkbtn=1&queryName=co_id&TYPEK=all&isnew=true&co_id=' + items[0].index;
+                api.xuiteDownload(url, '', function(err, data) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    var raw = data.match(/<TD align='right' [^&]+/g);
+                    if (raw.length < 2) {
+                        util.handleError({hoerror: 2, message: "can not find dividends!!!"}, callback, callback);
+                    }
+                    var dividends = Number(raw[0].match(/\d+(\.\d+)?/)[0]) + Number(raw[1].match(/\d+(\.\d+)?/)[0]);
+                    getStockPrice(items[0].type, items[0].index, function(err, price) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var yield = 0;
+                        if (dividends > 0) {
+                            yield = Math.ceil(price/dividends*1000)/1000;
+                        }
+                        setTimeout(function(){
+                            callback(null, yield);
+                        }, 0);
+                    });
+                }, 10000, false, false);
+                break;
+                default:
+                util.handleError({hoerror: 2, message: "stock type unknown!!!"}, callback, callback);
+            }
+        });
+    },
 };
+
+function getStockPrice(type, index, callback) {
+    var name = index;
+    if (type === 'twse') {
+        name+= '.tw+' + index + '.two';
+    }
+    var url = 'http://download.finance.yahoo.com/d/quotes.csv?s=' + name + '&f=l1';
+    api.xuiteDownload(url, '', function(err, result) {
+        if (err) {
+            util.handleError(err, callback, callback);
+        }
+        var price = result.match(/\d+(\.\d+)/)[0];
+        if (price) {
+            setTimeout(function(){
+                callback(null, price);
+            }, 0);
+        } else {
+            util.handleError({hoerror: 2, message: "stock price get fail"}, callback, callback);
+        }
+    }, 10000, false, false);
+}
 
 function getBasicStockData(type, index, callback) {
     switch(type) {
         case 'twse':
         var url = 'http://mops.twse.com.tw/mops/web/ajax_quickpgm?encodeURIComponent=1&step=4&firstin=1&off=1&keyword4=' + index + '&code1=&TYPEK2=&checkbtn=1&queryName=co_id&TYPEK=all&co_id=' + index;
-        var filePath = config_glb.nas_tmp+'/twse'+index;
-        api.xuiteDownload(url, filePath, function(err) {
+        api.xuiteDownload(url, '', function(err, data) {
             if (err) {
                 util.handleError(err, callback, callback);
             }
-            if(!fs.existsSync(filePath)) {
-                util.handleError({hoerror: 2, message: "cannot get basic data"}, callback, callback);
+            var raw = data.match(/>[^<]+<\/a>/g);
+            if (raw.length < 1) {
+                util.handleError({hoerror: 2, message: "can not find basic data!!!"}, callback, callback);
             }
-            fs.readFile(filePath, function (err,data) {
-                if (err) {
-                    util.handleError(err, callback, callback);
-                }
-                data = util.bufferToString(data);
-                fs.unlink(filePath, function(err) {
-                    if (err) {
-                        util.handleError(err, callback, callback);
-                    }
-                    var raw = data.match(/>[^<]+<\/a>/g);
-                    var result = {};
-                    result.stock_index = raw[0].match(/^>([^<]+)/)[1];
-                    result.stock_time = (Number(raw[raw.length-1].match(/^>([^<]+)/)[1].match(/\d+/)[0]) + 1911).toString();
-                    result.stock_class = raw[raw.length-2].match(/^>([^<]+)/)[1];
-                    result.stock_market = raw[raw.length-3].match(/^>([^<]+)/)[1];
-                    if (result.stock_market === '上市') {
-                        result.stock_market_e = 'sii';
-                    } else if (result.stock_market === '上櫃') {
-                        result.stock_market_e = 'otc';
-                    } else if (result.stock_market === '興櫃') {
-                        result.stock_market_e = 'rotc';
-                    } else if (result.stock_market === '公開發行') {
-                        result.stock_market_e = 'pub';
-                    }
-                    result.stock_full = raw[raw.length-4].match(/^>([^<]+)/)[1];
-                    result.stock_name = [];
-                    result.stock_location = ['tw', '台灣', '臺灣'];
-                    for (var i = 1; i < raw.length-4; i++) {
-                        result.stock_name.push(raw[i].match(/^>([^<]+)/)[1]);
-                    }
-                    if (result.stock_name[0].match(/^F/)) {
-                        result.stock_location.push('大陸');
-                        result.stock_location.push('中國');
-                        result.stock_location.push('中國大陸');
-                        result.stock_location.push('china');
-                    }
-                    setTimeout(function(){
-                        callback(null, result);
-                    }, 0);
-                });
-            });
-        }, 600000, false);
+            var result = {};
+            result.stock_index = raw[0].match(/^>([^<]+)/)[1];
+            result.stock_time = (Number(raw[raw.length-1].match(/^>([^<]+)/)[1].match(/\d+/)[0]) + 1911).toString();
+            result.stock_class = raw[raw.length-2].match(/^>([^<]+)/)[1];
+            result.stock_market = raw[raw.length-3].match(/^>([^<]+)/)[1];
+            if (result.stock_market === '上市') {
+                result.stock_market_e = 'sii';
+            } else if (result.stock_market === '上櫃') {
+                result.stock_market_e = 'otc';
+            } else if (result.stock_market === '興櫃') {
+                result.stock_market_e = 'rotc';
+            } else if (result.stock_market === '公開發行') {
+                result.stock_market_e = 'pub';
+            }
+            result.stock_full = raw[raw.length-4].match(/^>([^<]+)/)[1];
+            result.stock_name = [];
+            result.stock_location = ['tw', '台灣', '臺灣'];
+            for (var i = 1; i < raw.length-4; i++) {
+                result.stock_name.push(raw[i].match(/^>([^<]+)/)[1]);
+            }
+            if (result.stock_name[0].match(/^F/)) {
+                result.stock_location.push('大陸');
+                result.stock_location.push('中國');
+                result.stock_location.push('中國大陸');
+                result.stock_location.push('china');
+            }
+            setTimeout(function(){
+                callback(null, result);
+            }, 0);
+        }, 600000, false, false);
         break;
         default:
         util.handleError({hoerror: 2, message: "stock type unknown!!!"}, callback, callback);
