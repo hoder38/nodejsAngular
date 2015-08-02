@@ -1576,7 +1576,7 @@ process.on('uncaughtException', function(err) {
     }
 });
 
-var client = net.connect({port: config_glb.com_port, config_glb.file_ip},
+var client = net.connect({port: config_glb.com_port, ip: config_glb.file_ip},
     function() { //'connect' listener
     console.log('connected to server!');
 });
