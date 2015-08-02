@@ -15,7 +15,7 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
     $scope.$parent.collapse.nav = true;
     //right
     $scope.$parent.isRight = true;
-    $scope.bookmarkCollpase = false;
+    $scope.bookmarkCollapse = false;
     $scope.bookmarkEdit = false;
     $scope.stockDirList = [];
     //list
@@ -328,7 +328,7 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
             } else {
                 $scope.stockDirList = [];
                 for (var i in result.parentList) {
-                    $scope.stockDirList.push({name: result.parentList[i].name, show: result.parentList[i].show, collpase: true, edit: false, list: [], page: 0, more: true, moreDisabled: false, sortName: '', sortMtime: '', sort: 'name/asc'});
+                    $scope.stockDirList.push({name: result.parentList[i].name, show: result.parentList[i].show, collapse: true, edit: false, list: [], page: 0, more: true, moreDisabled: false, sortName: '', sortMtime: '', sort: 'name/asc'});
                 }
             }
         }, function(errorResult) {
@@ -580,6 +580,39 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
         getItemlist(this_obj, item, 0, true);
     }
 
+    $scope.addTag = function(tag) {
+        if (isValidString(tag, 'name')) {
+            if (this.selectList.length > 0) {
+                var this_obj = this;
+                for (var i in this.selectList) {
+                    var Info = $resource('/api/stock/addTag/' + this.selectList[i].id, {}, {
+                        'addTag': { method:'PUT' }
+                    });
+                    Info.addTag({tag: tag}, function (result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        }
+                        if (Number(i) === this_obj.selectList.length -1) {
+                            this_obj.tagNew = false;
+                        }
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
+                }
+            } else {
+                addAlert('Please selects item!!!');
+            }
+        } else {
+            addAlert('Tag is not vaild!!!');
+        }
+    }
+
     $scope.delTag = function(tag) {
         if (isValidString(tag, 'name')) {
             var this_itemList = this.itemList;
@@ -646,7 +679,7 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
     }
 
     $scope.showTaglist = function(item) {
-        item.collpase = !item.collpase;
+        item.collapse = !item.collapse;
         if (item.list.length === 0) {
             if ($cookies['dirStock' + item.name + 'SortName'] === 'mtime') {
                 item.sort = 'mtime/';
@@ -843,7 +876,7 @@ function StockCntl($route, $routeParams, $location, $resource, $window, $cookies
                 this_obj.$parent.historyList = result.parentList.his;
                 this_obj.$parent.exactlyList = result.parentList.exactly;
                 this_obj.$parent.moreDisabled = false;
-                this_obj.$parent.$parent.collapse.storage = true;
+                this_obj.$parent.$parent.collapse.stock = true;
             }
         }, function(errorResult) {
             this_obj.$parent.moreDisabled = false;

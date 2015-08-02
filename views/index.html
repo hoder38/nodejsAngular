@@ -15,6 +15,7 @@
         <script type="text/javascript" src="script/angular-chart.min.js"></script>
         <script type="text/javascript" src="script/controllers.js"></script>
         <script type="text/javascript" src="script/stock-controllers.js"></script>
+        <script type="text/javascript" src="script/password-controllers.js"></script>
         <script type="text/javascript" src="script/frontend.js"></script>
         <script type="text/javascript" src="script/ui-bootstrap-tpls-0.12.0.min.js"></script>
         <link rel="stylesheet" href="css/angular-chart.css">
@@ -56,6 +57,12 @@
                         <span class="icon-bar"></span>
                     </button>
                     <button ng-show="currentPage===2" type="button" class="navbar-toggle" ng-click="collapse.stock = !collapse.stock">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <button ng-show="currentPage===3" type="button" class="navbar-toggle" ng-click="collapse.password = !collapse.password">
                         <span class="sr-only">Toggle navigation</span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>

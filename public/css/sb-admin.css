@@ -529,6 +529,10 @@ audio.media-screen {
     margin-top: -34px;
 }
 
+#show-Password {
+    margin-top: -34px;
+}
+
 #parse-index {
     margin-top: -34px;
 }
@@ -585,6 +589,10 @@ audio.media-screen {
     z-index: 1500;
 }
 
+#password-section {
+    z-index: 1500;
+}
+
 #user-section {
     width: auto;
 }
@@ -623,6 +631,15 @@ audio.media-screen {
 
 .item-tool {
     width: 50px;
+}
+
+.item-user {
+    width: 27%;
+    min-width: 68px;
+}
+
+.nav>.item-user>a {
+    padding: 10px 5px;
 }
 
 .item-mtime {
@@ -743,4 +760,8 @@ audio.media-screen {
 
 .relative-point:hover, .relative-point:link, .relative-point:visited, .relative-point:active {
     color: #8B0000;
+}
+
+.modal-body.panel {
+    padding: 0px;
 }

@@ -11,11 +11,11 @@
                         <strong>{{stockName}}</strong>
                     </a>
                 </li>
-                <li class="{{!bookmarkCollpase && 'active' || ''}}" ng-show="$parent.isRight">
-                    <a href="#" aria-expanded="true" ng-click="bookmarkCollpase = !bookmarkCollpase">
-                        Bookmark&nbsp;<i class="glyphicon {{bookmarkCollpase && 'glyphicon-chevron-down' || 'glyphicon-chevron-up'}}"></i>
+                <li class="{{!bookmarkCollapse && 'active' || ''}}" ng-show="$parent.isRight">
+                    <a href="#" aria-expanded="true" ng-click="bookmarkCollapse = !bookmarkCollapse">
+                        Bookmark&nbsp;<i class="glyphicon {{bookmarkCollapse && 'glyphicon-chevron-down' || 'glyphicon-chevron-up'}}"></i>
                     </a>
-                    <ul class="nav nav-pills" aria-expanded="true" collapse="bookmarkCollpase">
+                    <ul class="nav nav-pills" aria-expanded="true" collapse="bookmarkCollapse">
                         <li ng-click="changeSort('bookmarkSort', 'name')">
                             <a class="nav-pills-trim" href="#">
                                 name<i ng-show="bookmarkSort.name" class="{{(bookmarkSort.name === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
@@ -30,7 +30,7 @@
                             <a class="nav-pills-trim" ng-click="bookmarkEdit = !bookmarkEdit" href="#">edit</a>
                         </li>
                     </ul>
-                    <ul aria-expanded="true" collapse="bookmarkCollpase">
+                    <ul aria-expanded="true" collapse="bookmarkCollapse">
                         <li ng-repeat="item in bookmarkList">
                             <a ng-hide="bookmarkEdit" ng-click="getBookmarkItem(item.id)" href="#">{{item.name}}</a>
                             <a ng-show="bookmarkEdit" confirmed-click="delBookmark(item.id)" ng-confirm-click="Would you sure to delete this bookmark?" href="#">
@@ -39,11 +39,11 @@
                         </li>
                     </ul>
                 </li>
-                <li ng-repeat="dir in stockDirList" class="{{!dir.collpase && 'active' || ''}}" ng-show="$parent.isRight">
+                <li ng-repeat="dir in stockDirList" class="{{!dir.collapse && 'active' || ''}}" ng-show="$parent.isRight">
                     <a href="#" aria-expanded="true" ng-click="showTaglist(dir)">
-                        {{dir.show}}&nbsp;<i class="glyphicon {{dir.collpase && 'glyphicon-chevron-down' || 'glyphicon-chevron-up'}}"></i>
+                        {{dir.show}}&nbsp;<i class="glyphicon {{dir.collapse && 'glyphicon-chevron-down' || 'glyphicon-chevron-up'}}"></i>
                     </a>
-                    <ul class="nav nav-pills" aria-expanded="true" collapse="dir.collpase">
+                    <ul class="nav nav-pills" aria-expanded="true" collapse="dir.collapse">
                         <li ng-click="changeDirSort(dir, 'name')">
                             <a class="nav-pills-trim" href="#">
                                 name<i ng-show="dir.sortName" class="{{(dir.sortName === 'desc') && 'fa fa-fw fa-caret-down' || 'fa fa-fw fa-caret-up'}}"></i>
@@ -58,7 +58,7 @@
                             <a class="nav-pills-trim" ng-click="dir.edit = !dir.edit" href="#">edit</a>
                         </li>
                     </ul>
-                    <ul aria-expanded="true" collapse="dir.collpase">
+                    <ul aria-expanded="true" collapse="dir.collapse">
                         <li ng-repeat="item in dir.list">
                             <a ng-hide="dir.edit" ng-click="dirItemlist(item.id)" href="#">{{item.name}}</a>
                             <a ng-show="dir.edit" confirmed-click="del2Parent(item.id, dir)" ng-confirm-click="Would you sure to delete this tag?" href="#">
@@ -224,7 +224,7 @@
     <div class="table-responsive">
         <table class="table table-hover">
             <tbody>
-                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{item.important === 1 && 'danger' || ''}}" ng-if="$index <= dirLocation">
+                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}}" ng-if="$index <= dirLocation">
                     <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
                     <td class="item-name" ng-click="submitIndex(item)">
                         <a href="#" class="item-point">{{item.type}}{{item.index}}{{item.name}}</a>
@@ -301,7 +301,7 @@
                         </button>
                     </td>
                 </tr>
-                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{item.important === 1 && 'danger' || ''}}" ng-if="$index > dirLocation">
+                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}}" ng-if="$index > dirLocation">
                     <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
                     <td class="item-name" ng-click="submitIndex(item)">
                         <a href="#" class="item-point">{{item.type}}{{item.index}}{{item.name}}</a>

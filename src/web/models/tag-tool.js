@@ -5,6 +5,7 @@ var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle', 'first 
 
 var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'publisher', 'tw': '出版社'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
 var stock_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'country', 'tw': '國家'}, {'name': 'market type', 'tw': '市場種類'}, {'name': 'category', 'tw': '產業分類'}];
+var password_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'category', 'tw': '功能分類'}, {'name': 'platform', 'tw': '平台'}];
 var adultonly_arr = [{'name': 'adult_command', 'tw': '18禁指令'}, {'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_author', 'tw': '18禁作者'}, {'name': 'adultonly_category', 'tw': '18禁分類'}, {'name': 'adultonly_producer', 'tw': '成人片商'}, {'name': 'adultonly_franchise', 'tw': '成人系列作'}];
 
 var queryLimit = 20;
@@ -43,6 +44,12 @@ module.exports = function(collection) {
         getQueryTag = getStockQueryTag;
         parent_arr = stock_parent_arr;
         getSortName = getStockSortName;
+        break;
+        case 'password':
+        getQuerySql = getPasswordQuerySql;
+        getQueryTag = getPasswordQueryTag;
+        parent_arr = password_parent_arr;
+        getSortName = getPasswordSortName;
         break;
         default:
         return false;
@@ -226,7 +233,7 @@ module.exports = function(collection) {
                     if (items.length === 0) {
                         util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, callback, null);
                     }
-                    if ((tagType.tag.hasOwnProperty('adultonly') && items[0].adultonly === tagType.tag.adultonly) || (tagType.tag.hasOwnProperty('first') && items[0].first === tagType.tag.first)) {
+                    if ((tagType.tag.hasOwnProperty('adultonly') && items[0].adultonly === tagType.tag.adultonly) || (tagType.tag.hasOwnProperty('first') && items[0].first === tagType.tag.first) || (tagType.tag.hasOwnProperty('important') && items[0].important === tagType.tag.important)) {
                         setTimeout(function(){
                             callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: tagType.name});
                         }, 0);
@@ -241,6 +248,10 @@ module.exports = function(collection) {
                         });
                     }
                 });
+            } else if (tagType.type === 3) {
+                setTimeout(function(){
+                    callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: tagType.name});
+                }, 0);
             } else if (tagType.type === 1) {
                 mongo.orig("find", collection, {_id: id}, {limit: 1}, function(err, items){
                     if(err) {
@@ -1268,10 +1279,8 @@ function getStockQuerySql(user, tagList, exactly) {
             } else if (index === 4) {
             } else if (index === 5) {
             } else if (index === 6) {
-                if (util.checkAdmin(1, user)) {
-                    nosql['important'] = 1;
-                    is_important = true;
-                }
+                nosql['important'] = 1;
+                is_important = true;
             } else {
                 if (exactly[i]) {
                     nosql.$and.push({tags: normal});
@@ -1310,6 +1319,69 @@ function getStockQuerySql(user, tagList, exactly) {
     return sql;
 }
 
+function getPasswordQuerySql(user, tagList, exactly) {
+    var nosql = {owner: user._id};
+    var is_tags = false;
+    var is_important = false;
+    var skip = 0;
+    if (tagList.length === 0) {
+    } else {
+        nosql['$and'] = [];
+        for (var i in tagList) {
+            var skip_number = tagList[i].match(/^>(\d+)$/);
+            if (skip_number) {
+                skip = Number(skip_number[1]);
+                continue;
+            }
+            var normal = normalize(tagList[i]);
+            var index = default_tags.indexOf(normal);
+            if (index === 0) {
+            } else if (index === 1) {
+            } else if (index === 2) {
+            } else if (index === 3) {
+            } else if (index === 4) {
+            } else if (index === 5) {
+            } else if (index === 6) {
+                nosql['important'] = 1;
+                is_important = true;
+            } else {
+                if (exactly[i]) {
+                    nosql.$and.push({tags: normal});
+                    is_tags = true;
+                } else {
+                    var es_reg = escapeRegExp(normal);
+                    nosql.$and.push({tags: { $regex: es_reg }});
+                }
+            }
+        }
+    }
+    console.log(nosql);
+    if (nosql.$and) {
+        console.log(nosql.$and);
+        if (nosql.$and.length === 0) {
+            delete(nosql.$and);
+        }
+    }
+    var hint = {};
+    if (is_tags) {
+        hint['tags'] = 1;
+    }
+    if (is_important) {
+        hint['important'] = 1;
+    }
+    hint['name'] = 1;
+    var sql = {nosql: nosql};
+    /*if (is_hint) {
+        sql['hint'] = hint;
+    }*/
+    sql['select'] = {password: 0, prePassword: 0, owner: 0};
+    if (skip) {
+        console.log('skip:' + skip);
+        sql['skip'] = skip;
+    }
+    return sql;
+}
+
 function getStorageQueryTag(user, tag, del) {
     del = typeof del !== 'undefined' ? del : 1;
     var normal = normalize(tag);
@@ -1337,6 +1409,19 @@ function getStockQueryTag(user, tag, del) {
         return {type: 0};
     } else if (index === 6) {
         return {tag: {important: del}, type: 2, name: default_tags[6]};
+    } else {
+        return {tag: {tags: normal}, type: 1};
+    }
+}
+
+function getPasswordQueryTag(user, tag, del) {
+    del = typeof del !== 'undefined' ? del : 1;
+    var normal = normalize(tag);
+    var index = default_tags.indexOf(normal);
+    if (index === 0 || index === 1 || index === 2 || index === 3 || index === 4 || index === 5) {
+        return {type: 0};
+    } else if (index === 6) {
+        return {type: 3, name: ''};
     } else {
         return {tag: {tags: normal}, type: 1};
     }
@@ -1425,6 +1510,17 @@ function getStockSortName(sortName) {
     }
     if (sort === 'count') {
         sort = 'managementIndex';
+    }
+    return sort;
+}
+
+function getPasswordSortName(sortName) {
+    var sort = sortName;
+    if (sort === 'mtime') {
+        sort = 'utime';
+    }
+    if (sort === 'count') {
+        sort = 'username';
     }
     return sort;
 }

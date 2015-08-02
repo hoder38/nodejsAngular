@@ -13,9 +13,9 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
     }).when('/Stock', {
         templateUrl: '/views/Stock',
         controller: StockCntl
-    }).when('/StockQuery', {
-        templateUrl: '/views/StockQuery',
-        controller: StockCntl
+    }).when('/Password', {
+        templateUrl: '/views/Password',
+        controller: PasswordCntl
     }).otherwise({ redirectTo: '/' });
     // configure html5 to get links working on jsfiddle
     $locationProvider.html5Mode(true);
@@ -210,6 +210,18 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
 }).filter('trusted', ['$sce', function ($sce) {
     return function(url) {
         return $sce.trustAsResourceUrl(url);
+    };
+}]).directive('selectOnClick', ['$window', function ($window) {
+    return {
+        restrict: 'A',
+        link: function (scope, element, attrs) {
+            element.on('focus', function () {
+                if (!$window.getSelection().toString()) {
+                    // Required for mobile Safari
+                    this.setSelectionRange(0, this.value.length)
+                }
+            });
+        }
     };
 }]);
 
@@ -489,7 +501,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     $scope.$parent.collapse.nav = true;
     $scope.$parent.currentPage = 1;
     //right
-    $scope.bookmarkCollpase = false;
+    $scope.bookmarkCollapse = false;
     $scope.bookmarkEdit = false;
     $scope.$parent.isRight = true;
     //list
@@ -1253,7 +1265,7 @@ function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $lo
     }
 
     $scope.showTaglist = function(item) {
-        item.collpase = !item.collpase;
+        item.collapse = !item.collapse;
         if (item.list.length === 0) {
             if ($cookies['dir' + item.name + 'SortName'] === 'mtime') {
                 item.sort = 'mtime/';
@@ -1786,6 +1798,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.collapse.nav = true;
     $scope.collapse.storage = true;
     $scope.collapse.stock = true;
+    $scope.collapse.password = true;
     $scope.navList = [{title: "homepage", hash: "/", css: "fa fa-fw fa-dashboard"}, {title: "Storage", hash: "/Storage", css: "fa fa-fw fa-desktop"}];
     //right
     $scope.dirList = [];
@@ -2880,7 +2893,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 $scope.dirEdit = result.isEdit;
                 $scope.dirList = [];
                 for (var i in result.parentList) {
-                    $scope.dirList.push({name: result.parentList[i].name, show: result.parentList[i].show, collpase: true, edit: false, list: [], page: 0, more: true, moreDisabled: false, sortName: '', sortMtime: '', sort: 'name/asc'});
+                    $scope.dirList.push({name: result.parentList[i].name, show: result.parentList[i].show, collapse: true, edit: false, list: [], page: 0, more: true, moreDisabled: false, sortName: '', sortMtime: '', sort: 'name/asc'});
                 }
             }
         }, function(errorResult) {

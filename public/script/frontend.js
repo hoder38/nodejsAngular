@@ -48,7 +48,16 @@ function isValidString(str, type)
     if (type === 'passwd')
     {
         //if (str.search(/^(?=.*\d)(?=.*[a-zA-Z]).{6,20}$/) != -1)
-        if (str.search(/^(?=.*\d+)(?=.*[a-zA-Z])[0-9a-zA-Z!@#$%]{6,20}$/) != -1)
+        if (str.search(/^[0-9a-zA-Z!@#$%]{6,20}$/) != -1)
+        {
+            return true;
+        }
+    }
+
+    if (type === 'email')
+    {
+        //if (str.search(/^(?=.*\d)(?=.*[a-zA-Z]).{6,20}$/) != -1)
+        if (str.search(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,6})+$/) != -1)
         {
             return true;
         }

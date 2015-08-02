@@ -22,11 +22,9 @@ var stockTagTool = require("../models/tag-tool.js")("stock");
 
 var stockTool = require("../models/stock-tool.js");
 
-var pwTool = require("../models/password-tool.js");
+var pwTagTool = require("../models/tag-tool.js")("password");
 
-console.log(pwTool.generatePW());
-console.log(pwTool.generatePW());
-console.log(pwTool.generatePW());
+var pwTool = require("../models/password-tool.js");
 
 var util = require("../util/utility.js");
 
@@ -850,7 +848,7 @@ app.delete('/api/parent/del/:id', function(req, res, next) {
 
 app.delete('/api/parent/stock/del/:id', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
-        console.log("parentDel");
+        console.log("stock parentDel");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
@@ -1356,7 +1354,7 @@ app.get('/api/getRelativeTag/:tag', function(req, res,next) {
 
 app.get('/api/stock/getRelativeTag/:tag', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
-        console.log('get relative tag');
+        console.log('get stock relative tag');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
@@ -1373,6 +1371,340 @@ app.get('/api/stock/getRelativeTag/:tag', function(req, res,next) {
     });
 });
 
+//password
+app.get('/api/parent/password/list/:lang?', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('password parent list');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var lang = typeof req.params.lang !== 'undefined' ? req.params.lang : 'tw';
+        var list = pwTagTool.parentList();
+        var ret = [];
+        for (var i in list) {
+            ret.push({'name':list[i].name, 'show':list[i][lang]});
+        }
+        res.json({parentList: ret});
+    });
+});
+
+app.get('/api/password/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(\\d+)/:name?/:exactly(true|false)?/:index(\\d+)?', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("password");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var exactly = false;
+        res.cookie('passwordSortName', req.params.sortName);
+        res.cookie('passwordSortType', req.params.sortType);
+        if (req.params.exactly === 'true') {
+            exactly = true;
+        }
+        var page = Number(req.params.page);
+        pwTagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            console.log(result.items);
+            var itemList = getPasswordItem(req.user, result.items);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
+        });
+    });
+});
+
+app.get('/api/password/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(\\d+)/:name?/:exactly(true|false)?/:index(\\d+)?', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("password single");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var exactly = false;
+        res.cookie('passwordSortName', req.params.sortName);
+        res.cookie('passwordSortType', req.params.sortType);
+        if (req.params.exactly === 'true') {
+            exactly = true;
+        }
+        var page = Number(req.params.page);
+        if (page === 0 && req.params.name) {
+            var tags = pwTagTool.searchTags(req.session);
+            if (!tags) {
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
+            }
+            var name = util.isValidString(req.params.name, 'name');
+            if (name === false) {
+                util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
+            }
+            tags.setSingleArray(name);
+        }
+        pwTagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            console.log(result);
+            var itemList = getPasswordItem(req.user, result.items);
+            console.log(itemList);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
+        });
+    });
+});
+
+app.get('/api/bookmark/password/getList/:sortName(name|mtime)/:sortType(desc|asc)', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("password get bookmark list");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        res.cookie('bookmarkPasswordSortName', req.params.sortName);
+        res.cookie('bookmarkPasswordSortType', req.params.sortType);
+        pwTagTool.getBookmarkList(req.params.sortName, req.params.sortType, req.user, next, function(err, result) {
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            res.json({bookmarkList: result.bookmarkList});
+        });
+    });
+});
+
+app.get('/api/password/reset', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("reset password");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var sortName = 'name';
+        var sortType = 'desc';
+        if (req.cookies.passwordSortName === 'name' || req.cookies.passwordSortName === 'mtime') {
+            sortName = req.cookies.passwordSortName;
+        }
+        if (req.cookies.passwordSortType === 'desc' || req.cookies.passwordSortType === 'asc') {
+            sortType = req.cookies.passwordSortType;
+        }
+        pwTagTool.resetQuery(sortName, sortType, req.user, req.session, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            var itemList = getPasswordItem(req.user, result.items);
+            res.json({itemList: itemList, parentList: result.parentList});
+        });
+    });
+});
+
+app.get('/api/password/getRelativeTag/:tag', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('get password relative tag');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var tag = util.isValidString(req.params.tag, 'name');
+        if (tag === false) {
+            util.handleError({hoerror: 2, message: "tag is not vaild"}, next, res);
+        }
+        pwTagTool.getRelativeTag(tag, req.user, next, function(err, relative) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json({relative: relative});
+        });
+    });
+});
+
+app.put('/api/password/addTag/:uid', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("password addTag");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        pwTagTool.addTag(req.params.uid, req.body.tag, req.user, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            sendWs({type: 'password', data: result.id}, 0, 1);
+            res.json(result);
+        });
+    });
+});
+
+app.put('/api/password/delTag/:uid', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("password delTag");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        pwTagTool.delTag(req.params.uid, req.body.tag, req.user, next, function (err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            sendWs({type: 'password', data: result.id}, 0, 1);
+            res.json(result);
+        });
+    });
+});
+
+app.post('/api/parent/password/add', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("password parentAdd");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        pwTagTool.addParent(req.body.name, req.body.tag, req.user, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json(result);
+        });
+    });
+});
+
+app.get('/api/parent/password/taglist/:name/:sortName(name|mtime)/:sortType(desc|asc)/:page(\\d+)', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("password showTaglist");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var page = Number(req.params.page);
+        res.cookie('dirPassword' + req.params.name + 'SortName', req.params.sortName);
+        res.cookie('dirPassword' + req.params.name + 'SortType', req.params.sortType);
+        pwTagTool.parentQuery(req.params.name, req.params.sortName, req.params.sortType, page, req.user, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json(result);
+        });
+    });
+});
+
+app.get('/api/parent/password/query/:id/:single?', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("password parent query");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.id, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        var sortName = 'name';
+        var sortType = 'desc';
+        if (req.cookies.passwordSortName === 'name' || req.cookies.passwordSortName === 'mtime') {
+            sortName = req.cookies.passwordSortName;
+        }
+        if (req.cookies.passwordSortType === 'desc' || req.cookies.passwordSortType === 'asc') {
+            sortType = req.cookies.passwordSortType;
+        }
+        pwTagTool.queryParentTag(id, req.params.single, sortName, sortType, req.user, req.session, next, function(err, result) {
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            var itemList = getPasswordItem(req.user, result.items);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
+        });
+    });
+});
+
+app.delete('/api/parent/password/del/:id', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("password parentDel");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.id, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        pwTagTool.delParent(id, req.user, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json(result);
+        });
+    });
+});
+
+app.post('/api/bookmark/password/add', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("password addbookmark");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var name = util.isValidString(req.body.name, 'name');
+        if (name === false) {
+            util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
+        }
+        pwTagTool.addBookmark(name, req.user, req.session, next, function(err, result){
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            res.json(result);
+        });
+    });
+});
+
+app.get('/api/bookmark/password/getList/:sortName(name|mtime)/:sortType(desc|asc)', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("password get bookmark list");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        res.cookie('bookmarkPasswordSortName', req.params.sortName);
+        res.cookie('bookmarkPasswordSortType', req.params.sortType);
+        pwTagTool.getBookmarkList(req.params.sortName, req.params.sortType, req.user, next, function(err, result) {
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            res.json({bookmarkList: result.bookmarkList});
+        });
+    });
+});
+
+app.delete('/api/bookmark/password/del/:id', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("del password bookmark");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.id, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
+        }
+        pwTagTool.delBookmark(id, next, function(err, result){
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            res.json({id: result.id});
+        });
+    });
+});
+
+app.post('/api/password/newRow', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("new password");
+        console.log(new Date());
+        console.log(req.url);
+        //console.log(req.body);
+        pwTool.newRow(req.body, req.user, next, function(err, result){
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            res.json({id: result.id});
+        });
+    });
+});
+
+app.get('/api/password/getPW/:uid', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("get password");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        pwTool.getPassword(req.params.uid, req.user, next, function(err, result){
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            res.json({password: result.password});
+        });
+    });
+});
+
 app.get('/api/getUser', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get user');
@@ -1383,7 +1715,7 @@ app.get('/api/getUser', function(req, res, next){
         var ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.wsj_port;
         if (util.checkAdmin(1, req.user)) {
             ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.wss_port;
-            nav = [{title: "Stock", hash: "/Stock", css: "fa fa-fw fa-line-chart"}];
+            nav = [{title: "Stock", hash: "/Stock", css: "fa fa-fw fa-line-chart"}, {title: "Password", hash: "/Password", css: "fa fa-fw fa-key"}];
         } else if (util.checkAdmin(2, req.user)) {
             ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port;
         }
@@ -1512,6 +1844,23 @@ app.get('/views/Stock', function(req, res, next) {
     console.log(req.body);
     if (util.checkAdmin(1, req.user)) {
          var stream = fs.createReadStream(viewsPath + '/Stock.html');
+        stream.on('error', function(err){
+            util.handleError(err, next, res);
+        });
+        stream.pipe(res);
+    } else {
+        res.send('permission denied');
+    }
+});
+
+app.get('/views/Password', function(req, res, next) {
+    "use strict";
+    console.log("views stock");
+    console.log(new Date());
+    console.log(req.url);
+    console.log(req.body);
+    if (util.checkAdmin(1, req.user)) {
+         var stream = fs.createReadStream(viewsPath + '/Password.html');
         stream.on('error', function(err){
             util.handleError(err, next, res);
         });
@@ -1713,6 +2062,20 @@ function getStockItem(user, items) {
                 items[i].tags.push('important');
             }
             var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, profit: items[i].profitIndex, safety: items[i].safetyIndex, management: items[i].managementIndex, index: items[i].index, type: items[i].type};
+            itemList.push(data);
+        }
+    }
+    return itemList;
+}
+
+function getPasswordItem(user, items) {
+    var itemList = [];
+    if (util.checkAdmin(1, user)) {
+        for (var i in items) {
+            if (items[i].important === 1) {
+                items[i].tags.push('important');
+            }
+            var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, username: items[i].username, url: items[i].url, email: items[i].email, utime: items[i].utime};
             itemList.push(data);
         }
     }

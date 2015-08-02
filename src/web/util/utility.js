@@ -92,7 +92,7 @@ module.exports = {
                     }
                     break;
                 case 'passwd':
-                    if (str.match(/^(?=.*\d+)(?=.*[a-zA-Z])[0-9a-zA-Z!@#$%]{6,20}$/)) {
+                    if (str.match(/^[0-9a-zA-Z!@#$%]{6,20}$/)) {
                         return str;
                     }
                     break;
@@ -104,6 +104,11 @@ module.exports = {
                 case 'url':
                     if (str.match(re_weburl)) {
                         return encodeURIComponent(str);
+                    }
+                    break;
+                case 'email':
+                    if (str.match(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,6})+$/)) {
+                        return str;
                     }
                     break;
                 default:
