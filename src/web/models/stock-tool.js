@@ -1758,7 +1758,7 @@ module.exports = {
                                 list.push(index[0]);
                             }
                         }
-                        /*api.xuiteDownload(url + "otc", filePath, function(err) {
+                        api.xuiteDownload(url + "otc", filePath, function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
@@ -1826,11 +1826,11 @@ module.exports = {
                                                                 if (index) {
                                                                     list.push(index[0]);
                                                                 }
-                                                            }*/
+                                                            }
                                                             setTimeout(function(){
                                                                 callback(null, list);
                                                             }, 0);
-                                                        /*});
+                                                        });
                                                     });
                                                 }, 600000, false);
                                             });
@@ -1838,7 +1838,7 @@ module.exports = {
                                     }, 600000, false);
                                 });
                             });
-                        }, 600000, false);*/
+                        }, 600000, false);
                     });
                 });
             }, 600000, false);
