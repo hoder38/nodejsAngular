@@ -1589,9 +1589,11 @@ module.exports = {
                             util.handleError(err, callback, callback);
                         }
                     }
-                    if (err) {
-                        util.handleError(err);
-                        if (err.code === 'HPE_INVALID_CONSTANT') {
+                    if (err || wait > 150000) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                        if (err.code === 'HPE_INVALID_CONSTANT' || wait > 150000) {
                             if (is_start) {
                                 var cashStatus = this_obj.getCashStatus(cash, asset);
                                 var assetStatus = this_obj.getAssetStatus(asset);
