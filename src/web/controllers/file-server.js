@@ -1836,6 +1836,6 @@ function userDrive(userlist, index, callback) {
 
 console.log('start express server\n');
 
-console.log("Server running at https://" + config_glb.extent_file_ip + ":" + config_glb.file_port + ' ' + new Date());
+console.log("Server running at https://" + config_glb.extent_file_ip + ":" + config_glb.extent_file_port + ' ' + new Date());
 
-console.log("Server running at http://" + config_glb.extent_file_ip + ":" + config_glb.file_http_port + ' ' + new Date());
+console.log("Server running at http://" + config_glb.extent_file_ip + ":" + config_glb.extent_file_http_port + ' ' + new Date());

@@ -1589,9 +1589,11 @@ module.exports = {
                             util.handleError(err, callback, callback);
                         }
                     }
-                    if (err) {
-                        util.handleError(err);
-                        if (err.code === 'HPE_INVALID_CONSTANT') {
+                    if (wait > 150000 || err) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                        if (wait > 150000 || err.code === 'HPE_INVALID_CONSTANT') {
                             if (is_start) {
                                 var cashStatus = this_obj.getCashStatus(cash, asset);
                                 var assetStatus = this_obj.getAssetStatus(asset);
@@ -1758,7 +1760,7 @@ module.exports = {
                                 list.push(index[0]);
                             }
                         }
-                        /*api.xuiteDownload(url + "otc", filePath, function(err) {
+                        api.xuiteDownload(url + "otc", filePath, function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
@@ -1826,11 +1828,11 @@ module.exports = {
                                                                 if (index) {
                                                                     list.push(index[0]);
                                                                 }
-                                                            }*/
+                                                            }
                                                             setTimeout(function(){
                                                                 callback(null, list);
                                                             }, 0);
-                                                        /*});
+                                                        });
                                                     });
                                                 }, 600000, false);
                                             });
@@ -1838,7 +1840,7 @@ module.exports = {
                                     }, 600000, false);
                                 });
                             });
-                        }, 600000, false);*/
+                        }, 600000, false);
                     });
                 });
             }, 600000, false);

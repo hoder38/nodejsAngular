@@ -91,7 +91,7 @@ app.get('/api/logout', function(req, res, next) {
         req.session.destroy();
     }
     //res.clearCookie('id');
-    res.json({apiOK: true, url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.file_port});
+    res.json({apiOK: true, url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
 });
 
 app.get('/api/userinfo', function (req, res, next) {
@@ -1723,7 +1723,7 @@ app.get('/api/getUser', function(req, res, next){
         if (util.checkAdmin(2 ,req.user)) {
             isAdult = true;
         }
-        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav, file_url: 'http://' + config_glb.extent_file_ip + ':' + config_glb.file_http_port, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.file_port});
+        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav, file_url: 'http://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_http_port, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
     });
 });
 
@@ -1780,7 +1780,7 @@ passport.deserializeUser(function(id, done) {
 app.post('/api*', passport.authenticate('local', { failureRedirect: '/api' }),
     function(req, res) {
         console.log("auth ok");
-        res.json({loginOK: true, id: req.user.username, url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.file_port});
+        res.json({loginOK: true, id: req.user.username, url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
 });
 
 app.all('/api*', function(req, res, next) {
@@ -1931,7 +1931,7 @@ process.on('uncaughtException', function(err) {
     }
 });
 
-var client = net.connect({port: config_glb.com_port},
+var client = net.connect(config_glb.com_port, config_glb.file_ip,
     function() { //'connect' listener
     console.log('connected to server!');
 });
