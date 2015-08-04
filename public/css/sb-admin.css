@@ -529,7 +529,11 @@ audio.media-screen {
     margin-top: -34px;
 }
 
-#show-Password {
+#show-password {
+    margin-top: -34px;
+}
+
+#show-username {
     margin-top: -34px;
 }
 
@@ -590,7 +594,7 @@ audio.media-screen {
 }
 
 #password-section {
-    z-index: 1500;
+    z-index: 1000;
 }
 
 #user-section {

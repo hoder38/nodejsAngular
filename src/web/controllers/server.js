@@ -1405,7 +1405,6 @@ app.get('/api/password/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page
             if (err) {
                 util.handleError(err, next, res);
             }
-            console.log(result.items);
             var itemList = getPasswordItem(req.user, result.items);
             res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
         });
@@ -1440,9 +1439,7 @@ app.get('/api/password/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)
             if (err) {
                 util.handleError(err, next, res);
             }
-            console.log(result);
             var itemList = getPasswordItem(req.user, result.items);
-            console.log(itemList);
             res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
         });
     });
@@ -1690,6 +1687,21 @@ app.post('/api/password/newRow', function (req, res, next) {
     });
 });
 
+app.put('/api/password/editRow/:uid', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("edit row");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        pwTool.editRow(req.params.uid, req.body, req.user, next, function(err){
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            res.json({apiOK: true});
+        });
+    });
+});
+
 app.get('/api/password/getPW/:uid', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get password");
@@ -1701,6 +1713,21 @@ app.get('/api/password/getPW/:uid', function (req, res, next) {
                 util.handleError(err, next, res);
             }
             res.json({password: result.password});
+        });
+    });
+});
+
+app.put('/api/password/delRow/:uid', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("del row");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        pwTool.delRow(req.params.uid, req.user, next, function(err){
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            res.json({apiOK: true});
         });
     });
 });
