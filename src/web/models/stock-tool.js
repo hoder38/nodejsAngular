@@ -847,7 +847,7 @@ module.exports = {
                 }
             }
         }
-        if (!isOk) {
+        if (!isOk && (year !== 2009 || quarter !== 4 || xml.xbrl.context[0].entity[0].identifier[0]['_'] !== '3664')) {
             console.log('unknown finance data');
             return false;
         }
@@ -1584,16 +1584,21 @@ module.exports = {
                 }
             } else {
                 api.getTwseXml(index, year, quarter, xml_path, function(err, xmlPath) {
+                    var filesize = 0;
                     if (err) {
                         if (err.code !== 'HPE_INVALID_CONSTANT' && err.code !== 'ECONNREFUSED' && err.code !== 'ENOTFOUND' && e.code !== 'ETIMEDOUT') {
                             util.handleError(err, callback, callback);
                         }
+                    } else {
+                        filesize = fs.statSync(xmlPath)['size'];
+                        console.log(filesize);
                     }
-                    if (wait > 150000 || err) {
+
+                    if (wait > 150000 || filesize === 350 || err) {
                         if (err) {
                             util.handleError(err);
                         }
-                        if (wait > 150000 || err.code === 'HPE_INVALID_CONSTANT') {
+                        if (wait > 150000 || filesize === 350 || err.code === 'HPE_INVALID_CONSTANT') {
                             if (is_start) {
                                 var cashStatus = this_obj.getCashStatus(cash, asset);
                                 var assetStatus = this_obj.getAssetStatus(asset);
@@ -1676,9 +1681,7 @@ module.exports = {
                             }, wait);
                         }
                     } else {
-                        var stats = fs.statSync(xmlPath);
-                        console.log(stats.size);
-                        if (stats.size < 10000) {
+                        if (filesize < 10000) {
                             fs.unlink(xmlPath, function (err) {
                                 if (err) {
                                     util.handleError(err, callback, callback);
