@@ -840,7 +840,7 @@ module.exports = {
             } else if (xmlDate = getXmlDate(xml, 'tw-gaap-ar:CashCashEquivalents', 0)) {
                 year = xmlDate.year;
                 quarter = xmlDate.quarter;
-                if (year === 2010 && quarter === 1 && xml.xbrl.context[0].entity[0].identifier[0]['_'] === '5315') {
+                if (year === 2010 && quarter === 1 && (xml.xbrl.context[0].entity[0].identifier[0]['_'] === '5315' || xml.xbrl.context[0].entity[0].identifier[0]['_'] === '6148')) {
                     return sales;
                 }
             } else {
