@@ -67,7 +67,7 @@ module.exports = {
             } else if (xmlDate = getXmlDate(xml, 'tw-gaap-ar:CashCashEquivalents', 0)) {
                 year = xmlDate.year;
                 quarter = xmlDate.quarter;
-                if (year === 2010 && quarter === 1 && xml.xbrl.context[0].entity[0].identifier[0]['_'] === '5315') {
+                if (year === 2010 && quarter === 1 && xml.xbrl.context[0].entity[0].identifier[0]['_'] === '5315' || xml.xbrl.context[0].entity[0].identifier[0]['_'] === '6148') {
                     return cash;
                 }
             } else {
@@ -412,7 +412,7 @@ module.exports = {
             } else if (xmlDate = getXmlDate(xml, 'tw-gaap-ar:CashCashEquivalents', 0)) {
                 year = xmlDate.year;
                 quarter = xmlDate.quarter;
-                if (year === 2010 && quarter === 1 && xml.xbrl.context[0].entity[0].identifier[0]['_'] === '5315') {
+                if (year === 2010 && quarter === 1 && xml.xbrl.context[0].entity[0].identifier[0]['_'] === '5315' || xml.xbrl.context[0].entity[0].identifier[0]['_'] === '6148') {
                     return asset;
                 }
             } else {
@@ -873,7 +873,7 @@ module.exports = {
         function califrsSales(si, no_cover) {
             var xmlDate = {};
             var y = 0,q = 0;
-            if (xmlDate = getXmlDate(xml, 'tifrs-bsci-ci:OperatingRevenue', si)) {
+            if ((xmlDate = getXmlDate(xml, 'tifrs-bsci-ci:OperatingRevenue', si)) || (xmlDate = getXmlDate(xml, 'tifrs-bsci-ci:OperatingExpenses', si))) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!sales[y]) {
