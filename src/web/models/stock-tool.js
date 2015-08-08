@@ -1617,6 +1617,9 @@ module.exports = {
                             util.handleError(err);
                         }
                         if (wait > 150000 || filesize === 350 || err.code === 'HPE_INVALID_CONSTANT') {
+                            if (filesize === 350) {
+                                fs.unlinkSync(xmlPath);
+                            }
                             if (is_start) {
                                 var cashStatus = this_obj.getCashStatus(cash, asset);
                                 var assetStatus = this_obj.getAssetStatus(asset);
