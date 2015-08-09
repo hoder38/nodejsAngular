@@ -1751,7 +1751,7 @@ module.exports = {
             }
         }
     },
-    //先只抓上市
+    //抓上市及上櫃
     getStockList: function(type, callback) {
         switch(type) {
             case 'twse':
@@ -1807,7 +1807,10 @@ module.exports = {
                                             list.push(index[0]);
                                         }
                                     }
-                                    api.xuiteDownload(url + "rotc", filePath, function(err) {
+                                    setTimeout(function(){
+                                        callback(null, list);
+                                    }, 0);
+                                    /*api.xuiteDownload(url + "rotc", filePath, function(err) {
                                         if (err) {
                                             util.handleError(err, callback, callback);
                                         }
@@ -1861,7 +1864,7 @@ module.exports = {
                                                 }, 600000, false);
                                             });
                                         });
-                                    }, 600000, false);
+                                    }, 600000, false);*/
                                 });
                             });
                         }, 600000, false);
