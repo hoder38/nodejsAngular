@@ -1637,7 +1637,7 @@ app.get('*', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    var stream_header = fs.createReadStream(viewsPath + '/release-header.html');
+    var stream_header = fs.createReadStream(viewsPath + '/' + config_type.dev_type + '-header.html');
     stream_header.on('error', function(err){
         util.handleError(err, next, res);
     });
