@@ -1010,11 +1010,11 @@ module.exports = function(collection) {
                 return 0;
             }
         },
-        getRelativeTag: function(tag, user, next, callback) {
+        getRelativeTag: function(tag, user, pre_arr, next, callback) {
             var name = util.isValidString(tag, 'name');
             if (name === false) {
                 setTimeout(function(){
-                    callback(null, []);
+                    callback(null, pre_arr);
                 }, 0);
                 return false;
             }
@@ -1022,7 +1022,7 @@ module.exports = function(collection) {
             var index = default_tags.indexOf(normal);
             if (index !== -1) {
                 setTimeout(function(){
-                    callback(null, []);
+                    callback(null, pre_arr);
                 }, 0);
                 return false;
             }
@@ -1048,8 +1048,10 @@ module.exports = function(collection) {
                         items[0].tags.splice(nIndex, 1);
                     }
                     items[0].tags.forEach(function (e) {
-                        relative_arr.push(e);
-                        counter_arr.push(0);
+                        if (pre_arr.indexOf(e) === -1 && normal !== e) {
+                            relative_arr.push(e);
+                            counter_arr.push(0);
+                        }
                     });
                     for (var i = 1; i < items.length; i++) {
                         if (t) {
@@ -1058,12 +1060,14 @@ module.exports = function(collection) {
                                 items[i].tags.splice(nIndex, 1);
                             }
                             items[i].tags.forEach(function (e) {
-                                nIndex = relative_arr.indexOf(e);
-                                if (nIndex === -1) {
-                                    relative_arr.push(e);
-                                    counter_arr.push(0);
-                                } else {
-                                    counter_arr[nIndex]++;
+                                if (pre_arr.indexOf(e) === -1 && normal !== e) {
+                                    nIndex = relative_arr.indexOf(e);
+                                    if (nIndex === -1) {
+                                        relative_arr.push(e);
+                                        counter_arr.push(0);
+                                    } else {
+                                        counter_arr[nIndex]++;
+                                    }
                                 }
                             });
                             t--;
@@ -1078,13 +1082,15 @@ module.exports = function(collection) {
                         }
                         temp = [];
                         relative_arr = relative_arr.filter(function (e, j) {
-                            if (items[i].tags.indexOf(e) !== -1) {
-                                temp.push(counter_arr[j]+1);
-                                return true;
-                            } else {
-                                if ((counter_arr[j] + inter_number) >= i) {
-                                    temp.push(counter_arr[j]);
+                            if (pre_arr.indexOf(e) === -1 && normal !== e) {
+                                if (items[i].tags.indexOf(e) !== -1) {
+                                    temp.push(counter_arr[j]+1);
                                     return true;
+                                } else {
+                                    if ((counter_arr[j] + inter_number) >= i) {
+                                        temp.push(counter_arr[j]);
+                                        return true;
+                                    }
                                 }
                             }
                         });
@@ -1093,8 +1099,10 @@ module.exports = function(collection) {
                     for (var i in items) {
                         if (u) {
                             items[i].tags.forEach(function (e) {
-                                if (relative_arr.indexOf(e) === -1) {
-                                    relative_arr.push(e);
+                                if (pre_arr.indexOf(e) === -1 && normal !== e) {
+                                    if (relative_arr.indexOf(e) === -1) {
+                                        relative_arr.push(e);
+                                    }
                                 }
                             });
                             u--;
@@ -1103,7 +1111,7 @@ module.exports = function(collection) {
                         }
                     }
                 }
-                if (collection === 'storage') {
+                /*if (collection === 'storage') {
                     if (relative_arr.indexOf('first item') === -1) {
                         relative_arr.push('first item');
                     }
@@ -1111,9 +1119,9 @@ module.exports = function(collection) {
                     if (relative_arr.indexOf('important') === -1) {
                         relative_arr.push('important');
                     }
-                }
+                }*/
                 setTimeout(function(){
-                    callback(null, relative_arr);
+                    callback(null, pre_arr.concat(relative_arr));
                 }, 0);
             });
         }
