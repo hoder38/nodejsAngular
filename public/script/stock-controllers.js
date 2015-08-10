@@ -9,7 +9,7 @@ function addCommas(nStr) {
     }
     return x1 + x2;
 }
-function StockCntl($route, $routeParams, $location, $resource, $window, $cookies, $filter, $scope, $location) {
+function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, $scope, $location) {
     //left
     $scope.$parent.currentPage = 2;
     $scope.$parent.collapse.nav = true;

@@ -1,3 +1,6 @@
+//壓縮 手動排序跟新增
+//cat script/angular.min.js script/angular-route.min.js script/angular-resource.min.js script/angular-cookies.min.js script/angular-sanitize.min.js script/angular-file-upload.js script/Chart.min.js script/angular-chart.min.js script/controllers.js script/stock-controllers.js script/password-controllers.js script/frontend.js script/ui-bootstrap-tpls-0.12.0.min.js > script/release.js
+//cat css/angular-chart.css css/bootstrap.min.css css/bootstrap-theme.min.css font-awesome/css/font-awesome.min.css css/sb-admin.css > css/release.css
 var video, music, subtitles, videoStart=0, musicStart=0;
 var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSanitize', 'angularFileUpload', 'ui.bootstrap', 'chart.js'], function($routeProvider, $locationProvider) {
     $routeProvider.when('/', {
@@ -225,7 +228,7 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
     };
 }]);
 
-function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $timeout) {
+function UserInfoCntl($route, $routeParams, $resource, $scope, $window, $timeout, $location) {
     $scope.$parent.currentPage = -1;
     $scope.$parent.isRight = false;
     $scope.uInfo = [];
@@ -490,13 +493,13 @@ function UserInfoCntl($route, $routeParams, $location, $resource, $scope, $locat
     }
 }
 
-function LoginCntl($route, $routeParams, $location, $resource, $scope, $location) {
+function LoginCntl($route, $routeParams, $resource, $scope, $location) {
     $scope.$parent.currentPage = 0;
     $scope.$parent.isRight = false;
     $scope.$parent.collapse.nav = true;
 }
 
-function StorageInfoCntl($route, $routeParams, $location, $resource, $scope, $location, $window, $cookies, $filter, FileUploader) {
+function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cookies, $filter, FileUploader, $location) {
     //left
     $scope.$parent.collapse.nav = true;
     $scope.$parent.currentPage = 1;
