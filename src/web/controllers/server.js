@@ -1545,11 +1545,18 @@ app.get('*', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    var stream = fs.createReadStream(viewsPath + '/index.html');
-    stream.on('error', function(err){
+    var stream_header = fs.createReadStream(viewsPath + '/' + config_type.dev_type + '-header.html');
+    stream_header.on('error', function(err){
         util.handleError(err, next, res);
     });
-    stream.pipe(res);
+    stream_header.pipe(res, { end: false });
+    stream_header.on('close', function() {
+        var stream = fs.createReadStream(viewsPath + '/index.html');
+        stream.on('error', function(err){
+            util.handleError(err, next, res);
+        });
+        stream.pipe(res);
+    });
 });
 
 app.all('*', function(req, res, next) {
