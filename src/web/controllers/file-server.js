@@ -36,8 +36,26 @@ var http = require('http'),
     net = require('net'),
     privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
     certificate = fs.readFileSync(config_type.certificate, 'utf8'),
-    credentials = {key: privateKey, cert: certificate},
-    express = require('express'),
+    credentials = {key: privateKey, cert: certificate, ciphers: [
+        "ECDHE-RSA-AES256-SHA384",
+        "DHE-RSA-AES256-SHA384",
+        "ECDHE-RSA-AES256-SHA256",
+        "DHE-RSA-AES256-SHA256",
+        "ECDHE-RSA-AES128-SHA256",
+        "DHE-RSA-AES128-SHA256",
+        "HIGH",
+        "!aNULL",
+        "!eNULL",
+        "!EXPORT",
+        "!DES",
+        "!RC4",
+        "!MD5",
+        "!PSK",
+        "!SRP",
+        "!CAMELLIA"
+    ].join(':'), honorCipherOrder: true};
+    credentials.agent = new https.Agent(credentials);
+var express = require('express'),
     crypto = require('crypto'),
     passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy,
@@ -518,7 +536,29 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
                 } else {
                     mediaTag.opt.push('first item');
                 }
-                res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                var relative_arr = [];
+                mediaTag.def.forEach(function (e) {
+                    relative_arr.push(e);
+                });
+                mediaTag.opt.forEach(function (e) {
+                    relative_arr.push(e);
+                });
+                var index = 0;
+                recur_relative();
+                function recur_relative() {
+                    tagTool.getRelativeTag(relative_arr[index], req.user, mediaTag.opt, next, function(err, relative) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        index++;
+                        mediaTag.opt = relative;
+                        if (index < relative_arr.length) {
+                            recur_relative();
+                        } else {
+                            res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                        }
+                    });
+                }
             });
         });
     });
@@ -1546,21 +1586,17 @@ function getFeedback(item, callback, user) {
         temp_tag.forEach(function (e) {
             relative_arr.push(e);
         });
-        recur_relative(0, relative_arr);
-        function recur_relative(index, tags) {
-            tagTool.getRelativeTag(tags[index], user, callback, function(err, relative) {
+        var index = 0;
+        recur_relative();
+        function recur_relative() {
+            tagTool.getRelativeTag(relative_arr[index], user, temp_tag, callback, function(err, relative) {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                //push tag
-                for (var i in relative) {
-                    if (item.tags.indexOf(relative[i]) === -1 && temp_tag.indexOf(relative[i]) === -1) {
-                        temp_tag.push(relative[i]);
-                    }
-                }
                 index++;
-                if (index < tags.length) {
-                    recur_relative(index, tags);
+                temp_tag = relative;
+                if (index < relative_arr.length) {
+                    recur_relative();
                 } else {
                     if (!util.checkAdmin(1, user)) {
                         var index_tag = 0;

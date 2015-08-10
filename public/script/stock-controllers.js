@@ -46,6 +46,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.bookmarkName = '';
     $scope.dirLocation = 0;
     $scope.isRelative = false;
+    $scope.tCD = false;
     $scope.relativeList = [];
     //cookie initial
     $scope.fileSort = {name:'', mtime: '', count: '', sort: 'name/desc'};
@@ -459,33 +460,43 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     }, true);
 
     getRelativeTag = function(oldList) {
-        if ($scope.isRelative) {
-            for (var i in $scope.tagList) {
-                if (oldList.indexOf($scope.tagList[i]) === -1) {
-                    var Info = $resource('/api/stock/getRelativeTag/' + $scope.tagList[i], {}, {
-                        'relativeTag': { method:'GET' }
-                    });
-                    Info.relativeTag({}, function (result) {
-                        if (result.loginOK) {
-                            $window.location.href = $location.path();
-                        } else {
-                            for (var j in result.relative) {
-                                if ($scope.relativeList.indexOf(result.relative[j]) === -1 && $scope.tagList.indexOf(result.relative[j]) === -1 && $scope.exceptList.indexOf(result.relative[j]) === -1 && $scope.isRelative) {
-                                    $scope.relativeList.push(result.relative[j]);
+        if (!$scope.tCD) {
+            $scope.tCD = true;
+            setTimeout(function() {
+                $scope.tCD = false;
+                if ($scope.isRelative) {
+                    var tags = [];
+                    for (var i in $scope.tagList) {
+                        if (oldList.indexOf($scope.tagList[i]) === -1) {
+                            tags.push($scope.tagList[i]);
+                        }
+                    }
+                    if (tags.length > 0) {
+                        var Info = $resource('/api/stock/getRelativeTag', {}, {
+                            'relativeTag': { method:'PUT' }
+                        });
+                        Info.relativeTag({tags: tags}, function (result) {
+                            if (result.loginOK) {
+                                $window.location.href = $location.path();
+                            } else {
+                                for (var j in result.relative) {
+                                    if ($scope.relativeList.indexOf(result.relative[j]) === -1 && $scope.tagList.indexOf(result.relative[j]) === -1 && $scope.exceptList.indexOf(result.relative[j]) === -1 && $scope.isRelative) {
+                                        $scope.relativeList.push(result.relative[j]);
+                                    }
                                 }
                             }
-                        }
-                    }, function(errorResult) {
-                        if (errorResult.status === 400) {
-                            addAlert(errorResult.data);
-                        } else if (errorResult.status === 403) {
-                            addAlert('unknown API!!!');
-                        } else if (errorResult.status === 401) {
-                            $window.location.href = $location.path();
-                        }
-                    });
+                        }, function(errorResult) {
+                            if (errorResult.status === 400) {
+                                addAlert(errorResult.data);
+                            } else if (errorResult.status === 403) {
+                                addAlert('unknown API!!!');
+                            } else if (errorResult.status === 401) {
+                                $window.location.href = $location.path();
+                            }
+                        });
+                    }
                 }
-            }
+            }, 1000);
         }
     }
 
@@ -541,28 +552,28 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         if (this.newTagName) {
             if (isValidString(this.newTagName, 'name')) {
                 if (this.selectList.length > 0) {
+                    var uids = [];
                     var this_obj = this;
                     for (var i in this.selectList) {
-                        var Info = $resource('/api/stock/addTag/' + this.selectList[i].id, {}, {
-                            'addTag': { method:'PUT' }
-                        });
-                        Info.addTag({tag: this.newTagName}, function (result) {
-                            if (result.loginOK) {
-                                $window.location.href = $location.path();
-                            }
-                            if (Number(i) === this_obj.selectList.length -1) {
-                                this_obj.tagNew = false;
-                            }
-                        }, function(errorResult) {
-                            if (errorResult.status === 400) {
-                                addAlert(errorResult.data);
-                            } else if (errorResult.status === 403) {
-                                addAlert('unknown API!!!');
-                            } else if (errorResult.status === 401) {
-                                $window.location.href = $location.path();
-                            }
-                        });
+                        uids.push(this.selectList[i].id);
                     }
+                    var Info = $resource('/api/stock/addTag/' + this.newTagName, {}, {
+                        'addTag': { method:'PUT' }
+                    });
+                    Info.addTag({uids: uids}, function (result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        }
+                        this_obj.tagNew = false;
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
                 } else {
                     addAlert('Please selects item!!!');
                 }
@@ -571,6 +582,41 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             }
         } else {
             addAlert('Please inputs new tag!!!');
+        }
+    }
+
+    $scope.addTag = function(tag) {
+        if (isValidString(tag, 'name')) {
+            if (this.selectList.length > 0) {
+                var uids = [];
+                var this_obj = this;
+                for (var i in this.selectList) {
+                    uids.push(this.selectList[i].id);
+                }
+                var Info = $resource('/api/stock/addTag/' + tag, {}, {
+                    'addTag': { method:'PUT' }
+                });
+                Info.addTag({uids: uids}, function (result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    }
+                    if (Number(i) === this_obj.selectList.length -1) {
+                        this_obj.tagNew = false;
+                    }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
+            } else {
+                addAlert('Please selects item!!!');
+            }
+        } else {
+            addAlert('Tag is not vaild!!!');
         }
     }
 
@@ -615,26 +661,27 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
 
     $scope.delTag = function(tag) {
         if (isValidString(tag, 'name')) {
-            var this_itemList = this.itemList;
             if (this.selectList.length > 0) {
+                var uids = [];
                 for (var i in this.selectList) {
-                    var Info = $resource('/api/stock/delTag/' + this.selectList[i].id, {}, {
-                        'delTag': { method:'PUT' }
-                    });
-                    Info.delTag({tag: tag}, function (result) {
-                        if (result.loginOK) {
-                            $window.location.href = $location.path();
-                        }
-                    }, function(errorResult) {
-                        if (errorResult.status === 400) {
-                            addAlert(errorResult.data);
-                        } else if (errorResult.status === 403) {
-                            addAlert('unknown API!!!');
-                        } else if (errorResult.status === 401) {
-                            $window.location.href = $location.path();
-                        }
-                    });
+                    uids.push(this.selectList[i].id);
                 }
+                var Info = $resource('/api/stock/delTag/' + tag, {}, {
+                    'delTag': { method:'PUT' }
+                });
+                Info.delTag({uids: uids}, function (result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
             } else {
                 addAlert('Please selects item!!!');
             }

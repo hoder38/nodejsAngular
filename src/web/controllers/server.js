@@ -31,8 +31,26 @@ var util = require("../util/utility.js");
 var https = require('https'),
     privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
     certificate = fs.readFileSync(config_type.certificate, 'utf8'),
-    credentials = {key: privateKey, cert: certificate},
-    express = require('express'),
+    credentials = {key: privateKey, cert: certificate, ciphers: [
+        "ECDHE-RSA-AES256-SHA384",
+        "DHE-RSA-AES256-SHA384",
+        "ECDHE-RSA-AES256-SHA256",
+        "DHE-RSA-AES256-SHA256",
+        "ECDHE-RSA-AES128-SHA256",
+        "DHE-RSA-AES128-SHA256",
+        "HIGH",
+        "!aNULL",
+        "!eNULL",
+        "!EXPORT",
+        "!DES",
+        "!RC4",
+        "!MD5",
+        "!PSK",
+        "!SRP",
+        "!CAMELLIA"
+    ].join(':'), honorCipherOrder: true};
+    credentials.agent = new https.Agent(credentials);
+var express = require('express'),
     crypto = require('crypto'),
     net = require('net'),
     passport = require('passport'),
@@ -607,35 +625,61 @@ app.get('/api/stock/reset', function(req, res, next){
     });
 });
 
-app.put('/api/addTag/:uid', function(req, res, next){
+app.put('/api/addTag/:tag', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("addTag");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        tagTool.addTag(req.params.uid, req.body.tag, req.user, next, function(err, result) {
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            sendWs({type: 'file', data: result.id}, result.adultonly);
-            res.json(result);
-        });
+        var index = 0;
+        if (req.body.uids.length > 0) {
+            recur_add();
+        } else {
+            res.json({apiOK: true});
+        }
+        function recur_add() {
+            tagTool.addTag(req.body.uids[index], req.params.tag, req.user, next, function(err, result) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                index++;
+                if (index < req.body.uids.length) {
+                    recur_add(index);
+                } else {
+                    sendWs({type: 'file', data: result.id}, result.adultonly);
+                    res.json({apiOK: true});
+                }
+            });
+        }
     });
 });
 
-app.put('/api/stock/addTag/:uid', function(req, res, next){
+app.put('/api/stock/addTag/:tag', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("stock addTag");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        stockTagTool.addTag(req.params.uid, req.body.tag, req.user, next, function(err, result) {
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            sendWs({type: 'stock', data: result.id}, 0, 1);
-            res.json(result);
-        });
+        var index = 0;
+        if (req.body.uids.length > 0) {
+            recur_add();
+        } else {
+            res.json({apiOK: true});
+        }
+        function recur_add() {
+            stockTagTool.addTag(req.body.uids[index], req.params.tag, req.user, next, function(err, result) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                index++;
+                if (index < req.body.uids.length) {
+                    recur_add(index);
+                } else {
+                    sendWs({type: 'stock', data: result.id}, 0, 1);
+                    res.json({apiOK: true});
+                }
+            });
+        }
     });
 });
 
@@ -655,35 +699,61 @@ app.put('/api/sendTag/:uid', function(req, res, next){
     });
 });
 
-app.put('/api/delTag/:uid', function(req, res, next){
+app.put('/api/delTag/:tag', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("delTag");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        tagTool.delTag(req.params.uid, req.body.tag, req.user, next, function (err, result) {
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            sendWs({type: 'file', data: result.id}, result.adultonly);
-            res.json(result);
-        });
+        var index = 0;
+        if (req.body.uids.length > 0) {
+            recur_del();
+        } else {
+            res.json({apiOK: true});
+        }
+        function recur_del() {
+            tagTool.delTag(req.body.uids[index], req.params.tag, req.user, next, function(err, result) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                index++;
+                if (index < req.body.uids.length) {
+                    recur_del();
+                } else {
+                    sendWs({type: 'file', data: result.id}, result.adultonly);
+                    res.json({apiOK: true});
+                }
+            });
+        }
     });
 });
 
-app.put('/api/stock/delTag/:uid', function(req, res, next){
+app.put('/api/stock/delTag/:tag', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("stock delTag");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        stockTagTool.delTag(req.params.uid, req.body.tag, req.user, next, function (err, result) {
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            sendWs({type: 'stock', data: result.id}, 0, 1);
-            res.json(result);
-        });
+        var index = 0;
+        if (req.body.uids.length > 0) {
+            recur_del();
+        } else {
+            res.json({apiOK: true});
+        }
+        function recur_del() {
+            stockTagTool.delTag(req.body.uids[index], req.params.tag, req.user, next, function(err, result) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                index++;
+                if (index < req.body.uids.length) {
+                    recur_del();
+                } else {
+                    sendWs({type: 'stock', data: result.id}, 0, 1);
+                    res.json({apiOK: true});
+                }
+            });
+        }
     });
 });
 
@@ -1333,41 +1403,63 @@ app.get('/api/stock/getYield/:uid', function(req, res,next) {
     });
 });
 
-app.get('/api/getRelativeTag/:tag', function(req, res,next) {
+app.put('/api/getRelativeTag', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get relative tag');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var tag = util.isValidString(req.params.tag, 'name');
-        if (tag === false) {
-            util.handleError({hoerror: 2, message: "tag is not vaild"}, next, res);
+        var index = 0;
+        var pre_arr = ['first item'];
+        if (req.body.tags.length > 0) {
+            recur_relative();
+        } else {
+            res.json({relative: []});
         }
-        tagTool.getRelativeTag(tag, req.user, next, function(err, relative) {
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            res.json({relative: relative});
-        });
+        function recur_relative() {
+            tagTool.getRelativeTag(req.body.tags[index], req.user, pre_arr, next, function(err, relative) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                index++;
+                pre_arr = relative;
+                if (index < req.body.tags.length) {
+                    recur_relative();
+                } else {
+                    res.json({relative: pre_arr});
+                }
+            });
+        }
     });
 });
 
-app.get('/api/stock/getRelativeTag/:tag', function(req, res,next) {
+app.put('/api/stock/getRelativeTag', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get stock relative tag');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var tag = util.isValidString(req.params.tag, 'name');
-        if (tag === false) {
-            util.handleError({hoerror: 2, message: "tag is not vaild"}, next, res);
+        var index = 0;
+        var pre_arr = ['important'];
+        if (req.body.tags.length > 0) {
+            recur_relative();
+        } else {
+            res.json({relative: []});
         }
-        stockTagTool.getRelativeTag(tag, req.user, next, function(err, relative) {
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            res.json({relative: relative});
-        });
+        function recur_relative() {
+            stockTagTool.getRelativeTag(req.body.tags[index], req.user, pre_arr, next, function(err, relative) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                index++;
+                pre_arr = relative;
+                if (index < req.body.tags.length) {
+                    recur_relative();
+                } else {
+                    res.json({relative: pre_arr});
+                }
+            });
+        }
     });
 });
 
