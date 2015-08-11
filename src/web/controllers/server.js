@@ -1466,18 +1466,19 @@ app.get('/api/getUser', function(req, res, next){
         console.log(req.url);
         console.log(req.body);
         var nav = [];
-        var ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.wsj_port;
+        var level = 0;
         if (util.checkAdmin(1, req.user)) {
-            ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.wss_port;
+            level = 2;
             nav = [{title: "Stock", hash: "/Stock", css: "fa fa-fw fa-line-chart"}];
         } else if (util.checkAdmin(2, req.user)) {
+            level = 1;
             ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port;
         }
         var isAdult = false;
         if (util.checkAdmin(2 ,req.user)) {
             isAdult = true;
         }
-        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav, file_url: 'http://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_http_port, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
+        res.json({id: req.user.username, ws_url: 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port, level: level, nav: nav, file_url: 'http://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_http_port, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
     });
 });
 

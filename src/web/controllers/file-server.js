@@ -292,15 +292,37 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                         } else {
                             mediaTag.opt.push('first item');
                         }
-                        res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
-                        mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
-                            sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                            if(err) {
-                                util.handleError(err);
-                            }
-                            console.log('transcode done');
-                            console.log(new Date());
+                        var relative_arr = [];
+                        mediaTag.def.forEach(function (e) {
+                            relative_arr.push(e);
                         });
+                        mediaTag.opt.forEach(function (e) {
+                            relative_arr.push(e);
+                        });
+                        var index = 0;
+                        recur_relative();
+                        function recur_relative() {
+                            tagTool.getRelativeTag(relative_arr[index], req.user, mediaTag.opt, next, function(err, relative) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                index++;
+                                mediaTag.opt = relative;
+                                if (index < relative_arr.length) {
+                                    recur_relative();
+                                } else {
+                                    res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                                    mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
+                                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                        if(err) {
+                                            util.handleError(err);
+                                        }
+                                        console.log('transcode done');
+                                        console.log(new Date());
+                                    });
+                                }
+                            });
+                        }
                     });
                 }
             });
@@ -426,15 +448,37 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         } else {
                             mediaTag.opt.push('first item');
                         }
-                        res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
-                        mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
-                            sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                            if(err) {
-                                util.handleError(err);
-                            }
-                            console.log('transcode done');
-                            console.log(new Date());
+                        var relative_arr = [];
+                        mediaTag.def.forEach(function (e) {
+                            relative_arr.push(e);
                         });
+                        mediaTag.opt.forEach(function (e) {
+                            relative_arr.push(e);
+                        });
+                        var index = 0;
+                        recur_relative();
+                        function recur_relative() {
+                            tagTool.getRelativeTag(relative_arr[index], req.user, mediaTag.opt, next, function(err, relative) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                index++;
+                                mediaTag.opt = relative;
+                                if (index < relative_arr.length) {
+                                    recur_relative();
+                                } else {
+                                    res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                                    mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
+                                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                        if(err) {
+                                            util.handleError(err);
+                                        }
+                                        console.log('transcode done');
+                                        console.log(new Date());
+                                    });
+                                }
+                            });
+                        }
                     });
                 });
             });
@@ -1450,7 +1494,7 @@ var server0 = net.createServer(function(c) { //'connection' listener
     });
 }).listen(config_glb.com_port);
 
-var server1 = https.createServer(credentials, function (req, res) {
+/*var server1 = https.createServer(credentials, function (req, res) {
     res.writeHead(200);
     res.end("hello world websocket1\n");
 }).listen(config_glb.wss_port);
@@ -1467,15 +1511,15 @@ var server3 = https.createServer(credentials, function (req, res) {
 
 var wssServer = new WebSocketServer({
     server: server1
-});
+});*/
 
 var wsServer = new WebSocketServer({
-    server: server2
+    server: server
 });
 
-var wsjServer = new WebSocketServer({
+/*var wsjServer = new WebSocketServer({
     server: server3
-});
+});*/
 
 function onWsConnMessage(message) {
     console.log(message);
@@ -1489,6 +1533,18 @@ function onWsConnClose(reasonCode, description) {
 }
 
 function sendWs(data, adultonly, auth) {
+    if (auth && adultonly) {
+        data.level = 2;
+    } else if (adultonly) {
+        data.level = 1;
+    } else {
+        data.level = 0;
+    }
+    var sendData = JSON.stringify(data);
+    wsServer.clients.forEach(function each(client) {
+        client.send(sendData);
+    });
+    /*
     var sendData = JSON.stringify(data);
     wssServer.clients.forEach(function each(client) {
         client.send(sendData);
@@ -1502,23 +1558,23 @@ function sendWs(data, adultonly, auth) {
                 client.send(sendData);
             });
         }
-    }
+    }*/
 }
 
-wssServer.on('connection', function(ws) {
+/*wssServer.on('connection', function(ws) {
     ws.on('message', onWsConnMessage);
     ws.on('close', onWsConnClose);
-});
+});*/
 
 wsServer.on('connection', function(ws) {
     ws.on('message', onWsConnMessage);
     ws.on('close', onWsConnClose);
 });
 
-wsjServer.on('connection', function(ws) {
+/*wsjServer.on('connection', function(ws) {
     ws.on('message', onWsConnMessage);
     ws.on('close', onWsConnClose);
-});
+});*/
 
 server.listen(config_glb.file_port, config_glb.file_ip);
 
