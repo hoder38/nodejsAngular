@@ -1578,54 +1578,91 @@ app.get('/api/password/reset', function(req, res, next){
     });
 });
 
-app.get('/api/password/getRelativeTag/:tag', function(req, res,next) {
+app.put('/api/password/getRelativeTag', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get password relative tag');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var tag = util.isValidString(req.params.tag, 'name');
-        if (tag === false) {
-            util.handleError({hoerror: 2, message: "tag is not vaild"}, next, res);
+        var index = 0;
+        var pre_arr = [];
+        if (req.body.tags.length > 0) {
+            recur_relative();
+        } else {
+            res.json({relative: []});
         }
-        pwTagTool.getRelativeTag(tag, req.user, next, function(err, relative) {
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            res.json({relative: relative});
-        });
+        function recur_relative() {
+            pwTagTool.getRelativeTag(req.body.tags[index], req.user, pre_arr, next, function(err, relative) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                index++;
+                pre_arr = relative;
+                if (index < req.body.tags.length) {
+                    recur_relative();
+                } else {
+                    res.json({relative: pre_arr});
+                }
+            });
+        }
     });
 });
 
-app.put('/api/password/addTag/:uid', function(req, res, next){
+app.put('/api/password/addTag/:tag', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("password addTag");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        pwTagTool.addTag(req.params.uid, req.body.tag, req.user, next, function(err, result) {
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            sendWs({type: 'password', data: result.id}, 0, 1);
-            res.json(result);
-        });
+        var index = 0;
+        if (req.body.uids.length > 0) {
+            recur_add();
+        } else {
+            res.json({apiOK: true});
+        }
+        function recur_add() {
+            pwTagTool.addTag(req.body.uids[index], req.params.tag, req.user, next, function(err, result) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                index++;
+                if (index < req.body.uids.length) {
+                    recur_add(index);
+                } else {
+                    sendWs({type: 'password', data: result.id}, 0, 1);
+                    res.json({apiOK: true});
+                }
+            });
+        }
     });
 });
 
-app.put('/api/password/delTag/:uid', function(req, res, next){
+app.put('/api/password/delTag/:tag', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("password delTag");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        pwTagTool.delTag(req.params.uid, req.body.tag, req.user, next, function (err, result) {
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            sendWs({type: 'password', data: result.id}, 0, 1);
-            res.json(result);
-        });
+        var index = 0;
+        if (req.body.uids.length > 0) {
+            recur_del();
+        } else {
+            res.json({apiOK: true});
+        }
+        function recur_del() {
+            pwTagTool.delTag(req.body.uids[index], req.params.tag, req.user, next, function(err, result) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                index++;
+                if (index < req.body.uids.length) {
+                    recur_del();
+                } else {
+                    sendWs({type: 'password', data: result.id}, 0, 1);
+                    res.json({apiOK: true});
+                }
+            });
+        }
     });
 });
 
@@ -1831,18 +1868,19 @@ app.get('/api/getUser', function(req, res, next){
         console.log(req.url);
         console.log(req.body);
         var nav = [];
-        var ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.wsj_port;
+        var level = 0;
         if (util.checkAdmin(1, req.user)) {
-            ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.wss_port;
+            level = 2;
             nav = [{title: "Stock", hash: "/Stock", css: "fa fa-fw fa-line-chart"}, {title: "Password", hash: "/Password", css: "fa fa-fw fa-key"}];
         } else if (util.checkAdmin(2, req.user)) {
+            level = 1;
             ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port;
         }
         var isAdult = false;
         if (util.checkAdmin(2 ,req.user)) {
             isAdult = true;
         }
-        res.json({id: req.user.username, ws_url: ws_url, isAdult: isAdult, nav: nav, file_url: 'http://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_http_port, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
+        res.json({id: req.user.username, ws_url: 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port, level: level, nav: nav, file_url: 'http://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_http_port, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
     });
 });
 

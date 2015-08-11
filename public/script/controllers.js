@@ -1068,9 +1068,9 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                             if (result.loginOK) {
                                 $window.location.href = $location.path();
                             } else {
-                                for (var j in result.relative) {
-                                    if ($scope.relativeList.indexOf(result.relative[j]) === -1 && $scope.tagList.indexOf(result.relative[j]) === -1 && $scope.exceptList.indexOf(result.relative[j]) === -1 && $scope.isRelative) {
-                                        $scope.relativeList.push(result.relative[j]);
+                                for (var i in result.relative) {
+                                    if ($scope.relativeList.indexOf(result.relative[i]) === -1 && $scope.tagList.indexOf(result.relative[i]) === -1 && $scope.exceptList.indexOf(result.relative[i]) === -1 && $scope.isRelative) {
+                                        $scope.relativeList.push(result.relative[i]);
                                     }
                                 }
                             }
@@ -1826,7 +1826,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.dropdown.feedback = false;
     $scope.feedbackDisabled = true;
     $scope.feedbackSelectTag = '';
-    $scope.feedback = {uid: '', name: '', list: [], run: false, queue: [], history: [], other: []};
+    $scope.feedback = {uid: '', name: '', relative: 0, list: [], run: false, queue: [], history: [], other: []};
     //dialog
     $scope.widget = {};
     $scope.widget.uploader = false;
@@ -2126,6 +2126,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
         $scope.feedback.other = response.other;
         var index = 0, searchTag='';
+        var historyRelative = [];
         for (var i in $scope.feedback.history) {
             searchTag = $scope.feedback.history[i].tag;
             index = arrayObjectIndexOf($scope.feedback.list, searchTag, "tag");
@@ -2133,6 +2134,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 $scope.feedback.history[i].history = true;
                 if ($scope.feedback.history[i].select) {
                     $scope.feedback.list.splice(0, 0, $scope.feedback.history[i]);
+                    historyRelative.push($scope.feedback.history[i].tag);
                 }
             } else {
                 if ($scope.feedback.list[index].select !== $scope.feedback.history[i].select) {
@@ -2141,6 +2143,33 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
             }
         }
+        clearTimeout($scope.feedback.relative);
+        $scope.feedback.relative = setTimeout(function() {
+            if (historyRelative.length > 0) {
+                var Info = $resource('/api/getRelativeTag', {}, {
+                    'relativeTag': { method:'PUT' }
+                });
+                Info.relativeTag({tags: historyRelative}, function (result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    } else {
+                        for (var i in result.relative) {
+                            if (arrayObjectIndexOf($scope.feedback.list, result.relative[i], 'tag') === -1) {
+                                $scope.feedback.list.push({tag: result.relative[i], select: false});
+                            }
+                        }
+                    }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
+            }
+        }, 1000);
         $scope.feedbackDisabled = false;
     };
 
@@ -2161,7 +2190,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 $scope.main_url = result.main_url;
                 document.domain = document.domain;
                 $scope.file_url = result.file_url;
-                $scope.isAdult = result.isAdult;
+                $scope.level = result.level;
                 getFeedbacks(1);
                 if (window.MozWebSocket) {
                     window.WebSocket = window.MozWebSocket;
@@ -2175,15 +2204,17 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
 
                 ws.onmessage = function(message) {
                     var wsmsg = JSON.parse(message.data);
-                    switch (wsmsg.type) {
-                        case 'file':
-                            $scope.$broadcast('file', JSON.stringify(wsmsg.data));
-                            break;
-                        case 'stock':
-                            $scope.$broadcast('stock', JSON.stringify(wsmsg.data));
-                            break;
-                        default:
-                            console.log(wsmsg);
+                    if ($scope.level >= wsmsg.level) {
+                        switch (wsmsg.type) {
+                            case 'file':
+                                $scope.$broadcast('file', JSON.stringify(wsmsg.data));
+                                break;
+                            case 'stock':
+                                $scope.$broadcast('stock', JSON.stringify(wsmsg.data));
+                                break;
+                            default:
+                                console.log(wsmsg);
+                        }
                     }
                 };
             }
