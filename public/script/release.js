@@ -1552,7 +1552,7 @@ module
 },this),this.scale.addXLabel(i),this.update()},removeData:function(){this.scale.removeXLabel(),e.each(this.datasets,function(t){t.bars.shift()},this),this.update()},reflow:function(){e.extend(this.BarClass.prototype,{y:this.scale.endPoint,base:this.scale.endPoint});var t=e.extend({height:this.chart.height,width:this.chart.width});this.scale.update(t)},draw:function(t){var i=t||1;this.clear();this.chart.ctx;this.scale.draw(i),e.each(this.datasets,function(t,s){e.each(t.bars,function(t,e){t.hasValue()&&(t.base=this.scale.endPoint,t.transition({x:this.scale.calculateBarX(this.datasets.length,s,e),y:this.scale.calculateY(t.value),width:this.scale.calculateBarWidth(this.datasets.length)},i).draw())},this)},this)}})}.call(this),function(){"use strict";var t=this,i=t.Chart,e=i.helpers,s={segmentShowStroke:!0,segmentStrokeColor:"#fff",segmentStrokeWidth:2,percentageInnerCutout:50,animationSteps:100,animationEasing:"easeOutBounce",animateRotate:!0,animateScale:!1,legendTemplate:'<ul class="<%=name.toLowerCase()%>-legend"><% for (var i=0; i<segments.length; i++){%><li><span style="background-color:<%=segments[i].fillColor%>"></span><%if(segments[i].label){%><%=segments[i].label%><%}%></li><%}%></ul>'};i.Type.extend({name:"Doughnut",defaults:s,initialize:function(t){this.segments=[],this.outerRadius=(e.min([this.chart.width,this.chart.height])-this.options.segmentStrokeWidth/2)/2,this.SegmentArc=i.Arc.extend({ctx:this.chart.ctx,x:this.chart.width/2,y:this.chart.height/2}),this.options.showTooltips&&e.bindEvents(this,this.options.tooltipEvents,function(t){var i="mouseout"!==t.type?this.getSegmentsAtEvent(t):[];e.each(this.segments,function(t){t.restore(["fillColor"])}),e.each(i,function(t){t.fillColor=t.highlightColor}),this.showTooltip(i)}),this.calculateTotal(t),e.each(t,function(t,i){this.addData(t,i,!0)},this),this.render()},getSegmentsAtEvent:function(t){var i=[],s=e.getRelativePosition(t);return e.each(this.segments,function(t){t.inRange(s.x,s.y)&&i.push(t)},this),i},addData:function(t,i,e){var s=i||this.segments.length;this.segments.splice(s,0,new this.SegmentArc({value:t.value,outerRadius:this.options.animateScale?0:this.outerRadius,innerRadius:this.options.animateScale?0:this.outerRadius/100*this.options.percentageInnerCutout,fillColor:t.color,highlightColor:t.highlight||t.color,showStroke:this.options.segmentShowStroke,strokeWidth:this.options.segmentStrokeWidth,strokeColor:this.options.segmentStrokeColor,startAngle:1.5*Math.PI,circumference:this.options.animateRotate?0:this.calculateCircumference(t.value),label:t.label})),e||(this.reflow(),this.update())},calculateCircumference:function(t){return 2*Math.PI*(Math.abs(t)/this.total)},calculateTotal:function(t){this.total=0,e.each(t,function(t){this.total+=Math.abs(t.value)},this)},update:function(){this.calculateTotal(this.segments),e.each(this.activeElements,function(t){t.restore(["fillColor"])}),e.each(this.segments,function(t){t.save()}),this.render()},removeData:function(t){var i=e.isNumber(t)?t:this.segments.length-1;this.segments.splice(i,1),this.reflow(),this.update()},reflow:function(){e.extend(this.SegmentArc.prototype,{x:this.chart.width/2,y:this.chart.height/2}),this.outerRadius=(e.min([this.chart.width,this.chart.height])-this.options.segmentStrokeWidth/2)/2,e.each(this.segments,function(t){t.update({outerRadius:this.outerRadius,innerRadius:this.outerRadius/100*this.options.percentageInnerCutout})},this)},draw:function(t){var i=t?t:1;this.clear(),e.each(this.segments,function(t,e){t.transition({circumference:this.calculateCircumference(t.value),outerRadius:this.outerRadius,innerRadius:this.outerRadius/100*this.options.percentageInnerCutout},i),t.endAngle=t.startAngle+t.circumference,t.draw(),0===e&&(t.startAngle=1.5*Math.PI),e<this.segments.length-1&&(this.segments[e+1].startAngle=t.endAngle)},this)}}),i.types.Doughnut.extend({name:"Pie",defaults:e.merge(s,{percentageInnerCutout:0})})}.call(this),function(){"use strict";var t=this,i=t.Chart,e=i.helpers,s={scaleShowGridLines:!0,scaleGridLineColor:"rgba(0,0,0,.05)",scaleGridLineWidth:1,scaleShowHorizontalLines:!0,scaleShowVerticalLines:!0,bezierCurve:!0,bezierCurveTension:.4,pointDot:!0,pointDotRadius:4,pointDotStrokeWidth:1,pointHitDetectionRadius:20,datasetStroke:!0,datasetStrokeWidth:2,datasetFill:!0,legendTemplate:'<ul class="<%=name.toLowerCase()%>-legend"><% for (var i=0; i<datasets.length; i++){%><li><span style="background-color:<%=datasets[i].strokeColor%>"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>'};i.Type.extend({name:"Line",defaults:s,initialize:function(t){this.PointClass=i.Point.extend({strokeWidth:this.options.pointDotStrokeWidth,radius:this.options.pointDotRadius,display:this.options.pointDot,hitDetectionRadius:this.options.pointHitDetectionRadius,ctx:this.chart.ctx,inRange:function(t){return Math.pow(t-this.x,2)<Math.pow(this.radius+this.hitDetectionRadius,2)}}),this.datasets=[],this.options.showTooltips&&e.bindEvents(this,this.options.tooltipEvents,function(t){var i="mouseout"!==t.type?this.getPointsAtEvent(t):[];this.eachPoints(function(t){t.restore(["fillColor","strokeColor"])}),e.each(i,function(t){t.fillColor=t.highlightFill,t.strokeColor=t.highlightStroke}),this.showTooltip(i)}),e.each(t.datasets,function(i){var s={label:i.label||null,fillColor:i.fillColor,strokeColor:i.strokeColor,pointColor:i.pointColor,pointStrokeColor:i.pointStrokeColor,points:[]};this.datasets.push(s),e.each(i.data,function(e,n){s.points.push(new this.PointClass({value:e,label:t.labels[n],datasetLabel:i.label,strokeColor:i.pointStrokeColor,fillColor:i.pointColor,highlightFill:i.pointHighlightFill||i.pointColor,highlightStroke:i.pointHighlightStroke||i.pointStrokeColor}))},this),this.buildScale(t.labels),this.eachPoints(function(t,i){e.extend(t,{x:this.scale.calculateX(i),y:this.scale.endPoint}),t.save()},this)},this),this.render()},update:function(){this.scale.update(),e.each(this.activeElements,function(t){t.restore(["fillColor","strokeColor"])}),this.eachPoints(function(t){t.save()}),this.render()},eachPoints:function(t){e.each(this.datasets,function(i){e.each(i.points,t,this)},this)},getPointsAtEvent:function(t){var i=[],s=e.getRelativePosition(t);return e.each(this.datasets,function(t){e.each(t.points,function(t){t.inRange(s.x,s.y)&&i.push(t)})},this),i},buildScale:function(t){var s=this,n=function(){var t=[];return s.eachPoints(function(i){t.push(i.value)}),t},o={templateString:this.options.scaleLabel,height:this.chart.height,width:this.chart.width,ctx:this.chart.ctx,textColor:this.options.scaleFontColor,fontSize:this.options.scaleFontSize,fontStyle:this.options.scaleFontStyle,fontFamily:this.options.scaleFontFamily,valuesCount:t.length,beginAtZero:this.options.scaleBeginAtZero,integersOnly:this.options.scaleIntegersOnly,calculateYRange:function(t){var i=e.calculateScaleRange(n(),t,this.fontSize,this.beginAtZero,this.integersOnly);e.extend(this,i)},xLabels:t,font:e.fontString(this.options.scaleFontSize,this.options.scaleFontStyle,this.options.scaleFontFamily),lineWidth:this.options.scaleLineWidth,lineColor:this.options.scaleLineColor,showHorizontalLines:this.options.scaleShowHorizontalLines,showVerticalLines:this.options.scaleShowVerticalLines,gridLineWidth:this.options.scaleShowGridLines?this.options.scaleGridLineWidth:0,gridLineColor:this.options.scaleShowGridLines?this.options.scaleGridLineColor:"rgba(0,0,0,0)",padding:this.options.showScale?0:this.options.pointDotRadius+this.options.pointDotStrokeWidth,showLabels:this.options.scaleShowLabels,display:this.options.showScale};this.options.scaleOverride&&e.extend(o,{calculateYRange:e.noop,steps:this.options.scaleSteps,stepValue:this.options.scaleStepWidth,min:this.options.scaleStartValue,max:this.options.scaleStartValue+this.options.scaleSteps*this.options.scaleStepWidth}),this.scale=new i.Scale(o)},addData:function(t,i){e.each(t,function(t,e){this.datasets[e].points.push(new this.PointClass({value:t,label:i,x:this.scale.calculateX(this.scale.valuesCount+1),y:this.scale.endPoint,strokeColor:this.datasets[e].pointStrokeColor,fillColor:this.datasets[e].pointColor}))},this),this.scale.addXLabel(i),this.update()},removeData:function(){this.scale.removeXLabel(),e.each(this.datasets,function(t){t.points.shift()},this),this.update()},reflow:function(){var t=e.extend({height:this.chart.height,width:this.chart.width});this.scale.update(t)},draw:function(t){var i=t||1;this.clear();var s=this.chart.ctx,n=function(t){return null!==t.value},o=function(t,i,s){return e.findNextWhere(i,n,s)||t},a=function(t,i,s){return e.findPreviousWhere(i,n,s)||t};this.scale.draw(i),e.each(this.datasets,function(t){var h=e.where(t.points,n);e.each(t.points,function(t,e){t.hasValue()&&t.transition({y:this.scale.calculateY(t.value),x:this.scale.calculateX(e)},i)},this),this.options.bezierCurve&&e.each(h,function(t,i){var s=i>0&&i<h.length-1?this.options.bezierCurveTension:0;t.controlPoints=e.splineCurve(a(t,h,i),t,o(t,h,i),s),t.controlPoints.outer.y>this.scale.endPoint?t.controlPoints.outer.y=this.scale.endPoint:t.controlPoints.outer.y<this.scale.startPoint&&(t.controlPoints.outer.y=this.scale.startPoint),t.controlPoints.inner.y>this.scale.endPoint?t.controlPoints.inner.y=this.scale.endPoint:t.controlPoints.inner.y<this.scale.startPoint&&(t.controlPoints.inner.y=this.scale.startPoint)},this),s.lineWidth=this.options.datasetStrokeWidth,s.strokeStyle=t.strokeColor,s.beginPath(),e.each(h,function(t,i){if(0===i)s.moveTo(t.x,t.y);else if(this.options.bezierCurve){var e=a(t,h,i);s.bezierCurveTo(e.controlPoints.outer.x,e.controlPoints.outer.y,t.controlPoints.inner.x,t.controlPoints.inner.y,t.x,t.y)}else s.lineTo(t.x,t.y)},this),s.stroke(),this.options.datasetFill&&h.length>0&&(s.lineTo(h[h.length-1].x,this.scale.endPoint),s.lineTo(h[0].x,this.scale.endPoint),s.fillStyle=t.fillColor,s.closePath(),s.fill()),e.each(h,function(t){t.draw()})},this)}})}.call(this),function(){"use strict";var t=this,i=t.Chart,e=i.helpers,s={scaleShowLabelBackdrop:!0,scaleBackdropColor:"rgba(255,255,255,0.75)",scaleBeginAtZero:!0,scaleBackdropPaddingY:2,scaleBackdropPaddingX:2,scaleShowLine:!0,segmentShowStroke:!0,segmentStrokeColor:"#fff",segmentStrokeWidth:2,animationSteps:100,animationEasing:"easeOutBounce",animateRotate:!0,animateScale:!1,legendTemplate:'<ul class="<%=name.toLowerCase()%>-legend"><% for (var i=0; i<segments.length; i++){%><li><span style="background-color:<%=segments[i].fillColor%>"></span><%if(segments[i].label){%><%=segments[i].label%><%}%></li><%}%></ul>'};i.Type.extend({name:"PolarArea",defaults:s,initialize:function(t){this.segments=[],this.SegmentArc=i.Arc.extend({showStroke:this.options.segmentShowStroke,strokeWidth:this.options.segmentStrokeWidth,strokeColor:this.options.segmentStrokeColor,ctx:this.chart.ctx,innerRadius:0,x:this.chart.width/2,y:this.chart.height/2}),this.scale=new i.RadialScale({display:this.options.showScale,fontStyle:this.options.scaleFontStyle,fontSize:this.options.scaleFontSize,fontFamily:this.options.scaleFontFamily,fontColor:this.options.scaleFontColor,showLabels:this.options.scaleShowLabels,showLabelBackdrop:this.options.scaleShowLabelBackdrop,backdropColor:this.options.scaleBackdropColor,backdropPaddingY:this.options.scaleBackdropPaddingY,backdropPaddingX:this.options.scaleBackdropPaddingX,lineWidth:this.options.scaleShowLine?this.options.scaleLineWidth:0,lineColor:this.options.scaleLineColor,lineArc:!0,width:this.chart.width,height:this.chart.height,xCenter:this.chart.width/2,yCenter:this.chart.height/2,ctx:this.chart.ctx,templateString:this.options.scaleLabel,valuesCount:t.length}),this.updateScaleRange(t),this.scale.update(),e.each(t,function(t,i){this.addData(t,i,!0)},this),this.options.showTooltips&&e.bindEvents(this,this.options.tooltipEvents,function(t){var i="mouseout"!==t.type?this.getSegmentsAtEvent(t):[];e.each(this.segments,function(t){t.restore(["fillColor"])}),e.each(i,function(t){t.fillColor=t.highlightColor}),this.showTooltip(i)}),this.render()},getSegmentsAtEvent:function(t){var i=[],s=e.getRelativePosition(t);return e.each(this.segments,function(t){t.inRange(s.x,s.y)&&i.push(t)},this),i},addData:function(t,i,e){var s=i||this.segments.length;this.segments.splice(s,0,new this.SegmentArc({fillColor:t.color,highlightColor:t.highlight||t.color,label:t.label,value:t.value,outerRadius:this.options.animateScale?0:this.scale.calculateCenterOffset(t.value),circumference:this.options.animateRotate?0:this.scale.getCircumference(),startAngle:1.5*Math.PI})),e||(this.reflow(),this.update())},removeData:function(t){var i=e.isNumber(t)?t:this.segments.length-1;this.segments.splice(i,1),this.reflow(),this.update()},calculateTotal:function(t){this.total=0,e.each(t,function(t){this.total+=t.value},this),this.scale.valuesCount=this.segments.length},updateScaleRange:function(t){var i=[];e.each(t,function(t){i.push(t.value)});var s=this.options.scaleOverride?{steps:this.options.scaleSteps,stepValue:this.options.scaleStepWidth,min:this.options.scaleStartValue,max:this.options.scaleStartValue+this.options.scaleSteps*this.options.scaleStepWidth}:e.calculateScaleRange(i,e.min([this.chart.width,this.chart.height])/2,this.options.scaleFontSize,this.options.scaleBeginAtZero,this.options.scaleIntegersOnly);e.extend(this.scale,s,{size:e.min([this.chart.width,this.chart.height]),xCenter:this.chart.width/2,yCenter:this.chart.height/2})},update:function(){this.calculateTotal(this.segments),e.each(this.segments,function(t){t.save()}),this.reflow(),this.render()},reflow:function(){e.extend(this.SegmentArc.prototype,{x:this.chart.width/2,y:this.chart.height/2}),this.updateScaleRange(this.segments),this.scale.update(),e.extend(this.scale,{xCenter:this.chart.width/2,yCenter:this.chart.height/2}),e.each(this.segments,function(t){t.update({outerRadius:this.scale.calculateCenterOffset(t.value)})},this)},draw:function(t){var i=t||1;this.clear(),e.each(this.segments,function(t,e){t.transition({circumference:this.scale.getCircumference(),outerRadius:this.scale.calculateCenterOffset(t.value)},i),t.endAngle=t.startAngle+t.circumference,0===e&&(t.startAngle=1.5*Math.PI),e<this.segments.length-1&&(this.segments[e+1].startAngle=t.endAngle),t.draw()},this),this.scale.draw()}})}.call(this),function(){"use strict";var t=this,i=t.Chart,e=i.helpers;i.Type.extend({name:"Radar",defaults:{scaleShowLine:!0,angleShowLineOut:!0,scaleShowLabels:!1,scaleBeginAtZero:!0,angleLineColor:"rgba(0,0,0,.1)",angleLineWidth:1,pointLabelFontFamily:"'Arial'",pointLabelFontStyle:"normal",pointLabelFontSize:10,pointLabelFontColor:"#666",pointDot:!0,pointDotRadius:3,pointDotStrokeWidth:1,pointHitDetectionRadius:20,datasetStroke:!0,datasetStrokeWidth:2,datasetFill:!0,legendTemplate:'<ul class="<%=name.toLowerCase()%>-legend"><% for (var i=0; i<datasets.length; i++){%><li><span style="background-color:<%=datasets[i].strokeColor%>"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>'},initialize:function(t){this.PointClass=i.Point.extend({strokeWidth:this.options.pointDotStrokeWidth,radius:this.options.pointDotRadius,display:this.options.pointDot,hitDetectionRadius:this.options.pointHitDetectionRadius,ctx:this.chart.ctx}),this.datasets=[],this.buildScale(t),this.options.showTooltips&&e.bindEvents(this,this.options.tooltipEvents,function(t){var i="mouseout"!==t.type?this.getPointsAtEvent(t):[];this.eachPoints(function(t){t.restore(["fillColor","strokeColor"])}),e.each(i,function(t){t.fillColor=t.highlightFill,t.strokeColor=t.highlightStroke}),this.showTooltip(i)}),e.each(t.datasets,function(i){var s={label:i.label||null,fillColor:i.fillColor,strokeColor:i.strokeColor,pointColor:i.pointColor,pointStrokeColor:i.pointStrokeColor,points:[]};this.datasets.push(s),e.each(i.data,function(e,n){var o;this.scale.animation||(o=this.scale.getPointPosition(n,this.scale.calculateCenterOffset(e))),s.points.push(new this.PointClass({value:e,label:t.labels[n],datasetLabel:i.label,x:this.options.animation?this.scale.xCenter:o.x,y:this.options.animation?this.scale.yCenter:o.y,strokeColor:i.pointStrokeColor,fillColor:i.pointColor,highlightFill:i.pointHighlightFill||i.pointColor,highlightStroke:i.pointHighlightStroke||i.pointStrokeColor}))},this)},this),this.render()},eachPoints:function(t){e.each(this.datasets,function(i){e.each(i.points,t,this)},this)},getPointsAtEvent:function(t){var i=e.getRelativePosition(t),s=e.getAngleFromPoint({x:this.scale.xCenter,y:this.scale.yCenter},i),n=2*Math.PI/this.scale.valuesCount,o=Math.round((s.angle-1.5*Math.PI)/n),a=[];return(o>=this.scale.valuesCount||0>o)&&(o=0),s.distance<=this.scale.drawingArea&&e.each(this.datasets,function(t){a.push(t.points[o])}),a},buildScale:function(t){this.scale=new i.RadialScale({display:this.options.showScale,fontStyle:this.options.scaleFontStyle,fontSize:this.options.scaleFontSize,fontFamily:this.options.scaleFontFamily,fontColor:this.options.scaleFontColor,showLabels:this.options.scaleShowLabels,showLabelBackdrop:this.options.scaleShowLabelBackdrop,backdropColor:this.options.scaleBackdropColor,backdropPaddingY:this.options.scaleBackdropPaddingY,backdropPaddingX:this.options.scaleBackdropPaddingX,lineWidth:this.options.scaleShowLine?this.options.scaleLineWidth:0,lineColor:this.options.scaleLineColor,angleLineColor:this.options.angleLineColor,angleLineWidth:this.options.angleShowLineOut?this.options.angleLineWidth:0,pointLabelFontColor:this.options.pointLabelFontColor,pointLabelFontSize:this.options.pointLabelFontSize,pointLabelFontFamily:this.options.pointLabelFontFamily,pointLabelFontStyle:this.options.pointLabelFontStyle,height:this.chart.height,width:this.chart.width,xCenter:this.chart.width/2,yCenter:this.chart.height/2,ctx:this.chart.ctx,templateString:this.options.scaleLabel,labels:t.labels,valuesCount:t.datasets[0].data.length}),this.scale.setScaleSize(),this.updateScaleRange(t.datasets),this.scale.buildYLabels()},updateScaleRange:function(t){var i=function(){var i=[];return e.each(t,function(t){t.data?i=i.concat(t.data):e.each(t.points,function(t){i.push(t.value)})}),i}(),s=this.options.scaleOverride?{steps:this.options.scaleSteps,stepValue:this.options.scaleStepWidth,min:this.options.scaleStartValue,max:this.options.scaleStartValue+this.options.scaleSteps*this.options.scaleStepWidth}:e.calculateScaleRange(i,e.min([this.chart.width,this.chart.height])/2,this.options.scaleFontSize,this.options.scaleBeginAtZero,this.options.scaleIntegersOnly);e.extend(this.scale,s)},addData:function(t,i){this.scale.valuesCount++,e.each(t,function(t,e){var s=this.scale.getPointPosition(this.scale.valuesCount,this.scale.calculateCenterOffset(t));this.datasets[e].points.push(new this.PointClass({value:t,label:i,x:s.x,y:s.y,strokeColor:this.datasets[e].pointStrokeColor,fillColor:this.datasets[e].pointColor}))},this),this.scale.labels.push(i),this.reflow(),this.update()},removeData:function(){this.scale.valuesCount--,this.scale.labels.shift(),e.each(this.datasets,function(t){t.points.shift()},this),this.reflow(),this.update()},update:function(){this.eachPoints(function(t){t.save()}),this.reflow(),this.render()},reflow:function(){e.extend(this.scale,{width:this.chart.width,height:this.chart.height,size:e.min([this.chart.width,this.chart.height]),xCenter:this.chart.width/2,yCenter:this.chart.height/2}),this.updateScaleRange(this.datasets),this.scale.setScaleSize(),this.scale.buildYLabels()},draw:function(t){var i=t||1,s=this.chart.ctx;this.clear(),this.scale.draw(),e.each(this.datasets,function(t){e.each(t.points,function(t,e){t.hasValue()&&t.transition(this.scale.getPointPosition(e,this.scale.calculateCenterOffset(t.value)),i)},this),s.lineWidth=this.options.datasetStrokeWidth,s.strokeStyle=t.strokeColor,s.beginPath(),e.each(t.points,function(t,i){0===i?s.moveTo(t.x,t.y):s.lineTo(t.x,t.y)},this),s.closePath(),s.stroke(),s.fillStyle=t.fillColor,s.fill(),e.each(t.points,function(t){t.hasValue()&&t.draw()})},this)}})}.call(this);!function(t){"use strict";"function"==typeof define&&define.amd?define(["angular","chart.js"],t):"object"==typeof exports?module.exports=t(require("angular"),require("chart.js")):t(angular,Chart)}(function(t,e){"use strict";function n(){var n={},r={Chart:e,getOptions:function(e){var r=e&&n[e]||{};return t.extend({},n,r)}};this.setOptions=function(e,r){return r?(n[e]=t.extend(n[e]||{},r),void 0):(r=e,n=t.extend(n,r),void 0)},this.$get=function(){return r}}function r(n){function r(t,e){return t&&e&&t.length&&e.length?Array.isArray(t[0])?t.length===e.length&&t[0].length===e[0].length:e.reduce(a,0)>0?t.length===e.length:!1:!1}function a(t,e){return t+e}function o(e,r,a){if(r.data&&r.data.length){r.getColour="function"==typeof r.getColour?r.getColour:l,r.colours=c(e,r);var o=a[0],u=o.getContext("2d"),s=Array.isArray(r.data[0])?g(r.labels,r.data,r.series||[],r.colours):p(r.labels,r.data,r.colours),f=t.extend({},n.getOptions(e),r.options),h=new n.Chart(u)[e](s,f);return r.$emit("create",h),["hover","click"].forEach(function(t){r[t]&&(o["click"===t?"onclick":"onmousemove"]=i(r,h,t))}),r.legend&&"false"!==r.legend&&v(a,h),h}}function i(t,e,n){return function(r){var a=e.getPointsAtEvent||e.getBarsAtEvent||e.getSegmentsAtEvent;if(a){var o=a.call(e,r);t[n](o,r),t.$apply()}}}function c(r,a){for(var o=t.copy(a.colours||n.getOptions(r).colours||e.defaults.global.colours);o.length<a.data.length;)o.push(a.getColour());return o.map(u)}function u(t){return"object"==typeof t&&null!==t?t:"string"==typeof t&&"#"===t[0]?s(d(t.substr(1))):l()}function l(){var t=[f(0,255),f(0,255),f(0,255)];return s(t)}function s(t){return{fillColor:h(t,.2),strokeColor:h(t,1),pointColor:h(t,1),pointStrokeColor:"#fff",pointHighlightFill:"#fff",pointHighlightStroke:h(t,.8)}}function f(t,e){return Math.floor(Math.random()*(e-t+1))+t}function h(t,e){return"rgba("+t.concat(e).join(",")+")"}function d(t){var e=parseInt(t,16),n=e>>16&255,r=e>>8&255,a=255&e;return[n,r,a]}function g(e,n,r,a){return{labels:e,datasets:n.map(function(e,n){var o=t.copy(a[n]);return o.label=r[n],o.data=e,o})}}function p(t,e,n){return t.map(function(t,r){return{label:t,value:e[r],color:n[r].strokeColor,highlight:n[r].pointHighlightStroke}})}function v(t,e){var n=t.parent(),r=n.find("chart-legend"),a="<chart-legend>"+e.generateLegend()+"</chart-legend>";r.length?r.replaceWith(a):n.append(a)}function y(t,e,n){Array.isArray(n.data[0])?t.datasets.forEach(function(t,n){(t.points||t.bars).forEach(function(t,r){t.value=e[n][r]})}):t.segments.forEach(function(t,n){t.value=e[n]}),t.update(),n.$emit("update",t)}function C(t){return!t||Array.isArray(t)&&!t.length||"object"==typeof t&&!Object.keys(t).length}return function(e){return{restrict:"CA",scope:{data:"=",labels:"=",options:"=",series:"=",colours:"=?",getColour:"=?",chartType:"=",legend:"@",click:"=",hover:"="},link:function(n,a){function i(r,i){if(!C(r)&&!t.equals(r,i)){var u=e||n.chartType;u&&(c&&c.destroy(),c=o(u,n,a))}}var c,u=document.createElement("div");u.className="chart-container",a.replaceWith(u),u.appendChild(a[0]),"object"==typeof window.G_vmlCanvasManager&&null!==window.G_vmlCanvasManager&&"function"==typeof window.G_vmlCanvasManager.initElement&&window.G_vmlCanvasManager.initElement(a[0]),n.$watch("data",function(t,i){if(t&&t.length&&(!Array.isArray(t[0])||t[0].length)){var u=e||n.chartType;if(u){if(c){if(r(t,i))return y(c,t,n);c.destroy()}c=o(u,n,a)}}},!0),n.$watch("series",i,!0),n.$watch("labels",i,!0),n.$watch("options",i,!0),n.$watch("colours",i,!0),n.$watch("chartType",function(e,r){C(e)||t.equals(e,r)||(c&&c.destroy(),c=o(e,n,a))}),n.$on("$destroy",function(){c&&c.destroy()})}}}}e.defaults.global.responsive=!0,e.defaults.global.multiTooltipTemplate="<%if (datasetLabel){%><%=datasetLabel%>: <%}%><%= value %>",e.defaults.global.colours=["#97BBCD","#DCDCDC","#F7464A","#46BFBD","#FDB45C","#949FB1","#4D5360"],t.module("chart.js",[]).provider("ChartJs",n).factory("ChartJsFactory",["ChartJs",r]).directive("chartBase",["ChartJsFactory",function(t){return new t}]).directive("chartLine",["ChartJsFactory",function(t){return new t("Line")}]).directive("chartBar",["ChartJsFactory",function(t){return new t("Bar")}]).directive("chartRadar",["ChartJsFactory",function(t){return new t("Radar")}]).directive("chartDoughnut",["ChartJsFactory",function(t){return new t("Doughnut")}]).directive("chartPie",["ChartJsFactory",function(t){return new t("Pie")}]).directive("chartPolarArea",["ChartJsFactory",function(t){return new t("PolarArea")}])});
 //# sourceMappingURL=angular-chart.min.js.map//壓縮 手動排序跟新增
 //cat script/angular.min.js script/angular-route.min.js script/angular-resource.min.js script/angular-cookies.min.js script/angular-sanitize.min.js script/angular-file-upload.js script/Chart.min.js script/angular-chart.min.js script/controllers.js script/stock-controllers.js script/frontend.js script/ui-bootstrap-tpls-0.12.0.min.js > script/release.js
-//cat css/angular-chart.css css/bootstrap.min.css css/bootstrap-theme.min.css css/sb-admin.css > css/release.css
+//cat css/angular-chart.css css/bootstrap.min.css css/bootstrap-theme.min.css font-awesome/css/font-awesome.min.css css/sb-admin.css > css/release.css
 var video, music, subtitles, videoStart=0, musicStart=0;
 var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSanitize', 'angularFileUpload', 'ui.bootstrap', 'chart.js'], function($routeProvider, $locationProvider) {
     $routeProvider.when('/', {
@@ -2077,6 +2077,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.bookmarkName = '';
     $scope.dirLocation = 0;
     $scope.isRelative = false;
+    $scope.tCD = false;
     $scope.relativeList = [];
     //cookie
     $scope.fileSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
@@ -2588,51 +2589,30 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     }, true);
 
     getRelativeTag = function(oldList) {
-        if ($scope.isRelative) {
-            for (var i in $scope.tagList) {
-                if (oldList.indexOf($scope.tagList[i]) === -1) {
-                    var Info = $resource('/api/getRelativeTag/' + $scope.tagList[i], {}, {
-                        'relativeTag': { method:'GET' }
-                    });
-                    Info.relativeTag({}, function (result) {
-                        if (result.loginOK) {
-                            $window.location.href = $location.path();
-                        } else {
-                            for (var j in result.relative) {
-                                if ($scope.relativeList.indexOf(result.relative[j]) === -1 && $scope.tagList.indexOf(result.relative[j]) === -1 && $scope.exceptList.indexOf(result.relative[j]) === -1 && $scope.isRelative) {
-                                    $scope.relativeList.push(result.relative[j]);
-                                }
-                            }
+        if (!$scope.tCD) {
+            $scope.tCD = true;
+            setTimeout(function() {
+                $scope.tCD = false;
+                if ($scope.isRelative) {
+                    var tags = [];
+                    for (var i in $scope.tagList) {
+                        if (oldList.indexOf($scope.tagList[i]) === -1) {
+                            tags.push($scope.tagList[i]);
                         }
-                    }, function(errorResult) {
-                        if (errorResult.status === 400) {
-                            addAlert(errorResult.data);
-                        } else if (errorResult.status === 403) {
-                            addAlert('unknown API!!!');
-                        } else if (errorResult.status === 401) {
-                            $window.location.href = $location.path();
-                        }
-                    });
-                }
-            }
-        }
-    }
-
-    $scope.submitTag = function() {
-        if (this.newTagName) {
-            if (isValidString(this.newTagName, 'name')) {
-                if (this.selectList.length > 0) {
-                    var this_obj = this;
-                    for (var i in this.selectList) {
-                        var Info = $resource('/api/addTag/' + this.selectList[i].id, {}, {
-                            'addTag': { method:'PUT' }
+                    }
+                    if (tags.length > 0) {
+                        var Info = $resource('/api/getRelativeTag', {}, {
+                            'relativeTag': { method:'PUT' }
                         });
-                        Info.addTag({tag: this.newTagName}, function (result) {
+                        Info.relativeTag({tags: tags}, function (result) {
                             if (result.loginOK) {
                                 $window.location.href = $location.path();
-                            }
-                            if (Number(i) === this_obj.selectList.length -1) {
-                                this_obj.tagNew = false;
+                            } else {
+                                for (var i in result.relative) {
+                                    if ($scope.relativeList.indexOf(result.relative[i]) === -1 && $scope.tagList.indexOf(result.relative[i]) === -1 && $scope.exceptList.indexOf(result.relative[i]) === -1 && $scope.isRelative) {
+                                        $scope.relativeList.push(result.relative[i]);
+                                    }
+                                }
                             }
                         }, function(errorResult) {
                             if (errorResult.status === 400) {
@@ -2644,6 +2624,37 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                             }
                         });
                     }
+                }
+            }, 1000);
+        }
+    }
+
+    $scope.submitTag = function() {
+        if (this.newTagName) {
+            if (isValidString(this.newTagName, 'name')) {
+                if (this.selectList.length > 0) {
+                    var uids = [];
+                    var this_obj = this;
+                    for (var i in this.selectList) {
+                        uids.push(this.selectList[i].id);
+                    }
+                    var Info = $resource('/api/addTag/' + this.newTagName, {}, {
+                        'addTag': { method:'PUT' }
+                    });
+                    Info.addTag({uids: uids}, function (result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        }
+                        this_obj.tagNew = false;
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
                 } else {
                     addAlert('Please selects item!!!');
                 }
@@ -2658,28 +2669,30 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.addTag = function(tag) {
         if (isValidString(tag, 'name')) {
             if (this.selectList.length > 0) {
+                var uids = [];
                 var this_obj = this;
                 for (var i in this.selectList) {
-                    var Info = $resource('/api/addTag/' + this.selectList[i].id, {}, {
-                        'addTag': { method:'PUT' }
-                    });
-                    Info.addTag({tag: tag}, function (result) {
-                        if (result.loginOK) {
-                            $window.location.href = $location.path();
-                        }
-                        if (Number(i) === this_obj.selectList.length -1) {
-                            this_obj.tagNew = false;
-                        }
-                    }, function(errorResult) {
-                        if (errorResult.status === 400) {
-                            addAlert(errorResult.data);
-                        } else if (errorResult.status === 403) {
-                            addAlert('unknown API!!!');
-                        } else if (errorResult.status === 401) {
-                            $window.location.href = $location.path();
-                        }
-                    });
+                    uids.push(this.selectList[i].id);
                 }
+                var Info = $resource('/api/addTag/' + tag, {}, {
+                    'addTag': { method:'PUT' }
+                });
+                Info.addTag({uids: uids}, function (result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    }
+                    if (Number(i) === this_obj.selectList.length -1) {
+                        this_obj.tagNew = false;
+                    }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
             } else {
                 addAlert('Please selects item!!!');
             }
@@ -2690,26 +2703,27 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
 
     $scope.delTag = function(tag) {
         if (isValidString(tag, 'name')) {
-            var this_itemList = this.itemList;
             if (this.selectList.length > 0) {
+                var uids = [];
                 for (var i in this.selectList) {
-                    var Info = $resource('/api/delTag/' + this.selectList[i].id, {}, {
-                        'delTag': { method:'PUT' }
-                    });
-                    Info.delTag({tag: tag}, function (result) {
-                        if (result.loginOK) {
-                            $window.location.href = $location.path();
-                        }
-                    }, function(errorResult) {
-                        if (errorResult.status === 400) {
-                            addAlert(errorResult.data);
-                        } else if (errorResult.status === 403) {
-                            addAlert('unknown API!!!');
-                        } else if (errorResult.status === 401) {
-                            $window.location.href = $location.path();
-                        }
-                    });
+                    uids.push(this.selectList[i].id);
                 }
+                var Info = $resource('/api/delTag/' + tag, {}, {
+                    'delTag': { method:'PUT' }
+                });
+                Info.delTag({uids: uids}, function (result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
             } else {
                 addAlert('Please selects item!!!');
             }
@@ -3351,7 +3365,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.dropdown.feedback = false;
     $scope.feedbackDisabled = true;
     $scope.feedbackSelectTag = '';
-    $scope.feedback = {uid: '', name: '', list: [], run: false, queue: [], history: [], other: []};
+    $scope.feedback = {uid: '', name: '', relative: 0, list: [], run: false, queue: [], history: [], other: []};
     //dialog
     $scope.widget = {};
     $scope.widget.uploader = false;
@@ -3553,10 +3567,10 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 var index = arrayObjectIndexOf(this.feedback.list, this.feedbackInput, 'tag');
                 if (index === -1) {
                     this.feedback.list.splice(0, 0, {tag: this.feedbackInput, select: true});
-                    var Info = $resource('/api/getRelativeTag/' + this.feedbackInput, {}, {
-                        'relativeTag': { method:'GET' }
+                    var Info = $resource('/api/getRelativeTag', {}, {
+                        'relativeTag': { method:'PUT' }
                     });
-                    Info.relativeTag({}, function (result) {
+                    Info.relativeTag({tags: [this.feedbackInput]}, function (result) {
                         if (result.loginOK) {
                             $window.location.href = $location.path();
                         } else {
@@ -3651,6 +3665,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
         $scope.feedback.other = response.other;
         var index = 0, searchTag='';
+        var historyRelative = [];
         for (var i in $scope.feedback.history) {
             searchTag = $scope.feedback.history[i].tag;
             index = arrayObjectIndexOf($scope.feedback.list, searchTag, "tag");
@@ -3658,6 +3673,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 $scope.feedback.history[i].history = true;
                 if ($scope.feedback.history[i].select) {
                     $scope.feedback.list.splice(0, 0, $scope.feedback.history[i]);
+                    historyRelative.push($scope.feedback.history[i].tag);
                 }
             } else {
                 if ($scope.feedback.list[index].select !== $scope.feedback.history[i].select) {
@@ -3666,6 +3682,33 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
             }
         }
+        clearTimeout($scope.feedback.relative);
+        $scope.feedback.relative = setTimeout(function() {
+            if (historyRelative.length > 0) {
+                var Info = $resource('/api/getRelativeTag', {}, {
+                    'relativeTag': { method:'PUT' }
+                });
+                Info.relativeTag({tags: historyRelative}, function (result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    } else {
+                        for (var i in result.relative) {
+                            if (arrayObjectIndexOf($scope.feedback.list, result.relative[i], 'tag') === -1) {
+                                $scope.feedback.list.push({tag: result.relative[i], select: false});
+                            }
+                        }
+                    }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
+            }
+        }, 1000);
         $scope.feedbackDisabled = false;
     };
 
@@ -3686,7 +3729,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 $scope.main_url = result.main_url;
                 document.domain = document.domain;
                 $scope.file_url = result.file_url;
-                $scope.isAdult = result.isAdult;
+                $scope.level = result.level;
                 getFeedbacks(1);
                 if (window.MozWebSocket) {
                     window.WebSocket = window.MozWebSocket;
@@ -3700,15 +3743,17 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
 
                 ws.onmessage = function(message) {
                     var wsmsg = JSON.parse(message.data);
-                    switch (wsmsg.type) {
-                        case 'file':
-                            $scope.$broadcast('file', JSON.stringify(wsmsg.data));
-                            break;
-                        case 'stock':
-                            $scope.$broadcast('stock', JSON.stringify(wsmsg.data));
-                            break;
-                        default:
-                            console.log(wsmsg);
+                    if ($scope.level >= wsmsg.level) {
+                        switch (wsmsg.type) {
+                            case 'file':
+                                $scope.$broadcast('file', JSON.stringify(wsmsg.data));
+                                break;
+                            case 'stock':
+                                $scope.$broadcast('stock', JSON.stringify(wsmsg.data));
+                                break;
+                            default:
+                                console.log(wsmsg);
+                        }
                     }
                 };
             }
@@ -4521,6 +4566,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.bookmarkName = '';
     $scope.dirLocation = 0;
     $scope.isRelative = false;
+    $scope.tCD = false;
     $scope.relativeList = [];
     //cookie initial
     $scope.fileSort = {name:'', mtime: '', count: '', sort: 'name/desc'};
@@ -4934,33 +4980,43 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     }, true);
 
     getRelativeTag = function(oldList) {
-        if ($scope.isRelative) {
-            for (var i in $scope.tagList) {
-                if (oldList.indexOf($scope.tagList[i]) === -1) {
-                    var Info = $resource('/api/stock/getRelativeTag/' + $scope.tagList[i], {}, {
-                        'relativeTag': { method:'GET' }
-                    });
-                    Info.relativeTag({}, function (result) {
-                        if (result.loginOK) {
-                            $window.location.href = $location.path();
-                        } else {
-                            for (var j in result.relative) {
-                                if ($scope.relativeList.indexOf(result.relative[j]) === -1 && $scope.tagList.indexOf(result.relative[j]) === -1 && $scope.exceptList.indexOf(result.relative[j]) === -1 && $scope.isRelative) {
-                                    $scope.relativeList.push(result.relative[j]);
+        if (!$scope.tCD) {
+            $scope.tCD = true;
+            setTimeout(function() {
+                $scope.tCD = false;
+                if ($scope.isRelative) {
+                    var tags = [];
+                    for (var i in $scope.tagList) {
+                        if (oldList.indexOf($scope.tagList[i]) === -1) {
+                            tags.push($scope.tagList[i]);
+                        }
+                    }
+                    if (tags.length > 0) {
+                        var Info = $resource('/api/stock/getRelativeTag', {}, {
+                            'relativeTag': { method:'PUT' }
+                        });
+                        Info.relativeTag({tags: tags}, function (result) {
+                            if (result.loginOK) {
+                                $window.location.href = $location.path();
+                            } else {
+                                for (var j in result.relative) {
+                                    if ($scope.relativeList.indexOf(result.relative[j]) === -1 && $scope.tagList.indexOf(result.relative[j]) === -1 && $scope.exceptList.indexOf(result.relative[j]) === -1 && $scope.isRelative) {
+                                        $scope.relativeList.push(result.relative[j]);
+                                    }
                                 }
                             }
-                        }
-                    }, function(errorResult) {
-                        if (errorResult.status === 400) {
-                            addAlert(errorResult.data);
-                        } else if (errorResult.status === 403) {
-                            addAlert('unknown API!!!');
-                        } else if (errorResult.status === 401) {
-                            $window.location.href = $location.path();
-                        }
-                    });
+                        }, function(errorResult) {
+                            if (errorResult.status === 400) {
+                                addAlert(errorResult.data);
+                            } else if (errorResult.status === 403) {
+                                addAlert('unknown API!!!');
+                            } else if (errorResult.status === 401) {
+                                $window.location.href = $location.path();
+                            }
+                        });
+                    }
                 }
-            }
+            }, 1000);
         }
     }
 
@@ -5016,28 +5072,28 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         if (this.newTagName) {
             if (isValidString(this.newTagName, 'name')) {
                 if (this.selectList.length > 0) {
+                    var uids = [];
                     var this_obj = this;
                     for (var i in this.selectList) {
-                        var Info = $resource('/api/stock/addTag/' + this.selectList[i].id, {}, {
-                            'addTag': { method:'PUT' }
-                        });
-                        Info.addTag({tag: this.newTagName}, function (result) {
-                            if (result.loginOK) {
-                                $window.location.href = $location.path();
-                            }
-                            if (Number(i) === this_obj.selectList.length -1) {
-                                this_obj.tagNew = false;
-                            }
-                        }, function(errorResult) {
-                            if (errorResult.status === 400) {
-                                addAlert(errorResult.data);
-                            } else if (errorResult.status === 403) {
-                                addAlert('unknown API!!!');
-                            } else if (errorResult.status === 401) {
-                                $window.location.href = $location.path();
-                            }
-                        });
+                        uids.push(this.selectList[i].id);
                     }
+                    var Info = $resource('/api/stock/addTag/' + this.newTagName, {}, {
+                        'addTag': { method:'PUT' }
+                    });
+                    Info.addTag({uids: uids}, function (result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        }
+                        this_obj.tagNew = false;
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
                 } else {
                     addAlert('Please selects item!!!');
                 }
@@ -5049,6 +5105,41 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         }
     }
 
+    $scope.addTag = function(tag) {
+        if (isValidString(tag, 'name')) {
+            if (this.selectList.length > 0) {
+                var uids = [];
+                var this_obj = this;
+                for (var i in this.selectList) {
+                    uids.push(this.selectList[i].id);
+                }
+                var Info = $resource('/api/stock/addTag/' + tag, {}, {
+                    'addTag': { method:'PUT' }
+                });
+                Info.addTag({uids: uids}, function (result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    }
+                    if (Number(i) === this_obj.selectList.length -1) {
+                        this_obj.tagNew = false;
+                    }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
+            } else {
+                addAlert('Please selects item!!!');
+            }
+        } else {
+            addAlert('Tag is not vaild!!!');
+        }
+    }
+
     $scope.exactlyStorage = function(this_obj, item) {
         this_obj.page = 0;
         this_obj.more = true;
@@ -5057,26 +5148,27 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
 
     $scope.delTag = function(tag) {
         if (isValidString(tag, 'name')) {
-            var this_itemList = this.itemList;
             if (this.selectList.length > 0) {
+                var uids = [];
                 for (var i in this.selectList) {
-                    var Info = $resource('/api/stock/delTag/' + this.selectList[i].id, {}, {
-                        'delTag': { method:'PUT' }
-                    });
-                    Info.delTag({tag: tag}, function (result) {
-                        if (result.loginOK) {
-                            $window.location.href = $location.path();
-                        }
-                    }, function(errorResult) {
-                        if (errorResult.status === 400) {
-                            addAlert(errorResult.data);
-                        } else if (errorResult.status === 403) {
-                            addAlert('unknown API!!!');
-                        } else if (errorResult.status === 401) {
-                            $window.location.href = $location.path();
-                        }
-                    });
+                    uids.push(this.selectList[i].id);
                 }
+                var Info = $resource('/api/stock/delTag/' + tag, {}, {
+                    'delTag': { method:'PUT' }
+                });
+                Info.delTag({uids: uids}, function (result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
             } else {
                 addAlert('Please selects item!!!');
             }
