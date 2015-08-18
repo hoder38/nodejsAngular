@@ -20,12 +20,15 @@ module.exports = {
         var username = util.isValidString(data['username'], 'name');
         var password = util.isValidString(data['password'], 'passwd');
         var conpassword = util.isValidString(data['conpassword'], 'passwd');
-        var url = '', email = '';
+        var url = '', email = '', userPW = '';
         if (data['url']) {
             url = util.isValidString(data['url'], 'url');
         }
         if (data['email']) {
             email = util.isValidString(data['email'], 'email');
+        }
+        if (data['userPW']) {
+            userPW = util.isValidString(data['userPW'], 'passwd');
         }
         if (name === false) {
             util.handleError({hoerror: 2, message: 'name not vaild!!!'}, next, callback);
@@ -48,6 +51,9 @@ module.exports = {
         if (email === false) {
             util.handleError({hoerror: 2, message: 'email not vaild!!!'}, next, callback);
         }
+        if (userPW === false) {
+            util.handleError({hoerror: 2, message: 'user password not vaild!!!'}, next, callback);
+        }
         var crypted_password = encrypt(password);
         var prePassword = crypted_password;
         var owner = user._id;
@@ -55,6 +61,11 @@ module.exports = {
         var important = 0;
         if (data['important']) {
             important = 1;
+        }
+        if (important !== 0) {
+            if (user.password !== crypto.createHash('md5').update(userPW).digest('hex')) {
+                util.handleError({hoerror: 2, message: "permission denied"}, next, callback);
+            }
         }
         var tags = [];
         var normal = pwTagTool.normalizeTag(name);
@@ -94,19 +105,31 @@ module.exports = {
             }, 0);
         });
     },
-    getPassword: function(uid, user, next, callback) {
+    getPassword: function(uid, type, user, next, callback) {
+        type = typeof type !== 'undefined' ? type : null;
+        var select = {_id: 0};
+        if (type === 'pre') {
+            select['prePassword'] = 1;
+        } else {
+            select['password'] = 1;
+        }
         var id = util.isValidString(uid, 'uid');
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, callback);
         }
-        mongo.orig("find", "password", {_id: id, owner: user._id}, {_id: 0, password: 1}, {limit: 1}, function(err, items){
+        mongo.orig("find", "password", {_id: id, owner: user._id}, select, {limit: 1}, function(err, items){
             if(err) {
                 util.handleError(err, next, callback);
             }
             if (items.length === 0) {
                 util.handleError({hoerror: 2, message: 'can not password object!!!'}, next, callback);
             }
-            var password = decrypt(items[0].password);
+            var password = '';
+            if (type === 'pre') {
+                password = decrypt(items[0].prePassword);
+            } else {
+                password = decrypt(items[0].password);
+            }
             setTimeout(function(){
                 callback(null, {password: password});
                 delete password;
@@ -140,22 +163,25 @@ module.exports = {
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, callback);
         }
-        if (!data['username'] || !data['name']) {
-            util.handleError({hoerror: 2, message: 'parameter lost!!!'}, next, callback);
-        }
-        var name = util.isValidString(data['name'], 'name');
-        var username = util.isValidString(data['username'], 'name');
-
-        var password = '', conpassword = '', url = '', email = '';
+        var password = '', conpassword = '', name = '', username = '', url = '', email = '', userPW = '';
         if (data['password']) {
             password = util.isValidString(data['password'], 'passwd');
             conpassword = util.isValidString(data['conpassword'], 'passwd');
+        }
+        if (data['name']) {
+            name = util.isValidString(data['name'], 'name');
+        }
+        if (data['username']) {
+            username = util.isValidString(data['username'], 'name');
         }
         if (data['url']) {
             url = util.isValidString(data['url'], 'url');
         }
         if (data['email']) {
             email = util.isValidString(data['email'], 'email');
+        }
+        if (data['userPW']) {
+            userPW = util.isValidString(data['userPW'], 'passwd');
         }
         if (name === false) {
             util.handleError({hoerror: 2, message: 'name not vaild!!!'}, next, callback);
@@ -178,6 +204,9 @@ module.exports = {
         if (email === false) {
             util.handleError({hoerror: 2, message: 'email not vaild!!!'}, next, callback);
         }
+        if (userPW === false) {
+            util.handleError({hoerror: 2, message: 'user password not vaild!!!'}, next, callback);
+        }
         mongo.orig("find", "password" , {_id: id, owner: user._id}, {limit: 1}, function(err, pws){
             if(err) {
                 util.handleError(err, next, callback);
@@ -185,24 +214,39 @@ module.exports = {
             if (pws.length === 0) {
                 util.handleError({hoerror: 2, message: 'password row does not exist!!!'}, next, callback);
             }
-            var important = 0;
-            if (data['important']) {
-                important = 1;
+            var update_data = {};
+            if (data.hasOwnProperty('important')) {
+                if (data['important']) {
+                    update_data['important'] = 1;
+                } else {
+                    update_data['important'] = 0;
+                }
+            }
+            if (pws[0].important !== 0 || pws[0].important !== update_data['important']) {
+                if (user.password !== crypto.createHash('md5').update(userPW).digest('hex')) {
+                    util.handleError({hoerror: 2, message: "permission denied"}, next, callback);
+                }
             }
             var tags = pws[0].tags;
-            var normal = pwTagTool.normalizeTag(name);
-            if (!pwTagTool.isDefaultTag(normal)) {
-                if (tags.indexOf(normal) === -1) {
-                    tags.push(normal);
+            var normal = '';
+            if (name) {
+                normal = pwTagTool.normalizeTag(name);
+                if (!pwTagTool.isDefaultTag(normal)) {
+                    if (tags.indexOf(normal) === -1) {
+                        tags.push(normal);
+                    }
                 }
+                update_data['name'] = name;
             }
-            normal = pwTagTool.normalizeTag(username);
-            if (!pwTagTool.isDefaultTag(normal)) {
-                if (tags.indexOf(normal) === -1) {
-                    tags.push(normal);
+            if (username) {
+                normal = pwTagTool.normalizeTag(username);
+                if (!pwTagTool.isDefaultTag(normal)) {
+                    if (tags.indexOf(normal) === -1) {
+                        tags.push(normal);
+                    }
                 }
+                update_data['username'] = username;
             }
-            var update_data = {name: name, username: username, important: important};
             if (email) {
                 normal = pwTagTool.normalizeTag(email);
                 if (!pwTagTool.isDefaultTag(normal)) {

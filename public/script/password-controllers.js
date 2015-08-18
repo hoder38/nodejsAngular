@@ -20,10 +20,11 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
     $scope.relativeList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
+    $scope.upPasswordFocus = false;
     $scope.showPassword = false;
-    $scope.showPasswordFocus = false;
     $scope.showClearPassword = false;
-    $scope.toolList = {details: false, pw: false, url: false, email: false, del: false, dir: false, item: null};
+
+    $scope.toolList = {details: false, pw: false, url: false, email: false, dir: false, item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -42,6 +43,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
     $scope.fileSort = {name:'', mtime: '', count: '', sort: 'name/desc'};
     $scope.dirSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
     $scope.bookmarkSort = {name:'', mtime: '', sort: 'name/asc'};
+    $scope.orig = {};
 
     //password details
     $scope.userPW = '';
@@ -50,9 +52,14 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
     $scope.userNameFocus = false;
     $scope.userUsername = '';
     $scope.userUsernameFocus = false;
+
+    //存password要注意
     $scope.userPassword = '';
-    $scope.userPasswordFocus = false;
+    $scope.newPassword = '';
     $scope.userConPassword = '';
+    $scope.upPassword = '';
+
+    $scope.newPasswordFocus = false;
     $scope.userConPasswordFocus = false;
     $scope.userUrl = '';
     $scope.userUrlFocus = false;
@@ -76,10 +83,10 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
     $scope.showUsername = false;
 
     //websocket
-    /*$scope.$on('password', function(e, d) {
+    $scope.$on('password', function(e, d) {
         var id = JSON.parse(d);
         var index = arrayObjectIndexOf($scope.itemList, id, 'id');
-        var storageApi = $resource('/api/stock/single/' + id, {}, {
+        var storageApi = $resource('/api/password/single/' + id, {}, {
             'single': { method:'get' }
         });
         var this_obj = this;
@@ -97,9 +104,13 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
                     $scope.bookmarkID = result.bookmarkID;
                     if (index !== -1) {
                         result.item.select = $scope.itemList[index].select;
+                        date = new Date(result.item.utime*1000);
+                        result.item.utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                         $scope.itemList.splice(index, 1, result.item);
                     } else {
                         result.item.select = false;
+                        date = new Date(result.item.utime*1000);
+                        result.item.utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
                         $scope.itemList.splice(0, 0, result.item);
                     }
                 }
@@ -113,7 +124,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
                 $window.location.href = $location.path();
             }
         });
-    });*/
+    });
 
     //taglist
     $scope.init = function(){
@@ -227,6 +238,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
+                console.log(result);
                 if (this_obj.page === 0) {
                     this_obj.itemList = [];
                 }
@@ -452,9 +464,23 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         if (typeof item === 'string') {
             this.$parent.toolList.dir = true;
             this.$parent.toolList.details = false;
+            this.$parent.toolList.pw = false;
+            this.$parent.toolList.url = false;
+            this.$parent.toolList.email = false;
         } else {
             this.$parent.toolList.dir = false;
             this.$parent.toolList.details = true;
+            this.$parent.toolList.pw = true;
+            if (item.url) {
+                this.$parent.toolList.url = true;
+            } else {
+                this.$parent.toolList.url = false;
+            }
+            if (item.email) {
+                this.$parent.toolList.email = true;
+            } else {
+                this.$parent.toolList.email = false;
+            }
         }
         this.toggleDropdown($event, 'item');
         this.$parent.toolList.item = item;
@@ -470,7 +496,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         if (this.selectList.length) {
             this.newTagName = '';
             this.showPassword = false;
-            this.userPassword = '';
+            this.upPassword = '';
             this.showUsername = false;
             this.tagNew = true;
             this.tagNewFocus = true;
@@ -955,11 +981,6 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         }
     }
 
-    /*document.getElementById('testcopy').addEventListener('copy', function(e){
-        e.clipboardData.setData('text/plain', 'Hello, world!');
-        e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
-    });*/
-
     //password
     $scope.sendForm = function() {
         if (this.isNew) {
@@ -984,32 +1005,72 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
             addAlert('name not vaild!!!');
         } else if (!isValidString(this.userUsername, 'name')) {
             addAlert('username not vaild!!!');
-        } else if (this.userPassword && (!isValidString(this.userPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd'))) {
+        } else if (this.newPassword && (!isValidString(this.newPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd'))) {
             addAlert('password not vaild!!!');
-        } else if (this.userPassword && (this.userPassword !== this.userConPassword)) {
+        } else if (this.newPassword && (this.newPassword !== this.userConPassword)) {
             addAlert('password is not equal!!!');
         } else if (this.userUrl && !isValidString(this.userUrl, 'url')) {
             addAlert('url is not vaild!!!');
         } else if (this.userEmail && !isValidString(this.userEmail, 'email')) {
             addAlert('email is not vaild!!!');
+        } else if (this.userPW && !isValidString(this.userPW, 'passwd')) {
+            addAlert('user password is not vaild!!!');
         } else {
-            passwordapi.editRow({name: this.userName, username: this.userUsername, password: this.userPassword, conpassword: this.userConPassword, url: this.userUrl, email: this.userEmail, important: this.userImportant}, function(result) {
-                if (result.loginOK) {
-                    $window.location.href = $location.path();
-                } else {
-                    console.log(result);
-                    this_obj.isNew = false;
-                    this_obj.edit = false;
-                }
-            }, function(errorResult) {
-                if (errorResult.status === 400) {
-                    addAlert(errorResult.data);
-                } else if (errorResult.status === 403) {
-                    addAlert('unknown API!!!');
-                } else if (errorResult.status === 401) {
-                    $window.location.href = $location.path();
-                }
-            });
+            var data = {};
+            var differ = false;
+            if (this.userName !== this.orig.name) {
+                data.name = this.userName;
+                differ = true;
+            }
+            if (this.userUsername !== this.orig.username) {
+                data.username = this.userUsername;
+                differ = true;
+            }
+            if (this.userUrl !== this.orig.url) {
+                data.url = this.userUrl;
+                differ = true;
+            }
+            if (this.userEmail !== this.orig.email) {
+                data.email = this.userEmail;
+                differ = true;
+            }
+            if (this.userImportant !== this.orig.important) {
+                data.important = this.userImportant;
+                differ = true;
+            }
+            if (this.newPassword) {
+                data.password = this.newPassword;
+                data.conpassword = this.userConPassword;
+                differ = true;
+            }
+            if (this.userPW) {
+                data.userPW = this.userPW;
+            }
+            if (differ) {
+                passwordapi.editRow(data, function(result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    } else {
+                        this_obj.isNew = false;
+                        this_obj.edit = false;
+                        this_obj.newPassword = '';
+                        this_obj.userConPassword = '';
+                        this_obj.userPW = '';
+                        this_obj.dbImportant = this_obj.userImportant;
+                    }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
+            } else {
+                this.isNew = false;
+                this.edit = false;
+            }
         }
     }
 
@@ -1022,23 +1083,26 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
             addAlert('name not vaild!!!');
         } else if (!isValidString(this.userUsername, 'name')) {
             addAlert('username not vaild!!!');
-        } else if (!isValidString(this.userPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd')) {
+        } else if (!isValidString(this.newPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd')) {
             addAlert('password not vaild!!!');
-        } else if (this.userPassword !== this.userConPassword) {
+        } else if (this.newPassword !== this.userConPassword) {
             addAlert('password is not equal!!!');
         } else if (this.userUrl && !isValidString(this.userUrl, 'url')) {
             addAlert('url is not vaild!!!');
         } else if (this.userEmail && !isValidString(this.userEmail, 'email')) {
             addAlert('email is not vaild!!!');
+        } else if (this.userPW && !isValidString(this.userPW, 'passwd')) {
+            addAlert('user password is not vaild!!!');
         } else {
-            passwordapi.newRow({name: this.userName, username: this.userUsername, password: this.userPassword, conpassword: this.userConPassword, url: this.userUrl, email: this.userEmail, important: this.userImportant}, function(result) {
+            passwordapi.newRow({name: this.userName, username: this.userUsername, password: this.newPassword, conpassword: this.userConPassword, url: this.userUrl, email: this.userEmail, important: this.userImportant, usePW: this.usePW}, function(result) {
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    console.log(result);
                     this_obj.isNew = false;
                     this_obj.edit = false;
                     this_obj.details = false;
+                    this_obj.newPassword = '';
+                    this_obj.userConPassword = '';
                 }
             }, function(errorResult) {
                 if (errorResult.status === 400) {
@@ -1054,6 +1118,10 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
 
     $scope.getPassword = function(id) {
         var this_obj = this.$parent.$parent;
+        if (!id) {
+            id = this.toolList.item.id;
+            this_obj = this;
+        }
         var passwordapi = $resource('/api/password/getPW/' + id, {}, {
             'getPW': { method:'GET' }
         });
@@ -1061,10 +1129,10 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
-                this_obj.userPassword = result.password;
+                this_obj.upPassword = result.password;
                 this_obj.showUsername = false;
                 this_obj.showPassword = true;
-                this_obj.showPasswordFocus = true;
+                this_obj.upPasswordFocus = true;
                 this_obj.showClearPassword = false;
                 delete result;
             }
@@ -1079,10 +1147,74 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         });
     }
 
+    $scope.handleUserPassword = function(type, is_pre) {
+        if (type === 'close') {
+            if (is_pre) {
+                this.openPrePassword = false;
+                this.userPrePassword = '';
+            } else {
+                this.openPassword = false;
+                this.userPassword = '';
+            }
+        } else {
+            var this_obj = this;
+            var passwordapi = null;
+            if (is_pre) {
+                passwordapi = $resource('/api/password/getPW/' + this.detailsId + '/pre', {}, {
+                    'getPW': { method:'GET' }
+                });
+            } else {
+                passwordapi = $resource('/api/password/getPW/' + this.detailsId, {}, {
+                    'getPW': { method:'GET' }
+                });
+            }
+            passwordapi.getPW({}, function(result) {
+                if (result.loginOK) {
+                    $window.location.href = $location.path();
+                } else {
+                    if (type === 'open') {
+                        if (is_pre) {
+                            this_obj.userPrePassword = result.password;
+                            this_obj.showUserPrePassword = true;
+                            this_obj.copyPrePasswordFocus = true;
+                            this_obj.openPrePassword = true;
+                        } else {
+                            this_obj.userPassword = result.password;
+                            this_obj.showUserPassword = true;
+                            this_obj.copyPasswordFocus = true;
+                            this_obj.openPassword = true;
+                        }
+                    } else if (type === 'copy') {
+                        if (is_pre) {
+                            this_obj.userPrePassword = result.password;
+                            this_obj.showUserPrePassword = false;
+                            this_obj.copyPrePasswordFocus = true;
+                            this_obj.openPrePassword = true;
+                        } else {
+                            this_obj.userPassword = result.password;
+                            this_obj.showUserPassword = false;
+                            this_obj.copyPasswordFocus = true;
+                            this_obj.openPassword = true;
+                        }
+                    }
+                    delete result;
+                }
+            }, function(errorResult) {
+                if (errorResult.status === 400) {
+                    addAlert(errorResult.data);
+                } else if (errorResult.status === 403) {
+                    addAlert('unknown API!!!');
+                } else if (errorResult.status === 401) {
+                    $window.location.href = $location.path();
+                }
+            });
+        }
+    }
+
     $scope.getUsername = function(item) {
         this.$parent.$parent.userUsername = item.username;
         this.$parent.$parent.showPassword = false;
-        this.$parent.$parent.userPassword = '';
+        this.$parent.$parent.upPassword = '';
         this.$parent.$parent.showUsername = true;
         this.$parent.$parent.showUsernameFocus = true;
     }
@@ -1092,6 +1224,13 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         this.userName = this.toolList.item.name;
         this.userUsername = this.toolList.item.username;
         this.userEmail = this.toolList.item.email;
+        if (this.toolList.item.important !== 1) {
+            this.userImportant = false;
+            this.dbImportant = false;
+        } else {
+            this.userImportant = true;
+            this.dbImportant = true;
+        }
         this.userUrl = decodeURIComponent(this.toolList.item.url);
         this.details = true;
         this.edit = false;
@@ -1110,8 +1249,11 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         this.userNameFocus = true;
     }
 
-    $scope.gotoUrl = function() {
+    $scope.gotoUrl = function(type) {
         var url = this.userUrl;
+        if (type === 1) {
+            url = decodeURIComponent(this.toolList.item.url);
+        }
         if (!isValidString(url, 'url')) {
             addAlert('url is not vaild!!!');
         } else {
@@ -1119,8 +1261,12 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         }
     }
 
-    $scope.gotoEmail = function() {
+    $scope.gotoEmail = function(type) {
         var email = this.userEmail;
+        if (type === 1) {
+            console.log(this.toolList.item);
+            email = this.toolList.item.email;
+        }
         if (!isValidString(email, 'email')) {
             addAlert('email is not vaild!!!');
         } else {
@@ -1160,4 +1306,68 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
             }
         });
     }
+
+    $scope.editTrigger = function() {
+        if (this.edit) {
+            this.userName = this.orig.name;
+            this.userUsername = this.orig.username;
+            this.userEmail = this.orig.email;
+            this.userUrl = this.orig.url;
+            this.userImportant = this.orig.important;
+            this.newPassword = '';
+            this.userConPassword = '';
+        } else {
+            this.orig = {name: this.userName, username: this.userUsername, email: this.userEmail, url: this.userUrl, important: this.userImportant};
+        }
+        this.edit = !this.edit;
+        this.userNameFocus = true;
+    }
+
+    $scope.generatePW = function() {
+        var passwordapi = $resource('/api/password/generate', {}, {
+            'generate': { method:'GET' }
+        });
+        var this_obj = this;
+        passwordapi.generate({}, function(result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                this_obj.newPassword = result.password;
+                this_obj.userConPassword = result.password;
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
+    }
+
+    document.getElementById('up-password').addEventListener('copy', function(e){
+        e.clipboardData.setData('text/plain', $scope.upPassword);
+        e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
+    });
+
+    document.getElementById('user-password').addEventListener('copy', function(e){
+        e.clipboardData.setData('text/plain', $scope.userPassword);
+        e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
+    });
+
+    document.getElementById('user-pre-password').addEventListener('copy', function(e){
+        e.clipboardData.setData('text/plain', $scope.userPrePassword);
+        e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
+    });
+
+    document.getElementById('s-user-password').addEventListener('copy', function(e){
+        e.clipboardData.setData('text/plain', $scope.userPassword);
+        e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
+    });
+
+    document.getElementById('s-user-pre-password').addEventListener('copy', function(e){
+        e.clipboardData.setData('text/plain', $scope.userPrePassword);
+        e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
+    });
 }

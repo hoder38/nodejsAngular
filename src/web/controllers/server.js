@@ -154,7 +154,7 @@ app.get('/api/userinfo', function (req, res, next) {
     });
 });
 
-app.put('/api/edituser/(:uid)?', function(req, res, next){
+app.put('/api/edituser/:uid?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("edituser");
         console.log(new Date());
@@ -643,10 +643,10 @@ app.put('/api/addTag/:tag', function(req, res, next){
                     util.handleError(err, next, res);
                 }
                 index++;
+                sendWs({type: 'file', data: result.id}, result.adultonly);
                 if (index < req.body.uids.length) {
                     recur_add(index);
                 } else {
-                    sendWs({type: 'file', data: result.id}, result.adultonly);
                     res.json({apiOK: true});
                 }
             });
@@ -672,10 +672,10 @@ app.put('/api/stock/addTag/:tag', function(req, res, next){
                     util.handleError(err, next, res);
                 }
                 index++;
+                sendWs({type: 'stock', data: result.id}, 0, 1);
                 if (index < req.body.uids.length) {
                     recur_add(index);
                 } else {
-                    sendWs({type: 'stock', data: result.id}, 0, 1);
                     res.json({apiOK: true});
                 }
             });
@@ -717,10 +717,10 @@ app.put('/api/delTag/:tag', function(req, res, next){
                     util.handleError(err, next, res);
                 }
                 index++;
+                sendWs({type: 'file', data: result.id}, result.adultonly);
                 if (index < req.body.uids.length) {
                     recur_del();
                 } else {
-                    sendWs({type: 'file', data: result.id}, result.adultonly);
                     res.json({apiOK: true});
                 }
             });
@@ -746,10 +746,10 @@ app.put('/api/stock/delTag/:tag', function(req, res, next){
                     util.handleError(err, next, res);
                 }
                 index++;
+                sendWs({type: 'stock', data: result.id}, 0, 1);
                 if (index < req.body.uids.length) {
                     recur_del();
                 } else {
-                    sendWs({type: 'stock', data: result.id}, 0, 1);
                     res.json({apiOK: true});
                 }
             });
@@ -1537,6 +1537,26 @@ app.get('/api/password/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)
     });
 });
 
+app.get('/api/password/single/:uid', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("password single");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        pwTagTool.singleQuery(req.params.uid, req.user, req.session, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (result.empty) {
+                res.json(result);
+            } else {
+                var itemList = getPasswordItem(req.user, [result.item]);
+                res.json({item: itemList[0], latest: result.latest, bookmarkID: result.bookmark});
+            }
+        });
+    });
+});
+
 app.get('/api/bookmark/password/getList/:sortName(name|mtime)/:sortType(desc|asc)', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("password get bookmark list");
@@ -1626,10 +1646,10 @@ app.put('/api/password/addTag/:tag', function(req, res, next){
                     util.handleError(err, next, res);
                 }
                 index++;
+                sendWs({type: 'password', data: result.id}, 0, 1);
                 if (index < req.body.uids.length) {
                     recur_add(index);
                 } else {
-                    sendWs({type: 'password', data: result.id}, 0, 1);
                     res.json({apiOK: true});
                 }
             });
@@ -1655,10 +1675,10 @@ app.put('/api/password/delTag/:tag', function(req, res, next){
                     util.handleError(err, next, res);
                 }
                 index++;
+                sendWs({type: 'password', data: result.id}, 0, 1);
                 if (index < req.body.uids.length) {
                     recur_del();
                 } else {
-                    sendWs({type: 'password', data: result.id}, 0, 1);
                     res.json({apiOK: true});
                 }
             });
@@ -1811,6 +1831,7 @@ app.post('/api/password/newRow', function (req, res, next) {
             if(err) {
                 util.handleError(err, next, res);
             }
+            sendWs({type: 'password', data: result.id}, 0, 1);
             res.json({id: result.id});
         });
     });
@@ -1826,18 +1847,19 @@ app.put('/api/password/editRow/:uid', function (req, res, next) {
             if(err) {
                 util.handleError(err, next, res);
             }
+            sendWs({type: 'password', data: req.params.uid}, 0, 1);
             res.json({apiOK: true});
         });
     });
 });
 
-app.get('/api/password/getPW/:uid', function (req, res, next) {
+app.get('/api/password/getPW/:uid/:type?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get password");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        pwTool.getPassword(req.params.uid, req.user, next, function(err, result){
+        pwTool.getPassword(req.params.uid, req.params.type, req.user, next, function(err, result){
             if(err) {
                 util.handleError(err, next, res);
             }
@@ -1856,8 +1878,19 @@ app.put('/api/password/delRow/:uid', function (req, res, next) {
             if(err) {
                 util.handleError(err, next, res);
             }
+            sendWs({type: 'password', data: req.params.uid}, 0, 1);
             res.json({apiOK: true});
         });
+    });
+});
+
+app.get('/api/password/generate', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("generate password");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        res.json({password: pwTool.generatePW()});
     });
 });
 
@@ -2239,7 +2272,7 @@ function getPasswordItem(user, items) {
             if (items[i].important === 1) {
                 items[i].tags.push('important');
             }
-            var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, username: items[i].username, url: items[i].url, email: items[i].email, utime: items[i].utime};
+            var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, username: items[i].username, url: items[i].url, email: items[i].email, utime: items[i].utime, important: items[i].important};
             itemList.push(data);
         }
     }

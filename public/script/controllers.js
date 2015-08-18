@@ -2212,6 +2212,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             case 'stock':
                                 $scope.$broadcast('stock', JSON.stringify(wsmsg.data));
                                 break;
+                            case 'password':
+                                $scope.$broadcast('password', JSON.stringify(wsmsg.data));
+                                break;
                             default:
                                 console.log(wsmsg);
                         }
