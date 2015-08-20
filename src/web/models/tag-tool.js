@@ -1371,6 +1371,7 @@ function getPasswordQuerySql(user, tagList, exactly) {
         }
     }
     var hint = {};
+    hint['owner'] = 1;
     if (is_tags) {
         hint['tags'] = 1;
     }
@@ -1379,9 +1380,9 @@ function getPasswordQuerySql(user, tagList, exactly) {
     }
     hint['name'] = 1;
     var sql = {nosql: nosql};
-    /*if (is_hint) {
+    if (is_hint) {
         sql['hint'] = hint;
-    }*/
+    }
     sql['select'] = {password: 0, prePassword: 0, owner: 0};
     if (skip) {
         console.log('skip:' + skip);
