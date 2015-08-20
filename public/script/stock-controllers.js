@@ -523,6 +523,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.openNewTag = function() {
         if (this.selectList.length) {
             this.newTagName = '';
+            this.parseIndex = false;
+            this.bookmarkNew = false;
             this.tagNew = true;
             this.tagNewFocus = true;
             var oldList = [];
@@ -1760,6 +1762,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                     $window.location.href = $location.path();
                 } else {
                     this_obj.inputIndex = result.per;
+                    this_obj.tagNew = false;
+                    this_obj.bookmarkNew = false;
                     this_obj.parseIndex = true;
                     this_obj.parseIndexFocus = true;
                 }
@@ -1787,6 +1791,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                     $window.location.href = $location.path();
                 } else {
                     this_obj.inputIndex = result.yield;
+                    this_obj.tagNew = false;
+                    this_obj.bookmarkNew = false;
                     this_obj.parseIndex = true;
                     this_obj.parseIndexFocus = true;
                 }

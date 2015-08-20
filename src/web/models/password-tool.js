@@ -63,9 +63,11 @@ module.exports = {
             important = 1;
         }
         if (important !== 0) {
-            if (user.password !== crypto.createHash('md5').update(userPW).digest('hex')) {
+            if (!util.userPWCheck(user, userPW)) {
                 util.handleError({hoerror: 2, message: "permission denied"}, next, callback);
             }
+            delete data['userPW'];
+            delete userPW;
         }
         var tags = [];
         var normal = pwTagTool.normalizeTag(name);
@@ -96,7 +98,9 @@ module.exports = {
                 }
             }
         }
-        mongo.orig("insert", "password", {name: name, username: username, password: crypted_password, prePassword: prePassword, owner: owner, utime: utime, url: url, email: email, tags: tags, important: important}, function(err, item){
+        var new_data = {name: name, username: username, password: crypted_password, prePassword: prePassword, owner: owner, utime: utime, url: url, email: email, tags: tags, important: important};
+        console.log(new_data);
+        mongo.orig("insert", "password", new_data, function(err, item){
             if(err) {
                 util.handleError(err, next, callback);
             }
@@ -105,9 +109,9 @@ module.exports = {
             }, 0);
         });
     },
-    getPassword: function(uid, type, user, next, callback) {
+    getPassword: function(uid, type, userPW, user, next, callback) {
         type = typeof type !== 'undefined' ? type : null;
-        var select = {_id: 0};
+        var select = {_id: 0, important: 1};
         if (type === 'pre') {
             select['prePassword'] = 1;
         } else {
@@ -117,12 +121,26 @@ module.exports = {
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, callback);
         }
+        if (userPW) {
+            userPW = util.isValidString(userPW, 'passwd');
+        } else {
+            userPW = '';
+        }
+        if (userPW === false) {
+            util.handleError({hoerror: 2, message: 'user password not vaild!!!'}, next, callback);
+        }
         mongo.orig("find", "password", {_id: id, owner: user._id}, select, {limit: 1}, function(err, items){
             if(err) {
                 util.handleError(err, next, callback);
             }
             if (items.length === 0) {
                 util.handleError({hoerror: 2, message: 'can not password object!!!'}, next, callback);
+            }
+            if (items[0].important !== 0) {
+                if (!util.userPWCheck(user, userPW)) {
+                    util.handleError({hoerror: 2, message: "permission denied"}, next, callback);
+                }
+                delete userPW;
             }
             var password = '';
             if (type === 'pre') {
@@ -136,10 +154,18 @@ module.exports = {
             }, 0);
         });
     },
-    delRow: function(uid, user, next, callback) {
+    delRow: function(uid, userPW, user, next, callback) {
         var id = util.isValidString(uid, 'uid');
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, callback);
+        }
+        if (userPW) {
+            userPW = util.isValidString(userPW, 'passwd');
+        } else {
+            userPW = '';
+        }
+        if (userPW === false) {
+            util.handleError({hoerror: 2, message: 'user password not vaild!!!'}, next, callback);
         }
         mongo.orig("find", "password" , {_id: id, owner: user._id}, {limit: 1}, function(err, pws){
             if(err) {
@@ -147,6 +173,12 @@ module.exports = {
             }
             if (pws.length === 0) {
                 util.handleError({hoerror: 2, message: 'password row does not exist!!!'}, next, callback);
+            }
+            if (pws[0].important !== 0) {
+                if (!util.userPWCheck(user, userPW)) {
+                    util.handleError({hoerror: 2, message: "permission denied"}, next, callback);
+                }
+                delete userPW;
             }
             mongo.orig("remove", "password", {_id: id, owner: user._id, $isolated: 1}, function(err, items){
                 if(err) {
@@ -222,10 +254,12 @@ module.exports = {
                     update_data['important'] = 0;
                 }
             }
-            if (pws[0].important !== 0 || pws[0].important !== update_data['important']) {
-                if (user.password !== crypto.createHash('md5').update(userPW).digest('hex')) {
+            if (pws[0].important !== 0 || (data.hasOwnProperty('important') && pws[0].important !== update_data['important'])) {
+                if (!util.userPWCheck(user, userPW)) {
                     util.handleError({hoerror: 2, message: "permission denied"}, next, callback);
                 }
+                delete data['userPW'];
+                delete userPW;
             }
             var tags = pws[0].tags;
             var normal = '';
@@ -274,6 +308,7 @@ module.exports = {
                 update_data['password'] = crypted_password;
                 update_data['prePassword'] = prePassword;
                 update_data['utime'] = utime;
+                console.log(update_data);
                 mongo.orig("update", "password", {_id: id, owner: user._id}, {$set: update_data}, function(err, item){
                     if(err) {
                         util.handleError(err, next, callback);
@@ -283,6 +318,7 @@ module.exports = {
                     }, 0);
                 });
             } else {
+                console.log(update_data);
                 mongo.orig("update", "password", {_id: id, owner: user._id}, {$set: update_data}, function(err, item){
                     if(err) {
                         util.handleError(err, next, callback);

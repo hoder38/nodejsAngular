@@ -24,7 +24,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
     $scope.showPassword = false;
     $scope.showClearPassword = false;
 
-    $scope.toolList = {details: false, pw: false, url: false, email: false, dir: false, item: null};
+    $scope.toolList = {details: false, pw: false, url: false, email: false, del: false, dir: false, item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -46,8 +46,6 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
     $scope.orig = {};
 
     //password details
-    $scope.userPW = '';
-    $scope.userPWFocus = false;
     $scope.userName = '';
     $scope.userNameFocus = false;
     $scope.userUsername = '';
@@ -55,6 +53,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
 
     //存password要注意
     $scope.userPassword = '';
+    $scope.userPrePassword = '';
     $scope.newPassword = '';
     $scope.userConPassword = '';
     $scope.upPassword = '';
@@ -467,10 +466,12 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
             this.$parent.toolList.pw = false;
             this.$parent.toolList.url = false;
             this.$parent.toolList.email = false;
+            this.$parent.toolList.del = false;
         } else {
             this.$parent.toolList.dir = false;
             this.$parent.toolList.details = true;
             this.$parent.toolList.pw = true;
+            this.$parent.toolList.del = true;
             if (item.url) {
                 this.$parent.toolList.url = true;
             } else {
@@ -983,10 +984,73 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
 
     //password
     $scope.sendForm = function() {
-        if (this.isNew) {
-            this.newRow();
-        } else if (this.edit) {
-            this.editRow();
+        if (this.isNew || this.edit) {
+            if (!isValidString(this.userName, 'name')) {
+                addAlert('name not vaild!!!');
+            } else if (!isValidString(this.userUsername, 'name')) {
+                addAlert('username not vaild!!!');
+            } else if (this.userUrl && !isValidString(this.userUrl, 'url')) {
+                addAlert('url is not vaild!!!');
+            } else if (this.userEmail && !isValidString(this.userEmail, 'email')) {
+                addAlert('email is not vaild!!!');
+            }
+            if (this.isNew) {
+                if (!isValidString(this.newPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd')) {
+                    addAlert('password not vaild!!!');
+                } else if (this.newPassword !== this.userConPassword) {
+                    addAlert('password is not equal!!!');
+                } else if (this.userImportant) {
+                    openBlockPW(this.newRow, this);
+                } else {
+                    this.newRow();
+                }
+            } else {
+                if (this.newPassword && (!isValidString(this.newPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd'))) {
+                    addAlert('password not vaild!!!');
+                } else if (this.newPassword && (this.newPassword !== this.userConPassword)) {
+                    addAlert('password is not equal!!!');
+                } else if (!this.detailsId) {
+                    addAlert('select row first!!!');
+                } else {
+                    var data = {};
+                    var differ = false;
+                    if (this.userName !== this.orig.name) {
+                        data.name = this.userName;
+                        differ = true;
+                    }
+                    if (this.userUsername !== this.orig.username) {
+                        data.username = this.userUsername;
+                        differ = true;
+                    }
+                    if (this.userUrl !== this.orig.url) {
+                        data.url = this.userUrl;
+                        differ = true;
+                    }
+                    if (this.userEmail !== this.orig.email) {
+                        data.email = this.userEmail;
+                        differ = true;
+                    }
+                    if (this.userImportant !== this.orig.important) {
+                        data.important = this.userImportant;
+                        differ = true;
+                    }
+                    if (this.newPassword) {
+                        data.password = this.newPassword;
+                        data.conpassword = this.userConPassword;
+                        differ = true;
+                    }
+                    if (differ) {
+                        if (this.userImportant || this.dbImportant) {
+                            openBlockPW(this.editRow, this, data);
+                        } else {
+                            this.editRow(data);
+                        }
+                    } else {
+                        this.isNew = false;
+                        this.edit = false;
+                    }
+                }
+            }
         } else {
             this.isNew = false;
             this.edit = false;
@@ -994,84 +1058,34 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         }
     }
 
-    $scope.editRow = function() {
+    $scope.editRow = function(data) {
         var this_obj = this;
+        if (this.$parent.userPW) {
+            data.userPW = this.$parent.userPW;
+        }
         var passwordapi = $resource('/api/password/editRow/' + this.detailsId, {}, {
             'editRow': { method:'PUT' }
         });
-        if (!this.detailsId) {
-            addAlert('select row first!!!');
-        } else if (!isValidString(this.userName, 'name')) {
-            addAlert('name not vaild!!!');
-        } else if (!isValidString(this.userUsername, 'name')) {
-            addAlert('username not vaild!!!');
-        } else if (this.newPassword && (!isValidString(this.newPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd'))) {
-            addAlert('password not vaild!!!');
-        } else if (this.newPassword && (this.newPassword !== this.userConPassword)) {
-            addAlert('password is not equal!!!');
-        } else if (this.userUrl && !isValidString(this.userUrl, 'url')) {
-            addAlert('url is not vaild!!!');
-        } else if (this.userEmail && !isValidString(this.userEmail, 'email')) {
-            addAlert('email is not vaild!!!');
-        } else if (this.userPW && !isValidString(this.userPW, 'passwd')) {
-            addAlert('user password is not vaild!!!');
-        } else {
-            var data = {};
-            var differ = false;
-            if (this.userName !== this.orig.name) {
-                data.name = this.userName;
-                differ = true;
-            }
-            if (this.userUsername !== this.orig.username) {
-                data.username = this.userUsername;
-                differ = true;
-            }
-            if (this.userUrl !== this.orig.url) {
-                data.url = this.userUrl;
-                differ = true;
-            }
-            if (this.userEmail !== this.orig.email) {
-                data.email = this.userEmail;
-                differ = true;
-            }
-            if (this.userImportant !== this.orig.important) {
-                data.important = this.userImportant;
-                differ = true;
-            }
-            if (this.newPassword) {
-                data.password = this.newPassword;
-                data.conpassword = this.userConPassword;
-                differ = true;
-            }
-            if (this.userPW) {
-                data.userPW = this.userPW;
-            }
-            if (differ) {
-                passwordapi.editRow(data, function(result) {
-                    if (result.loginOK) {
-                        $window.location.href = $location.path();
-                    } else {
-                        this_obj.isNew = false;
-                        this_obj.edit = false;
-                        this_obj.newPassword = '';
-                        this_obj.userConPassword = '';
-                        this_obj.userPW = '';
-                        this_obj.dbImportant = this_obj.userImportant;
-                    }
-                }, function(errorResult) {
-                    if (errorResult.status === 400) {
-                        addAlert(errorResult.data);
-                    } else if (errorResult.status === 403) {
-                        addAlert('unknown API!!!');
-                    } else if (errorResult.status === 401) {
-                        $window.location.href = $location.path();
-                    }
-                });
+        passwordapi.editRow(data, function(result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
             } else {
-                this.isNew = false;
-                this.edit = false;
+                this_obj.isNew = false;
+                this_obj.edit = false;
+                this_obj.newPassword = '';
+                this_obj.userConPassword = '';
+                this_obj.dbImportant = this_obj.userImportant;
+                this_obj.$parent.closeBlockPW(true);
             }
-        }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
     }
 
     $scope.newRow = function() {
@@ -1079,53 +1093,63 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         var passwordapi = $resource('/api/password/newRow', {}, {
             'newRow': { method:'POST' }
         });
-        if (!isValidString(this.userName, 'name')) {
-            addAlert('name not vaild!!!');
-        } else if (!isValidString(this.userUsername, 'name')) {
-            addAlert('username not vaild!!!');
-        } else if (!isValidString(this.newPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd')) {
-            addAlert('password not vaild!!!');
-        } else if (this.newPassword !== this.userConPassword) {
-            addAlert('password is not equal!!!');
-        } else if (this.userUrl && !isValidString(this.userUrl, 'url')) {
-            addAlert('url is not vaild!!!');
-        } else if (this.userEmail && !isValidString(this.userEmail, 'email')) {
-            addAlert('email is not vaild!!!');
-        } else if (this.userPW && !isValidString(this.userPW, 'passwd')) {
-            addAlert('user password is not vaild!!!');
+        var data = {name: this.userName, username: this.userUsername, password: this.newPassword, conpassword: this.userConPassword, url: this.userUrl, email: this.userEmail, important: this.userImportant};
+        if (this.$parent.userPW) {
+            data['userPW'] = this.$parent.userPW;
+        }
+        passwordapi.newRow(data, function(result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                this_obj.isNew = false;
+                this_obj.edit = false;
+                this_obj.details = false;
+                this_obj.newPassword = '';
+                this_obj.userConPassword = '';
+                this_obj.$parent.closeBlockPW(true);
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
+    }
+
+    $scope.preGetPassword = function(type, item) {
+        if (type === 'list') {
+            var this_obj = this.$parent.$parent;
+            if (!item) {
+                item = this.toolList.item;
+                this_obj = this;
+            }
+            if (item.important) {
+                openBlockPW(this_obj.getPassword, this_obj, item.id);
+            } else {
+                this_obj.getPassword(item.id);
+            }
         } else {
-            passwordapi.newRow({name: this.userName, username: this.userUsername, password: this.newPassword, conpassword: this.userConPassword, url: this.userUrl, email: this.userEmail, important: this.userImportant, usePW: this.usePW}, function(result) {
-                if (result.loginOK) {
-                    $window.location.href = $location.path();
-                } else {
-                    this_obj.isNew = false;
-                    this_obj.edit = false;
-                    this_obj.details = false;
-                    this_obj.newPassword = '';
-                    this_obj.userConPassword = '';
-                }
-            }, function(errorResult) {
-                if (errorResult.status === 400) {
-                    addAlert(errorResult.data);
-                } else if (errorResult.status === 403) {
-                    addAlert('unknown API!!!');
-                } else if (errorResult.status === 401) {
-                    $window.location.href = $location.path();
-                }
-            });
+            if (this.dbImportant) {
+                openBlockPW(this.handleUserPassword, this, type, item);
+            } else {
+                this.handleUserPassword(type, item);
+            }
         }
     }
 
     $scope.getPassword = function(id) {
-        var this_obj = this.$parent.$parent;
-        if (!id) {
-            id = this.toolList.item.id;
-            this_obj = this;
-        }
+        var this_obj = this;
         var passwordapi = $resource('/api/password/getPW/' + id, {}, {
-            'getPW': { method:'GET' }
+            'getPW': { method:'PUT' }
         });
-        passwordapi.getPW({}, function(result) {
+        var data = {};
+        if (this.$parent.userPW) {
+            data['userPW'] = this.$parent.userPW;
+        }
+        passwordapi.getPW(data, function(result) {
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
@@ -1134,6 +1158,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
                 this_obj.showPassword = true;
                 this_obj.upPasswordFocus = true;
                 this_obj.showClearPassword = false;
+                this_obj.$parent.closeBlockPW(true);
                 delete result;
             }
         }, function(errorResult) {
@@ -1161,14 +1186,18 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
             var passwordapi = null;
             if (is_pre) {
                 passwordapi = $resource('/api/password/getPW/' + this.detailsId + '/pre', {}, {
-                    'getPW': { method:'GET' }
+                    'getPW': { method:'PUT' }
                 });
             } else {
                 passwordapi = $resource('/api/password/getPW/' + this.detailsId, {}, {
-                    'getPW': { method:'GET' }
+                    'getPW': { method:'PUT' }
                 });
             }
-            passwordapi.getPW({}, function(result) {
+            var data = {};
+            if (this.$parent.userPW) {
+                data['userPW'] = this.$parent.userPW;
+            }
+            passwordapi.getPW(data, function(result) {
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
@@ -1197,6 +1226,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
                             this_obj.openPassword = true;
                         }
                     }
+                    this_obj.$parent.closeBlockPW(true);
                     delete result;
                 }
             }, function(errorResult) {
@@ -1224,12 +1254,12 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         this.userName = this.toolList.item.name;
         this.userUsername = this.toolList.item.username;
         this.userEmail = this.toolList.item.email;
-        if (this.toolList.item.important !== 1) {
-            this.userImportant = false;
-            this.dbImportant = false;
-        } else {
+        if (this.toolList.item.important) {
             this.userImportant = true;
             this.dbImportant = true;
+        } else {
+            this.userImportant = false;
+            this.dbImportant = false;
         }
         this.userUrl = decodeURIComponent(this.toolList.item.url);
         this.details = true;
@@ -1246,6 +1276,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         this.isNew = true;
         this.edit = true;
         this.details = true;
+        this.userImportant = false;
         this.userNameFocus = true;
     }
 
@@ -1282,12 +1313,27 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         }
     }
 
+    $scope.preDelPassword = function(id) {
+        var important = true;
+        if (!id) {
+            id = this.toolList.item.id;
+            important = this.toolList.item.important;
+        } else {
+            important = this.dbImportant;
+        }
+        if (important) {
+            openBlockPW(this.delPassword, this, id);
+        } else {
+            this.delPassword(id);
+        }
+    }
+
     $scope.delPassword = function(id) {
         var this_obj = this;
         var passwordapi = $resource('/api/password/delRow/' + id, {}, {
             'delRow': { method:'PUT' }
         });
-        passwordapi.delRow({}, function(result) {
+        passwordapi.delRow({userPW: this.$parent.userPW}, function(result) {
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
@@ -1295,6 +1341,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
                 this_obj.isNew = false;
                 this_obj.edit = false;
                 this_obj.details = false;
+                this_obj.$parent.closeBlockPW(true);
             }
         }, function(errorResult) {
             if (errorResult.status === 400) {

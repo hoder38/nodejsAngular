@@ -423,6 +423,23 @@
                         </div>
                     </section>
                 </section>
+                <section id="block-section" ng-show="pwBlock">
+                    <form ng-submit="sendPW()">
+                        <div class="input-group" id="pw-check">
+                            <span class="input-group-btn">
+                                <button class="btn btn-danger" type="button" ng-click="closeBlockPW(false)">
+                                    <i class="glyphicon glyphicon-remove"></i>
+                                </button>
+                            </span>
+                            <input type="password" class="form-control" ng-model="userPW" focus-me="userPWFocus" placeholder="Password" ng-enter="sendPW()" />
+                            <span class="input-group-btn">
+                                <button class="btn btn-danger" type="submit">
+                                    <span class="glyphicon glyphicon-ok"></span>
+                                </button>
+                            </span>
+                        </div>
+                    </form>
+                </section>
             </section>
         </div>
     </body>

@@ -7,15 +7,12 @@
                     <div class="panel-heading">
                         <h3 class="panel-title">User profile</h3>
                     </div>
-                    <form ng-submit="addUser(user)">
+                    <form ng-submit="preAddUser(user)">
                         <div class="panel-body">
                             <div class="input-group">
-                                <span class="input-group-btn">
-                                    <button class="btn btn-success" type="submit">
-                                        <i class="glyphicon glyphicon-ok"></i>
-                                    </button>
-                                </span>
-                                <input type="password" class="form-control" placeholder="Password" ng-model="user.password" focus-me="user.passwordFocus" ng-enter="addUser(user)" />
+                                <button class="btn btn-success" type="submit">
+                                    <i class="glyphicon glyphicon-ok"></i>
+                                </button>
                             </div>
                         </div>
                         <div class="panel-footer">
@@ -46,7 +43,7 @@
                                         </dd>
                                         <dt>Confirm Password:</dt>
                                         <dd>
-                                            <input type="password" class="form-control" ng-model="user.conPwd" focus-me="user.conPwdFocus" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" />
+                                            <input type="password" class="form-control" ng-model="user.conPwd" focus-me="user.conPwdFocus" placeholder="Confirm Password" ng-enter="preAddUser(user)" />
                                         </dd>
                                     </dl>
                                 </div>
@@ -78,7 +75,7 @@
                                         <tr>
                                             <td>Confirm Password:</td>
                                             <td>
-                                                <input class="form-control" focus-me="user.conPwdFocus" ng-model="user.conPwd" type="password" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" />
+                                                <input class="form-control" focus-me="user.conPwdFocus" ng-model="user.conPwd" type="password" placeholder="Confirm Password" ng-enter="preAddUser(user)" />
                                             </td>
                                         </tr>
                                         </tbody>
@@ -96,26 +93,17 @@
                     <div class="panel-heading">
                         <h3 class="panel-title">User profile</h3>
                     </div>
-                    <form ng-submit="saveAll(user)">
+                    <form ng-submit="preSaveAll(user)">
                         <div class="panel-body">
-                            <div class="input-group">
-                                <span class="input-group-btn">
-                                    <button class="btn btn-success" type="submit">
-                                        <i class="glyphicon glyphicon-ok"></i>
-                                    </button>
-                                </span>
-                                <input type="password" class="form-control" placeholder="Password" ng-model="user.password" focus-me="user.passwordFocus" ng-enter="saveAll(user)" />
-                                <span class="input-group-btn" ng-click="editAll(user)">
-                                    <button class="btn btn-warning" type="button">
-                                        <i class="glyphicon {{user.edit && 'glyphicon-check' || 'glyphicon-edit'}}"></i>
-                                    </button>
-                                </span>
-                                <span ng-show="user.delable" confirmed-click="delUser(user)" ng-confirm-click="Would you sure to delete this user?" class="input-group-btn">
-                                    <button class="btn btn-danger" type="button">
-                                        <i class="glyphicon glyphicon-remove"></i>
-                                    </button>
-                                </span>
-                            </div>
+                            <button class="btn btn-success" type="submit">
+                                <i class="glyphicon glyphicon-ok"></i>
+                            </button>
+                            <button class="btn btn-warning" ng-click="editAll(user)" type="button">
+                                <i class="glyphicon {{user.edit && 'glyphicon-check' || 'glyphicon-edit'}}"></i>
+                            </button>
+                            <button ng-show="user.delable" confirmed-click="preDelUser(user)" ng-confirm-click="Would you sure to delete this user?" class="btn btn-danger" type="button">
+                                <i class="glyphicon glyphicon-remove"></i>
+                            </button>
                         </div>
                         <div class="panel-footer">
                             <div class="row">
@@ -177,7 +165,7 @@
                                         </dd>
                                         <dt>Confirm Password:</dt>
                                         <dd>
-                                            <input type="password" class="form-control" ng-model="user.conPwd" focus-me="user.conPwdFocus" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" />
+                                            <input type="password" class="form-control" ng-model="user.conPwd" focus-me="user.conPwdFocus" placeholder="Confirm Password" ng-enter="preSaveAll(user)" />
                                         </dd>
                                     </dl>
                                 </div>
@@ -238,7 +226,7 @@
                                         <tr>
                                             <td>Confirm Password:</td>
                                             <td>
-                                                <input class="form-control" type="password" ng-model="user.conPwd" focus-me="user.conPwdFocus" placeholder="Confirm Password" ng-enter="user.passwordFocus = true" />
+                                                <input class="form-control" type="password" ng-model="user.conPwd" focus-me="user.conPwdFocus" placeholder="Confirm Password" ng-enter="preSaveAll(user)" />
                                             </td>
                                         </tr>
                                         </tbody>

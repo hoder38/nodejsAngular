@@ -159,13 +159,18 @@ app.put('/api/edituser/:uid?', function(req, res, next){
         console.log("edituser");
         console.log(new Date());
         console.log(req.url);
-        var pwd = util.isValidString(req.body.pwd, 'passwd');
-        if (pwd === false) {
+        var userPW = '';
+        if (req.body.userPW) {
+            userPW = util.isValidString(req.body.userPW, 'passwd');
+        }
+        if (userPW === false) {
             util.handleError({hoerror: 2, message: "passwd is not vaild"}, next, res);
         }
-        if (req.user.password !== crypto.createHash('md5').update(pwd).digest('hex')) {
-            util.handleError({hoerror: 2, message: "password error"}, next, res);
+        if (!util.userPWCheck(req.user, userPW)) {
+            util.handleError({hoerror: 2, message: "permission denied"}, next, res);
         }
+        delete req.body.userPW;
+        delete userPW;
         var ret = {};
         var data = {};
         var needPerm = false;
@@ -315,13 +320,18 @@ app.post('/api/adduser', function(req, res, next){
             console.log("adduser");
             console.log(new Date());
             console.log(req.url);
-            var pwd = util.isValidString(req.body.pwd, 'passwd');
-            if (pwd === false) {
+            var userPW = '';
+            if (req.body.userPW) {
+                userPW = util.isValidString(req.body.userPW, 'passwd');
+            }
+            if (userPW === false) {
                 util.handleError({hoerror: 2, message: "passwd is not vaild"}, next, res);
             }
-            if (req.user.password !== crypto.createHash('md5').update(pwd).digest('hex')) {
-                util.handleError({hoerror: 2, message: "password error"}, next, res);
+            if (!util.userPWCheck(req.user, userPW)) {
+                util.handleError({hoerror: 2, message: "permission denied"}, next, res);
             }
+            delete req.body.userPW;
+            delete userPW;
             var name = util.isValidString(req.body.name, 'name'),
                 desc = util.isValidString(req.body.desc, 'desc'),
                 perm = util.isValidString(req.body.perm, 'perm'),
@@ -385,14 +395,19 @@ app.put('/api/deluser/:uid', function(req, res, next){
         console.log("deluser");
         console.log(new Date());
         console.log(req.url);
-        var pwd = util.isValidString(req.body.pwd, 'passwd'),
-            id = util.isValidString(req.params.uid, 'uid');
-        if (pwd === false) {
+        var userPW = '';
+        if (req.body.userPW) {
+            userPW = util.isValidString(req.body.userPW, 'passwd');
+        }
+        if (userPW === false) {
             util.handleError({hoerror: 2, message: "passwd is not vaild"}, next, res);
         }
-        if (req.user.password !== crypto.createHash('md5').update(pwd).digest('hex')) {
-            util.handleError({hoerror: 2, message: "password error"}, next, res);
+        if (!util.userPWCheck(req.user, userPW)) {
+            util.handleError({hoerror: 2, message: "permission denied"}, next, res);
         }
+        delete req.body.userPW;
+        delete userPW;
+        var id = util.isValidString(req.params.uid, 'uid');
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
@@ -1826,7 +1841,6 @@ app.post('/api/password/newRow', function (req, res, next) {
         console.log("new password");
         console.log(new Date());
         console.log(req.url);
-        //console.log(req.body);
         pwTool.newRow(req.body, req.user, next, function(err, result){
             if(err) {
                 util.handleError(err, next, res);
@@ -1842,7 +1856,6 @@ app.put('/api/password/editRow/:uid', function (req, res, next) {
         console.log("edit row");
         console.log(new Date());
         console.log(req.url);
-        console.log(req.body);
         pwTool.editRow(req.params.uid, req.body, req.user, next, function(err){
             if(err) {
                 util.handleError(err, next, res);
@@ -1853,13 +1866,12 @@ app.put('/api/password/editRow/:uid', function (req, res, next) {
     });
 });
 
-app.get('/api/password/getPW/:uid/:type?', function (req, res, next) {
+app.put('/api/password/getPW/:uid/:type?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get password");
         console.log(new Date());
         console.log(req.url);
-        console.log(req.body);
-        pwTool.getPassword(req.params.uid, req.params.type, req.user, next, function(err, result){
+        pwTool.getPassword(req.params.uid, req.params.type, req.body.userPW, req.user, next, function(err, result){
             if(err) {
                 util.handleError(err, next, res);
             }
@@ -1873,8 +1885,8 @@ app.put('/api/password/delRow/:uid', function (req, res, next) {
         console.log("del row");
         console.log(new Date());
         console.log(req.url);
-        console.log(req.body);
-        pwTool.delRow(req.params.uid, req.user, next, function(err){
+        //console.log(req.body);
+        pwTool.delRow(req.params.uid, req.body.userPW, req.user, next, function(err){
             if(err) {
                 util.handleError(err, next, res);
             }
@@ -2272,7 +2284,12 @@ function getPasswordItem(user, items) {
             if (items[i].important === 1) {
                 items[i].tags.push('important');
             }
-            var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, username: items[i].username, url: items[i].url, email: items[i].email, utime: items[i].utime, important: items[i].important};
+            var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, username: items[i].username, url: items[i].url, email: items[i].email, utime: items[i].utime};
+            if (items[i].important === 0) {
+                data['important'] = false;
+            } else {
+                data['important'] = true;
+            }
             itemList.push(data);
         }
     }

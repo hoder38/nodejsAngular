@@ -1894,10 +1894,12 @@ module.exports = {
             for (var i = 3; i >=0; i--) {
                 if (sales[year][i]) {
                     if (i === 3) {
-                        yearEPS = sales[year][i].eps
+                        yearEPS = sales[year][i].eps;
+                        break;
                     } else {
                         if (sales[year-1] && sales[year-1][3] && sales[year-1][i]) {
                             yearEPS = sales[year][i].eps + sales[year-1][3].eps - sales[year-1][i].eps;
+                            break;
                         }
                     }
                 }

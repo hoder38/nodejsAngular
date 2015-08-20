@@ -232,7 +232,6 @@ function UserInfoCntl($route, $routeParams, $resource, $scope, $window, $timeout
     $scope.$parent.currentPage = -1;
     $scope.$parent.isRight = false;
     $scope.uInfo = [];
-    $scope.password = "";
     $scope.timer = false;
     $scope.init = function(){
         var Info = $resource('/api/userinfo', {}, {
@@ -270,67 +269,66 @@ function UserInfoCntl($route, $routeParams, $resource, $scope, $window, $timeout
             }
         });
     }
-    $scope.addUser = function(item) {
-        if (!isValidString(item.password, 'passwd')) {
-            addAlert('password error!!!');
-        } else {
-            if (item.newable) {
-                if (!isValidString(item.name, 'name')) {
-                    addAlert('name not vaild!!!');
-                } else if (!isValidString(item.desc, 'desc')) {
-                    addAlert('desc not vaild!!!');
-                } else if (!isValidString(item.perm, 'perm')) {
-                    addAlert('perm not vaild!!!');
-                } else if (!isValidString(item.newPwd, 'passwd') || !isValidString(item.conPwd, 'passwd')) {
-                    addAlert('new password is not valid!!!');
-                    item.newPwd = '';
-                    item.conPwd = '';
-                } else if (item.newPwd !== item.conPwd) {
-                    addAlert('confirm password must equal!!!');
-                    item.newPwd = '';
-                    item.conPwd = '';
-                } else {
-                    var addInfo = $resource('/api/adduser', {}, {
-                        'addinfo': { method:'POST' }
-                    });
-                    var this_uInfo = this.uInfo;
-                    addInfo.addinfo({name: item.name, desc: item.desc, perm: item.perm, newPwd: item.newPwd, conPwd: item.conPwd, pwd: item.password}, function (result) {
-                        if (result.loginOK) {
-                            $window.location.href = $location.path();
-                        } else {
-                            if (result.item) {
-                                for (var i in result.item) {
-                                    item[i] = result.item[i];
-                                }
-                                item.newPwd = '';
-                                item.conPwd = '';
-                                item["password"] = '';
-                            }
-                            if (result.newItem) {
-                                if (result.newItem.hasOwnProperty('desc')) {
-                                    result.newItem.hasDesc = true;
-                                }
-                                if (result.newItem.hasOwnProperty('perm')) {
-                                    result.newItem.hasPerm = true;
-                                }
-                                result.newItem.isDel = false;
-                                this_uInfo.push(result.newItem);
-                            }
-                        }
-                    }, function(errorResult) {
-                        if (errorResult.status === 400) {
-                            addAlert(errorResult.data);
-                        } else if (errorResult.status === 403) {
-                            addAlert('unknown API!!!');
-                        } else if (errorResult.status === 401) {
-                            $window.location.href = $location.path();
-                        }
-                    });
-                }
+    $scope.preAddUser = function(item) {
+        if (item.newable) {
+            if (!isValidString(item.name, 'name')) {
+                addAlert('name not vaild!!!');
+            } else if (!isValidString(item.desc, 'desc')) {
+                addAlert('desc not vaild!!!');
+            } else if (!isValidString(item.perm, 'perm')) {
+                addAlert('perm not vaild!!!');
+            } else if (!isValidString(item.newPwd, 'passwd') || !isValidString(item.conPwd, 'passwd')) {
+                addAlert('new password is not valid!!!');
+                item.newPwd = '';
+                item.conPwd = '';
+            } else if (item.newPwd !== item.conPwd) {
+                addAlert('confirm password must equal!!!');
+                item.newPwd = '';
+                item.conPwd = '';
+            } else {
+                openBlockPW(this.addUser, this, item);
             }
         }
-        item.password = '';
         return false;
+    }
+    $scope.addUser = function(item) {
+        var addInfo = $resource('/api/adduser', {}, {
+            'addinfo': { method:'POST' }
+        });
+        var this_obj = this;
+        var this_uInfo = this.uInfo;
+        addInfo.addinfo({name: item.name, desc: item.desc, perm: item.perm, newPwd: item.newPwd, conPwd: item.conPwd, userPW: this.$parent.userPW}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                if (result.item) {
+                    for (var i in result.item) {
+                        item[i] = result.item[i];
+                    }
+                    item.newPwd = '';
+                    item.conPwd = '';
+                }
+                if (result.newItem) {
+                    if (result.newItem.hasOwnProperty('desc')) {
+                        result.newItem.hasDesc = true;
+                    }
+                    if (result.newItem.hasOwnProperty('perm')) {
+                        result.newItem.hasPerm = true;
+                    }
+                    result.newItem.isDel = false;
+                    this_uInfo.push(result.newItem);
+                }
+                this_obj.$parent.closeBlockPW(true);
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
     }
     $scope.editAll = function(item) {
         if (item.edit) {
@@ -342,7 +340,6 @@ function UserInfoCntl($route, $routeParams, $resource, $scope, $window, $timeout
             item["auto"] = item['autoOrig'];
             item["newPwd"] = '';
             item["conPwd"] = '';
-            item["password"] = '';
             item.edit = false;
         } else {
             item["nameOrig"] = item['name'];
@@ -355,141 +352,153 @@ function UserInfoCntl($route, $routeParams, $resource, $scope, $window, $timeout
             item.nameFocus = true;
         }
     }
-    $scope.saveAll = function(item) {
-        if (!isValidString(item.password, 'passwd')) {
-            addAlert('password error!!!');
+    $scope.preSaveAll = function(item) {
+        if (!isValidString(item.name, 'name') && item.edit) {
+            addAlert('name not vaild!!!');
+        } else if (!isValidString(item.desc, 'desc') && item.edit && item.hasDesc) {
+            addAlert('desc not vaild!!!');
+        } else if (!isValidString(item.perm, 'perm') && item.edit && item.hasPerm) {
+            addAlert('perm not vaild!!!');
+        } else if (!isValidString(item.unDay, 'int') && item.edit && item.hasUnDay) {
+            addAlert('unactive day not vaild!!!');
+        } else if (!isValidString(item.unHit, 'int') && item.edit && item.hasUnHit) {
+            addAlert('unactive hit not vaild!!!');
+        } else if (item.auto && !isValidString(item.auto, 'url') && item.edit && item.editAuto) {
+            addAlert('auto upload not vaild!!!');
+        } else if ((item.newPwd || item.conPwd) && (!isValidString(item.newPwd, 'passwd') || !isValidString(item.conPwd, 'passwd'))) {
+            item.newPwd = '';
+            item.conPwd = '';
+            addAlert('new password is not vaild!!!');
+        } else if (item.newPwd !== item.conPwd) {
+            item.newPwd = '';
+            item.conPwd = '';
+            addAlert('confirm password is not vaild!!!');
         } else {
-            if (!isValidString(item.name, 'name') && item.edit) {
-                addAlert('name not vaild!!!');
-            } else if (!isValidString(item.desc, 'desc') && item.edit && item.hasDesc) {
-                addAlert('desc not vaild!!!');
-            } else if (!isValidString(item.perm, 'perm') && item.edit && item.hasPerm) {
-                addAlert('perm not vaild!!!');
-            } else if (!isValidString(item.unDay, 'int') && item.edit && item.hasUnDay) {
-                addAlert('unactive day not vaild!!!');
-            } else if (!isValidString(item.unHit, 'int') && item.edit && item.hasUnHit) {
-                addAlert('unactive hit not vaild!!!');
-            } else if (item.auto && !isValidString(item.auto, 'url') && item.edit && item.editAuto) {
-                addAlert('auto upload not vaild!!!');
-            } else if ((item.newPwd || item.conPwd) && (!isValidString(item.newPwd, 'passwd') || !isValidString(item.conPwd, 'passwd'))) {
-                item.newPwd = '';
-                item.conPwd = '';
-                addAlert('new password is not vaild!!!');
-            } else if (item.newPwd !== item.conPwd) {
-                item.newPwd = '';
-                item.conPwd = '';
-                addAlert('confirm password is not vaild!!!');
+            var set_obj = {};
+            var differ = false;
+            if (item.name !== item.nameOrig && item.edit) {
+                differ = true;
+                set_obj['name'] = item.name;
+            }
+            if (item.perm !== item.permOrig && item.edit) {
+                differ = true;
+                set_obj['perm'] = item.perm;
+            }
+            if (item.desc !== item.descOrig && item.edit) {
+                differ = true;
+                set_obj['desc'] = item.desc;
+            }
+            if (item.unDay !== item.unDayOrig && item.edit) {
+                differ = true;
+                set_obj['unDay'] = item.unDay;
+            }
+            if (item.unHit !== item.unHitOrig && item.edit) {
+                differ = true;
+                set_obj['unHit'] = item.unHit;
+            }
+            if (item.auto !== item.autoOrig && item.edit) {
+                differ = true;
+                set_obj['auto'] = item.auto;
+            }
+            if (item.newPwd) {
+                differ = true;
+                set_obj['newPwd'] = item.newPwd;
+            }
+            if (item.conPwd) {
+                differ = true;
+                set_obj['conPwd'] = item.conPwd;
+            }
+            if (differ) {
+                openBlockPW(this.saveAll, this, item, set_obj);
             } else {
-                if (item.key) {
-                    var editInfo = $resource('/api/edituser/' + item.key, {}, {
-                        'editinfo': { method:'PUT' }
-                    });
-                } else {
-                    var editInfo = $resource('/api/edituser', {}, {
-                        'editinfo': { method:'PUT' }
-                    });
-                }
-                var this_obj = this;
-                var set_obj = {pwd: item.password};
-                if (item.name !== item.nameOrig && item.edit) {
-                    set_obj['name'] = item.name;
-                }
-                if (item.perm !== item.permOrig && item.edit) {
-                    set_obj['perm'] = item.perm;
-                }
-                if (item.desc !== item.descOrig && item.edit) {
-                    set_obj['desc'] = item.desc;
-                }
-                if (item.unDay !== item.unDayOrig && item.edit) {
-                    set_obj['unDay'] = item.unDay;
-                }
-                if (item.unHit !== item.unHitOrig && item.edit) {
-                    set_obj['unHit'] = item.unHit;
-                }
-                if (item.auto !== item.autoOrig && item.edit) {
-                    set_obj['auto'] = item.auto;
-                }
-                if (item.newPwd) {
-                    set_obj['newPwd'] = item.newPwd;
-                }
-                if (item.conPwd) {
-                    set_obj['conPwd'] = item.conPwd;
-                }
-                editInfo.editinfo(set_obj, function(result) {
-                    if (result.loginOK) {
-                        $window.location.href = $location.path();
-                    } else {
-                        addAlert('edit complete');
-                        if (result.hasOwnProperty('name')) {
-                            item.name = result.name;
-                        }
-                        if (result.hasOwnProperty('desc')) {
-                            item.desc = result.desc;
-                        }
-                        if (result.hasOwnProperty('perm')) {
-                            item.perm = result.perm;
-                        }
-                        if (result.hasOwnProperty('unDay')) {
-                            item.unDay = result.unDay;
-                        }
-                        if (result.hasOwnProperty('unHit')) {
-                            item.unHit = result.unHit;
-                        }
-                        if (result.hasOwnProperty('auto')) {
-                            item.auto = result.auto;
-                        }
-                        if (result.hasOwnProperty('owner')) {
-                            this_obj.$parent.$parent.id = result.owner;
-                        }
-                        item.edit = false;
-                        item["newPwd"] = '';
-                        item["conPwd"] = '';
-                        item["password"] = '';
-                    }
-                }, function(errorResult) {
-                    item.newPwd = '';
-                    item.conPwd = '';
-                    if (errorResult.status === 400) {
-                        addAlert(errorResult.data);
-                    } else if (errorResult.status === 403) {
-                        addAlert('unknown API!!!');
-                    } else if (errorResult.status === 401) {
-                        $window.location.href = $location.path();
-                    }
-                });
+                this.editAll(item);
             }
         }
-        item.password = '';
         return false;
     }
-    $scope.delUser = function(item) {
-        if (!isValidString(item.password, 'passwd')) {
-            addAlert('password error!!!');
-        } else {
-            var delInfo = $resource('/api/deluser/' + item.key, {}, {
-                'delinfo': { method:'PUT' }
+    $scope.saveAll = function(item, data) {
+        if (item.key) {
+            var editInfo = $resource('/api/edituser/' + item.key, {}, {
+                'editinfo': { method:'PUT' }
             });
-            var this_obj = this;
-            delInfo.delinfo({pwd: item.password}, function(result) {
-                if (result.loginOK) {
-                    $window.location.href = $location.path();
-                } else {
-                    addAlert("user deleted successfully!");
-                    item.isDel = true;
-                }
-            }, function(errorResult) {
-                if (errorResult.status === 400) {
-                    addAlert(errorResult.data);
-                } else if (errorResult.status === 403) {
-                    addAlert('unknown API!!!');
-                } else if (errorResult.status === 401) {
-                    $window.location.href = $location.path();
-                }
+        } else {
+            var editInfo = $resource('/api/edituser', {}, {
+                'editinfo': { method:'PUT' }
             });
         }
-        item.password = '';
-        //this.cleanPwd();
+        var this_obj = this;
+        data["userPW"] = this.$parent.userPW;
+        editInfo.editinfo(data, function(result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                addAlert('edit complete');
+                if (result.hasOwnProperty('name')) {
+                    item.name = result.name;
+                }
+                if (result.hasOwnProperty('desc')) {
+                    item.desc = result.desc;
+                }
+                if (result.hasOwnProperty('perm')) {
+                    item.perm = result.perm;
+                }
+                if (result.hasOwnProperty('unDay')) {
+                    item.unDay = result.unDay;
+                }
+                if (result.hasOwnProperty('unHit')) {
+                    item.unHit = result.unHit;
+                }
+                if (result.hasOwnProperty('auto')) {
+                    item.auto = result.auto;
+                }
+                if (result.hasOwnProperty('owner')) {
+                    this_obj.$parent.$parent.id = result.owner;
+                }
+                item.edit = false;
+                item["newPwd"] = '';
+                item["conPwd"] = '';
+                this_obj.$parent.closeBlockPW(true);
+            }
+        }, function(errorResult) {
+            item.newPwd = '';
+            item.conPwd = '';
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
+    }
+
+    $scope.preDelUser = function(item) {
+        openBlockPW(this.delUser, this, item);
         return false;
+    }
+
+    $scope.delUser = function(item) {
+        var delInfo = $resource('/api/deluser/' + item.key, {}, {
+            'delinfo': { method:'PUT' }
+        });
+        var this_obj = this;
+        delInfo.delinfo({userPW: this.$parent.userPW}, function(result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                addAlert("user deleted successfully!");
+                item.isDel = true;
+                this_obj.$parent.closeBlockPW(true);
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
     }
 }
 
@@ -1850,7 +1859,52 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.alerts = [];
     var alertTime;
 
+    //block
+    $scope.pwBlock = false;
+    $scope.userPW = '';
+    $scope.userPWFocus = false;
+    $scope.pwObj = null;
+    $scope.pwArgs = [];
+    $scope.pwCallback = null;
+    var need_auth = true;
+
     indexInit();
+
+    openBlockPW = function(callback, obj) {
+        if (need_auth) {
+            $scope.pwBlock = true;
+            $scope.userPW = '';
+            $scope.userPWFocus = true;
+            $scope.pwArgs = Array.prototype.slice.call(arguments, 2);
+            $scope.pwObj = obj;
+            $scope.pwCallback = callback;
+        } else {
+            callback.apply(obj, Array.prototype.slice.call(arguments, 2));
+        }
+    }
+
+    $scope.closeBlockPW = function(is_auth) {
+        if ($scope.userPW && is_auth) {
+            need_auth = false;
+            setTimeout(function() {
+                need_auth = true;
+            }, 60000);
+        }
+        $scope.pwBlock = false;
+        $scope.userPW = '';
+        $scope.userPWFocus = false;
+        $scope.pwObj = null;
+        $scope.pwCallback = null;
+        $scope.pwArgs = [];
+    }
+
+    $scope.sendPW = function() {
+        if (this.userPW && !isValidString(this.userPW, 'passwd')) {
+            addAlert('user password is not vaild!!!');
+        } else {
+            this.pwCallback.apply(this.pwObj, this.pwArgs);
+        }
+    }
 
     addAlert = function(msg) {
         $scope.alerts.splice(0,0,{type: 'danger', msg: msg});

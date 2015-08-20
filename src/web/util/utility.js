@@ -6,6 +6,8 @@ var mongo = require("../models/mongo-tool.js"),
     charsetDetector = require("node-icu-charset-detector");
 var config_type = require('../../../ver.js');
 
+var pwCheck = {};
+
 var re_weburl = new RegExp(
         "^" +
         // protocol identifier
@@ -236,5 +238,17 @@ module.exports = {
             });
             fs.rmdirSync(path);
         }
+    },
+    userPWCheck: function(user, pw) {
+        if (user.password === crypto.createHash('md5').update(pw).digest('hex')) {
+            pwCheck[user._id] = 1;
+            setTimeout(function() {
+                pwCheck[user._id] = 0;
+            }, 70000);
+            return true;
+        } else if (pwCheck[user._id] === 1){
+            return true;
+        }
+        return false;
     }
 };

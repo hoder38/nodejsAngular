@@ -268,6 +268,23 @@ ul.alert-dropdown {
     _position:absolute; /* position fixed for IE6 */
 }
 
+#block-section {
+    position:fixed;
+    z-index: 2001;
+    top:0px;
+    right:0px;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.5);
+    _position:absolute; /* position fixed for IE6 */
+}
+
+#pw-check {
+    top: 150px;
+    margin: 0px auto;
+    width: 500px;
+}
+
 #full-section {
     position:fixed;
     top:0px;
@@ -606,7 +623,7 @@ audio.media-screen {
     position:fixed;
     left: 0px;
     width: 100%;
-    z-index: 2000;
+    z-index: 2002;
     _position:absolute; /* position fixed for IE6 */
 }
 
