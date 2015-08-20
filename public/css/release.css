@@ -280,6 +280,23 @@ ul.alert-dropdown {
     _position:absolute; /* position fixed for IE6 */
 }
 
+#block-section {
+    position:fixed;
+    z-index: 2001;
+    top:0px;
+    right:0px;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.5);
+    _position:absolute; /* position fixed for IE6 */
+}
+
+#pw-check {
+    top: 150px;
+    margin: 0px auto;
+    width: 500px;
+}
+
 #full-section {
     position:fixed;
     top:0px;
@@ -541,6 +558,14 @@ audio.media-screen {
     margin-top: -34px;
 }
 
+#show-password {
+    margin-top: -34px;
+}
+
+#show-username {
+    margin-top: -34px;
+}
+
 #parse-index {
     margin-top: -34px;
 }
@@ -597,6 +622,10 @@ audio.media-screen {
     z-index: 1500;
 }
 
+#password-section {
+    z-index: 1000;
+}
+
 #user-section {
     width: auto;
 }
@@ -606,7 +635,7 @@ audio.media-screen {
     position:fixed;
     left: 0px;
     width: 100%;
-    z-index: 2000;
+    z-index: 2002;
     _position:absolute; /* position fixed for IE6 */
 }
 
@@ -635,6 +664,15 @@ audio.media-screen {
 
 .item-tool {
     width: 50px;
+}
+
+.item-user {
+    width: 27%;
+    min-width: 68px;
+}
+
+.nav>.item-user>a {
+    padding: 10px 5px;
 }
 
 .item-mtime {
@@ -755,4 +793,8 @@ audio.media-screen {
 
 .relative-point:hover, .relative-point:link, .relative-point:visited, .relative-point:active {
     color: #8B0000;
+}
+
+.modal-body.panel {
+    padding: 0px;
 }
