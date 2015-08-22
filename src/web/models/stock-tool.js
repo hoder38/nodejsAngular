@@ -1784,6 +1784,13 @@ module.exports = {
                                 list.push(index[0]);
                             }
                         }
+                        raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                        for (var i in raw) {
+                            index = raw[i].match(/\d+/);
+                            if (index) {
+                                list.push(index[0]);
+                            }
+                        }
                         api.xuiteDownload(url + "otc", filePath, function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
@@ -1801,6 +1808,13 @@ module.exports = {
                                         util.handleError(err, callback, callback);
                                     }
                                     raw = data.match(/<tr class=\'even\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                                    for (var i in raw) {
+                                        index = raw[i].match(/\d+/);
+                                        if (index) {
+                                            list.push(index[0]);
+                                        }
+                                    }
+                                    raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
                                     for (var i in raw) {
                                         index = raw[i].match(/\d+/);
                                         if (index) {
@@ -1833,6 +1847,13 @@ module.exports = {
                                                         list.push(index[0]);
                                                     }
                                                 }
+                                                raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                                                for (var i in raw) {
+                                                    index = raw[i].match(/\d+/);
+                                                    if (index) {
+                                                        list.push(index[0]);
+                                                    }
+                                                }
                                                 api.xuiteDownload(url + "pub", filePath, function(err) {
                                                     if (err) {
                                                         util.handleError(err, callback, callback);
@@ -1850,6 +1871,13 @@ module.exports = {
                                                                 util.handleError(err, callback, callback);
                                                             }
                                                             raw = data.match(/<tr class=\'even\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                                                            for (var i in raw) {
+                                                                index = raw[i].match(/\d+/);
+                                                                if (index) {
+                                                                    list.push(index[0]);
+                                                                }
+                                                            }
+                                                            raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
                                                             for (var i in raw) {
                                                                 index = raw[i].match(/\d+/);
                                                                 if (index) {
