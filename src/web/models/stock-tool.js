@@ -1287,7 +1287,7 @@ module.exports = {
         for (var i = endYear; i >= startYear; i--) {
             for (var j = 3; j >=0; j--) {
                 if (profitStatus[i] && profitStatus[i][j]) {
-                    index += (profitStatus[i][j].profit+profitStatus[i][j].gross_profit+profitStatus[i][j].operating_profit)*profitStatus[i][j].turnover/profitStatus[i][j].leverage/denominator;
+                    index += (profitStatus[i][j].profit*3+profitStatus[i][j].operating_profit*2+profitStatus[i][j].gross_profit)*profitStatus[i][j].turnover/profitStatus[i][j].leverage/denominator;
                     denominator++;
                 }
             }
