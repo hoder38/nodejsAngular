@@ -1695,11 +1695,12 @@ function loopUpdateStock(error, countdown) {
                     util.handleError(err);
                     loopUpdateStock(null, stock_interval);
                 } else {
+                    var index = stocklist.indexOf('3060');
                     if (stocklist.length < 1) {
                         console.log('empty stock list');
                         loopUpdateStock(null, stock_interval);
                     } else {
-                        updateStock('twse', stocklist, 0, loopUpdateStock);
+                        updateStock('twse', stocklist, index, loopUpdateStock);
                     }
                 }
             });

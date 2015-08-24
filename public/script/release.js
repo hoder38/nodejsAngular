@@ -6638,7 +6638,6 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
-                console.log(result);
                 if (this_obj.page === 0) {
                     this_obj.itemList = [];
                 }
@@ -7696,7 +7695,6 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.gotoEmail = function(type) {
         var email = this.userEmail;
         if (type === 1) {
-            console.log(this.toolList.item);
             email = this.toolList.item.email;
         }
         if (!isValidString(email, 'email')) {
@@ -7738,7 +7736,6 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
-                console.log(result);
                 this_obj.isNew = false;
                 this_obj.edit = false;
                 this_obj.details = false;

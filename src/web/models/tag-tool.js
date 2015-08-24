@@ -1502,34 +1502,49 @@ function CN2ArabNum(cn) {
 }
 
 function getStorageSortName(sortName) {
-    var sort = sortName;
-    if (sort === 'mtime') {
+    var sort = 'name';
+    switch (sortName) {
+        case 'count':
+        sort = sortName;
+        break;
+        case 'mtime':
         sort = 'utime';
+        break;
+        case 'name':
+        default:
+        break;
     }
     return sort;
 }
 
 function getStockSortName(sortName) {
-    var sort = sortName;
-    if (sort === 'name') {
-        sort = 'profitIndex';
-    }
-    if (sort === 'mtime') {
-        sort = 'safetyIndex';
-    }
-    if (sort === 'count') {
+    var sort = 'profitIndex';
+    switch (sortName) {
+        case 'count':
         sort = 'managementIndex';
+        break;
+        case 'mtime':
+        sort = 'safetyIndex';
+        break;
+        case 'name':
+        default:
+        break;
     }
     return sort;
 }
 
 function getPasswordSortName(sortName) {
-    var sort = sortName;
-    if (sort === 'mtime') {
-        sort = 'utime';
-    }
-    if (sort === 'count') {
+    var sort = 'name';
+    switch (sortName) {
+        case 'count':
         sort = 'username';
+        break;
+        case 'mtime':
+        sort = 'utime';
+        break;
+        case 'name':
+        default:
+        break;
     }
     return sort;
 }
