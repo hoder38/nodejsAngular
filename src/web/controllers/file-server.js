@@ -27,7 +27,13 @@ var mediaHandleTool = require("../models/mediaHandle-tool.js")(sendWs);
 
 var drive_interval = 3600000;
 
+var drive_size = 500 * 1024 * 1024;
+
+var drive_time = {time: 0, size: 0};
+
 var stock_interval = 86400000;
+
+var stock_time = 0;
 
 var drive_batch = 100;
 
@@ -1580,12 +1586,34 @@ server.listen(config_glb.file_port, config_glb.file_ip);
 
 serverHttp.listen(config_glb.file_http_port, config_glb.file_ip);
 
-if (config_glb.updateStock) {
-    loopUpdateStock();
+if (config_glb.autoUpload) {
+    setTimeout(function() {
+        loopDrive();
+        setInterval(function(){
+            console.log('loop Drive');
+            console.log(drive_time);
+            var now_time = new Date().getTime();
+            var idle_time = drive_interval * (Math.floor(drive_time.size / drive_size) + 1);
+            console.log(idle_time);
+            if (drive_time.time === 1 || (now_time - drive_time.time) > idle_time) {
+                loopDrive();
+            }
+        }, drive_interval);
+    }, 60000);
 }
 
-if (config_glb.autoUpload) {
-    loopDrive();
+if (config_glb.updateStock) {
+    setTimeout(function() {
+        loopUpdateStock();
+        setInterval(function(){
+            console.log('loop UpdateStock');
+            console.log(stock_time);
+            var now_time = new Date().getTime();
+            if (stock_time === 1 || (now_time - stock_time) > stock_interval) {
+                loopUpdateStock();
+            }
+        }, stock_interval);
+    }, 120000);
 }
 
 function checkLogin(req, res, next, callback) {
@@ -1679,68 +1707,92 @@ function getFeedback(item, callback, user) {
 function loopUpdateStock(error, countdown) {
     console.log('loopUpdateStock');
     console.log(new Date());
-    if (error) {
+    /*if (error) {
         util.handleError(error);
     }
     if (!countdown) {
         countdown = 120000;
     }
     console.log(countdown);
-    setTimeout(function() {
-        var day = new Date().getDate();
-        if (day === config_type.updateStockDate[0]) {
-            console.log('update stock');
-            stockTool.getStockList('twse', function(err, stocklist){
-                if(err) {
-                    util.handleError(err);
-                    loopUpdateStock(null, stock_interval);
+    setTimeout(function() {*/
+    stock_time = new Date().getTime();
+    var day = new Date().getDate();
+    if (day === config_type.updateStockDate[0]) {
+        console.log('update stock');
+        stockTool.getStockList('twse', function(err, stocklist){
+            if(err) {
+                util.handleError(err);
+                stock_time = 1;
+                console.log('loopUpdateStock end');
+                //loopUpdateStock(null, stock_interval);
+            } else {
+                if (stocklist.length < 1) {
+                    console.log('empty stock list');
+                    stock_time = 1;
+                    console.log('loopUpdateStock end');
+                    //loopUpdateStock(null, stock_interval);
                 } else {
-                    var index = stocklist.indexOf('3060');
-                    if (stocklist.length < 1) {
-                        console.log('empty stock list');
-                        loopUpdateStock(null, stock_interval);
-                    } else {
-                        updateStock('twse', stocklist, index, loopUpdateStock);
-                    }
+                    updateStock('twse', stocklist, 0, function(err) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                        stock_time = 1;
+                        console.log('loopUpdateStock end');
+                    });
                 }
-            });
-        } else if (config_type.updateStockDate.indexOf(day) !== -1) {
-            console.log('update important stock');
-            mongo.orig("find", "stock", {important: 1}, function(err, items){
-                if(err) {
-                    util.handleError(err);
-                    loopUpdateStock(null, stock_interval);
+            }
+        });
+    } else if (config_type.updateStockDate.indexOf(day) !== -1) {
+        console.log('update important stock');
+        mongo.orig("find", "stock", {important: 1}, function(err, items){
+            if(err) {
+                util.handleError(err);
+                //loopUpdateStock(null, stock_interval);
+                stock_time = 1;
+                console.log('loopUpdateStock end');
+            } else {
+                var stocklist = [];
+                for (var i in items) {
+                    stocklist.push(items[i].index);
+                }
+                if (stocklist.length < 1) {
+                    console.log('empty stock list');
+                    stock_time = 1;
+                    console.log('loopUpdateStock end');
+                    //loopUpdateStock(null, stock_interval);
                 } else {
-                    var stocklist = [];
-                    for (var i in items) {
-                        stocklist.push(items[i].index);
-                    }
-                    if (stocklist.length < 1) {
-                        console.log('empty stock list');
-                        loopUpdateStock(null, stock_interval);
-                    } else {
-                        updateStock('twse', stocklist, 0, loopUpdateStock);
-                    }
+                    updateStock('twse', stocklist, 0, function(err) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                        stock_time = 1;
+                        console.log('loopUpdateStock end');
+                    });
                 }
-            });
-        }
-    }, countdown);
+            }
+        });
+    } else {
+        stock_time = 1;
+        console.log('loopUpdateStock end');
+    }
+    //}, countdown);
 }
 
 function updateStock(type, stocklist, index, callback) {
+    stock_time = new Date().getTime();
     console.log('updateStock');
     console.log(new Date());
     console.log(stocklist[index]);
     stockTool.getSingleStock(type, stocklist[index], function(err) {
         if (err) {
-            util.handleError(err, callback, callback, stock_interval);
+            util.handleError(err, callback, callback);
         }
         index++;
         if (index < stocklist.length) {
             updateStock(type, stocklist, index, callback);
         } else {
             setTimeout(function(){
-                callback(null, stock_interval);
+                callback(null);
             }, 0);
         }
     }, config_type.updateStockMode);
@@ -1749,26 +1801,40 @@ function updateStock(type, stocklist, index, callback) {
 function loopDrive(error, countdown) {
     console.log('loopDrive');
     console.log(new Date());
-    if (error) {
+    drive_time.time = new Date().getTime();
+    drive_time.size = 0;
+    /*if (error) {
         util.handleError(error);
     }
     if (!countdown) {
         countdown = 60000;
     }
     console.log(countdown);
-    setTimeout(function() {
-        mongo.orig("find", "user", {auto: {$exists: true}}, function(err, userlist){
-            if(err) {
-                util.handleError(err);
-                loopDrive(null, drive_interval);
-            } else {
-                userDrive(userlist, 0, loopDrive);
-            }
-        });
-    }, countdown);
+    setTimeout(function() {*/
+    mongo.orig("find", "user", {auto: {$exists: true}}, function(err, userlist){
+        if(err) {
+            util.handleError(err);
+            //drive_time.time = 1;
+            //drive_time.size = 0;
+            console.log('loopDrive end');
+            //loopDrive(null, drive_interval);
+        } else {
+            userDrive(userlist, 0, function(err) {
+                if(err) {
+                    util.handleError(err);
+                }
+                //drive_time.time = 1;
+                //drive_time.size = 0;
+                console.log('loopDrive end');
+            });
+        }
+    });
+    //}, countdown);
 }
 
 function userDrive(userlist, index, callback) {
+    drive_time.time = new Date().getTime();
+    drive_time.size = 0;
     console.log('userDrive');
     console.log(new Date());
     console.log(userlist[index].username);
@@ -1779,14 +1845,14 @@ function userDrive(userlist, index, callback) {
     var file_count = 0;
     getDriveList(function(err) {
         if (err) {
-            util.handleError(err, callback, callback, drive_interval);
+            util.handleError(err, callback, callback);
         }
         index++;
         if (index < userlist.length) {
             userDrive(userlist, index, callback);
         } else {
             setTimeout(function(){
-                callback(null, drive_interval);
+                callback(null);
             }, 0);
         }
     });
@@ -1805,7 +1871,7 @@ function userDrive(userlist, index, callback) {
             var data = {folderId: current.id};
             googleApi.googleApi('list file', data, function(err, metadataList) {
                 if (err) {
-                    util.handleError(err, callback, callback, drive_interval);
+                    util.handleError(err, callback, callback);
                 }
                 if (metadataList.length > 0) {
                     if (metadataList.length > (drive_batch - file_count)) {
@@ -1824,7 +1890,7 @@ function userDrive(userlist, index, callback) {
                             } else {
                                 googleApi.googleApi('list folder', data, function(err, folder_metadataList) {
                                     if (err) {
-                                        util.handleError(err, callback, callback, drive_interval);
+                                        util.handleError(err, callback, callback);
                                     }
                                     if (is_root) {
                                         var templist = [];
@@ -1847,12 +1913,12 @@ function userDrive(userlist, index, callback) {
                                     }, 0);
                                 });
                             }
-                        });
+                        }, drive_time);
                     } else {
                         var uploaded_data = {folderId: userlist[index].auto, name: 'uploaded'};
                         googleApi.googleApi('list folder', uploaded_data, function(err, uploadedList) {
                             if (err) {
-                                util.handleError(err, callback, callback, drive_interval);
+                                util.handleError(err, callback, callback);
                             }
                             if (uploadedList.length < 1 ) {
                                 util.handleError({hoerror: 2, message: "do not have uploaded folder!!!"}, callback, callback, drive_interval);
@@ -1870,7 +1936,7 @@ function userDrive(userlist, index, callback) {
                                 } else {
                                     googleApi.googleApi('list folder', data, function(err, folder_metadataList) {
                                         if (err) {
-                                            util.handleError(err, callback, callback, drive_interval);
+                                            util.handleError(err, callback, callback);
                                         }
                                         if (is_root) {
                                             var templist = [];
@@ -1893,13 +1959,13 @@ function userDrive(userlist, index, callback) {
                                         }, 0);
                                     });
                                 }
-                            });
+                            }, drive_time);
                         });
                     }
                 } else {
                     googleApi.googleApi('list folder', data, function(err, folder_metadataList) {
                         if (err) {
-                            util.handleError(err, callback, callback, drive_interval);
+                            util.handleError(err, callback, callback);
                         }
                         if (is_root) {
                             var templist = [];

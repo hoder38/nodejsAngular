@@ -701,8 +701,14 @@ module.exports = function(sendWs) {
                 });
             });
         },
-        singleDrive: function(metadatalist, index, user, folderId, uploaded, dirpath, next) {
+        singleDrive: function(metadatalist, index, user, folderId, uploaded, dirpath, next, drive_info) {
             var metadata = metadatalist[index];
+            console.log('singleDrive');
+            console.log(new Date());
+            if (drive_info) {
+                drive_info.time = new Date().getTime();
+                drive_info.size = metadata.fileSize;
+            }
             var oOID = mongo.objectID();
             var filePath = util.getFileLocation(user._id, oOID);
             var folderPath = path.dirname(filePath);
