@@ -29,9 +29,10 @@ var pwTool = require("../models/password-tool.js");
 var util = require("../util/utility.js");
 
 var https = require('https'),
-    privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
-    certificate = fs.readFileSync(config_type.certificate, 'utf8'),
-    credentials = {key: privateKey, cert: certificate, ciphers: [
+    //privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
+    //certificate = fs.readFileSync(config_type.certificate, 'utf8'),
+    pfx = fs.readFileSync(config_type.pfx),
+    credentials = {pfx: pfx, passphrase: config_type.pfx_pwd, ciphers: [
         "ECDHE-RSA-AES256-SHA384",
         "DHE-RSA-AES256-SHA384",
         "ECDHE-RSA-AES256-SHA256",
@@ -1925,7 +1926,7 @@ app.get('/api/getUser', function(req, res, next){
         if (util.checkAdmin(2 ,req.user)) {
             isAdult = true;
         }
-        res.json({id: req.user.username, ws_url: 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port, level: level, nav: nav, file_url: 'http://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_http_port, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
+        res.json({id: req.user.username, ws_url: 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port, level: level, nav: nav, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
     });
 });
 
@@ -2159,9 +2160,9 @@ server.listen(config_glb.port, config_glb.ip);
 
 function checkLogin(req, res, next, callback) {
     if(!req.isAuthenticated()){
-        if (util.isMobile(req.headers['user-agent'])) {
+        if (util.isMobile(req.headers['user-agent']) || req.headers['user-agent'].match(/Firefox/i)) {
             if (/^\/video\//.test(req.path)) {
-                console.log("mobile");
+                console.log("mobile or firefox");
                 setTimeout(function(){
                     callback(req, res, next);
                 }, 0);

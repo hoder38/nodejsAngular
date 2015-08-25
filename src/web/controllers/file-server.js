@@ -37,12 +37,12 @@ var stock_time = 0;
 
 var drive_batch = 100;
 
-var http = require('http'),
-    https = require('https'),
+var https = require('https'),
     net = require('net'),
-    privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
-    certificate = fs.readFileSync(config_type.certificate, 'utf8'),
-    credentials = {key: privateKey, cert: certificate, ciphers: [
+    //privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
+    //certificate = fs.readFileSync(config_type.certificate, 'utf8'),
+    pfx = fs.readFileSync(config_type.pfx),
+    credentials = {pfx: pfx, passphrase: config_type.pfx_pwd, ciphers: [
         "ECDHE-RSA-AES256-SHA384",
         "DHE-RSA-AES256-SHA384",
         "ECDHE-RSA-AES256-SHA256",
@@ -69,10 +69,6 @@ var express = require('express'),
     app = express(),
     server = https.createServer(credentials, app),
     mkdirp = require('mkdirp'),
-    //port = 443,
-    serverHttp = http.createServer(app),
-    //port = 80,
-    encode = "utf8",
     sessionStore = require("../models/session-tool.js")(express);
 
 app.use(express.favicon());
@@ -1500,32 +1496,9 @@ var server0 = net.createServer(function(c) { //'connection' listener
     });
 }).listen(config_glb.com_port);
 
-/*var server1 = https.createServer(credentials, function (req, res) {
-    res.writeHead(200);
-    res.end("hello world websocket1\n");
-}).listen(config_glb.wss_port);
-
-var server2 = https.createServer(credentials, function (req, res) {
-    res.writeHead(200);
-    res.end("hello world websocket2\n");
-}).listen(config_glb.ws_port);
-
-var server3 = https.createServer(credentials, function (req, res) {
-    res.writeHead(200);
-    res.end("hello world websocket3\n");
-}).listen(config_glb.wsj_port);
-
-var wssServer = new WebSocketServer({
-    server: server1
-});*/
-
 var wsServer = new WebSocketServer({
     server: server
 });
-
-/*var wsjServer = new WebSocketServer({
-    server: server3
-});*/
 
 function onWsConnMessage(message) {
     console.log(message);
@@ -1584,8 +1557,6 @@ wsServer.on('connection', function(ws) {
 
 server.listen(config_glb.file_port, config_glb.file_ip);
 
-serverHttp.listen(config_glb.file_http_port, config_glb.file_ip);
-
 if (config_glb.autoUpload) {
     setTimeout(function() {
         loopDrive();
@@ -1618,9 +1589,9 @@ if (config_glb.updateStock) {
 
 function checkLogin(req, res, next, callback) {
     if(!req.isAuthenticated()){
-        if (util.isMobile(req.headers['user-agent'])) {
+        if (util.isMobile(req.headers['user-agent']) || req.headers['user-agent'].match(/Firefox/i)) {
             if (/^\/video\//.test(req.path)) {
-                console.log("mobile");
+                console.log("mobile or firefox");
                 setTimeout(function(){
                     callback(req, res, next);
                 }, 0);
@@ -1996,5 +1967,3 @@ function userDrive(userlist, index, callback) {
 console.log('start express server\n');
 
 console.log("Server running at https://" + config_glb.extent_file_ip + ":" + config_glb.extent_file_port + ' ' + new Date());
-
-console.log("Server running at http://" + config_glb.extent_file_ip + ":" + config_glb.extent_file_http_port + ' ' + new Date());

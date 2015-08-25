@@ -1506,7 +1506,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                         } else if (type === 'present') {
                             this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id;
                         } else {
-                            this_obj.$parent[type].src = $scope.file_url + '/' + preType + '/' + item.id;
+                            this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id;
                         }
                         this_obj.$parent[type].maxId = item.present;
                         if (type === 'video') {
@@ -1565,7 +1565,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         if ($scope.bookmarkID) {
             $scope.latest = id;
         }
-        $window.location.href = this.file_url + '/download/' + id;
+        $window.location.href = this.main_url + '/download/' + id;
     }
 
     $scope.handleMedia = function(action, item) {
@@ -1814,7 +1814,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.username = '';
     $scope.password = '';
     $scope.id = 'guest';
-    $scope.file_url = '';
     $scope.main_url = '';
     $scope.loginFocus = {user: true, pwd:false};
     $scope.isLogin = false;
@@ -2243,7 +2242,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 $scope.id = result.id;
                 $scope.main_url = result.main_url;
                 document.domain = document.domain;
-                $scope.file_url = result.file_url;
                 $scope.level = result.level;
                 getFeedbacks(1);
                 if (window.MozWebSocket) {
@@ -2531,7 +2529,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 return false;
             }
         }
-        this.image.src = this.file_url + '/image/' + this.image.list[this.image.index + this.image.back].id + '/' + this.image.presentId;
+        this.image.src = this.main_url + '/image/' + this.image.list[this.image.index + this.image.back].id + '/' + this.image.presentId;
     }
 
     $scope.nextImage = function() {
@@ -2663,7 +2661,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     } else if (type === 'present') {
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     } else {
-                                        this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
                                     if (type === 'video') {
                                         var track = video.textTracks[0];
@@ -2779,7 +2777,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     } else if (type === 'present') {
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     } else {
-                                        this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
                                     if (type === 'video') {
                                         var track = video.textTracks[0];
@@ -2856,7 +2854,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         } else if (type === 'present') {
                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         } else {
-                            this_obj[type].src = $scope.file_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                            this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         }
                         if (type === 'video') {
                             var track = video.textTracks[0];
