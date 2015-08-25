@@ -18,8 +18,8 @@ module.exports = {
         }
         var name = util.isValidString(data['name'], 'name');
         var username = util.isValidString(data['username'], 'name');
-        var password = util.isValidString(data['password'], 'passwd');
-        var conpassword = util.isValidString(data['conpassword'], 'passwd');
+        var password = util.isValidString(data['password'], 'altpwd');
+        var conpassword = util.isValidString(data['conpassword'], 'altpwd');
         var url = '', email = '', userPW = '';
         if (data['url']) {
             url = util.isValidString(data['url'], 'url');
@@ -197,8 +197,8 @@ module.exports = {
         }
         var password = '', conpassword = '', name = '', username = '', url = '', email = '', userPW = '';
         if (data['password']) {
-            password = util.isValidString(data['password'], 'passwd');
-            conpassword = util.isValidString(data['conpassword'], 'passwd');
+            password = util.isValidString(data['password'], 'altpwd');
+            conpassword = util.isValidString(data['conpassword'], 'altpwd');
         }
         if (data['name']) {
             name = util.isValidString(data['name'], 'name');

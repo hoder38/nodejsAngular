@@ -1814,8 +1814,8 @@ function loopDrive(error, countdown) {
     mongo.orig("find", "user", {auto: {$exists: true}}, function(err, userlist){
         if(err) {
             util.handleError(err);
-            //drive_time.time = 1;
-            //drive_time.size = 0;
+            drive_time.time = 1;
+            drive_time.size = 0;
             console.log('loopDrive end');
             //loopDrive(null, drive_interval);
         } else {
@@ -1823,8 +1823,8 @@ function loopDrive(error, countdown) {
                 if(err) {
                     util.handleError(err);
                 }
-                //drive_time.time = 1;
-                //drive_time.size = 0;
+                drive_time.time = 1;
+                drive_time.size = 0;
                 console.log('loopDrive end');
             });
         }

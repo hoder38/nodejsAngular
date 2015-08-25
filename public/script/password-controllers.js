@@ -994,7 +994,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
                 addAlert('email is not vaild!!!');
             }
             if (this.isNew) {
-                if (!isValidString(this.newPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd')) {
+                if (!isValidString(this.newPassword, 'altpwd') || !isValidString(this.userConPassword, 'altpwd')) {
                     addAlert('password not vaild!!!');
                 } else if (this.newPassword !== this.userConPassword) {
                     addAlert('password is not equal!!!');
@@ -1004,7 +1004,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
                     this.newRow();
                 }
             } else {
-                if (this.newPassword && (!isValidString(this.newPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd'))) {
+                if (this.newPassword && (!isValidString(this.newPassword, 'altpwd') || !isValidString(this.userConPassword, 'altpwd'))) {
                     addAlert('password not vaild!!!');
                 } else if (this.newPassword && (this.newPassword !== this.userConPassword)) {
                     addAlert('password is not equal!!!');
@@ -1390,28 +1390,38 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         });
     }
 
-    document.getElementById('up-password').addEventListener('copy', function(e){
-        e.clipboardData.setData('text/plain', $scope.upPassword);
-        e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
-    });
+    if (document.getElementById('up-password')) {
+        document.getElementById('up-password').addEventListener('copy', function(e){
+            e.clipboardData.setData('text/plain', $scope.upPassword);
+            e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
+        });
+    }
 
-    document.getElementById('user-password').addEventListener('copy', function(e){
-        e.clipboardData.setData('text/plain', $scope.userPassword);
-        e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
-    });
+    if (document.getElementById('user-password')) {
+        document.getElementById('user-password').addEventListener('copy', function(e){
+            e.clipboardData.setData('text/plain', $scope.userPassword);
+            e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
+        });
+    }
 
-    document.getElementById('user-pre-password').addEventListener('copy', function(e){
-        e.clipboardData.setData('text/plain', $scope.userPrePassword);
-        e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
-    });
+    if (document.getElementById('user-pre-password')) {
+        document.getElementById('user-pre-password').addEventListener('copy', function(e){
+            e.clipboardData.setData('text/plain', $scope.userPrePassword);
+            e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
+        });
+    }
 
-    document.getElementById('s-user-password').addEventListener('copy', function(e){
-        e.clipboardData.setData('text/plain', $scope.userPassword);
-        e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
-    });
+    if (document.getElementById('s-user-password')) {
+        document.getElementById('s-user-password').addEventListener('copy', function(e){
+            e.clipboardData.setData('text/plain', $scope.userPassword);
+            e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
+        });
+    }
 
-    document.getElementById('s-user-pre-password').addEventListener('copy', function(e){
-        e.clipboardData.setData('text/plain', $scope.userPrePassword);
-        e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
-    });
+    if (document.getElementById('s-user-pre-password')) {
+        document.getElementById('s-user-pre-password').addEventListener('copy', function(e){
+            e.clipboardData.setData('text/plain', $scope.userPrePassword);
+            e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
+        });
+    }
 }

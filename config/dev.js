@@ -1,6 +1,8 @@
 module.exports = {
-    extent_ip: '114.32.213.158',
-    extent_file_ip: '114.32.213.158',
+    extent_ip: 'www.anomopi.com',
+    extent_file_ip: 'www.anomopi.com',
+    //extent_ip: '114.32.213.158',
+    //extent_file_ip: '114.32.213.158',
     ip: '192.168.2.101',
     file_ip: '192.168.2.101',
     port: 8080,

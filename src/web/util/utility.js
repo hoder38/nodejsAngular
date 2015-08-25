@@ -98,6 +98,11 @@ module.exports = {
                         return str;
                     }
                     break;
+                case 'altpwd':
+                    if (str.match(/^[0-9a-zA-Z!@#$%]{2,30}$/)) {
+                        return str;
+                    }
+                    break;
                 case 'uid':
                     if (str.match(/^[0-9a-f]{24}$/)) {
                         return mongo.objectID(str);
