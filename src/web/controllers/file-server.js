@@ -1590,7 +1590,7 @@ if (config_glb.updateStock) {
 function checkLogin(req, res, next, callback) {
     if(!req.isAuthenticated()){
         if (util.isMobile(req.headers['user-agent']) || req.headers['user-agent'].match(/Firefox/i)) {
-            if (/^\/video\//.test(req.path)) {
+            if (/^\/video\//.test(req.path) || /^\/subtitle\//.test(req.path)) {
                 console.log("mobile or firefox");
                 setTimeout(function(){
                     callback(req, res, next);

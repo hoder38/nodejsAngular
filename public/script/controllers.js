@@ -1,5 +1,5 @@
 //壓縮 手動排序跟新增
-//cat script/angular.min.js script/angular-route.min.js script/angular-resource.min.js script/angular-cookies.min.js script/angular-sanitize.min.js script/angular-file-upload.js script/Chart.min.js script/angular-chart.min.js script/controllers.js script/stock-controllers.js script/password-controllers.js script/frontend.js script/ui-bootstrap-tpls-0.12.0.min.js > script/release.js
+//cat script/angular.min.js script/angular-route.min.js script/angular-resource.min.js script/angular-cookies.min.js script/angular-sanitize.min.js script/angular-file-upload.js script/Chart.min.js script/angular-chart.min.js script/controllers.js script/stock-controllers.js script/password-controllers.js script/frontend.js script/ui-bootstrap-tpls-0.12.0.min.js script/vtt.js > script/release.js
 //cat css/angular-chart.css css/bootstrap.min.css css/bootstrap-theme.min.css font-awesome/css/font-awesome.min.css css/sb-admin.css > css/release.css
 var video, music, subtitles, videoStart=0, musicStart=0;
 var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSanitize', 'angularFileUpload', 'ui.bootstrap', 'chart.js'], function($routeProvider, $locationProvider) {
@@ -1510,15 +1510,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                         }
                         this_obj.$parent[type].maxId = item.present;
                         if (type === 'video') {
-                            var track = video.textTracks[0];
-                            if (track) {
-                                var cues = track.cues;
-                                if (cues && cues.length > 0) {
-                                    for (var i=cues.length-1;i>=0;i--) {
-                                        track.removeCue(cues[i]);
-                                    }
-                                }
-                            }
+                            removeCue();
                             this_obj.$parent[type].sub = $scope.main_url + '/subtitle/' + item.id;
                         }
                         var tempList = $filter("filter")(this_obj.itemList, {status: status});
@@ -1868,6 +1860,118 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     var need_auth = true;
 
     indexInit();
+
+    var is_firefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+
+    $scope.videoToggle = function() {
+        if (!is_firefox) {
+            video.focus();
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        }
+    }
+
+    document.getElementById('video-tag').onkeydown = function(evt) {
+        evt = evt || window.event;
+        if (is_firefox) {
+            switch(evt.keyCode) {
+                case 67:
+                if (video.textTracks[0].mode === 'showing') {
+                    video.textTracks[0].mode = "hidden";
+                } else {
+                    video.textTracks[0].mode = "showing";
+                }
+                break;
+            }
+        } else {
+            switch(evt.keyCode) {
+                case 32:
+                if (video.paused) {
+                    video.play();
+                } else {
+                    video.pause();
+                }
+                break;
+                case 37:
+                if (video.currentTime >= 15) {
+                    video.currentTime -= 15;
+                } else {
+                    video.currentTime = 0;
+                }
+                break;
+                case 38:
+                if (video.volume < 0.9) {
+                    video.volume+= 0.1;
+                } else {
+                    video.volume = 1;
+                }
+                break;
+                case 39:
+                video.currentTime += 15;
+                break;
+                case 40:
+                if (video.volume > 0.1) {
+                    video.volume-= 0.1;
+                } else {
+                    video.volume = 0;
+                }
+                break;
+                case 67:
+                if (video.textTracks[0].mode === 'showing') {
+                    video.textTracks[0].mode = "hidden";
+                } else {
+                    video.textTracks[0].mode = "showing";
+                }
+                break;
+            }
+        }
+    };
+    if (is_firefox) {
+        $scope.$watch("video.sub", function(newVal, oldVal) {
+            if (newVal) {
+                if (!video.textTracks.length){
+                    video.addTextTrack("subtitles", "English", "en-US");
+                    video.textTracks[0].mode = "showing";
+                }
+                // Create XMLHttpRequest object
+                var xhr;
+                if (window.XMLHttpRequest) {
+                    xhr = new XMLHttpRequest();
+                } else if (window.ActiveXObject) { // IE8
+                    xhr = new ActiveXObject("Microsoft.XMLHTTP");
+                }
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            var parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
+                            parser.oncue = function(cue) {
+                                video.textTracks[0].addCue(cue);
+                            };
+                            parser.parse(xhr.responseText);
+                            parser.flush();
+                        }
+                    }
+                }
+                xhr.open("get", newVal, true);
+                xhr.send();
+            }
+        }, true);
+    }
+
+    removeCue = function() {
+        var track = video.textTracks[0];
+        if (track) {
+            var cues = track.cues;
+            if (cues && cues.length > 0) {
+                for (var i=cues.length-1;i>=0;i--) {
+                    track.removeCue(cues[i]);
+                }
+            }
+        }
+    }
 
     openBlockPW = function(callback, obj) {
         if (need_auth) {
@@ -2664,15 +2768,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
                                     if (type === 'video') {
-                                        var track = video.textTracks[0];
-                                        if (track) {
-                                            var cues = track.cues;
-                                            if (cues && cues.length > 0) {
-                                                for (var i=cues.length-1;i>=0;i--) {
-                                                    track.removeCue(cues[i]);
-                                                }
-                                            }
-                                        }
+                                        removeCue();
                                         this_obj[type].sub = $scope.main_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
                                 }
@@ -2780,15 +2876,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
                                     if (type === 'video') {
-                                        var track = video.textTracks[0];
-                                        if (track) {
-                                            var cues = track.cues;
-                                            if (cues && cues.length > 0) {
-                                                for (var i=cues.length-1;i>=0;i--) {
-                                                    track.removeCue(cues[i]);
-                                                }
-                                            }
-                                        }
+                                        removeCue();
                                         this_obj[type].sub = $scope.main_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
                                 }
@@ -2857,15 +2945,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         }
                         if (type === 'video') {
-                            var track = video.textTracks[0];
-                            if (track) {
-                                var cues = track.cues;
-                                if (cues && cues.length > 0) {
-                                    for (var i=cues.length-1;i>=0;i--) {
-                                        track.removeCue(cues[i]);
-                                    }
-                                }
-                            }
+                            removeCue();
                             this_obj[type].sub = $scope.main_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         }
                     }
