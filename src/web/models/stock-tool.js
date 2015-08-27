@@ -1256,7 +1256,7 @@ module.exports = {
                         salesStatus[i][j].quarterGross = Math.ceil((sales[i][j].gross_profit - sales[i][Number(j)-1].gross_profit)/salesStatus[i][j].quarterRevenue*1000)/10;
                         salesStatus[i][j].quarterOperating = Math.ceil((sales[i][j].operating - sales[i][Number(j)-1].operating)/salesStatus[i][j].quarterRevenue*1000)/10;
                         salesStatus[i][j].quarterProfit = Math.ceil((sales[i][j].profit - sales[i][Number(j)-1].profit)/salesStatus[i][j].quarterRevenue*1000)/10;
-                        salesStatus[i][j].quarterEPS = sales[i][j].eps - sales[i][Number(j)-1].eps;
+                        salesStatus[i][j].quarterEPS = Math.ceil((sales[i][j].eps - sales[i][Number(j)-1].eps)*1000)/1000;
                     } else {
                         salesStatus[i][j].quarterRevenue = sales[i][j].revenue;
                         salesStatus[i][j].quarterGross = Math.ceil(sales[i][j].gross_profit/salesStatus[i][j].quarterRevenue*1000)/10;
