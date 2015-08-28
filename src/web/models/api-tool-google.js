@@ -620,6 +620,85 @@ var exports = module.exports = {
                 util.handleError({hoerror: 2, message: 'recycle ' + recycle + ' denied!!!'}, callback, callback);
         }
     },
+    googleDownloadYoutube: function(url, filePath, callback) {
+        var this_obj = this;
+        this.googleDownload(url, filePath + ".htm", function(err) {
+            if (err) {
+                util.handleError(err, callback, callback);
+            }
+            var cmdline = 'grep ,\\\"url_encoded_fmt_stream_map\\\": ' + filePath + ".htm";
+            var media_code = 37;
+            child_process.exec(cmdline, function (err, output) {
+                var pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
+                var name_pattern = ',"title":"(.+?)",';
+                var tag_pattern = ',"keywords":"(.*?)",';
+                var thumb_pattern = ',"thumbnail_url":"(.+?)",';
+                var media_location, media_name, media_thumb=null, media_tag, tag_arr = [];
+                if (err) {
+                    util.handleError(err, callback, callback);
+                }
+                media_location = output.match(pattern);
+                if (!media_location) {
+                    media_code = 22;
+                    pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
+                    media_location = output.match(pattern);
+                    if (!media_location) {
+                        media_code = 18;
+                        pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
+                        media_location = output.match(pattern);
+                        if (!media_location) {
+                            media_code = 43;
+                            pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
+                            media_location = output.match(pattern);
+                            if (!media_location) {
+                                console.log(output);
+                                util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
+                            }
+                        }
+                    }
+                }
+                media_location = media_location[1];
+                media_location = decodeURIComponent(media_location);
+                media_name = output.match(name_pattern);
+                if (!media_name) {
+                    media_name = 'youtube video.mp4';
+                } else {
+                    media_name = media_name[1] + '.mp4';
+                }
+                media_tag = output.match(tag_pattern);
+                if (media_tag) {
+                    media_tag = media_tag[1];
+                    if (media_tag) {
+                        tag_arr = media_tag.split(/,/);
+                    }
+                }
+                media_thumb = output.match(thumb_pattern);
+                if (media_thumb) {
+                    media_thumb = media_thumb[1];
+                    media_thumb = media_thumb.replace(/\\\//g, '/');
+                }
+                this_obj.googleDownload(media_location, filePath, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    if (media_thumb) {
+                        this_obj.googleDownload(media_thumb, filePath + '_s.jpg', function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            setTimeout(function(){
+                                callback(null, media_name, tag_arr);
+                            }, 0);
+                        });
+                    } else {
+                        setTimeout(function(){
+                            callback(null, media_name, tag_arr);
+                        }, 0);
+                    }
+                });
+            });
+        });
+    },
     googleDownloadMedia: function(threshold, alternate, key, filePath, hd, callback, is_ok) {
         var this_obj = this;
         if (hd === 1080) {

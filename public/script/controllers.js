@@ -1843,7 +1843,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, mode: false};
     $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
     $scope.inputUrl = '';
-    $scope.disableUrlUpload = false;
     $scope.disableUrlSave = false;
     $scope.isAdult = false;
     //alert
@@ -2390,8 +2389,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         var url = this.inputUrl;
         var this_obj = this;
         this.inputUrl = '';
-        if (isValidString(url, 'url') && !this.disableUrlUpload) {
-            this.disableUrlUpload = true;
+        if (isValidString(url, 'url')) {
             var uploadurl = this.main_url + '/api/upload/url';
             if (this.adultonly) {
                 uploadurl = this.main_url + '/api/upload/url/1';
@@ -2400,7 +2398,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 'uploadUrl': { method:'POST', withCredentials: true }
             });
             api.uploadUrl({url: url}, function (result) {
-                this_obj.disableUrlUpload = false;
                 this_obj.inputUrl = '';
                 if (result.loginOK) {
                     $window.location.href = $location.path();
@@ -2421,7 +2418,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     }
                 }
             }, function(errorResult) {
-                this_obj.disableUrlUpload = false;
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {

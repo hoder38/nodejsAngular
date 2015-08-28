@@ -345,131 +345,178 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
         var oOID = mongo.objectID();
         var filePath = util.getFileLocation(req.user._id, oOID);
         var folderPath = path.dirname(filePath);
+        var is_media = false;
         if (!fs.existsSync(folderPath)) {
             mkdirp(folderPath, function(err) {
                 if(err) {
                     console.log(filePath);
                     util.handleError(err, next, res);
                 }
-                streamClose();
+                if (decodeURIComponent(url).match(/^(https|http):\/\/www\.youtube\.com\//)) {
+                    console.log('youtube');
+                    is_media = true;
+                    googleApi.googleDownloadYoutube(decodeURIComponent(url), filePath, function(err, filename, tag_arr) {
+                        streamClose(filename, tag_arr);
+                    });
+                } else {
+                    api.xuiteDownload(decodeURIComponent(url), filePath, function(err, pathname, filename) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (!filename) {
+                            filename = path.basename(pathname);
+                        }
+                        streamClose(filename, []);
+                    });
+                }
             });
         } else {
-            streamClose();
-        }
-        function streamClose(){
-            api.xuiteDownload(decodeURIComponent(url), filePath, function(err, pathname, filename) {
-                if (err) {
-                    util.handleError(err, next, res);
-                }
-                if (!filename) {
-                    filename = path.basename(pathname);
-                }
-                var name = util.toValidName(filename);
-                if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
-                    name = mime.addPost(name, '1');
-                }
-                var utime = Math.round(new Date().getTime() / 1000);
-                var oUser_id = req.user._id;
-                var ownerTag = [];
-                var data = {};
-                data['_id'] = oOID;
-                data['name'] = name;
-                data['owner'] = oUser_id;
-                data['utime'] = utime;
-                var stats = fs.statSync(filePath);
-                data['size'] = stats["size"];
-                data['count'] = 0;
-                data['recycle'] = 0;
-                if (util.checkAdmin(2 ,req.user) && Number(req.params.type) === 1) {
-                    data['adultonly'] = 1;
-                } else {
-                    data['adultonly'] = 0;
-                }
-                data['untag'] = 1;
-                data['first'] = 1;
-                data['status'] = 0;//media type
-                mediaHandleTool.handleTag(filePath, data, name, '', 0, function(err, mediaType, mediaTag, DBdata) {
+            if (decodeURIComponent(url).match(/^(https|http):\/\/www\.youtube\.com\//)) {
+                console.log('youtube');
+                is_media = true;
+                googleApi.googleDownloadYoutube(decodeURIComponent(url), filePath, function(err, filename, tag_arr) {
                     if (err) {
                         util.handleError(err, next, res);
                     }
-                    var normal = tagTool.normalizeTag(name);
-                    if (mediaTag.def.indexOf(normal) === -1) {
-                        mediaTag.def.push(normal);
+                    streamClose(filename, tag_arr);
+                });
+            } else {
+                api.xuiteDownload(decodeURIComponent(url), filePath, function(err, pathname, filename) {
+                    if (err) {
+                        util.handleError(err, next, res);
                     }
-                    normal = tagTool.normalizeTag(req.user.username);
-                    if (mediaTag.def.indexOf(normal) === -1) {
-                        mediaTag.def.push(normal);
+                    if (!filename) {
+                        filename = path.basename(pathname);
                     }
-                    if (mediaTag.def.indexOf('url upload') === -1) {
-                        mediaTag.def.push('url upload');
-                    }
-                    var tags = tagTool.searchTags(req.session);
-                    if (tags) {
-                        var parentList = tags.getArray();
-                        for (var i in parentList.cur) {
-                            normal = tagTool.normalizeTag(parentList.cur[i]);
-                            if (!tagTool.isDefaultTag(normal)) {
-                                if (mediaTag.def.indexOf(normal) === -1) {
-                                    mediaTag.def.push(normal);
-                                }
-                            } else {
-                                if (normal === '18禁') {
-                                    DBdata['adultonly'] = 1;
-                                }
+                    streamClose(filename, []);
+                });
+            }
+        }
+        function streamClose(filename, tag_arr){
+            var name = util.toValidName(filename);
+            if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
+                name = mime.addPost(name, '1');
+            }
+            var utime = Math.round(new Date().getTime() / 1000);
+            var oUser_id = req.user._id;
+            var ownerTag = [];
+            var data = {};
+            data['_id'] = oOID;
+            data['name'] = name;
+            data['owner'] = oUser_id;
+            data['utime'] = utime;
+            var stats = fs.statSync(filePath);
+            data['size'] = stats["size"];
+            data['count'] = 0;
+            data['recycle'] = 0;
+            if (util.checkAdmin(2 ,req.user) && Number(req.params.type) === 1) {
+                data['adultonly'] = 1;
+            } else {
+                data['adultonly'] = 0;
+            }
+            data['untag'] = 1;
+            data['first'] = 1;
+            data['status'] = 0;//media type
+            mediaHandleTool.handleTag(filePath, data, name, '', 0, function(err, mediaType, mediaTag, DBdata) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (is_media) {
+                    DBdata['status'] = 3;
+                }
+                var normal = tagTool.normalizeTag(name);
+                if (mediaTag.def.indexOf(normal) === -1) {
+                    mediaTag.def.push(normal);
+                }
+                normal = tagTool.normalizeTag(req.user.username);
+                if (mediaTag.def.indexOf(normal) === -1) {
+                    mediaTag.def.push(normal);
+                }
+                if (mediaTag.def.indexOf('url upload') === -1) {
+                    mediaTag.def.push('url upload');
+                }
+                if (tag_arr) {
+                    for (var i in tag_arr) {
+                        normal = tagTool.normalizeTag(tag_arr[i]);
+                        if (!tagTool.isDefaultTag(normal)) {
+                            if (mediaTag.def.indexOf(normal) === -1) {
+                                mediaTag.def.push(normal);
                             }
-                        }
-                        var temp_tag = [];
-                        for (var j in mediaTag.opt) {
-                            normal = tagTool.normalizeTag(mediaTag.opt[j]);
-                            if (!tagTool.isDefaultTag(normal)) {
-                                if (mediaTag.def.indexOf(normal) === -1) {
-                                    temp_tag.push(normal);
-                                }
-                            }
-                        }
-                        mediaTag.opt = temp_tag;
-                    }
-                    DBdata['tags'] = mediaTag.def;
-                    DBdata[oUser_id] = mediaTag.def;
-                    mongo.orig("insert", "storage", DBdata, function(err, item){
-                        if(err) {
-                            util.handleError(err, next, res);
-                        }
-                        console.log(item);
-                        console.log('save end');
-                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                        if (util.checkAdmin(2 ,req.user)) {
-                            if (item[0].adultonly === 1) {
-                                mediaTag.def.push('18禁');
-                            } else {
-                                mediaTag.opt.push('18禁');
-                            }
-                        }
-                        if (item[0].first === 1) {
-                            mediaTag.def.push('first item');
                         } else {
-                            mediaTag.opt.push('first item');
+                            if (normal === '18禁') {
+                                DBdata['adultonly'] = 1;
+                            }
                         }
-                        var relative_arr = [];
-                        mediaTag.def.forEach(function (e) {
-                            relative_arr.push(e);
-                        });
-                        mediaTag.opt.forEach(function (e) {
-                            relative_arr.push(e);
-                        });
-                        var index = 0;
-                        recur_relative();
-                        function recur_relative() {
-                            tagTool.getRelativeTag(relative_arr[index], req.user, mediaTag.opt, next, function(err, relative) {
-                                if (err) {
-                                    util.handleError(err, next, res);
-                                }
-                                index++;
-                                mediaTag.opt = relative;
-                                if (index < relative_arr.length) {
-                                    recur_relative();
-                                } else {
-                                    res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                    }
+                }
+                var tags = tagTool.searchTags(req.session);
+                if (tags) {
+                    var parentList = tags.getArray();
+                    for (var i in parentList.cur) {
+                        normal = tagTool.normalizeTag(parentList.cur[i]);
+                        if (!tagTool.isDefaultTag(normal)) {
+                            if (mediaTag.def.indexOf(normal) === -1) {
+                                mediaTag.def.push(normal);
+                            }
+                        } else {
+                            if (normal === '18禁') {
+                                DBdata['adultonly'] = 1;
+                            }
+                        }
+                    }
+                    var temp_tag = [];
+                    for (var j in mediaTag.opt) {
+                        normal = tagTool.normalizeTag(mediaTag.opt[j]);
+                        if (!tagTool.isDefaultTag(normal)) {
+                            if (mediaTag.def.indexOf(normal) === -1) {
+                                temp_tag.push(normal);
+                            }
+                        }
+                    }
+                    mediaTag.opt = temp_tag;
+                }
+                DBdata['tags'] = mediaTag.def;
+                DBdata[oUser_id] = mediaTag.def;
+                mongo.orig("insert", "storage", DBdata, function(err, item){
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
+                    console.log(item);
+                    console.log('save end');
+                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                    if (util.checkAdmin(2 ,req.user)) {
+                        if (item[0].adultonly === 1) {
+                            mediaTag.def.push('18禁');
+                        } else {
+                            mediaTag.opt.push('18禁');
+                        }
+                    }
+                    if (item[0].first === 1) {
+                        mediaTag.def.push('first item');
+                    } else {
+                        mediaTag.opt.push('first item');
+                    }
+                    var relative_arr = [];
+                    mediaTag.def.forEach(function (e) {
+                        relative_arr.push(e);
+                    });
+                    mediaTag.opt.forEach(function (e) {
+                        relative_arr.push(e);
+                    });
+                    var index = 0;
+                    recur_relative();
+                    function recur_relative() {
+                        tagTool.getRelativeTag(relative_arr[index], req.user, mediaTag.opt, next, function(err, relative) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            index++;
+                            mediaTag.opt = relative;
+                            if (index < relative_arr.length) {
+                                recur_relative();
+                            } else {
+                                res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                                if (!is_media) {
                                     mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
                                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                                         if(err) {
@@ -479,9 +526,9 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                         console.log(new Date());
                                     });
                                 }
-                            });
-                        }
-                    });
+                            }
+                        });
+                    }
                 });
             });
         }
