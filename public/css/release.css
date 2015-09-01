@@ -404,11 +404,11 @@ ul.alert-dropdown {
     width: 100px;
     height: 100px;
     color: #000; /* Fallback for older browsers */
-    color: rgba(0, 0, 0, 0.5);
+    color: rgba(0, 0, 0, 0.3);
     top:0px;
     left:0px;
     _position:absolute; /* position fixed for IE6 */
-    font-size: 250%;
+    font-size: 600%;
     line-height: 100px;
     text-decoration: none;
 }
@@ -418,11 +418,11 @@ ul.alert-dropdown {
     width: 100px;
     height: 100px;
     color: #000; /* Fallback for older browsers */
-    color: rgba(0, 0, 0, 0.5);
+    color: rgba(0, 0, 0, 0.3);
     top:0px;
     right:0px;
     _position:absolute; /* position fixed for IE6 */
-    font-size: 250%;
+    font-size: 600%;
     line-height: 100px;
     float: right !important;
     text-decoration: none;
@@ -779,6 +779,22 @@ audio.media-screen {
 
 .item-point:hover, .item-point:link, .item-point:visited, .item-point:active {
     color: black;
+}
+
+.recycled .item-point:hover,.recycled .item-point:link,.recycled .item-point:visited,.recycled .item-point:active {
+    color: red;
+}
+
+.recycled {
+    color: red;
+}
+
+.recycling .item-point:hover,.recycling .item-point:link,.recycling .item-point:visited,.recycling .item-point:active {
+    color: #FFBF00;
+}
+
+.recycling {
+    color: #FFBF00;
 }
 
 .history-point:hover, .history-point:link, .history-point:visited, .history-point:active {
