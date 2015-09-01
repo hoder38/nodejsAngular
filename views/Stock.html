@@ -211,11 +211,14 @@
             <li ng-show="toolList.per">
                 <a ng-click="stockPer()" href="#">PER</a>
             </li>
+            <li ng-show="toolList.pre">
+                <a ng-click="stockPre()" href="#">PREDICT</a>
+            </li>
             <li ng-show="toolList.yield">
                 <a ng-click="stockYield()" href="#">YIELD</a>
             </li>
             <li ng-show="toolList.dir" ng-repeat="item in stockDirList">
-                <a confirmed-click="add2Parent(item)" ng-confirm-click="Would you sure to add this tag to Dir?" href="#">{{item.show}}</a>
+                <a confirmed-click="add2Parent(item)" ng-confirm-click="Would you sure to add" ng-sub-msg="to {{item.show}}?" href="#">{{item.show}}</a>
             </li>
         </ul>
     </div>
@@ -240,7 +243,7 @@
                 </tr>
                 <tr ng-repeat="tag in relativeList">
                     <td class="item-check text-center">
-                        <button confirmed-click="addTag(tag)" ng-confirm-click="Would you sure to ADD this tag?" type="button" class="btn btn-default" tooltip="增加此TAG為共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right">
+                        <button confirmed-click="addTag(tag)" ng-confirm-click="Would you sure to add {{tag}}?" type="button" class="btn btn-default" tooltip="增加此TAG為共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right">
                             <i class="glyphicon glyphicon-plus-sign"></i>
                         </button>
                     </td>
@@ -282,7 +285,7 @@
                 </tr>
                 <tr ng-repeat="tag in exceptList">
                     <td class="item-check text-center">
-                        <button confirmed-click="addTag(tag)" ng-confirm-click="Would you sure to ADD this tag?" type="button" class="btn btn-default" tooltip="增加此TAG為共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right">
+                        <button confirmed-click="addTag(tag)" ng-confirm-click="Would you sure to add {{tag}}?" type="button" class="btn btn-default" tooltip="增加此TAG為共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right">
                             <i class="glyphicon glyphicon-plus-sign"></i>
                         </button>
                     </td>

@@ -1438,6 +1438,10 @@ module.exports = {
                     } else {
                         managementStatus[Y][Q][dataRelative] = 0;
                     }
+                    if (dataRelative === 'profitRelative') {
+                        managementStatus.b = Relative / revenueVariance[i-2] / revenueVariance[i-2];
+                        managementStatus.a = dataEven[i-2] - managementStatus.b * revenueEven[i-2];
+                    }
                 } else {
                     i--;
                 }
@@ -1461,7 +1465,7 @@ module.exports = {
         var this_obj = this;
         var date = new Date();
         var year = date.getFullYear();
-        var month = date.getMonth();
+        var month = date.getMonth()+1;
         var quarter = 3;
         if (month < 4) {
             quarter = 4;
@@ -1932,18 +1936,21 @@ module.exports = {
                     }
                 }
             }
-            getStockPrice(items[0].type, items[0].index, function(err, price) {
-                if(err) {
-                    util.handleError(err, callback, callback);
-                }
-                var per = 0;
-                if (yearEPS > 0) {
-                    per = Math.ceil(price/yearEPS*1000)/1000;
-                }
+            if (yearEPS > 0) {
+                getStockPrice(items[0].type, items[0].index, function(err, price) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    var per = Math.ceil(price/yearEPS*1000)/1000;
+                    setTimeout(function(){
+                        callback(null, per);
+                    }, 0);
+                });
+            } else {
                 setTimeout(function(){
-                    callback(null, per);
+                    callback(null, yearEPS);
                 }, 0);
-            });
+            }
         });
     },
     getStockYield: function(id, callback) {
@@ -1985,6 +1992,144 @@ module.exports = {
             }
         });
     },
+    getPredictPER: function(id, callback) {
+        var this_obj = this;
+        var sales_per = [];
+        var sales_num = [];
+        var url = '';
+        var date = new Date();
+        var year = date.getFullYear() - 1911;
+        var month = date.getMonth()+1;
+        var month_str = month.toString();
+        if (month < 10) {
+            month_str = '0' + month_str;
+        }
+        console.log(year);
+        console.log(month_str);
+        mongo.orig("find", "stock", {_id: id}, {limit: 1}, function(err, items){
+            if(err) {
+                util.handleError(err, callback, callback);
+            }
+            if (items.length === 0) {
+                util.handleError({hoerror: 2, message: "can not find stock!!!"}, callback, callback);
+            }
+            switch(items[0].type) {
+                case 'twse':
+                var index = 0;
+                recur_mp();
+                function recur_mp() {
+                    url = 'http://mops.twse.com.tw/mops/web/ajax_t05st10_ifrs?encodeURIComponent=1&run=Y&step=0&yearmonth=' + year + month_str + '&colorchg=&TYPEK=all&co_id=' + items[0].index + '&off=1&year=' + year + '&month=' + month_str + '&firstin=true';
+                    api.xuiteDownload(url, '', function(err, data) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        if (data.length > 500) {
+                            var raw = data.match(/-?[0-9,\.]+<\/TD>/gi);
+                            if (!raw || raw.length < 4) {
+                                console.log(data);
+                                util.handleError({hoerror: 2, message: "can not find month sales!!!"}, callback, callback);
+                            }
+                            sales_num.push(Number(raw[0].match(/[0-9,]+/)[0].replace(/,/g, '')));
+                            if (raw.length > 10) {
+                                sales_per.push(Number(raw[6].match(/-?[0-9\.]+/)[0]));
+                            } else {
+                                sales_per.push(Number(raw[3].match(/-?[0-9\.]+/)[0]));
+                            }
+                        } else if (data.length > 200) {
+                            util.handleError({hoerror: 2, message: "稍後再查詢!!"}, callback, callback);
+                        }
+                        index++;
+                        if (month === 1) {
+                            year--;
+                            month = 12;
+                            month_str = month.toString();
+                        } else {
+                            month--;
+                            month_str = month.toString();
+                            if (month < 10) {
+                                month_str = '0' + month_str;
+                            }
+                        }
+                        console.log(year);
+                        console.log(month_str);
+                        if (index >= 20 || sales_num.length > 11) {
+                            console.log(sales_num);
+                            console.log(sales_per);
+                            var per_even = caculateEven(sales_per, true);
+                            var relative = 0;
+                            var even = (sales_per.length + 1) * sales_per.length /2/sales_per.length;
+                            var vari = 0;
+                            for (var i = sales_per.length; i > 0; i--) {
+                                vari += (i - even) * (i - even);
+                            }
+                            for (var i = 0; i < sales_per.length; i++) {
+                                relative += (sales_per.length - i - even) * (sales_per[i] - per_even[per_even.length-1]);
+                            }
+                            relative = Math.ceil(relative / vari * 1000) / 1000;
+                            var init = Math.ceil((per_even[per_even.length-1] - relative * even)* 1000) / 1000;
+                            console.log(relative);
+                            console.log(init);
+                            var predict_sales = 0;
+                            for (var i = sales_num.length-1; i >= 0; i--) {
+                                predict_sales += sales_num[i] * ( 100 + init + relative * (sales_per.length + sales_num.length - i))/100;
+                            }
+                            predict_sales = Math.ceil(predict_sales);
+                            console.log(predict_sales);
+                            sales = items[0].sales;
+                            cash = items[0].cash;
+                            asset = items[0].asset;
+                            year = date.getFullYear();
+                            var cashStatus = this_obj.getCashStatus(cash, asset);
+                            var salesStatus = this_obj.getSalesStatus(sales, asset);
+                            var profitStatus = this_obj.getProfitStatus(salesStatus, cashStatus, asset);
+                            var managementStatus = this_obj.getManagementStatus(salesStatus, asset);
+                            var predict_eps = 0;
+                            for (i = 3; i >=0; i--) {
+                                if (profitStatus[year][i]) {
+                                    if (profitStatus[year][i].salesPerShare > 0 && predict_sales > 0) {
+                                        predict_eps = predict_sales / profitStatus[year][i].salesPerShare * 1000;
+                                        var predict_profit = managementStatus.a + managementStatus.b * predict_sales * 1000;
+                                        var predict_profit_eps = predict_profit / asset[year][i].share;
+                                        getStockPrice(items[0].type, items[0].index, function(err, price) {
+                                            if(err) {
+                                                util.handleError(err, callback, callback);
+                                            }
+                                            var per = 0;
+                                            console.log(predict_eps);
+                                            console.log(predict_profit_eps);
+                                            if (predict_eps < predict_profit_eps) {
+                                                per = Math.ceil(price/predict_eps*1000)/1000;
+                                            } else {
+                                                per = Math.ceil(price/predict_profit_eps*1000)/1000;
+                                            }
+                                            setTimeout(function(){
+                                                callback(null, per);
+                                            }, 0);
+                                        });
+                                    } else {
+                                        for (var i = sales_num.length-1; i >= 0; i--) {
+                                            predict_eps += sales_num[i];
+                                        }
+                                        predict_eps = Math.ceil((predict_sales/predict_eps-1)*1000)/1000 + '%';
+                                        setTimeout(function(){
+                                            callback(null, predict_eps);
+                                        }, 0);
+                                    }
+                                    break;
+                                }
+                            }
+                            console.log('done');
+                        } else {
+                            recur_mp();
+                        }
+                    }, 10000, false, false);
+                }
+                break;
+                default:
+                util.handleError({hoerror: 2, message: "stock type unknown!!!"}, callback, callback);
+            }
+        });
+    }
 };
 
 function getStockPrice(type, index, callback) {
@@ -2083,7 +2228,7 @@ function handleStockTag(type, index, callback){
     });
 }
 
-function caculateEven(data) {
+function caculateEven(data, is_dot) {
     var dataSum = [];
     var dataEven = [];
     var Sum = 0;
@@ -2094,13 +2239,19 @@ function caculateEven(data) {
         }
         dataSum.push(Sum);
     }
-    for (var i in dataSum) {
-        dataEven.push(Math.ceil(dataSum[i] / (Number(i)+3)));
+    if (is_dot) {
+        for (var i in dataSum) {
+            dataEven.push(Math.ceil(dataSum[i] / (Number(i)+3)*1000)/1000);
+        }
+    } else {
+        for (var i in dataSum) {
+            dataEven.push(Math.ceil(dataSum[i] / (Number(i)+3)));
+        }
     }
     return dataEven;
 }
 
-function caculateVariance(data, dataEven) {
+function caculateVariance(data, dataEven, is_dot) {
     var dataVariance = [];
     var Variance = 0;
     for (var i = 2; i < data.length; i++) {
@@ -2108,7 +2259,11 @@ function caculateVariance(data, dataEven) {
         for (var j = 0; j <= i; j++) {
             Variance += (data[j] - dataEven[i-2]) * (data[j] - dataEven[i-2]);
         }
-        dataVariance.push(Math.ceil(Math.sqrt(Variance)));
+        if (is_dot) {
+            dataVariance.push(Math.ceil(Math.sqrt(Variance)*1000)/1000);
+        } else {
+            dataVariance.push(Math.ceil(Math.sqrt(Variance)));
+        }
     }
     return dataVariance;
 }

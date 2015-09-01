@@ -466,6 +466,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
             this.$parent.toolList.url = false;
             this.$parent.toolList.email = false;
             this.$parent.toolList.del = false;
+            confirm_str = item;
         } else {
             this.$parent.toolList.dir = false;
             this.$parent.toolList.details = true;
@@ -1158,6 +1159,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
                 this_obj.upPasswordFocus = true;
                 this_obj.showClearPassword = false;
                 this_obj.$parent.closeBlockPW(true);
+                this_obj.latest = id;
                 delete result;
             }
         }, function(errorResult) {
@@ -1183,12 +1185,13 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         } else {
             var this_obj = this;
             var passwordapi = null;
+            var id = this.detailsId;
             if (is_pre) {
-                passwordapi = $resource('/api/password/getPW/' + this.detailsId + '/pre', {}, {
+                passwordapi = $resource('/api/password/getPW/' + id + '/pre', {}, {
                     'getPW': { method:'PUT' }
                 });
             } else {
-                passwordapi = $resource('/api/password/getPW/' + this.detailsId, {}, {
+                passwordapi = $resource('/api/password/getPW/' + id, {}, {
                     'getPW': { method:'PUT' }
                 });
             }
@@ -1226,6 +1229,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
                         }
                     }
                     this_obj.$parent.closeBlockPW(true);
+                    this_obj.latest = id;
                     delete result;
                 }
             }, function(errorResult) {

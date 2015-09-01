@@ -450,14 +450,18 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
-            var name = util.isValidString(req.params.name, 'name');
-            if (req.params.name.match(/^>(\d+)$/)) {
-                name = req.params.name;
+            var name = false;
+            var name_arr = req.params.name.split(' : ');
+            for (var i in name_arr) {
+                name = util.isValidString(name_arr[i], 'name');
+                if (name_arr[i].match(/^>(\d+)$/)) {
+                    name = name_arr[i];
+                }
+                if (name === false) {
+                    util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
+                }
+                tags.setSingleArray(name);
             }
-            if (name === false) {
-                util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
-            }
-            tags.setSingleArray(name);
         }
         tagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
@@ -1400,6 +1404,25 @@ app.get('/api/stock/getPER/:uid', function(req, res,next) {
     });
 });
 
+app.get('/api/stock/getPredictPER/:uid', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('stock get predict per');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        stockTool.getPredictPER(id, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json({per:result});
+        });
+    });
+});
+
 app.get('/api/stock/getYield/:uid', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('stock get yield');
@@ -1872,7 +1895,7 @@ app.put('/api/password/getPW/:uid/:type?', function (req, res, next) {
         console.log("get password");
         console.log(new Date());
         console.log(req.url);
-        pwTool.getPassword(req.params.uid, req.params.type, req.body.userPW, req.user, next, function(err, result){
+        pwTool.getPassword(req.params.uid, req.params.type, req.body.userPW, req.user, req.session, next, function(err, result){
             if(err) {
                 util.handleError(err, next, res);
             }

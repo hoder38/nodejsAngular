@@ -109,7 +109,7 @@ module.exports = {
             }, 0);
         });
     },
-    getPassword: function(uid, type, userPW, user, next, callback) {
+    getPassword: function(uid, type, userPW, user, session, next, callback) {
         type = typeof type !== 'undefined' ? type : null;
         var select = {_id: 0, important: 1};
         if (type === 'pre') {
@@ -148,6 +148,11 @@ module.exports = {
             } else {
                 password = decrypt(items[0].password);
             }
+            pwTagTool.setLatest('', id, session, function(err) {
+                if (err) {
+                    util.handleError(err);
+                }
+            });
             setTimeout(function(){
                 callback(null, {password: password});
                 delete password;

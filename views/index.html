@@ -156,7 +156,7 @@
                         <div class="dropdown" dropdown="" is-open="dropdown.feedback">
                             <ul class="dropdown-menu" id="dir-list">
                                 <li ng-repeat="item in dirList">
-                                    <a ng-confirm-click="'Would you sure to add this tag to Dir?'" confirmed-click="feedbackAdd2Parent(item.name)">{{item.show}}</a>
+                                    <a ng-confirm-click="Would you sure to add" ng-sub-msg="to {{item.show}}?" confirmed-click="feedbackAdd2Parent(item.name)">{{item.show}}</a>
                                 </li>
                             </ul>
                         </div>
@@ -212,7 +212,7 @@
                             {{image.showId}}
                         </a>
                         <a href="#" id="transparent-right" class="{{(!isVisible&&isFull) && 'visible-section' || 'invisible-section'}} text-center" ng-click="isVisible = !isVisible">
-                            ->
+                            <i class="glyphicon glyphicon-repeat"></i>
                         </a>
                         <div class="panel-heading" ng-click="mediaToggle('image')">
                             <h4 class="panel-title">
@@ -326,7 +326,7 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <audio class="media-screen" ng-src="{{music.src | trusted}}" controls autoplay ng-music ng-ended="musicShuffle()" ng-play="testLogin()" ng-pause="mediaRecord('music')">
+                            <audio class="media-screen" ng-src="{{music.src | trusted}}" controls autoplay ng-music ng-ended="musicShuffle()" ng-play="testLogin()" ng-pause="mediaRecord('music')" id="music-tag">
                             </audio>
                         </div>
                     </section>

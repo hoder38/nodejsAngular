@@ -1,7 +1,7 @@
 //壓縮 手動排序跟新增
 //cat script/angular.min.js script/angular-route.min.js script/angular-resource.min.js script/angular-cookies.min.js script/angular-sanitize.min.js script/angular-file-upload.js script/Chart.min.js script/angular-chart.min.js script/controllers.js script/stock-controllers.js script/password-controllers.js script/frontend.js script/ui-bootstrap-tpls-0.12.0.min.js script/vtt.js > script/release.js
 //cat css/angular-chart.css css/bootstrap.min.css css/bootstrap-theme.min.css font-awesome/css/font-awesome.min.css css/sb-admin.css > css/release.css
-var video, music, subtitles, videoStart=0, musicStart=0;
+var video, music, subtitles, videoStart=0, musicStart=0, confirm_str='';
 var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSanitize', 'angularFileUpload', 'ui.bootstrap', 'chart.js'], function($routeProvider, $locationProvider) {
     $routeProvider.when('/', {
         templateUrl: '/views/homepage',
@@ -62,17 +62,31 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
         link: function (scope, element, attr) {
             var msg = attr.ngConfirmClick || "Are you sure?";
             var clickAction = attr.confirmedClick;
-            element.bind('click',function (event) {
-                openModal(msg).then(function () {
-                    scope.$eval(clickAction);
-                }, function () {
+            var msg2 = attr.ngSubMsg;
+            if (msg2) {
+                element.bind('click',function (event) {
+                    openModal(msg+' '+confirm_str+' '+msg2).then(function () {
+                        scope.$eval(clickAction);
+                    }, function () {
+                    });
                 });
-            });
+            } else {
+                element.bind('click',function (event) {
+                    openModal(msg).then(function () {
+                        scope.$eval(clickAction);
+                    }, function () {
+                    });
+                });
+            }
+
         }
     };
 }).directive('ngMusic', function() {
     return function (scope, element, attrs) {
         music = element[0];
+        music.onplay = function() {
+            music.focus();
+        };
         music.addEventListener('loadedmetadata', function () {
             if (musicStart) {
                 music.currentTime = musicStart;
@@ -83,6 +97,9 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
 }).directive('ngVideo', function() {
     return function (scope, element, attrs) {
         video = element[0];
+        video.onplay = function() {
+            video.focus();
+        };
         video.addEventListener('loadedmetadata', function () {
             if (videoStart) {
                 video.currentTime = videoStart;
@@ -528,7 +545,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
-    $scope.toolList = {download: false, edit: false, upload:false, del: false, dir: false, item: null};
+    $scope.toolList = {download: false, edit: false, upload:false, del: false, dir: false, first: false, item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -906,31 +923,65 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 });
             }
         } else if (name && !index) {
-            if (name.match(/^>\d+$/) || isValidString(name, 'name')) {
-                if (this_obj.multiSearch) {
-                    Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly, {}, {
-                        'storage': { method:'GET' }
-                    });
-                } else {
-                    Info = $resource('/api/storage/getSingle/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly, {}, {
-                        'storage': { method:'GET' }
-                    });
+            var query_name = '';
+            if (Array.isArray(name)) {
+                for (var i in name) {
+                    if (name[i].match(/^>\d+$/) || isValidString(name[i], 'name')) {
+
+                    } else {
+                        addAlert('search tag is not vaild!!!');
+                        return false;
+                    }
                 }
+                query_name = name.join(' : ');
             } else {
-                addAlert('search tag is not vaild!!!');
-                return false;
+                if (name.match(/^>\d+$/) || isValidString(name, 'name')) {
+                    query_name = name;
+                } else {
+                    addAlert('search tag is not vaild!!!');
+                    return false;
+                }
+            }
+            if (this_obj.multiSearch) {
+                Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + query_name + '/' + exactly, {}, {
+                    'storage': { method:'GET' }
+                });
+            } else {
+                Info = $resource('/api/storage/getSingle/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + query_name + '/' + exactly, {}, {
+                    'storage': { method:'GET' }
+                });
             }
         } else if (!name && index) {
             addAlert("not enough parameter");
             return false;
         } else {
-            if ((name.match(/^>\d+$/) || isValidString(name, 'name')) && isValidString(index, 'parentIndex')) {
-                Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly + '/' + index, {}, {
+            var query_name = '';
+            if (Array.isArray(name)) {
+                for (var i in name) {
+                    if (name[i].match(/^>\d+$/) || isValidString(name[i], 'name')) {
+
+                    } else {
+                        addAlert('search tag is not vaild!!!');
+                        return false;
+                    }
+                }
+                query_name = name.join(':');
+            } else {
+                if (name.match(/^>\d+$/) || isValidString(name, 'name')) {
+                    query_name = name;
+                } else {
+                    addAlert('search tag is not vaild!!!');
+                    return false;
+                }
+            }
+            if (this_obj.multiSearch) {
+                Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + query_name + '/' + exactly + '/' + index, {}, {
                     'storage': { method:'GET' }
                 });
             } else {
-                addAlert('search tag is not vaild!!!');
-                return false;
+                Info = $resource('/api/storage/getSingle/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + query_name + '/' + exactly, {}, {
+                    'storage': { method:'GET' }
+                });
             }
         }
         this_obj.moreDisabled = true;
@@ -1414,7 +1465,28 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         return false;
     }
 
+    $scope.selectFirst = function($event, item) {
+        if (item.tags.indexOf('first item') !== -1) {
+            this.$parent.toolList.item = item;
+            this.$parent.toolList.first = true;
+            this.$parent.toolList.dir = false;
+            this.$parent.toolList.download = false;
+            this.$parent.toolList.edit = false;
+            this.$parent.toolList.del = false;
+            this.$parent.toolList.recover = false;
+            this.$parent.toolList.upload = false;
+            this.$parent.toolList.delMedia = false;
+            this.$parent.toolList.vlogMedia = false;
+            this.toggleDropdown($event, 'item');
+        } else {
+            this.showUrl(item);
+        }
+    }
+
     $scope.showUrl = function(item) {
+        if (!item) {
+            item = this.toolList.item;
+        }
         $window.open(decodeURIComponent(item.url));
         var mediaApi = $resource('/api/media/setTime/' + item.id + '/url', {}, {
             'setTime': { method:'GET' }
@@ -1599,6 +1671,8 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.upload = false;
             this.$parent.toolList.delMedia = false;
             this.$parent.toolList.vlogMedia = false;
+            this.$parent.toolList.first = false;
+            confirm_str = item;
         } else {
             if (item.status === 7) {
                 this.$parent.toolList.download = false;
@@ -1606,6 +1680,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 this.$parent.toolList.download = true;
             }
             this.$parent.toolList.dir = false;
+            this.$parent.toolList.first = false;
             if (item.isOwn) {
                 this.$parent.toolList.edit = true;
                 this.$parent.toolList.del = true;
@@ -1873,6 +1948,45 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
     }
 
+    if (!is_firefox) {
+        document.getElementById('music-tag').onkeydown = function(evt) {
+            evt = evt || window.event;
+            switch(evt.keyCode) {
+                case 32:
+                if (music.paused) {
+                    music.play();
+                } else {
+                    music.pause();
+                }
+                break;
+                case 37:
+                if (music.currentTime >= 15) {
+                    music.currentTime -= 15;
+                } else {
+                    music.currentTime = 0;
+                }
+                break;
+                case 38:
+                if (music.volume < 0.9) {
+                    music.volume+= 0.1;
+                } else {
+                    music.volume = 1;
+                }
+                break;
+                case 39:
+                music.currentTime += 15;
+                break;
+                case 40:
+                if (music.volume > 0.1) {
+                    music.volume-= 0.1;
+                } else {
+                    music.volume = 0;
+                }
+                break;
+            }
+        };
+    }
+
     document.getElementById('video-tag').onkeydown = function(evt) {
         evt = evt || window.event;
         if (is_firefox) {
@@ -2065,6 +2179,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.selectFeedbackTag = function($event, tag) {
         var pre = $scope.feedbackSelectTag;
         $scope.feedbackSelectTag = tag;
+        confirm_str = tag;
         this.toggleDropdown($event, 'feedback');
     }
     $scope.toggleWidget = function (type) {
@@ -2375,6 +2490,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         }
                     }
                 };
+                $scope.testLogin();
             }
         }, function(errorResult) {
             if (errorResult.status === 400) {
@@ -2547,9 +2663,10 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     }
 
     $scope.testLogin = function() {
-        var testApi = $resource('/api/getUser', {}, {
-            'testLogin': { method:'GET' }
+        var testApi = $resource(this.main_url + '/api/testLogin', {}, {
+            'testLogin': { method:'GET', withCredentials: true }
         });
+        var this_obj = this;
         testApi.testLogin({}, function (result) {
             if (result.loginOK) {
                 $window.location.href = $location.path();
@@ -2560,7 +2677,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             } else if (errorResult.status === 403) {
                 addAlert('unknown API!!!');
             } else if (errorResult.status === 401) {
-                $window.location.href = $location.path();
+                //$window.location.href = $location.path();
+                this_obj.doLogout();
             }
         });
     }

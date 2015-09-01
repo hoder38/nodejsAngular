@@ -518,22 +518,29 @@ module.exports = function(collection) {
                     }
                 });
             } else if (!index) {
+                var name_arr = tagName.split(' : ');
                 var name = false;
-                if (collection === 'stock' && (tagName.match(/^>\d+$/) || tagName.match(/^profit>\d+$/) || tagName.match(/^safety>-?\d+$/) || tagName.match(/^manag>\d+$/))) {
-                    name = tagName;
-                } else if (collection === 'storage' && tagName.match(/^>\d+$/)) {
-                    name = tagName;
-                } else {
-                    name = util.isValidString(tagName, 'name');
-                }
-                if (name === false) {
-                    util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
+                for (var i in name_arr) {
+                    if (collection === 'stock' && (name_arr[i].match(/^>\d+$/) || name_arr[i].match(/^profit>\d+$/) || name_arr[i].match(/^safety>-?\d+$/) || name_arr[i].match(/^manag>\d+$/))) {
+                        name = name_arr[i];
+                    } else if (collection === 'storage' && name_arr[i].match(/^>\d+$/)) {
+                        name = name_arr[i];
+                    } else {
+                        name = util.isValidString(name_arr[i], 'name');
+                    }
+                    if (name === false) {
+                        util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
+                    }
+                    name_arr[i] = name;
                 }
                 var tags = this_obj.searchTags(session);
                 if (!tags) {
                     util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
-                var parentList = tags.getArray(name, exactly);
+                var parentList = null;
+                for (var i in name_arr) {
+                    parentList = tags.getArray(name_arr[i], exactly);
+                }
                 var sql = getQuerySql(user, parentList.cur, parentList.exactly);
                 if (sql.skip) {
                     options["skip"] = page + sql.skip;
@@ -577,15 +584,19 @@ module.exports = function(collection) {
             } else {
                 var name = false,
                     Pindex = util.isValidString(index, 'parentIndex');
-                if (collection === 'stock' && (tagName.match(/^>\d+$/) || tagName.match(/^profit>\d+$/) || tagName.match(/^safety>-?\d+$/) || tagName.match(/^manag>\d+$/))) {
-                    name = tagName;
-                } else if (collection === 'storage' && tagName.match(/^>\d+$/)) {
-                    name = tagName;
-                } else {
-                    name = util.isValidString(tagName, 'name');
-                }
-                if (name === false) {
-                    util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
+                var name_arr = tagName.split(' : ');
+                for (var i in name_arr) {
+                    if (collection === 'stock' && (name_arr[i].match(/^>\d+$/) || name_arr[i].match(/^profit>\d+$/) || name_arr[i].match(/^safety>-?\d+$/) || name_arr[i].match(/^manag>\d+$/))) {
+                        name = name_arr[i];
+                    } else if (collection === 'storage' && name_arr[i].match(/^>\d+$/)) {
+                        name = name_arr[i];
+                    } else {
+                        name = util.isValidString(name_arr[i], 'name');
+                    }
+                    if (name === false) {
+                        util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
+                    }
+                    name_arr[i] = name;
                 }
                 if (Pindex === false) {
                     util.handleError({hoerror: 2, message: "parentIndex is not vaild"}, next, callback);
@@ -594,7 +605,11 @@ module.exports = function(collection) {
                 if (!tags) {
                     util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
-                var parentList = tags.getArray(name, exactly, Pindex);
+                var parentList = null;
+                for (var i in name_arr) {
+                    parentList = tags.getArray(name_arr[i], exactly, Pindex);
+                    Pindex++;
+                }
                 var sql = getQuerySql(user, parentList.cur, parentList.exactly);
                 if (sql.skip) {
                     options["skip"] = page + sql.skip;

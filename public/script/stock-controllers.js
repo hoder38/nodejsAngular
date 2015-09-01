@@ -504,10 +504,13 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         if (typeof item === 'string') {
             this.$parent.toolList.dir = true;
             this.$parent.toolList.per = false;
+            this.$parent.toolList.pre = false;
             this.$parent.toolList.yield = false;
+            confirm_str = item;
         } else {
             this.$parent.toolList.dir = false;
             this.$parent.toolList.per = true;
+            this.$parent.toolList.pre = true;
             this.$parent.toolList.yield = true;
         }
         this.toggleDropdown($event, 'item');
@@ -1722,6 +1725,35 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         var this_obj = this;
         if (this.toolList.item) {
             var stockApi = $resource('/api/stock/getPER/' + this.toolList.item.id, {}, {
+                'getPER': { method:'get' }
+            });
+            stockApi.getPER({}, function (result) {
+                if (result.loginOK) {
+                    $window.location.href = $location.path();
+                } else {
+                    this_obj.inputIndex = result.per;
+                    this_obj.tagNew = false;
+                    this_obj.bookmarkNew = false;
+                    this_obj.parseIndex = true;
+                    this_obj.parseIndexFocus = true;
+                }
+            }, function(errorResult) {
+                if (errorResult.status === 400) {
+                    addAlert(errorResult.data);
+                } else if (errorResult.status === 403) {
+                    addAlert('unknown API!!!');
+                } else if (errorResult.status === 401) {
+                    $window.location.href = $location.path();
+                }
+            });
+        } else {
+            addAlert('select a stock!!!');
+        }
+    }
+    $scope.stockPre = function() {
+        var this_obj = this;
+        if (this.toolList.item) {
+            var stockApi = $resource('/api/stock/getPredictPER/' + this.toolList.item.id, {}, {
                 'getPER': { method:'get' }
             });
             stockApi.getPER({}, function (result) {

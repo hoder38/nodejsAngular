@@ -1404,6 +1404,16 @@ app.get('/api/handleMedia/:uid/:action(act|vlog|del)', function(req, res, next) 
     });
 });
 
+app.get('/api/testLogin', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('test login');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        res.json({apiOK: true});
+    });
+});
+
 /*
 app.get('/api/stock/query/:index', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
