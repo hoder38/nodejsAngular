@@ -255,5 +255,25 @@ module.exports = {
             return true;
         }
         return false;
+    },
+    SRT2VTT: function(filePath, ext, callback) {
+        var this_obj = this;
+        fs.readFile(filePath + '.' + ext, function (err,data) {
+            if (err) {
+                this_obj.handleError(err, callback, callback);
+            }
+            data = this_obj.bufferToString(data);
+            var result = "WEBVTT\n\n";
+            result = result + data.replace(/,/g, '.');
+            fs.writeFile(filePath + '.vtt', result, 'utf8', function (err) {
+                if (err) {
+                    console.log(filePath + '.vtt');
+                    this_obj.handleError(err, callback, callback);
+                }
+                setTimeout(function(){
+                    callback(null);
+                }, 0);
+            });
+        });
     }
 };

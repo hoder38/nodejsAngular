@@ -4,7 +4,10 @@ var googleapis = require('googleapis'),
     urlMod = require('url'),
     path = require('path'),
     mkdirp = require('mkdirp'),
-    child_process = require('child_process');
+    child_process = require('child_process'),
+    xml2js = require('xml2js');
+
+var api = require("../models/api-tool.js");
 
 var config_type = require('../../../ver.js');
 
@@ -15,6 +18,8 @@ var mongo = require("../models/mongo-tool.js");
 var util = require("../util/utility.js");
 
 var mime = require('../util/mime.js');
+
+var xml_parser = new xml2js.Parser();
 
 var CLIENT_ID = config_type.google_id,
     CLIENT_SECRET = config_type.google_secret,
@@ -620,7 +625,10 @@ var exports = module.exports = {
                 util.handleError({hoerror: 2, message: 'recycle ' + recycle + ' denied!!!'}, callback, callback);
         }
     },
-    googleDownloadYoutube: function(url, filePath, callback) {
+    //install youtube-dl
+    //sudo wget https://yt-dl.org/latest/youtube-dl -O /usr/bin/youtube-dl
+    //sudo chmod a+x /usr/bin/youtube-dl
+    googleDownloadYoutube: function(url, filePath, callback, is_music) {
         var this_obj = this;
         this.googleDownload(url, filePath + ".htm", function(err) {
             if (err) {
@@ -629,42 +637,12 @@ var exports = module.exports = {
             var cmdline = 'grep ,\\\"url_encoded_fmt_stream_map\\\": ' + filePath + ".htm";
             var media_code = 37;
             child_process.exec(cmdline, function (err, output) {
-                var pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
-                var name_pattern = ',"title":"(.+?)",';
-                var tag_pattern = ',"keywords":"(.*?)",';
-                var thumb_pattern = ',"thumbnail_url":"(.+?)",';
-                var media_location, media_name, media_thumb=null, media_tag, tag_arr = [];
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                media_location = output.match(pattern);
-                if (!media_location) {
-                    media_code = 22;
-                    pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
-                    media_location = output.match(pattern);
-                    if (!media_location) {
-                        media_code = 18;
-                        pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
-                        media_location = output.match(pattern);
-                        if (!media_location) {
-                            media_code = 43;
-                            pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
-                            media_location = output.match(pattern);
-                            if (!media_location) {
-                                console.log(output);
-                                util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
-                            }
-                        }
-                    }
-                }
-                media_location = media_location[1];
-                media_location = decodeURIComponent(media_location);
-                media_name = output.match(name_pattern);
-                if (!media_name) {
-                    media_name = 'youtube video.mp4';
-                } else {
-                    media_name = media_name[1] + '.mp4';
-                }
+                var media_name, media_tag, tag_arr = [];
+                var name_pattern = ',"title":"(.+?)",';
+                var tag_pattern = ',"keywords":"(.*?)",';
                 media_tag = output.match(tag_pattern);
                 if (media_tag) {
                     media_tag = media_tag[1];
@@ -672,30 +650,164 @@ var exports = module.exports = {
                         tag_arr = media_tag.split(/,/);
                     }
                 }
-                media_thumb = output.match(thumb_pattern);
-                if (media_thumb) {
-                    media_thumb = media_thumb[1];
-                    media_thumb = media_thumb.replace(/\\\//g, '/');
+                media_name = output.match(name_pattern);
+                if (!media_name) {
+                    media_name = 'youtube video';
+                } else {
+                    media_name = media_name[1];
                 }
-                this_obj.googleDownload(media_location, filePath, function(err) {
-                    if (err) {
-                        util.handleError(err, callback, callback);
-                    }
-                    if (media_thumb) {
-                        this_obj.googleDownload(media_thumb, filePath + '_s.jpg', function(err) {
+                console.log(media_name);
+                if (is_music) {
+                    var mp3_time = new Date;
+                    var youtube_id = url.match(/v=(.+?)$/)[1];
+                    console.log(youtube_id);
+                    var push_url = '/a/pushItem/?item=http%3A//www.youtube.com/watch%3Fv%3D' + youtube_id + '&el=na&bf=false&r=' + mp3_time.getTime();
+                    var info_url = '/a/itemInfo/?video_id=' + youtube_id + '&ac=www&t=grp&r=' + mp3_time.getTime();
+                    var siged = sig_url(push_url);
+                    console.log('http://www.youtube-mp3.org' + siged);
+                    api.xuiteDownload('http://www.youtube-mp3.org' + siged, '', function(err, music_id) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(music_id);
+                        if (music_id !== youtube_id) {
+                            util.handleError({hoerror: 2, message: 'push music data failed!!!'}, callback, callback);
+                        }
+                        siged = sig_url(info_url);
+                        console.log('http://www.youtube-mp3.org' + siged);
+                        api.xuiteDownload('http://www.youtube-mp3.org' + siged, '', function(err, music_data) {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
-                            setTimeout(function(){
-                                callback(null, media_name, tag_arr);
-                            }, 0);
-                        });
-                    } else {
-                        setTimeout(function(){
-                            callback(null, media_name, tag_arr);
-                        }, 0);
+                            console.log(music_data);
+                            var music_json = music_data.match(/^info = (.*);$/);
+                            if (!music_json) {
+                                util.handleError({hoerror: 2, message: 'get music info failed!!!'}, callback, callback);
+                            }
+                            var music_info = JSON.parse(music_json[1]);
+                            var ts_create = music_info.ts_create;
+                            var r = encodeURIComponent(music_info.r);
+                            var h2 = music_info.h2;
+                            var download_url = '/get?video_id=' + youtube_id + '&ts_create=' + ts_create + '&r=' + r + '&h2=' + h2;
+                            siged = sig_url(download_url);
+                            console.log('http://www.youtube-mp3.org' + siged);
+                            api.xuiteDownload('http://www.youtube-mp3.org' + siged, filePath, function(err, pathname, filename) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                if (!filename) {
+                                    filename = path.basename(pathname);
+                                }
+                                setTimeout(function(){
+                                    callback(null, media_name + '.mp3', tag_arr);
+                                }, 0);
+                            });
+                        }, 60000, false, false);
+                    }, 60000, false, false);
+                } else {
+                    /*var pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
+                    var media_location, media_thumb=null;
+                    media_location = output.match(pattern);
+                    if (!media_location) {
+                        media_code = 22;
+                        pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
+                        media_location = output.match(pattern);
+                        if (!media_location) {
+                            media_code = 18;
+                            pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
+                            media_location = output.match(pattern);
+                            if (!media_location) {
+                                media_code = 43;
+                                pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
+                                media_location = output.match(pattern);
+                                if (!media_location) {
+                                    console.log(output);
+                                    util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
+                                }
+                            }
+                        }
                     }
-                });
+                    media_location = media_location[1];
+                    media_location = decodeURIComponent(media_location);*/
+                    var thumb_pattern = ',"thumbnail_url":"(.+?)",';
+                    var media_thumb = null, media_track = null;
+                    media_thumb = output.match(thumb_pattern);
+                    if (media_thumb) {
+                        media_thumb = media_thumb[1];
+                        media_thumb = media_thumb.replace(/\\\//g, '/');
+                    }
+                    var track_pattern = ',"caption_tracks":"(.+?)",';
+                    media_track = output.match(track_pattern);
+                    if (media_track) {
+                        media_track = media_track[1];
+                        media_track = media_track.split('\\u0026');
+                        var lang_arr = [];
+                        var temp = null;
+                        for (var i in media_track) {
+                            temp = media_track[i].match(/,?lc=([^,]+)/);
+                            if (temp) {
+                                lang_arr.push(temp[1]);
+                            }
+                        }
+                        console.log(lang_arr);
+                        if (lang_arr.indexOf('zh-TW') !== -1) {
+                            media_track = 'zh-TW';
+                        } else if (lang_arr.indexOf('zh-CN') !== -1) {
+                            media_track = 'zh-CN';
+                        } else if (lang_arr.indexOf('en') !== -1) {
+                            media_track = 'en';
+                        } else {
+                            media_track = null;
+                        }
+                    }
+                    var cmdline = 'youtube-dl "' + url + '" --output ' + filePath;
+                    if (media_track) {
+                        cmdline += ' --write-srt --write-auto-sub --sub-lang ' + media_track;
+                    }
+                    child_process.exec(cmdline, function (err, output) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(output);
+                        if (fs.existsSync(filePath + '.' + media_track + '.srt')) {
+                            fs.renameSync(filePath + '.' + media_track + '.srt', filePath + '.srt');
+                            util.SRT2VTT(filePath, 'srt', function(err) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                if (media_thumb) {
+                                    this_obj.googleDownload(media_thumb, filePath + '_s.jpg', function(err) {
+                                        if (err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        setTimeout(function(){
+                                            callback(null, media_name + '.mp4', tag_arr);
+                                        }, 0);
+                                    });
+                                } else {
+                                    setTimeout(function(){
+                                        callback(null, media_name + '.mp4', tag_arr);
+                                    }, 0);
+                                }
+                            });
+                        } else {
+                            if (media_thumb) {
+                                this_obj.googleDownload(media_thumb, filePath + '_s.jpg', function(err) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    setTimeout(function(){
+                                        callback(null, media_name + '.mp4', tag_arr);
+                                    }, 0);
+                                });
+                            } else {
+                                setTimeout(function(){
+                                    callback(null, media_name + '.mp4', tag_arr);
+                                }, 0);
+                            }
+                        }
+                    });
+                }
             });
         });
     },
@@ -824,3 +936,58 @@ function deUnicode(x) {
         return String.fromCharCode(parseInt(grp, 16)); } );
     return unescape(x);
 }
+
+//http://www.youtube-mp3.org signature function
+function sig(H){
+    var x3 = ['a','c','e','i','h','m','l','o','n','s','t','.']
+    ,G3 = [6,7,1,0,10,3,7,8,11,4,7,9,10,8,0,5,2]
+    ,M = ['a','c','b','e','d','g','m','-','s','o','.','p','3','r','u','t','v','y','n']
+    ,X = [[17,9,14,15,14,2,3,7,6,11,12,10,9,13,5],[11,6,4,1,9,18,16,10,0,11,11,8,11,9,15,10,1,9,6]]
+    ,A = {"a":870,"b":906,"c":167,"d":119,"e":130,"f":899,"g":248,"h":123,"i":627,"j":706,"k":694,"l":421,"m":214,"n":561,"o":819,"p":925,"q":857,"r":539,"s":898,"t":866,"u":433,"v":299,"w":137,"x":285,"y":613,"z":635,"_":638,"&":639,"-":880,"/":687,"=":721}
+    ,r3 = ["0","1","2","3","4","5","6","7","8","9"];
+    var encode = function(arr, code_arr) {
+        var out="";
+        for(var i=0;i < arr.length;i++) {
+            out += code_arr[arr[i]];
+        };
+        return out;
+    };
+    var check = function(arr, ch_str) {
+        var ret = arr.indexOf(ch_str, arr.length-ch_str.length);
+        return ret!==-1;
+    };
+    var findstr = function(arr, ch_str) {
+        for (var i=0;i < arr.length;i++) {
+            if(arr[i] == ch_str)
+                return i;
+        }
+        return -1;
+    };
+    var L = [1.23413,1.51214,1.9141741,1.5123114,1.51214,1.2651], F = 1;
+    F = L[1%2];
+    var W = "www.youtube-mp3.org", S = encode(X[0], M), T = encode(X[1], M);
+    if (check(W, S) || check(W, T)) {
+        F = L[1];
+    } else {
+        F = L[5%3];
+    }
+    var N = 3219;
+    for (var Y=0;Y < H.length;Y++) {
+        var Q = H.substr(Y, 1).toLowerCase();
+        if (findstr(r3, Q) > -1) {
+            N += (parseInt(Q)*121*F);
+        } else {
+            if (Q in A) {
+                N += (A[Q]*F);
+            }
+        }
+        N *= 0.1;
+    }
+    N = Math.round(N*1000);
+    return N;
+};
+
+function sig_url(a){
+    var b = sig(a);
+    return a + "&s=" + escape(b);
+};

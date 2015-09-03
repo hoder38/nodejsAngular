@@ -150,20 +150,11 @@ app.post('/upload/subtitle/:uid', function(req, res, next) {
                     if (err) {
                         util.handleError(err, next, res);
                     }
-                    fs.readFile(filePath + '.' + ext, function (err,data) {
+                    util.SRT2VTT(filePath, ext, function(err) {
                         if (err) {
                             util.handleError(err, next, res);
                         }
-                        data = util.bufferToString(data);
-                        var result = "WEBVTT\n\n";
-                        result = result + data.replace(/,/g, '.');
-                        fs.writeFile(filePath + '.vtt', result, 'utf8', function (err) {
-                            if (err) {
-                                console.log(filePath + '.vtt');
-                                util.handleError(err, next, res);
-                            }
-                            res.json({apiOK: true});
-                        });
+                        res.json({apiOK: true});
                     });
                 });
             }
@@ -345,22 +336,41 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
         var oOID = mongo.objectID();
         var filePath = util.getFileLocation(req.user._id, oOID);
         var folderPath = path.dirname(filePath);
-        var is_media = false;
+        var is_media = 0;
         if (!fs.existsSync(folderPath)) {
             mkdirp(folderPath, function(err) {
                 if(err) {
                     console.log(filePath);
                     util.handleError(err, next, res);
                 }
-                if (decodeURIComponent(url).match(/^(https|http):\/\/www\.youtube\.com\//)) {
-                    console.log('youtube');
-                    is_media = true;
-                    googleApi.googleDownloadYoutube(decodeURIComponent(url), filePath, function(err, filename, tag_arr) {
-                        streamClose(filename, tag_arr);
-                    });
+                url = decodeURIComponent(url);
+                if (url.match(/^(https|http):\/\/www\.youtube\.com\//)) {
+                    var is_music = url.match(/^(.*):music$/);
+                    if (is_music) {
+                         is_media = 4;
+                        console.log('youtube music');
+                        googleApi.googleDownloadYoutube(is_music[1], filePath, function(err, filename, tag_arr) {
+                            if (err) {
+                                sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
+                                util.handleError(err, next, res);
+                            }
+                            streamClose(filename, tag_arr);
+                        }, true);
+                    } else {
+                         is_media = 3;
+                        console.log('youtube');
+                        googleApi.googleDownloadYoutube(url, filePath, function(err, filename, tag_arr) {
+                            if (err) {
+                                sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, item[0].adultonly);
+                                util.handleError(err, next, res);
+                            }
+                            streamClose(filename, tag_arr);
+                        });
+                    }
                 } else {
-                    api.xuiteDownload(decodeURIComponent(url), filePath, function(err, pathname, filename) {
+                    api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                         if (err) {
+                            sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
                             util.handleError(err, next, res);
                         }
                         if (!filename) {
@@ -371,18 +381,34 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 }
             });
         } else {
-            if (decodeURIComponent(url).match(/^(https|http):\/\/www\.youtube\.com\//)) {
-                console.log('youtube');
-                is_media = true;
-                googleApi.googleDownloadYoutube(decodeURIComponent(url), filePath, function(err, filename, tag_arr) {
-                    if (err) {
-                        util.handleError(err, next, res);
-                    }
-                    streamClose(filename, tag_arr);
-                });
+            url = decodeURIComponent(url);
+            if (url.match(/^(https|http):\/\/www\.youtube\.com\//)) {
+                var is_music = url.match(/^(.*):music$/);
+                if (is_music) {
+                    is_media = 4;
+                    console.log('youtube music');
+                    googleApi.googleDownloadYoutube(is_music[1], filePath, function(err, filename, tag_arr) {
+                        if (err) {
+                            sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
+                            util.handleError(err, next, res);
+                        }
+                        streamClose(filename, tag_arr);
+                    }, true);
+                } else {
+                    is_media = 3;
+                    console.log('youtube');
+                    googleApi.googleDownloadYoutube(url, filePath, function(err, filename, tag_arr) {
+                        if (err) {
+                            sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
+                            util.handleError(err, next, res);
+                        }
+                        streamClose(filename, tag_arr);
+                    });
+                }
             } else {
-                api.xuiteDownload(decodeURIComponent(url), filePath, function(err, pathname, filename) {
+                api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                     if (err) {
+                        sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
                         util.handleError(err, next, res);
                     }
                     if (!filename) {
@@ -419,10 +445,11 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
             data['status'] = 0;//media type
             mediaHandleTool.handleTag(filePath, data, name, '', 0, function(err, mediaType, mediaTag, DBdata) {
                 if (err) {
+                    sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
                     util.handleError(err, next, res);
                 }
                 if (is_media) {
-                    DBdata['status'] = 3;
+                    DBdata['status'] = is_media;
                 }
                 var normal = tagTool.normalizeTag(name);
                 if (mediaTag.def.indexOf(normal) === -1) {
@@ -479,11 +506,13 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 DBdata[oUser_id] = mediaTag.def;
                 mongo.orig("insert", "storage", DBdata, function(err, item){
                     if(err) {
+                        sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
                         util.handleError(err, next, res);
                     }
                     console.log(item);
                     console.log('save end');
                     sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                    sendWs({type: req.user.username, data: name + ' upload complete'}, item[0].adultonly);
                     if (util.checkAdmin(2 ,req.user)) {
                         if (item[0].adultonly === 1) {
                             mediaTag.def.push('18禁');
