@@ -673,10 +673,10 @@ module.exports = function(sendWs) {
                                     }
                                 }
                                 if (items[0].adultonly === 1) {
-                                    result_tag.push('18禁');
+                                    result_tag.push('18+');
                                 } else {
                                     if (util.checkAdmin(2, user)) {
-                                        mediaTag.opt.push('18禁');
+                                        mediaTag.opt.push('18+');
                                     }
                                 }
                                 if (items[0].first === 1) {
@@ -834,7 +834,7 @@ module.exports = function(sendWs) {
                 data['adultonly'] = 0;
                 if (util.checkAdmin(2 ,user)) {
                     for (var i in dirpath) {
-                        if (tagTool.normalizeTag(dirpath[i]) === '18禁') {
+                        if (tagTool.normalizeTag(dirpath[i]) === '18+') {
                             data['adultonly'] = 1;
                             break;
                         }

@@ -248,7 +248,7 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                                     mediaTag.def.push(normal);
                                 }
                             } else {
-                                if (normal === '18禁') {
+                                if (normal === '18+') {
                                     DBdata['adultonly'] = 1;
                                 }
                             }
@@ -275,9 +275,9 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                         if (util.checkAdmin(2 ,req.user)) {
                             if (item[0].adultonly === 1) {
-                                mediaTag.def.push('18禁');
+                                mediaTag.def.push('18+');
                             } else {
-                                mediaTag.opt.push('18禁');
+                                mediaTag.opt.push('18+');
                             }
                         }
                         if (item[0].first === 1) {
@@ -470,7 +470,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                 mediaTag.def.push(normal);
                             }
                         } else {
-                            if (normal === '18禁') {
+                            if (normal === '18+') {
                                 DBdata['adultonly'] = 1;
                             }
                         }
@@ -486,7 +486,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                 mediaTag.def.push(normal);
                             }
                         } else {
-                            if (normal === '18禁') {
+                            if (normal === '18+') {
                                 DBdata['adultonly'] = 1;
                             }
                         }
@@ -515,9 +515,9 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     sendWs({type: req.user.username, data: name + ' upload complete'}, item[0].adultonly);
                     if (util.checkAdmin(2 ,req.user)) {
                         if (item[0].adultonly === 1) {
-                            mediaTag.def.push('18禁');
+                            mediaTag.def.push('18+');
                         } else {
-                            mediaTag.opt.push('18禁');
+                            mediaTag.opt.push('18+');
                         }
                     }
                     if (item[0].first === 1) {
@@ -621,7 +621,7 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
                             mediaTag.def.push(normal);
                         }
                     } else {
-                        if (normal === '18禁') {
+                        if (normal === '18+') {
                             DBdata['adultonly'] = 1;
                         }
                     }
@@ -648,9 +648,9 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
                 sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                 if (util.checkAdmin(2 ,req.user)) {
                     if (item[0].adultonly === 1) {
-                        mediaTag.def.push('18禁');
+                        mediaTag.def.push('18+');
                     } else {
-                        mediaTag.opt.push('18禁');
+                        mediaTag.opt.push('18+');
                     }
                 }
                 if (item[0].first === 1) {
@@ -1714,10 +1714,10 @@ function getFeedback(item, callback, user) {
             temp_tag.push('first item');
         }
         if (item.adultonly === 1) {
-            item.tags.push('18禁');
+            item.tags.push('18+');
         } else {
             if (util.checkAdmin(2, user)) {
-                temp_tag.push('18禁');
+                temp_tag.push('18+');
             }
         }
         var relative_arr = [];

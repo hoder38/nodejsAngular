@@ -2103,7 +2103,7 @@ app.get('/views/homepage', function(req, res, next) {
     console.log(req.url);
     console.log(req.body);
     var msg = "hello<br/> 壓縮檔加上.book或是cbr、cbz檔可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/><br/>指令不算在單項搜尋裡<br/>預設只會搜尋到有first item的檔案<br/>方便尋找，可以縮小範圍後再下all item顯示全部<br/><br/>播放器 快捷鍵:<br/>空白鍵: 播放/暫停<br/>c: 字幕 開/關<br/>左: 後退15秒<br/>右: 前進15秒<br/>上: 音量變大<br/>下: 音量變小<br/><br/>URL上傳支援:<br/>Youtube (with字幕)<br/>Youtube music: url結尾加上 :music 會下載成mp3格式(限制20分鐘以下的影片)";
-    var adult_msg = "<br/><br/>18禁指令: <br/><br/>18禁: 只顯示十八禁的檔案"
+    var adult_msg = "<br/><br/>18+指令: <br/><br/>18+: 只顯示十八禁的檔案"
     if (util.checkAdmin(2, req.user)) {
         msg += adult_msg;
     }
@@ -2209,7 +2209,7 @@ function getStorageItem(user, items, mediaHandle) {
         if (util.checkAdmin(1, user)) {
             for (var i in items) {
                 if (items[i].adultonly === 1) {
-                    items[i].tags.push('18禁');
+                    items[i].tags.push('18+');
                 }
                 if (items[i].first === 1) {
                     items[i].tags.push('first item');
@@ -2226,7 +2226,7 @@ function getStorageItem(user, items, mediaHandle) {
         } else {
             for (var i in items) {
                 if (items[i].adultonly === 1) {
-                    items[i].tags.push('18禁');
+                    items[i].tags.push('18+');
                 }
                 if (items[i].first === 1) {
                     items[i].tags.push('first item');
@@ -2248,7 +2248,7 @@ function getStorageItem(user, items, mediaHandle) {
         if (util.checkAdmin(1, user)) {
             for (var i in items) {
                 if (items[i].adultonly === 1) {
-                    items[i].tags.push('18禁');
+                    items[i].tags.push('18+');
                 }
                 if (items[i].first === 1) {
                     items[i].tags.push('first item');
@@ -2265,7 +2265,7 @@ function getStorageItem(user, items, mediaHandle) {
         } else {
             for (var i in items) {
                 if (items[i].adultonly === 1) {
-                    items[i].tags.push('18禁');
+                    items[i].tags.push('18+');
                 }
                 if (items[i].first === 1) {
                     items[i].tags.push('first item');

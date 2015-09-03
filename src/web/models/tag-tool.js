@@ -1,12 +1,12 @@
 var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 
-var default_tags = ['18禁', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important'];
+var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important'];
 
 var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'publisher', 'tw': '出版社'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
 var stock_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'country', 'tw': '國家'}, {'name': 'market type', 'tw': '市場種類'}, {'name': 'category', 'tw': '產業分類'}];
 var password_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'category', 'tw': '功能分類'}, {'name': 'platform', 'tw': '平台'}];
-var adultonly_arr = [{'name': 'adult_command', 'tw': '18禁指令'}, {'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_author', 'tw': '18禁作者'}, {'name': 'adultonly_category', 'tw': '18禁分類'}, {'name': 'adultonly_producer', 'tw': '成人片商'}, {'name': 'adultonly_franchise', 'tw': '成人系列作'}];
+var adultonly_arr = [{'name': 'adult_command', 'tw': '18+指令'}, {'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_author', 'tw': '18+作者'}, {'name': 'adultonly_category', 'tw': '18+分類'}, {'name': 'adultonly_producer', 'tw': '成人片商'}, {'name': 'adultonly_franchise', 'tw': '成人系列作'}];
 
 var queryLimit = 20;
 
@@ -190,12 +190,12 @@ module.exports = function(collection) {
                 },
                 setSingleArray: function(value) {
                     var normal = normalize(value);
-                    if (normal === 'all item' || normal === '18禁' || normal === 'important' || normal.match(/^>\d+$/) || normal.match(/^profit>\d+$/) || normal.match(/^safety>-?\d+$/) || normal.match(/^manag>\d+$/)) {
+                    if (normal === 'all item' || normal === '18+' || normal === 'important' || normal.match(/^>\d+$/) || normal.match(/^profit>\d+$/) || normal.match(/^safety>-?\d+$/) || normal.match(/^manag>\d+$/)) {
                         return true;
                     } else {
                         for (var i = 0; i < search[name].index; i++) {
                             normal = search[name].tags[i];
-                            if (normal !== 'all item' && normal !== '18禁' && normal !== 'important' && !normal.match(/^>\d+$/) && !normal.match(/^profit>\d+$/) && !normal.match(/^safety>-?\d+$/) && !normal.match(/^manag>\d+$/)) {
+                            if (normal !== 'all item' && normal !== '18+' && normal !== 'important' && !normal.match(/^>\d+$/) && !normal.match(/^profit>\d+$/) && !normal.match(/^safety>-?\d+$/) && !normal.match(/^manag>\d+$/)) {
                                 search[name].tags = search[name].tags.slice(0, i);
                                 search[name].exactly = search[name].exactly.slice(0, i);
                                 search[name].index = search[name].tags.length;
