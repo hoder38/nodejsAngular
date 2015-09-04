@@ -304,6 +304,17 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                                 if (index < relative_arr.length) {
                                     recur_relative();
                                 } else {
+                                    var temp_arr = [];
+                                    var normal = '';
+                                    for (var j in mediaTag.opt) {
+                                        normal = tagTool.normalizeTag(mediaTag.opt[j]);
+                                        if (!tagTool.isDefaultTag(normal)) {
+                                            if (mediaTag.def.indexOf(normal) === -1) {
+                                                temp_arr.push(normal);
+                                            }
+                                        }
+                                    }
+                                    mediaTag.opt = temp_arr;
                                     res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
                                     mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
                                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
@@ -501,6 +512,8 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         }
                     }
                     mediaTag.opt = temp_tag;
+                    console.log(123);
+                    console.log(mediaTag.def);
                 }
                 DBdata['tags'] = mediaTag.def;
                 DBdata[oUser_id] = mediaTag.def;
@@ -544,6 +557,17 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             if (index < relative_arr.length) {
                                 recur_relative();
                             } else {
+                                var temp_tag = [];
+                                var normal = '';
+                                for (var j in mediaTag.opt) {
+                                    normal = tagTool.normalizeTag(mediaTag.opt[j]);
+                                    if (!tagTool.isDefaultTag(normal)) {
+                                        if (mediaTag.def.indexOf(normal) === -1) {
+                                            temp_tag.push(normal);
+                                        }
+                                    }
+                                }
+                                mediaTag.opt = temp_tag;
                                 res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
                                 if (!is_media) {
                                     mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
@@ -677,6 +701,17 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
                         if (index < relative_arr.length) {
                             recur_relative();
                         } else {
+                            var temp_tag = [];
+                            var normal = '';
+                            for (var j in mediaTag.opt) {
+                                normal = tagTool.normalizeTag(mediaTag.opt[j]);
+                                if (!tagTool.isDefaultTag(normal)) {
+                                    if (mediaTag.def.indexOf(normal) === -1) {
+                                        temp_tag.push(normal);
+                                    }
+                                }
+                            }
+                            mediaTag.opt = temp_tag;
                             res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
                         }
                     });
@@ -1739,6 +1774,17 @@ function getFeedback(item, callback, user) {
                 if (index < relative_arr.length) {
                     recur_relative();
                 } else {
+                    var temp_arr = [];
+                    var normal = '';
+                    for (var j in temp_tag) {
+                        normal = tagTool.normalizeTag(temp_tag[j]);
+                        if (!tagTool.isDefaultTag(normal)) {
+                            if (item.tags.indexOf(normal) === -1) {
+                                temp_arr.push(normal);
+                            }
+                        }
+                    }
+                    temp_tag = temp_arr;
                     if (!util.checkAdmin(1, user)) {
                         var index_tag = 0;
                         for (var i in item[user._id.toString()]) {

@@ -659,7 +659,7 @@ var exports = module.exports = {
                 console.log(media_name);
                 if (is_music) {
                     var mp3_time = new Date;
-                    var youtube_id = url.match(/v=(.+?)$/)[1];
+                    var youtube_id = url.match(/v=([^&]+?)/)[1];
                     console.log(youtube_id);
                     var push_url = '/a/pushItem/?item=http%3A//www.youtube.com/watch%3Fv%3D' + youtube_id + '&el=na&bf=false&r=' + mp3_time.getTime();
                     var info_url = '/a/itemInfo/?video_id=' + youtube_id + '&ac=www&t=grp&r=' + mp3_time.getTime();
