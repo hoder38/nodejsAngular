@@ -1783,7 +1783,27 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
     return function(url) {
         return $sce.trustAsResourceUrl(url);
     };
-}]).directive('selectOnClick', ['$window', function ($window) {
+}]).filter('clear', function () {
+    return function(str) {
+        var ret_str = '';
+        for (var i in str) {
+            if (str[i] === 'l') {
+                ret_str += '"title L"';
+            } else if (str[i] === 'I') {
+                ret_str += '"big i"';
+            } else if (str[i] === '1') {
+                ret_str += '"number 1"';
+            } else if (str[i] === 'O') {
+                ret_str += '"big o"';
+            } else if (str[i] === '0') {
+                ret_str += '"number 0"';
+            } else {
+                ret_str += str[i];
+            }
+        }
+        return ret_str;
+    };
+}).directive('selectOnClick', ['$window', function ($window) {
     return {
         restrict: 'A',
         link: function (scope, element, attrs) {
@@ -4037,6 +4057,10 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             case 'password':
                                 $scope.$broadcast('password', JSON.stringify(wsmsg.data));
                                 break;
+                            case $scope.id:
+                                var msg = JSON.stringify(wsmsg.data);
+                                addAlert(msg);
+                                break;
                             default:
                                 console.log(wsmsg);
                         }
@@ -4875,7 +4899,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.profitSeries = ['Gross', 'Operating', 'Profit'];
     $scope.profitTrioLabels = [];
     $scope.profitTrioData = [[], [], []];
-    $scope.profitTrioSeries = ['leverage', 'turnover', 'Profit'];
+    $scope.profitTrioSeries = ['debt', 'turnover', 'Profit'];
     $scope.profitROELabels = [];
     $scope.profitROEData = [[], [], []];
     $scope.profitROESeries = ['ROE', 'Asset Growth', 'Profit'];
@@ -6208,7 +6232,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                             }
                             break;
                             case 'leverage':
-                            this.profitTrioData[0].push(Math.ceil(this.parseResult.profitStatus[i][j][k]*1000)/10);
+                            this.profitTrioData[0].push(Math.ceil(1000 - this.parseResult.profitStatus[i][j][k]*1000)/10);
                             break;
                             case 'turnover':
                             this.profitTrioData[1].push(Math.ceil(this.parseResult.profitStatus[i][j][k]*1000)/10);
