@@ -231,7 +231,27 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
     return function(url) {
         return $sce.trustAsResourceUrl(url);
     };
-}]).directive('selectOnClick', ['$window', function ($window) {
+}]).filter('clear', function () {
+    return function(str) {
+        var ret_str = '';
+        for (var i in str) {
+            if (str[i] === 'l') {
+                ret_str += '"title L"';
+            } else if (str[i] === 'I') {
+                ret_str += '"big i"';
+            } else if (str[i] === '1') {
+                ret_str += '"number 1"';
+            } else if (str[i] === 'O') {
+                ret_str += '"big o"';
+            } else if (str[i] === '0') {
+                ret_str += '"number 0"';
+            } else {
+                ret_str += str[i];
+            }
+        }
+        return ret_str;
+    };
+}).directive('selectOnClick', ['$window', function ($window) {
     return {
         restrict: 'A',
         link: function (scope, element, attrs) {

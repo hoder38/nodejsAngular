@@ -93,7 +93,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.profitSeries = ['Gross', 'Operating', 'Profit'];
     $scope.profitTrioLabels = [];
     $scope.profitTrioData = [[], [], []];
-    $scope.profitTrioSeries = ['leverage', 'turnover', 'Profit'];
+    $scope.profitTrioSeries = ['debt', 'turnover', 'Profit'];
     $scope.profitROELabels = [];
     $scope.profitROEData = [[], [], []];
     $scope.profitROESeries = ['ROE', 'Asset Growth', 'Profit'];
@@ -1426,7 +1426,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                             }
                             break;
                             case 'leverage':
-                            this.profitTrioData[0].push(Math.ceil(this.parseResult.profitStatus[i][j][k]*1000)/10);
+                            this.profitTrioData[0].push(Math.ceil(1000 - this.parseResult.profitStatus[i][j][k]*1000)/10);
                             break;
                             case 'turnover':
                             this.profitTrioData[1].push(Math.ceil(this.parseResult.profitStatus[i][j][k]*1000)/10);
