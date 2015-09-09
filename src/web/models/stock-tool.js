@@ -1534,7 +1534,13 @@ module.exports = {
                 }
                 if (items.length > 0) {
                     id_db = items[0]._id;
-                    normal_tags = items[0].tags;
+                    for (var i in items[0].tags) {
+                        if (items[0].stock_default) {
+                            if (items[0].stock_default.indexOf(items[0].tags[i]) === -1) {
+                                normal_tags.push(items[0].tags[i]);
+                            }
+                        }
+                    }
                     if (stage < 2) {
                         cash = items[0].cash;
                         asset = items[0].asset;
@@ -1646,21 +1652,24 @@ module.exports = {
                                 var profitIndex = this_obj.getProfitIndex(profitStatus, earliestYear, latestYear);
                                 var safetyIndex = this_obj.getSafetyIndex(safetyStatus, earliestYear, latestYear);
                                 var managementIndex = this_obj.getManagementIndex(managementStatus, latestYear, latestQuarter);
-                                handleStockTag(type, index, function (err, name, tags){
+                                handleStockTag(type, index, earliestYear, earliestQuarter, latestYear, latestQuarter, assetStatus, cashStatus, safetyStatus, profitStatus, salesStatus, managementStatus, function (err, name, tags){
                                     if (err) {
                                         util.handleError(err, callback, callback);
                                     }
+                                    console.log(tags);
                                     var normal = '';
+                                    var stock_default = [];
                                     for (var i in tags) {
                                         normal = stockTagTool.normalizeTag(tags[i]);
                                         if (!stockTagTool.isDefaultTag(normal)) {
                                             if (normal_tags.indexOf(normal) === -1) {
                                                 normal_tags.push(normal);
+                                                stock_default.push(normal);
                                             }
                                         }
                                     }
                                     if (id_db) {
-                                        mongo.orig("update", "stock", {_id: id_db}, {$set: {cash: cash, asset: asset, sales: sales, profitIndex: profitIndex, safetyIndex: safetyIndex, managementIndex: managementIndex, tags: normal_tags, name: name}}, function(err, item2){
+                                        mongo.orig("update", "stock", {_id: id_db}, {$set: {cash: cash, asset: asset, sales: sales, profitIndex: profitIndex, safetyIndex: safetyIndex, managementIndex: managementIndex, tags: normal_tags, name: name, stock_default: stock_default}}, function(err, item2){
                                             if(err) {
                                                 util.handleError(err, callback, callback);
                                             }
@@ -1669,7 +1678,7 @@ module.exports = {
                                             }, 0);
                                         });
                                     } else {
-                                        mongo.orig("insert", "stock", {type: type, index: index, name: name, cash: cash, asset: asset, sales: sales, profitIndex: profitIndex, safetyIndex: safetyIndex, managementIndex: managementIndex, tags: normal_tags, important: 0}, function(err, item2){
+                                        mongo.orig("insert", "stock", {type: type, index: index, name: name, cash: cash, asset: asset, sales: sales, profitIndex: profitIndex, safetyIndex: safetyIndex, managementIndex: managementIndex, tags: normal_tags, important: 0, stock_default: stock_default}, function(err, item2){
                                             if(err) {
                                                 util.handleError(err, callback, callback);
                                             }
@@ -2201,7 +2210,7 @@ function getBasicStockData(type, index, callback) {
     }
 }
 
-function handleStockTag(type, index, callback){
+function handleStockTag(type, index, earliestYear, earliestQuarter, latestYear, latestQuarter, assetStatus, cashStatus, safetyStatus, profitStatus, salesStatus, managementStatus, callback){
     var tags = [];
     var name = '';
     getBasicStockData(type, index, function(err, basic) {
@@ -2222,10 +2231,719 @@ function handleStockTag(type, index, callback){
         for (var i in basic.stock_location) {
             tags.push(basic.stock_location[i]);
         }
+        var ly = latestYear, lq = latestQuarter-1, ey = earliestYear, eq = earliestQuarter-1;
+        var insert_tag = '';
+        for (var i = 0; i < 20; i++) {
+            if (assetStatus[ly] && assetStatus[ly][lq]) {
+                break;
+            } else {
+                if (lq > 0) {
+                    lq--;
+                } else {
+                    lq = 3;
+                    ly--;
+                }
+            }
+        }
+        for (var i in assetStatus[ly][lq]) {
+            if (i !== 'total' && assetStatus[ly][lq][i] > 25) {
+                insert_tag = trans_tag(i, '較多');
+                if (tags.indexOf(insert_tag) === -1) {
+                    tags.push(insert_tag);
+                }
+            }
+        }
+        if (assetStatus[ly][lq]['equityChild'] + assetStatus[ly][lq]['equityParent'] >= 50) {
+            if (tags.indexOf('權益較多') === -1) {
+                tags.push('權益較多');
+            }
+        } else {
+            if (tags.indexOf('負債較多') === -1) {
+                tags.push('負債較多');
+            }
+        }
+        var diff = 0;
+        var diff_obj = {d: [], p: []};
+        var threshold = 0;
+        for (var i = 0; i < 20; i++) {
+            if (assetStatus[ey] && assetStatus[ey][eq]) {
+                break;
+            } else {
+                if (eq < 3) {
+                    eq++;
+                } else {
+                    eq = 0;
+                    ey++;
+                }
+            }
+        }
+        threshold = threshold2 = assetStatus[ey][eq]['total'] * 10;
+        for (var i in assetStatus[ey][eq]) {
+            if (i !== 'total') {
+                diff = assetStatus[ly][lq][i] * assetStatus[ly][lq]['total'] - assetStatus[ey][eq][i] * assetStatus[ey][eq]['total'];
+                if (Math.abs(diff) > threshold) {
+                    if (i === 'equityChild' || i === 'equityParent' || i === 'noncurrent_liabilities' || i === 'current_liabilities_without_payable' || i === 'payable') {
+                        diff_obj.d.push({i: i, n: diff});
+                    } else {
+                        diff_obj.p.push({i: i, n: diff});
+                    }
+                }
+            }
+        }
+        if (diff_obj.d.length > 0) {
+            diff_obj.d.sort(function(a, b){return Math.abs(a.n)-Math.abs(b.n)});
+        }
+        if (diff_obj.p.length > 0) {
+            diff_obj.p.sort(function(a, b){return Math.abs(a.n)-Math.abs(b.n)});
+        }
+        if (diff_obj.d[0]) {
+            if (diff_obj.d[0].n > 0) {
+                insert_tag = trans_tag(diff_obj.d[0].i, '成長');
+                if (tags.indexOf(insert_tag) === -1) {
+                    tags.push(insert_tag);
+                }
+            } else {
+                insert_tag = trans_tag(diff_obj.d[0].i, '減少');
+                if (tags.indexOf(insert_tag) === -1) {
+                    tags.push(insert_tag);
+                }
+            }
+            if (diff_obj.d[1]) {
+                if (diff_obj.d[1].n > 0) {
+                    insert_tag = trans_tag(diff_obj.d[1].i, '成長');
+                    if (tags.indexOf(insert_tag) === -1) {
+                        tags.push(insert_tag);
+                    }
+                    trans_tag(diff_obj.d[1].i, tags, '成長');
+                } else {
+                    insert_tag = trans_tag(diff_obj.d[1].i, '減少');
+                    if (tags.indexOf(insert_tag) === -1) {
+                        tags.push(insert_tag);
+                    }
+                }
+            }
+        }
+        if (diff_obj.p[0]) {
+            if (diff_obj.p[0].n > 0) {
+                insert_tag = trans_tag(diff_obj.p[0].i, '成長');
+                if (tags.indexOf(insert_tag) === -1) {
+                    tags.push(insert_tag);
+                }
+            } else {
+                insert_tag = trans_tag(diff_obj.p[0].i, '減少');
+                if (tags.indexOf(insert_tag) === -1) {
+                    tags.push(insert_tag);
+                }
+            }
+            if (diff_obj.p[1]) {
+                if (diff_obj.p[1].n > 0) {
+                    insert_tag = trans_tag(diff_obj.p[1].i, '成長');
+                    if (tags.indexOf(insert_tag) === -1) {
+                        tags.push(insert_tag);
+                    }
+                } else {
+                    insert_tag = trans_tag(diff_obj.p[1].i, '減少');
+                    if (tags.indexOf(insert_tag) === -1) {
+                        tags.push(insert_tag);
+                    }
+                }
+                if (diff_obj.p[2]) {
+                    if (diff_obj.p[2].n > 0) {
+                        insert_tag = trans_tag(diff_obj.p[2].i, '成長');
+                        if (tags.indexOf(insert_tag) === -1) {
+                            tags.push(insert_tag);
+                        }
+                    } else {
+                        insert_tag = trans_tag(diff_obj.p[2].i, '減少');
+                        if (tags.indexOf(insert_tag) === -1) {
+                            tags.push(insert_tag);
+                        }
+                    }
+                }
+            }
+        }
+        var total_diff = assetStatus[ly][lq]['total'] - assetStatus[ey][eq]['total'];
+        if (total_diff > (assetStatus[ey][eq]['total'] * 0.2)) {
+            if (tags.indexOf('總資產成長') === -1) {
+                tags.push('總資產成長');
+            }
+            diff = (assetStatus[ly][lq]['equityChild'] + assetStatus[ly][lq]['equityParent']) * assetStatus[ly][lq]['total'] - (assetStatus[ey][eq]['equityChild'] + assetStatus[ly][lq]['equityParent']) * assetStatus[ey][eq]['total'];
+            if (diff > (total_diff - diff)) {
+                if (tags.indexOf('總權益成長') === -1) {
+                    tags.push('總權益成長');
+                }
+            } else {
+                if (tags.indexOf('總負債成長') === -1) {
+                    tags.push('總負債成長');
+                }
+            }
+        } else if (total_diff < (-0.2 * assetStatus[ey][eq]['total'])){
+            if (tags.indexOf('總資產減少') === -1) {
+                tags.push('總資產減少');
+            }
+            diff = (assetStatus[ly][lq]['equityChild'] + assetStatus[ly][lq]['equityParent']) * assetStatus[ly][lq]['total'] - (assetStatus[ey][eq]['equityChild'] + assetStatus[ly][lq]['equityParent']) * assetStatus[ey][eq]['total'];
+            if (diff < (total_diff - diff)) {
+                if (tags.indexOf('總權益減少') === -1) {
+                    tags.push('總權益減少');
+                }
+            } else {
+                if (tags.indexOf('總負債減少') === -1) {
+                    tags.push('總負債減少');
+                }
+            }
+        }
+        var y = earliestYear, q = earliestQuarter-1;
+        var operation = 0, financial = 0, minor = 0, profit_flow = 0, divided_flow = 0;
+        for (var i = 0; i < 100; i++) {
+            if (cashStatus[y] && cashStatus[y][q]) {
+                operation = operation + (cashStatus[y][q].operation + cashStatus[y][q].invest) * cashStatus[y][q].end;
+                financial += (cashStatus[y][q].without_dividends * cashStatus[y][q].end);
+                minor += (cashStatus[y][q].minor * cashStatus[y][q].end);
+                profit_flow += (cashStatus[y][q].profitBT * cashStatus[y][q].end);
+                divided_flow += (cashStatus[y][q].dividends * cashStatus[y][q].end);
+            }
+            if (y === latestYear && q === latestQuarter-1) {
+                break;
+            } else {
+                if (q < 3) {
+                    q++;
+                } else {
+                    q = 0;
+                    y++;
+                }
+            }
+        }
+        var cash_flow = operation + financial + minor;
+        if (cash_flow > (cashStatus[ey][eq].end * 20)) {
+            if (tags.indexOf('現金流入') === -1) {
+                tags.push('現金流入');
+            }
+        } else if (cash_flow < (cashStatus[ey][eq].end * -20)){
+            if (tags.indexOf('現金流出') === -1) {
+                tags.push('現金流出');
+            }
+        }
+        if (Math.abs(operation) > Math.abs(financial) * 1.2) {
+            if (operation > 0) {
+                if (tags.indexOf('營運現金流入') === -1) {
+                    tags.push('營運現金流入');
+                }
+            } else {
+                if (tags.indexOf('營運現金流出') === -1) {
+                    tags.push('營運現金流出');
+                }
+            }
+        } else if (Math.abs(financial) > Math.abs(operation) * 1.2) {
+            if (financial > 0) {
+                if (tags.indexOf('融資現金流入') === -1) {
+                    tags.push('融資現金流入');
+                }
+            } else {
+                if (tags.indexOf('融資現金流出') === -1) {
+                    tags.push('融資現金流出');
+                }
+            }
+        }
+        divided_flow /= -100;
+        profit_flow /= 100;
+        cash_flow /= 100;
+        var value_flow = divided_flow + total_diff;
+        if (value_flow > 0) {
+            if (tags.indexOf('價值增加') === -1) {
+                tags.push('價值增加');
+            }
+        } else {
+            if (tags.indexOf('價值減少') === -1) {
+                tags.push('價值減少');
+            }
+        }
+        if (profit_flow > 0) {
+            if (tags.indexOf('累積獲利') === -1) {
+                tags.push('累積獲利');
+            }
+        } else {
+            if (tags.indexOf('累積虧損') === -1) {
+                tags.push('累積虧損');
+            }
+        }
+        if (Math.abs(value_flow - profit_flow) > Math.abs(profit_flow * 0.2)) {
+            if (value_flow - profit_flow > 0) {
+                if (tags.indexOf('非獲利價值增加過高') === -1) {
+                    tags.push('非獲利價值增加過高');
+                }
+            } else {
+                if (tags.indexOf('非獲利價值減少過高') === -1) {
+                    tags.push('非獲利價值減少過高');
+                }
+            }
+        }
+        if (Math.abs(cash_flow) > 0.5 * Math.abs(value_flow)) {
+            if (cash_flow > 0) {
+                if (tags.indexOf('現金價值增加') === -1) {
+                    tags.push('現金價值增加');
+                }
+            } else {
+                if (tags.indexOf('現金價值減少') === -1) {
+                    tags.push('現金價值減少');
+                }
+            }
+        }
+        if (Math.abs(total_diff - cash_flow) > 0.5 * Math.abs(value_flow)) {
+            if (total_diff - cash_flow > 0) {
+                if (tags.indexOf('非現金價值增加') === -1) {
+                    tags.push('非現金價值增加');
+                }
+            } else {
+                if (tags.indexOf('非現金價值減少') === -1) {
+                    tags.push('非現金價值減少');
+                }
+            }
+        }
+        if (divided_flow > 0.2 * Math.abs(value_flow)) {
+            if (tags.indexOf('股利價值增加') === -1) {
+                tags.push('股利價值增加');
+            }
+        }
+        ly = latestYear, lq = latestQuarter-1;
+        for (var i = 0; i < 20; i++) {
+            if (safetyStatus[ly] && safetyStatus[ly][lq]) {
+                break;
+            } else {
+                if (lq > 0) {
+                    lq--;
+                } else {
+                    lq = 3;
+                    ly--;
+                }
+            }
+        }
+        if (safetyStatus[ly][lq].prMinusProfit > 0) {
+            if (tags.indexOf('營運資金充足') === -1) {
+                tags.push('營運資金充足');
+            }
+        } else {
+            if (tags.indexOf('營運資金不足') === -1) {
+                tags.push('營運資金不足');
+            }
+        }
+        if (safetyStatus[ly][lq].shortCash > 100) {
+            if (tags.indexOf('綜合資金不足') === -1) {
+                tags.push('綜合資金不足');
+            }
+        } else {
+            if (tags.indexOf('綜合資金充足') === -1) {
+                tags.push('綜合資金充足');
+            }
+        }
+        if (safetyStatus[ly][lq].shortCashWithoutCL > 100) {
+            if (tags.indexOf('投資資金不足') === -1) {
+                tags.push('投資資金不足');
+            }
+        } else {
+            if (tags.indexOf('投資資金充足') === -1) {
+                tags.push('投資資金充足');
+            }
+        }
+        if (safetyStatus[ly][lq].shortCashWithoutInvest > 100) {
+            if (tags.indexOf('短債資金不足') === -1) {
+                tags.push('短債資金不足');
+            }
+        } else {
+            if (tags.indexOf('短債資金充足') === -1) {
+                tags.push('短債資金充足');
+            }
+        }
+        ly = latestYear, lq = latestQuarter-1;
+        for (var i = 0; i < 20; i++) {
+            if (profitStatus[ly] && profitStatus[ly][lq]) {
+                break;
+            } else {
+                if (lq > 0) {
+                    lq--;
+                } else {
+                    lq = 3;
+                    ly--;
+                }
+            }
+        }
+        if (profitStatus[ly][lq].gross_profit > 20) {
+            if (tags.indexOf('毛利率高') === -1) {
+                tags.push('毛利率高');
+            }
+        } else if (profitStatus[ly][lq].gross_profit < 10){
+            //if (tags.indexOf('毛利率中等') === -1) {
+            //    tags.push('毛利率中等');
+            //}
+        //} else {
+            if (tags.indexOf('毛利率低') === -1) {
+                tags.push('毛利率低');
+            }
+        }
+        if (profitStatus[ly][lq].operating_profit > 10) {
+            if (tags.indexOf('營益率高') === -1) {
+                tags.push('營益率高');
+            }
+        } else if (profitStatus[ly][lq].operating_profit < 5){
+            //if (tags.indexOf('營益率中等') === -1) {
+            //    tags.push('營益率中等');
+            //}
+        //} else {
+            if (tags.indexOf('營益率低') === -1) {
+                tags.push('營益率低');
+            }
+        }
+        if (profitStatus[ly][lq].profit > 10) {
+            if (tags.indexOf('淨利率高') === -1) {
+                tags.push('淨利率高');
+            }
+        } else if (profitStatus[ly][lq].profit < 5){
+            //if (tags.indexOf('淨利率中等') === -1) {
+            //    tags.push('淨利率中等');
+            //}
+        //} else {
+            if (tags.indexOf('淨利率低') === -1) {
+                tags.push('淨利率低');
+            }
+        }
+        if (profitStatus[ly][lq].leverage > 0.6) {
+            if (tags.indexOf('高槓桿') === -1) {
+                tags.push('高槓桿');
+            }
+        } else if (profitStatus[ly][lq].leverage < 0.3){
+            //if (tags.indexOf('中等槓桿') === -1) {
+            //    tags.push('中等槓桿');
+            //}
+        //} else {
+            if (tags.indexOf('低槓桿') === -1) {
+                tags.push('低槓桿');
+            }
+        }
+        if (profitStatus[ly][lq].turnover > 0.5) {
+            if (tags.indexOf('週轉極高') === -1) {
+                tags.push('週轉極高');
+            }
+        } else if (profitStatus[ly][lq].turnover > 0.25){
+            if (tags.indexOf('週轉高') === -1) {
+                tags.push('週轉高');
+            }
+        //} else if (profitStatus[ly][lq].turnover > 0.125){
+        //    if (tags.indexOf('週轉中等') === -1) {
+        //        tags.push('週轉中等');
+        //    }
+        //} else if (profitStatus[ly][lq].turnover > 0.0625){
+        } else if (profitStatus[ly][lq].turnover < 0.125 && profitStatus[ly][lq].turnover > 0.0625){
+            if (tags.indexOf('週轉低') === -1) {
+                tags.push('週轉低');
+            }
+        } else {
+            if (tags.indexOf('週轉極低') === -1) {
+                tags.push('週轉極低');
+            }
+        }
+        ly = latestYear, lq = latestQuarter-1;
+        for (var i = 0; i < 20; i++) {
+            if (salesStatus[ly] && salesStatus[ly][lq]) {
+                break;
+            } else {
+                if (lq > 0) {
+                    lq--;
+                } else {
+                    lq = 3;
+                    ly--;
+                }
+            }
+        }
+        if (Math.abs(salesStatus[ly][lq].nonoperating_without_FC - salesStatus[ly][lq].finance_cost) > Math.abs(0.3 * salesStatus[ly][lq].profit)) {
+            if (salesStatus[ly][lq].nonoperating_without_FC - salesStatus[ly][lq].finance_cost > 0) {
+                if (tags.indexOf('非營業利潤過高') === -1) {
+                    tags.push('非營業利潤過高');
+                }
+            } else {
+                if (tags.indexOf('非營業虧損過高') === -1) {
+                    tags.push('非營業虧損過高');
+                }
+            }
+        }
+        if (Math.abs(salesStatus[ly][lq].tax) > Math.abs(0.3 * salesStatus[ly][lq].profit)) {
+            if (salesStatus[ly][lq].tax > 0) {
+                if (tags.indexOf('稅率過高') === -1) {
+                    tags.push('稅率過高');
+                }
+            } else {
+                if (tags.indexOf('退稅過高') === -1) {
+                    tags.push('退稅過高');
+                }
+            }
+        }
+        if (Math.abs(salesStatus[ly][lq].comprehensive) > Math.abs(0.3 * salesStatus[ly][lq].profit)) {
+            if (salesStatus[ly][lq].comprehensive > 0) {
+                if (tags.indexOf('其他綜合收益過高') === -1) {
+                    tags.push('其他綜合收益過高');
+                }
+            } else {
+                if (tags.indexOf('其他綜合虧損過高') === -1) {
+                    tags.push('其他綜合虧損過高');
+                }
+            }
+        }
+        ly = latestYear, lq = latestQuarter-1;
+        for (var i = 0; i < 20; i++) {
+            if (managementStatus[ly] && managementStatus[ly][lq]) {
+                break;
+            } else {
+                if (lq > 0) {
+                    lq--;
+                } else {
+                    lq = 3;
+                    ly--;
+                }
+            }
+        }
+        if (managementStatus[ly][lq].profitRelative > 0.7) {
+            if (tags.indexOf('獲利跟營收高相關') === -1) {
+                tags.push('獲利跟營收高相關');
+            }
+        } else if (managementStatus[ly][lq].profitRelative > 0.3) {
+            if (tags.indexOf('獲利跟營收中相關') === -1) {
+                tags.push('獲利跟營收中相關');
+            }
+        } else {
+            if (tags.indexOf('獲利跟營收低相關') === -1) {
+                tags.push('獲利跟營收低相關');
+            }
+        }
+        if (managementStatus[ly][lq].cashRelative > 0.7) {
+            if (tags.indexOf('現金跟營收高相關') === -1) {
+                tags.push('現金跟營收高相關');
+            }
+        } else if (managementStatus[ly][lq].cashRelative > 0.3) {
+            if (tags.indexOf('現金跟營收中相關') === -1) {
+                tags.push('現金跟營收中相關');
+            }
+        } else {
+            if (tags.indexOf('現金跟營收低相關') === -1) {
+                tags.push('現金跟營收低相關');
+            }
+        }
+        if (managementStatus[ly][lq].inventoriesRelative > 0.7) {
+            if (tags.indexOf('存貨跟營收高相關') === -1) {
+                tags.push('存貨跟營收高相關');
+            }
+        } else if (managementStatus[ly][lq].inventoriesRelative > 0.3) {
+            if (tags.indexOf('存貨跟營收中相關') === -1) {
+                tags.push('存貨跟營收中相關');
+            }
+        } else {
+            if (tags.indexOf('存貨跟營收低相關') === -1) {
+                tags.push('存貨跟營收低相關');
+            }
+        }
+        if (managementStatus[ly][lq].receivableRelative > 0.7) {
+            if (tags.indexOf('應收跟營收高相關') === -1) {
+                tags.push('應收跟營收高相關');
+            }
+        } else if (managementStatus[ly][lq].receivableRelative > 0.3) {
+            if (tags.indexOf('應收跟營收中相關') === -1) {
+                tags.push('應收跟營收中相關');
+            }
+        } else {
+            if (tags.indexOf('應收跟營收低相關') === -1) {
+                tags.push('應收跟營收低相關');
+            }
+        }
+        if (managementStatus[ly][lq].payableRelative > 0.7) {
+            if (tags.indexOf('應付跟營收高相關') === -1) {
+                tags.push('應付跟營收高相關');
+            }
+        } else if (managementStatus[ly][lq].payableRelative > 0.3) {
+            if (tags.indexOf('應付跟營收中相關') === -1) {
+                tags.push('應付跟營收中相關');
+            }
+        } else {
+            if (tags.indexOf('應付跟營收低相關') === -1) {
+                tags.push('應付跟營收低相關');
+            }
+        }
+        var revenue = [];
+        var revenueP = [];
+        var profit = [];
+        var profitP = [];
+        var cash = [];
+        var cashP = [];
+        var inventories = [];
+        var inventoriesP = [];
+        var receivable = [];
+        var receivableP = [];
+        var payable = [];
+        var payableP = [];
+        for (var i = 0; i < 100; i++) {
+            if (managementStatus[ly] && managementStatus[ly][lq]) {
+                if (revenue[lq]) {
+                    revenueP.push(Math.pow(revenue[lq].n / managementStatus[ly][lq].revenue,1/(revenue[lq].y - ly)) - 1);
+                } else {
+                    revenue[lq] = {y: ly, n: managementStatus[ly][lq].revenue};
+                }
+                if (profit[lq]) {
+                    profitP.push(Math.pow(profit[lq].n / managementStatus[ly][lq].profit,1/(profit[lq].y - ly)) - 1);
+                } else {
+                    profit[lq] = {y: ly, n: managementStatus[ly][lq].profit};
+                }
+                if (cash[lq]) {
+                    cashP.push(Math.pow(cash[lq].n / managementStatus[ly][lq].cash,1/(cash[lq].y - ly)) - 1);
+                } else {
+                    cash[lq] = {y: ly, n: managementStatus[ly][lq].cash};
+                }
+                if (inventories[lq]) {
+                    inventoriesP.push(Math.pow(inventories[lq].n / managementStatus[ly][lq].inventories,1/(inventories[lq].y - ly)) - 1);
+                } else {
+                    inventories[lq] = {y: ly, n: managementStatus[ly][lq].inventories};
+                }
+                if (receivable[lq]) {
+                    receivableP.push(Math.pow(receivable[lq].n / managementStatus[ly][lq].receivable,1/(receivable[lq].y - ly)) - 1);
+                } else {
+                    receivable[lq] = {y: ly, n: managementStatus[ly][lq].receivable};
+                }
+                if (payable[lq]) {
+                    payableP.push(Math.pow(payable[lq].n / managementStatus[ly][lq].payable,1/(payable[lq].y - ly)) - 1);
+                } else {
+                    payable[lq] = {y: ly, n: managementStatus[ly][lq].payable};
+                }
+            }
+            if (ly === earliestYear && lq === earliestQuarter-1) {
+                break;
+            } else {
+                if (lq > 0) {
+                    lq--;
+                } else {
+                    lq = 3;
+                    ly--;
+                }
+            }
+        }
+        getSD(revenueP, '營收');
+        function getSD(pp, name) {
+            var even = caculateEven(pp, true);
+            var sd = 0;
+            if (pp.length < 8 && pp.length > 3) {
+                for (var i = 0; i < 4; i++) {
+                    sd = sd + (pp[i] - even[1]) * (pp[i] - even[1]);
+                }
+                sd = Math.sqrt(sd/4);
+                if (even[1] > 0.05) {
+                    if (tags.indexOf('短期' + name + '成長') === -1) {
+                        tags.push('短期' + name + '成長');
+                    }
+                } else if (even[1] < -0.05) {
+                    if (tags.indexOf('短期' + name + '衰退') === -1) {
+                        tags.push('短期' + name + '衰退');
+                    }
+                }
+                if (sd < 0.1) {
+                    if (tags.indexOf('短期' + name + '穩定') === -1) {
+                        tags.push('短期' + name + '穩定');
+                    }
+                } else {
+                    if (tags.indexOf('短期' + name + '不穩定') === -1) {
+                        tags.push('短期' + name + '不穩定');
+                    }
+                }
+            } else if (pp.length < 16) {
+                for (var i = 0; i < 8; i++) {
+                    sd = sd + (pp[i] - even[5]) * (pp[i] - even[5]);
+                }
+                sd = Math.sqrt(sd/8);
+                var even2 = caculateEven(pp.slice(4, 8), true);
+                if (even2[1] > 0.05) {
+                    if (tags.indexOf('中期' + name + '成長') === -1) {
+                        tags.push('中期' + name + '成長');
+                    }
+                } else if (even2[1] < -0.05) {
+                    if (tags.indexOf('中期' + name + '衰退') === -1) {
+                        tags.push('中期' + name + '衰退');
+                    }
+                }
+                if (sd < 0.1) {
+                    if (tags.indexOf('中期' + name + '穩定') === -1) {
+                        tags.push('中期' + name + '穩定');
+                    }
+                } else {
+                    if (tags.indexOf('中期' + name + '不穩定') === -1) {
+                        tags.push('中期' + name + '不穩定');
+                    }
+                }
+            } else {
+                for (var i = 0; i < 16; i++) {
+                    sd = sd + (pp[i] - even[13]) * (pp[i] - even[13]);
+                }
+                sd = Math.sqrt(sd/16);
+                var even3 = caculateEven(pp.slice(12, 16), true);
+                if (even3[1] > 0.05) {
+                    if (tags.indexOf('長期' + name + '成長') === -1) {
+                        tags.push('長期' + name + '成長');
+                    }
+                } else if (even3[1] < -0.05) {
+                    if (tags.indexOf('長期' + name + '衰退') === -1) {
+                        tags.push('長期' + name + '衰退');
+                    }
+                }
+                if (sd < 0.1) {
+                    if (tags.indexOf('長期' + name + '穩定') === -1) {
+                        tags.push('長期' + name + '穩定');
+                    }
+                } else {
+                    if (tags.indexOf('長期' + name + '不穩定') === -1) {
+                        tags.push('長期' + name + '不穩定');
+                    }
+                }
+            }
+        }
+
         setTimeout(function(){
             callback(null, name, tags);
         }, 0);
     });
+}
+function trans_tag(item, append) {
+    var tag = '';
+    switch (item) {
+        case 'receivable':
+            tag = '應收資產' + append;
+            break;
+        case 'cash':
+            tag = '現金資產' + append;
+            break;
+        case 'OCFA':
+            tag = '其他流動資產' + append;
+            break;
+        case 'inventories':
+            tag = '存貨資產' + append;
+            break;
+        case 'property':
+            tag = '不動資產' + append;
+            break;
+        case 'longterm':
+            tag = '長期投資資產' + append;
+            break;
+        case 'other':
+            tag = '其他資產' + append;
+            break;
+        case 'equityChild':
+            tag = '非控制權益' + append;
+            break;
+        case 'equityParent':
+            tag = '母公司權益' + append;
+            break;
+        case 'noncurrent_liabilities':
+            tag = '非流動負債' + append;
+            break;
+        case 'current_liabilities_without_payable':
+            tag = '流動不包含應付帳款負債' + append;
+            break;
+        case 'payable':
+            tag = '應付帳款負債' + append;
+            break;
+    }
+    return tag;
 }
 
 function caculateEven(data, is_dot) {

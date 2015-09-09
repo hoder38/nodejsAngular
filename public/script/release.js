@@ -1788,15 +1788,15 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
         var ret_str = '';
         for (var i in str) {
             if (str[i] === 'l') {
-                ret_str += '"title L"';
+                ret_str += '<little L>';
             } else if (str[i] === 'I') {
-                ret_str += '"big i"';
+                ret_str += '<big i>';
             } else if (str[i] === '1') {
-                ret_str += '"number 1"';
+                ret_str += '<number 1>';
             } else if (str[i] === 'O') {
-                ret_str += '"big o"';
+                ret_str += '<big o>';
             } else if (str[i] === '0') {
-                ret_str += '"number 0"';
+                ret_str += '<number 0>';
             } else {
                 ret_str += str[i];
             }

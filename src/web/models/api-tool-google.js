@@ -115,6 +115,7 @@ function sendAPI(method, data, callback) {
                         util.handleError(err, callback, callback, null);
                     } else {
                         if (tokens.expiry_date < (Date.now())) {
+                            console.log('uplad expire');
                             oauth2Client.refreshAccessToken(function(err, refresh_tokens) {
                                 if (err) {
                                     exports.getApiQueue();
@@ -231,6 +232,7 @@ function sendAPI(method, data, callback) {
 
 function checkOauth(callback) {
     if (!tokens.access_token || !tokens.expiry_date) {
+        console.log('first');
         mongo.orig("find", "accessToken", {api: "google"}, {limit: 1}, function(err, token){
             if(err) {
                 util.handleError(err, callback, callback, null);
@@ -240,6 +242,7 @@ function checkOauth(callback) {
             }
             tokens = token[0];
             if (tokens.expiry_date < (Date.now())) {
+                console.log('expire');
                 oauth2Client.setCredentials(tokens);
                 oauth2Client.refreshAccessToken(function(err, refresh_tokens) {
                     if (err) {
@@ -264,6 +267,7 @@ function checkOauth(callback) {
             }
         });
     } else if (tokens.expiry_date < (Date.now())) {
+        console.log('expire');
         oauth2Client.setCredentials(tokens);
         oauth2Client.refreshAccessToken(function(err, refresh_tokens) {
             if (err) {
