@@ -121,6 +121,7 @@ function sendAPI(method, data, callback) {
                                     exports.getApiQueue();
                                     util.handleError(err, callback, callback, null);
                                 }
+                                console.log(refresh_tokens);
                                 mongo.orig("update", "accessToken", {api: "google"}, {$set: refresh_tokens}, function(err,token){
                                     if(err) {
                                         exports.getApiQueue();
@@ -153,6 +154,10 @@ function sendAPI(method, data, callback) {
         }
         drive.files.list({q: "'" + data['folderId'] + "' in parents and trashed = false and mimeType != 'application/vnd.google-apps.folder'", maxResults: max}, function(err, metadata) {
             if (err && err.code !== 'ECONNRESET') {
+                if (err.code == '401') {
+                    console.log(tokens);
+                    console.log(oauth2Client);
+                }
                 util.handleError(err, callback, callback, null);
             }
             setTimeout(function(){
@@ -248,6 +253,7 @@ function checkOauth(callback) {
                     if (err) {
                         util.handleError(err, callback, callback, null);
                     }
+                    console.log(refresh_tokens);
                     mongo.orig("update", "accessToken", {api: "google"}, {$set: refresh_tokens}, function(err,token){
                         if(err) {
                             util.handleError(err, callback, callback, null);
@@ -273,6 +279,7 @@ function checkOauth(callback) {
             if (err) {
                 util.handleError(err, callback, callback, null);
             }
+            console.log(refresh_tokens);
             mongo.orig("update", "accessToken", {api: "google"}, {$set: refresh_tokens}, function(err,token){
                 if(err) {
                     util.handleError(err, callback, callback, null);
@@ -663,7 +670,7 @@ var exports = module.exports = {
                 console.log(media_name);
                 if (is_music) {
                     var mp3_time = new Date;
-                    var youtube_id = url.match(/v=([^&]+?)/)[1];
+                    var youtube_id = url.match(/v=([^&]+)/)[1];
                     console.log(youtube_id);
                     var push_url = '/a/pushItem/?item=http%3A//www.youtube.com/watch%3Fv%3D' + youtube_id + '&el=na&bf=false&r=' + mp3_time.getTime();
                     var info_url = '/a/itemInfo/?video_id=' + youtube_id + '&ac=www&t=grp&r=' + mp3_time.getTime();
