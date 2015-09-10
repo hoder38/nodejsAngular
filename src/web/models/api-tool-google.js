@@ -38,6 +38,8 @@ var api_pool = [];
 
 var api_ing = 0;
 
+var oath_waiting = 60000;
+
 function sendAPI(method, data, callback) {
     var drive = googleapis.drive({ version: 'v2', auth: oauth2Client });
     var param = {};
@@ -154,13 +156,28 @@ function sendAPI(method, data, callback) {
         }
         drive.files.list({q: "'" + data['folderId'] + "' in parents and trashed = false and mimeType != 'application/vnd.google-apps.folder'", maxResults: max}, function(err, metadata) {
             if (err && err.code !== 'ECONNRESET') {
-                console.log(tokens);
-                console.log(oauth2Client);
-                util.handleError(err, callback, callback, null);
+                if (err.code == '401') {
+                    console.log(tokens);
+                    console.log(oauth2Client);
+                    setTimeout(function(){
+                        oath_waiting *= 2;
+                        checkOauth(function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback, null);
+                            }
+                            sendAPI(method, data, callback);
+                        });
+                    }, oath_waiting);
+                } else {
+                    oath_waiting = 60000;
+                    util.handleError(err, callback, callback, null);
+                }
+            } else {
+                oath_waiting = 60000;
+                setTimeout(function(){
+                    callback(null, metadata.items);
+                }, 0);
             }
-            setTimeout(function(){
-                callback(null, metadata.items);
-            }, 0);
         });
         break;
         case 'list folder':
