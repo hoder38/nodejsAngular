@@ -154,10 +154,8 @@ function sendAPI(method, data, callback) {
         }
         drive.files.list({q: "'" + data['folderId'] + "' in parents and trashed = false and mimeType != 'application/vnd.google-apps.folder'", maxResults: max}, function(err, metadata) {
             if (err && err.code !== 'ECONNRESET') {
-                if (err.code == '401') {
-                    console.log(tokens);
-                    console.log(oauth2Client);
-                }
+                console.log(tokens);
+                console.log(oauth2Client);
                 util.handleError(err, callback, callback, null);
             }
             setTimeout(function(){
