@@ -1656,7 +1656,6 @@ module.exports = {
                                     if (err) {
                                         util.handleError(err, callback, callback);
                                     }
-                                    console.log(tags);
                                     var normal = '';
                                     var stock_default = [];
                                     for (var i in tags) {
@@ -2935,10 +2934,7 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
 
                 end = p[0] + p[1] + p[2] + p[3];
 
-                console.log(p);
-
                 yearp = Math.pow(end/start,1/5) - 1;
-                console.log(yearp);
                 if (yearp > 0.05) {
                     if (tags.indexOf(name + '成長') === -1) {
                         tags.push(name + '成長');
@@ -2959,7 +2955,6 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
                 }
             }
         }
-
         setTimeout(function(){
             callback(null, name, tags);
         }, 0);
