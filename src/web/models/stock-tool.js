@@ -2404,24 +2404,50 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
                 }
             }
         }
-        var y = ly - 5, q = lq;
-        var operation = 0, financial = 0, minor = 0, profit_flow = 0, divided_flow = 0;
-        for (var i = 0; i < 100; i++) {
-            if (cashStatus[y] && cashStatus[y][q]) {
-                operation = operation + (cashStatus[y][q].operation + cashStatus[y][q].invest) * cashStatus[y][q].end;
-                financial += (cashStatus[y][q].without_dividends * cashStatus[y][q].end);
-                minor += (cashStatus[y][q].minor * cashStatus[y][q].end);
-                profit_flow += (cashStatus[y][q].profitBT * cashStatus[y][q].end);
-                divided_flow += (cashStatus[y][q].dividends * cashStatus[y][q].end);
-            }
-            if (y === latestYear && q === latestQuarter-1) {
+        ly = latestYear, lq = latestQuarter-1;
+        for (var i = 0; i < 20; i++) {
+            if (cashStatus[ly] && cashStatus[ly][lq]) {
                 break;
             } else {
-                if (q < 3) {
-                    q++;
+                if (lq > 0) {
+                    lq--;
                 } else {
-                    q = 0;
-                    y++;
+                    lq = 3;
+                    ly--;
+                }
+            }
+        }
+        var y = ly - 5, q = lq;
+        var ey = ly - 5, eq = lq;
+        var operation = 0, financial = 0, minor = 0, profit_flow = 0, divided_flow = 0;
+        for (var i = 0; i < 100; i++) {
+            if (cashStatus[ly] && cashStatus[ly][lq]) {
+                operation = operation + (cashStatus[ly][lq].operation + cashStatus[ly][lq].invest) * cashStatus[ly][lq].end;
+                financial += (cashStatus[ly][lq].without_dividends * cashStatus[ly][lq].end);
+                minor += (cashStatus[ly][lq].minor * cashStatus[ly][lq].end);
+                profit_flow += (cashStatus[ly][lq].profitBT * cashStatus[ly][lq].end);
+                divided_flow += (cashStatus[ly][lq].dividends * cashStatus[ly][lq].end);
+            }
+            if (ly === y && q === lq) {
+                break;
+            } else {
+                if (lq > 0) {
+                    lq--;
+                } else {
+                    lq = 3;
+                    ly--;
+                }
+            }
+        }
+        for (var i = 0; i < 20; i++) {
+            if (cashStatus[ey] && cashStatus[ey][eq]) {
+                break;
+            } else {
+                if (eq < 3) {
+                    eq++;
+                } else {
+                    eq = 0;
+                    ey++;
                 }
             }
         }
@@ -2569,98 +2595,123 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
             var line = caculateRelativeLine(data, even, time, timeEven, timeVariance);
             var start = line.a + line.b * time[time.length-1];
             var end = line.a + line.b * time[0];
+            var append = name;
 
             if (reverse) {
                 if (line.b > speed) {
-                    name += '快速減少';
+                    append += '快速減少';
                 } else if (line.b > 0) {
-                    name += '逐漸減少';
+                    append += '逐漸減少';
                 } else if (line.b > -speed){
-                    name += '逐漸增加';
+                    append += '逐漸增加';
                 } else {
-                    name += '快速增加';
+                    append += '快速增加';
                 }
             } else {
                 if (line.b > speed) {
-                    name += '快速增加';
+                    append += '快速增加';
                 } else if (line.b > 0) {
-                    name += '逐漸增加';
+                    append += '逐漸增加';
                 } else if (line.b > -speed){
-                    name += '逐漸減少';
+                    append += '逐漸減少';
                 } else {
-                    name += '快速減少';
+                    append += '快速減少';
                 }
             }
+
+            if (tags.indexOf(append) === -1) {
+                tags.push(append);
+            }
+
+            append = name;
 
             if (typeof interval2 !== 'undefined') {
                 if (typeof interval3 !== 'undefined') {
                     if (start > interval1) {
-                        name = name + '從' + d1;
+                        append = append + '從' + d1;
                     } else if (start > interval2) {
-                        name = name + '從' + d2;
+                        append = append + '從' + d2;
                     } else if (start > interval3) {
-                        name = name + '從' + d3;
+                        //append = append + '從' + d3;
+                        append = '';
                     } else if (start > interval4) {
-                        name = name + '從' + d4;
+                        append = append + '從' + d4;
                     } else {
-                        name = name + '從' + d5;
+                        append = append + '從' + d5;
                     }
+                    if (append) {
+                        if (tags.indexOf(append) === -1) {
+                            tags.push(append);
+                        }
+                    }
+                    append = name;
                     if (end > interval1) {
-                        if (tags.indexOf(name + '變得' + d1) === -1) {
-                            tags.push(name + '變得' + d1);
+                        if (tags.indexOf(append + '變得' + d1) === -1) {
+                            tags.push(append + '變得' + d1);
                         }
                     } else if (end > interval2) {
-                        if (tags.indexOf(name + '變得' + d2) === -1) {
-                            tags.push(name + '變得' + d2);
+                        if (tags.indexOf(append + '變得' + d2) === -1) {
+                            tags.push(append + '變得' + d2);
                         }
                     } else if (end > interval3) {
-                        if (tags.indexOf(name + '變得' + d3) === -1) {
-                            tags.push(name + '變得' + d3);
-                        }
+                        //if (tags.indexOf(append + '變得' + d3) === -1) {
+                            //tags.push(append + '變得' + d3);
+                        //}
                     } else if (end > interval4) {
-                        if (tags.indexOf(name + '變得' + d4) === -1) {
-                            tags.push(name + '變得' + d4);
+                        if (tags.indexOf(append + '變得' + d4) === -1) {
+                            tags.push(append + '變得' + d4);
                         }
                     } else {
-                        if (tags.indexOf(name + '變得' + d5) === -1) {
-                            tags.push(name + '變得' + d5);
+                        if (tags.indexOf(append + '變得' + d5) === -1) {
+                            tags.push(append + '變得' + d5);
                         }
                     }
                 } else {
                     if (start > interval1) {
-                        name = name + '從' + d1;
+                        append = append + '從' + d1;
                     } else if (start > interval2) {
-                        name = name + '從' + d2;
+                        //append = append + '從' + d2;
+                        append = '';
                     } else {
-                        name = name + '從' + d3;
+                        append = append + '從' + d3;
                     }
+                    if (append) {
+                        if (tags.indexOf(append) === -1) {
+                            tags.push(append);
+                        }
+                    }
+                    append = name;
                     if (end > interval1) {
-                        if (tags.indexOf(name + '變得' + d1) === -1) {
-                            tags.push(name + '變得' + d1);
+                        if (tags.indexOf(append + '變得' + d1) === -1) {
+                            tags.push(append + '變得' + d1);
                         }
                     } else if (end > interval2) {
-                        if (tags.indexOf(name + '變得' + d2) === -1) {
-                            tags.push(name + '變得' + d2);
-                        }
+                        //if (tags.indexOf(append + '變得' + d2) === -1) {
+                        //    tags.push(append + '變得' + d2);
+                        //}
                     } else {
-                        if (tags.indexOf(name + '變得' + d3) === -1) {
-                            tags.push(name + '變得' + d3);
+                        if (tags.indexOf(append + '變得' + d3) === -1) {
+                            tags.push(append + '變得' + d3);
                         }
                     }
                 }
             } else {
                 if (start > interval1) {
-                    name = name + '從' + d1;
+                    append = append + '從' + d1;
                 } else {
-                    name = name + '從' + d2;
+                    append = append + '從' + d2;
                 }
+                if (tags.indexOf(append) === -1) {
+                    tags.push(append);
+                }
+                append = name;
                 if (end > interval1) {
-                    if (tags.indexOf(name + '變得' + d1) === -1) {
-                        tags.push(name + '變得' + d1);
+                    if (tags.indexOf(append + '變得' + d1) === -1) {
+                        tags.push(append + '變得' + d1);
                     }
                 } else {
-                    if (tags.indexOf(name + '變得' + d2) === -1) {
-                        tags.push(name + '變得' + d2);
+                    if (tags.indexOf(append + '變得' + d2) === -1) {
+                        tags.push(append + '變得' + d2);
                     }
                 }
             }
