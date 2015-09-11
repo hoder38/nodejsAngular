@@ -1652,7 +1652,7 @@ module.exports = {
                                 var profitIndex = this_obj.getProfitIndex(profitStatus, earliestYear, latestYear);
                                 var safetyIndex = this_obj.getSafetyIndex(safetyStatus, earliestYear, latestYear);
                                 var managementIndex = this_obj.getManagementIndex(managementStatus, latestYear, latestQuarter);
-                                handleStockTag(type, index, earliestYear, earliestQuarter, latestYear, latestQuarter, assetStatus, cashStatus, safetyStatus, profitStatus, salesStatus, managementStatus, function (err, name, tags){
+                                handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cashStatus, safetyStatus, profitStatus, salesStatus, managementStatus, function (err, name, tags){
                                     if (err) {
                                         util.handleError(err, callback, callback);
                                     }
@@ -2062,70 +2062,82 @@ module.exports = {
                         console.log(year);
                         console.log(month_str);
                         if (index >= 20 || sales_num.length > 11) {
-                            console.log(sales_num);
-                            console.log(sales_per);
-                            var per_even = caculateEven(sales_per, true);
-                            var relative = 0;
-                            var even = (sales_per.length + 1) * sales_per.length /2/sales_per.length;
-                            var vari = 0;
-                            for (var i = sales_per.length; i > 0; i--) {
-                                vari += (i - even) * (i - even);
+                            var len = sales_num.length;
+                            var time = [];
+                            var t = 100;
+                            for (var i = 0; i < len; i++) {
+                                sales_num.push(sales_num[i] * (100-sales_per[i])/100);
+                                time.push(t);
+                                t--;
+                                time.push(t);
+                                t--;
                             }
-                            for (var i = 0; i < sales_per.length; i++) {
-                                relative += (sales_per.length - i - even) * (sales_per[i] - per_even[per_even.length-1]);
+                            var salesEven = caculateEven(sales_num, true);
+                            var timeEven = caculateEven(time, true);
+                            var timeVariance = caculateVariance(time, timeEven, true);
+                            var line = caculateRelativeLine(sales_num, salesEven, time, timeEven, timeVariance);
+                            //算標準差
+                            var sd = 0;
+                            for (var i = 0; i < sales_num.length; i++) {
+                                sd = sd + (sales_num[i] - salesEven[salesEven.length-1]) * (sales_num[i] - salesEven[salesEven.length-1]);
                             }
-                            relative = Math.ceil(relative / vari * 1000) / 1000;
-                            var init = Math.ceil((per_even[per_even.length-1] - relative * even)* 1000) / 1000;
-                            console.log(relative);
-                            console.log(init);
+                            sd = Math.sqrt(sd/sales_num.length);
+                            var diff = 0;
                             var predict_sales = 0;
-                            for (var i = sales_num.length-1; i >= 0; i--) {
-                                predict_sales += sales_num[i] * ( 100 + init + relative * (sales_per.length + sales_num.length - i))/100;
+                            for (t = 101; t < 113; t++) {
+                                diff = sales_num[t-101] - (line.a + line.b * (t - 12));
+                                if (diff > 0) {
+                                    diff = Math.ceil(diff/sd);
+                                } else if (diff < 0){
+                                    diff = -Math.ceil(-diff/sd);
+                                }
+                                predict_sales = predict_sales + line.a + line.b * t + sd * diff;
                             }
-                            predict_sales = Math.ceil(predict_sales);
                             console.log(predict_sales);
                             sales = items[0].sales;
-                            cash = items[0].cash;
                             asset = items[0].asset;
                             year = date.getFullYear();
-                            var cashStatus = this_obj.getCashStatus(cash, asset);
-                            var salesStatus = this_obj.getSalesStatus(sales, asset);
-                            var profitStatus = this_obj.getProfitStatus(salesStatus, cashStatus, asset);
-                            var managementStatus = this_obj.getManagementStatus(salesStatus, asset);
-                            var predict_eps = 0;
-                            for (i = 3; i >=0; i--) {
-                                if (profitStatus[year][i]) {
-                                    if (profitStatus[year][i].salesPerShare > 0 && predict_sales > 0) {
-                                        predict_eps = predict_sales / profitStatus[year][i].salesPerShare * 1000;
-                                        var predict_profit = managementStatus.a + managementStatus.b * predict_sales * 1000;
-                                        var predict_profit_eps = predict_profit / asset[year][i].share;
-                                        getStockPrice(items[0].type, items[0].index, function(err, price) {
-                                            if(err) {
-                                                util.handleError(err, callback, callback);
-                                            }
-                                            var per = 0;
-                                            console.log(predict_eps);
-                                            console.log(predict_profit_eps);
-                                            if (predict_eps < predict_profit_eps) {
-                                                per = Math.ceil(price/predict_eps*1000)/1000;
-                                            } else {
-                                                per = Math.ceil(price/predict_profit_eps*1000)/1000;
-                                            }
-                                            setTimeout(function(){
-                                                callback(null, per);
-                                            }, 0);
-                                        });
-                                    } else {
-                                        for (var i = sales_num.length-1; i >= 0; i--) {
-                                            predict_eps += sales_num[i];
-                                        }
-                                        predict_eps = Math.ceil((predict_sales/predict_eps-1)*1000)/1000 + '%';
-                                        setTimeout(function(){
-                                            callback(null, predict_eps);
-                                        }, 0);
-                                    }
+                            var y = date.getFullYear(), q = 3;
+                            for (var i = 0; i < 20; i++) {
+                                if (asset[y] && asset[y][q]) {
                                     break;
+                                } else {
+                                    if (q > 0) {
+                                        q--;
+                                    } else {
+                                        y--;
+                                        q = 3;
+                                    }
                                 }
+                            }
+                            var salesStatus = this_obj.getSalesStatus(sales, asset);
+                            var managementStatus = this_obj.getManagementStatus(salesStatus, asset);
+                            var ret_str = '';
+                            var true_sales = 0;
+                            for (var i = sales_num.length-1; i >= 0; i--) {
+                                true_sales += sales_num[i];
+                            }
+                            ret_str = Math.ceil((predict_sales/true_sales-1)*1000)/10 + '%';
+                            if (predict_sales > 0) {
+                                var predict_profit = managementStatus.a + managementStatus.b * predict_sales * 1000;
+                                var predict_eps = predict_profit / asset[y][q].share;
+                                console.log(predict_eps);
+                                if (predict_eps > 0) {
+                                    getStockPrice(items[0].type, items[0].index, function(err, price) {
+                                        if(err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        var per = Math.ceil(price/predict_eps*1000)/1000;
+                                        setTimeout(function(){
+                                            callback(null, ret_str + ' ' + per);
+                                        }, 0);
+                                    });
+                                }
+                            }
+                            if (predict_sales <= 0 || predict_eps <= 0) {
+                                setTimeout(function(){
+                                    callback(null, ret_str);
+                                }, 0);
                             }
                             console.log('done');
                         } else {
@@ -2210,7 +2222,7 @@ function getBasicStockData(type, index, callback) {
     }
 }
 
-function handleStockTag(type, index, earliestYear, earliestQuarter, latestYear, latestQuarter, assetStatus, cashStatus, safetyStatus, profitStatus, salesStatus, managementStatus, callback){
+function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cashStatus, safetyStatus, profitStatus, salesStatus, managementStatus, callback){
     var tags = [];
     var name = '';
     getBasicStockData(type, index, function(err, basic) {
@@ -2231,7 +2243,7 @@ function handleStockTag(type, index, earliestYear, earliestQuarter, latestYear, 
         for (var i in basic.stock_location) {
             tags.push(basic.stock_location[i]);
         }
-        var ly = latestYear, lq = latestQuarter-1, ey = earliestYear, eq = earliestQuarter-1;
+        var ly = latestYear, lq = latestQuarter-1;
         var insert_tag = '';
         for (var i = 0; i < 20; i++) {
             if (assetStatus[ly] && assetStatus[ly][lq]) {
@@ -2265,6 +2277,7 @@ function handleStockTag(type, index, earliestYear, earliestQuarter, latestYear, 
         var diff = 0;
         var diff_obj = {d: [], p: []};
         var threshold = 0;
+        var ey = ly - 5, eq = lq;
         for (var i = 0; i < 20; i++) {
             if (assetStatus[ey] && assetStatus[ey][eq]) {
                 break;
@@ -2392,7 +2405,7 @@ function handleStockTag(type, index, earliestYear, earliestQuarter, latestYear, 
                 }
             }
         }
-        var y = earliestYear, q = earliestQuarter-1;
+        var y = ly - 5, q = lq;
         var operation = 0, financial = 0, minor = 0, profit_flow = 0, divided_flow = 0;
         for (var i = 0; i < 100; i++) {
             if (cashStatus[y] && cashStatus[y][q]) {
@@ -2517,42 +2530,143 @@ function handleStockTag(type, index, earliestYear, earliestQuarter, latestYear, 
                 }
             }
         }
-        if (safetyStatus[ly][lq].prMinusProfit > 0) {
-            if (tags.indexOf('營運資金充足') === -1) {
-                tags.push('營運資金充足');
+        y = ly - 5, q = lq;
+        var opcash = [];
+        var cdcash = [];
+        var shortcash = [];
+        var time = [];
+        var t = 100;
+        for (var i = 0; i < 100; i++) {
+            if (safetyStatus[ly] && safetyStatus[ly][lq]) {
+                opcash.push(safetyStatus[ly][lq].prMinusProfit);
+                cdcash.push(safetyStatus[ly][lq].shortCashWithoutInvest);
+                shortcash.push(safetyStatus[ly][lq].shortCash);
+                time.push(t);
+                t--;
             }
-        } else {
-            if (tags.indexOf('營運資金不足') === -1) {
-                tags.push('營運資金不足');
-            }
-        }
-        if (safetyStatus[ly][lq].shortCash > 100) {
-            if (tags.indexOf('綜合資金不足') === -1) {
-                tags.push('綜合資金不足');
-            }
-        } else {
-            if (tags.indexOf('綜合資金充足') === -1) {
-                tags.push('綜合資金充足');
-            }
-        }
-        if (safetyStatus[ly][lq].shortCashWithoutCL > 100) {
-            if (tags.indexOf('投資資金不足') === -1) {
-                tags.push('投資資金不足');
-            }
-        } else {
-            if (tags.indexOf('投資資金充足') === -1) {
-                tags.push('投資資金充足');
+            if (ly === y && q === lq) {
+                break;
+            } else {
+                if (lq > 0) {
+                    lq--;
+                } else {
+                    lq = 3;
+                    ly--;
+                }
             }
         }
-        if (safetyStatus[ly][lq].shortCashWithoutInvest > 100) {
-            if (tags.indexOf('短債資金不足') === -1) {
-                tags.push('短債資金不足');
+        var timeEven = caculateEven(time, true);
+        var timeVariance = caculateVariance(time, timeEven, true);
+        var opcashEven = caculateEven(opcash, true);
+        var cdcashEven = caculateEven(cdcash, true);
+        var shortcashEven = caculateEven(shortcash, true);
+
+        periodChange(opcash, '營運資金', 5, false, 0, '充足', '不足');
+        periodChange(cdcash, '短債資金', 5, false, 100, '充足', '不足');
+        periodChange(shortcash, '安全資金', 5, false, 100, '充足', '不足');
+
+        function periodChange(data, name, speed, reverse, interval1, d1, d2, interval2, d3, interval3, d4, interval4, d5) {
+            var even = caculateEven(data, true);
+            var line = caculateRelativeLine(data, even, time, timeEven, timeVariance);
+            var start = line.a + line.b * time[time.length-1];
+            var end = line.a + line.b * time[0];
+
+            if (reverse) {
+                if (line.b > speed) {
+                    name += '快速減少';
+                } else if (line.b > 0) {
+                    name += '逐漸減少';
+                } else if (line.b > -speed){
+                    name += '逐漸增加';
+                } else {
+                    name += '快速增加';
+                }
+            } else {
+                if (line.b > speed) {
+                    name += '快速增加';
+                } else if (line.b > 0) {
+                    name += '逐漸增加';
+                } else if (line.b > -speed){
+                    name += '逐漸減少';
+                } else {
+                    name += '快速減少';
+                }
             }
-        } else {
-            if (tags.indexOf('短債資金充足') === -1) {
-                tags.push('短債資金充足');
+
+            if (typeof interval2 !== 'undefined') {
+                if (typeof interval3 !== 'undefined') {
+                    if (start > interval1) {
+                        name = name + '從' + d1;
+                    } else if (start > interval2) {
+                        name = name + '從' + d2;
+                    } else if (start > interval3) {
+                        name = name + '從' + d3;
+                    } else if (start > interval4) {
+                        name = name + '從' + d4;
+                    } else {
+                        name = name + '從' + d5;
+                    }
+                    if (end > interval1) {
+                        if (tags.indexOf(name + '變得' + d1) === -1) {
+                            tags.push(name + '變得' + d1);
+                        }
+                    } else if (end > interval2) {
+                        if (tags.indexOf(name + '變得' + d2) === -1) {
+                            tags.push(name + '變得' + d2);
+                        }
+                    } else if (end > interval3) {
+                        if (tags.indexOf(name + '變得' + d3) === -1) {
+                            tags.push(name + '變得' + d3);
+                        }
+                    } else if (end > interval4) {
+                        if (tags.indexOf(name + '變得' + d4) === -1) {
+                            tags.push(name + '變得' + d4);
+                        }
+                    } else {
+                        if (tags.indexOf(name + '變得' + d5) === -1) {
+                            tags.push(name + '變得' + d5);
+                        }
+                    }
+                } else {
+                    if (start > interval1) {
+                        name = name + '從' + d1;
+                    } else if (start > interval2) {
+                        name = name + '從' + d2;
+                    } else {
+                        name = name + '從' + d3;
+                    }
+                    if (end > interval1) {
+                        if (tags.indexOf(name + '變得' + d1) === -1) {
+                            tags.push(name + '變得' + d1);
+                        }
+                    } else if (end > interval2) {
+                        if (tags.indexOf(name + '變得' + d2) === -1) {
+                            tags.push(name + '變得' + d2);
+                        }
+                    } else {
+                        if (tags.indexOf(name + '變得' + d3) === -1) {
+                            tags.push(name + '變得' + d3);
+                        }
+                    }
+                }
+            } else {
+                if (start > interval1) {
+                    name = name + '從' + d1;
+                } else {
+                    name = name + '從' + d2;
+                }
+                if (end > interval1) {
+                    if (tags.indexOf(name + '變得' + d1) === -1) {
+                        tags.push(name + '變得' + d1);
+                    }
+                } else {
+                    if (tags.indexOf(name + '變得' + d2) === -1) {
+                        tags.push(name + '變得' + d2);
+                    }
+                }
             }
         }
+
         ly = latestYear, lq = latestQuarter-1;
         for (var i = 0; i < 20; i++) {
             if (profitStatus[ly] && profitStatus[ly][lq]) {
@@ -2566,80 +2680,44 @@ function handleStockTag(type, index, earliestYear, earliestQuarter, latestYear, 
                 }
             }
         }
-        if (profitStatus[ly][lq].gross_profit > 20) {
-            if (tags.indexOf('毛利率高') === -1) {
-                tags.push('毛利率高');
+        y = ly - 5, q = lq;
+        var gross_profit = [];
+        var operating_profit = [];
+        var profit = [];
+        var leverage = [];
+        var turnover = [];
+        time = [];
+        t = 100;
+        for (var i = 0; i < 100; i++) {
+            if (profitStatus[ly] && profitStatus[ly][lq]) {
+                gross_profit.push(profitStatus[ly][lq].gross_profit);
+                operating_profit.push(profitStatus[ly][lq].operating_profit);
+                profit.push(profitStatus[ly][lq].profit);
+                leverage.push(profitStatus[ly][lq].leverage);
+                turnover.push(profitStatus[ly][lq].turnover);
+                time.push(t);
+                t--;
             }
-        } else if (profitStatus[ly][lq].gross_profit < 10){
-            //if (tags.indexOf('毛利率中等') === -1) {
-            //    tags.push('毛利率中等');
-            //}
-        //} else {
-            if (tags.indexOf('毛利率低') === -1) {
-                tags.push('毛利率低');
-            }
-        }
-        if (profitStatus[ly][lq].operating_profit > 10) {
-            if (tags.indexOf('營益率高') === -1) {
-                tags.push('營益率高');
-            }
-        } else if (profitStatus[ly][lq].operating_profit < 5){
-            //if (tags.indexOf('營益率中等') === -1) {
-            //    tags.push('營益率中等');
-            //}
-        //} else {
-            if (tags.indexOf('營益率低') === -1) {
-                tags.push('營益率低');
-            }
-        }
-        if (profitStatus[ly][lq].profit > 10) {
-            if (tags.indexOf('淨利率高') === -1) {
-                tags.push('淨利率高');
-            }
-        } else if (profitStatus[ly][lq].profit < 5){
-            //if (tags.indexOf('淨利率中等') === -1) {
-            //    tags.push('淨利率中等');
-            //}
-        //} else {
-            if (tags.indexOf('淨利率低') === -1) {
-                tags.push('淨利率低');
+            if (ly === y && q === lq) {
+                break;
+            } else {
+                if (lq > 0) {
+                    lq--;
+                } else {
+                    lq = 3;
+                    ly--;
+                }
             }
         }
-        if (profitStatus[ly][lq].leverage > 0.6) {
-            if (tags.indexOf('高槓桿') === -1) {
-                tags.push('高槓桿');
-            }
-        } else if (profitStatus[ly][lq].leverage < 0.3){
-            //if (tags.indexOf('中等槓桿') === -1) {
-            //    tags.push('中等槓桿');
-            //}
-        //} else {
-            if (tags.indexOf('低槓桿') === -1) {
-                tags.push('低槓桿');
-            }
-        }
-        if (profitStatus[ly][lq].turnover > 0.5) {
-            if (tags.indexOf('週轉極高') === -1) {
-                tags.push('週轉極高');
-            }
-        } else if (profitStatus[ly][lq].turnover > 0.25){
-            if (tags.indexOf('週轉高') === -1) {
-                tags.push('週轉高');
-            }
-        //} else if (profitStatus[ly][lq].turnover > 0.125){
-        //    if (tags.indexOf('週轉中等') === -1) {
-        //        tags.push('週轉中等');
-        //    }
-        //} else if (profitStatus[ly][lq].turnover > 0.0625){
-        } else if (profitStatus[ly][lq].turnover < 0.125 && profitStatus[ly][lq].turnover > 0.0625){
-            if (tags.indexOf('週轉低') === -1) {
-                tags.push('週轉低');
-            }
-        } else {
-            if (tags.indexOf('週轉極低') === -1) {
-                tags.push('週轉極低');
-            }
-        }
+        timeEven = caculateEven(time, true);
+        timeVariance = caculateVariance(time, timeEven, true);
+
+        periodChange(gross_profit, '毛利率', 1, false, 20, '高', '中', 10, '低');
+        periodChange(operating_profit, '營益率', 0.5, false, 10, '高', '中', 5, '低');
+        periodChange(profit, '淨利率', 0.5, false, 10, '高', '中', 5, '低');
+        periodChange(leverage, '槓桿', 0.02, true, 0.6, '低', '中', 0.3, '高');
+        periodChange(turnover, '週轉率', 0.015, false, 0.5, '極高', '高', 0.25, '中', 0.125, '低', 0.0625, '極低');
+
         ly = latestYear, lq = latestQuarter-1;
         for (var i = 0; i < 20; i++) {
             if (salesStatus[ly] && salesStatus[ly][lq]) {
@@ -2653,39 +2731,96 @@ function handleStockTag(type, index, earliestYear, earliestQuarter, latestYear, 
                 }
             }
         }
-        if (Math.abs(salesStatus[ly][lq].nonoperating_without_FC - salesStatus[ly][lq].finance_cost) > Math.abs(0.3 * salesStatus[ly][lq].profit)) {
-            if (salesStatus[ly][lq].nonoperating_without_FC - salesStatus[ly][lq].finance_cost > 0) {
-                if (tags.indexOf('非營業利潤過高') === -1) {
-                    tags.push('非營業利潤過高');
+        y = ly - 5, q = lq;
+        var nonoperating = {p: 0, m: 0};
+        var tax = {p: 0, m: 0};
+        var comprehensive = {p: 0, m: 0};
+        t = 0;
+        for (var i = 0; i < 100; i++) {
+            if (salesStatus[ly] && salesStatus[ly][lq]) {
+                if (Math.abs(salesStatus[ly][lq].nonoperating_without_FC - salesStatus[ly][lq].finance_cost) > Math.abs(0.3 * salesStatus[ly][lq].profit)) {
+                    if (salesStatus[ly][lq].nonoperating_without_FC - salesStatus[ly][lq].finance_cost > 0) {
+                        nonoperating.p++;
+                    } else {
+                        nonoperating.m++;
+                    }
                 }
+                if (Math.abs(salesStatus[ly][lq].tax) > Math.abs(0.3 * salesStatus[ly][lq].profit)) {
+                    if (salesStatus[ly][lq].tax < 0) {
+                        tax.p++;
+                    } else {
+                        tax.m++;
+                    }
+                }
+                if (Math.abs(salesStatus[ly][lq].comprehensive) > Math.abs(0.3 * salesStatus[ly][lq].profit)) {
+                    if (salesStatus[ly][lq].comprehensive > 0) {
+                        comprehensive.p++;
+                    } else {
+                        comprehensive.m++;
+                    }
+                }
+                t++;
+            }
+            if (ly === y && q === lq) {
+                break;
             } else {
-                if (tags.indexOf('非營業虧損過高') === -1) {
-                    tags.push('非營業虧損過高');
+                if (lq > 0) {
+                    lq--;
+                } else {
+                    lq = 3;
+                    ly--;
                 }
             }
         }
-        if (Math.abs(salesStatus[ly][lq].tax) > Math.abs(0.3 * salesStatus[ly][lq].profit)) {
-            if (salesStatus[ly][lq].tax > 0) {
-                if (tags.indexOf('稅率過高') === -1) {
-                    tags.push('稅率過高');
+
+        if (nonoperating.p + nonoperating.m > 0.5 * (t)) {
+            if (nonoperating.p > nonoperating.m * 1.5) {
+                if (tags.indexOf('非營業佔比過高並多數是增加') === -1) {
+                    tags.push('非營業佔比過高並多數是增加');
+                }
+            } else if (nonoperating.m > nonoperating.p * 1.5) {
+                if (tags.indexOf('非營業佔比過高並多數是減少') === -1) {
+                    tags.push('非營業佔比過高並多數是減少');
                 }
             } else {
-                if (tags.indexOf('退稅過高') === -1) {
-                    tags.push('退稅過高');
+                if (tags.indexOf('非營業佔比過高') === -1) {
+                    tags.push('非營業佔比過高');
                 }
             }
         }
-        if (Math.abs(salesStatus[ly][lq].comprehensive) > Math.abs(0.3 * salesStatus[ly][lq].profit)) {
-            if (salesStatus[ly][lq].comprehensive > 0) {
-                if (tags.indexOf('其他綜合收益過高') === -1) {
-                    tags.push('其他綜合收益過高');
+
+        if (tax.p + tax.m > 0.5 * (t)) {
+            if (tax.p > tax.m * 1.5) {
+                if (tags.indexOf('稅率佔獲利過高並多數是增加') === -1) {
+                    tags.push('稅率佔獲利過高並多數是增加');
+                }
+            } else if (tax.m > tax.p * 1.5) {
+                if (tags.indexOf('稅率佔獲利過高並多數是減少') === -1) {
+                    tags.push('稅率佔獲利過高並多數是減少');
                 }
             } else {
-                if (tags.indexOf('其他綜合虧損過高') === -1) {
-                    tags.push('其他綜合虧損過高');
+                if (tags.indexOf('稅率佔獲利過高') === -1) {
+                    tags.push('稅率佔獲利過高');
                 }
             }
         }
+
+        if (comprehensive.p + comprehensive.m > 0.3 * (t)) {
+            if (comprehensive.p > comprehensive.m * 1.5) {
+                if (tags.indexOf('其他綜合佔獲利過高並多數是增加') === -1) {
+                    tags.push('其他綜合佔獲利過高並多數是增加');
+                }
+            } else if (comprehensive.m > comprehensive.p * 1.5) {
+                if (tags.indexOf('其他綜合佔獲利過高並多數是減少') === -1) {
+                    tags.push('其他綜合佔獲利過高並多數是減少');
+                }
+            } else {
+                if (tags.indexOf('其他綜合佔獲利過高') === -1) {
+                    tags.push('其他綜合佔獲利過高');
+                }
+            }
+        }
+
         ly = latestYear, lq = latestQuarter-1;
         for (var i = 0; i < 20; i++) {
             if (managementStatus[ly] && managementStatus[ly][lq]) {
@@ -2699,176 +2834,95 @@ function handleStockTag(type, index, earliestYear, earliestQuarter, latestYear, 
                 }
             }
         }
-        if (managementStatus[ly][lq].profitRelative > 0.7) {
-            if (tags.indexOf('獲利跟營收高相關') === -1) {
-                tags.push('獲利跟營收高相關');
+        if (managementStatus[ly] && managementStatus[ly][lq]) {
+            if (managementStatus[ly][lq].profitRelative > 0.7) {
+                if (tags.indexOf('獲利跟營收高相關') === -1) {
+                    tags.push('獲利跟營收高相關');
+                }
             }
-        } else if (managementStatus[ly][lq].profitRelative > 0.3) {
-            if (tags.indexOf('獲利跟營收中相關') === -1) {
-                tags.push('獲利跟營收中相關');
+            if (managementStatus[ly][lq].cashRelative > 0.7) {
+                if (tags.indexOf('現金跟營收高相關') === -1) {
+                    tags.push('現金跟營收高相關');
+                }
             }
-        } else {
-            if (tags.indexOf('獲利跟營收低相關') === -1) {
-                tags.push('獲利跟營收低相關');
+            if (managementStatus[ly][lq].inventoriesRelative > 0.7) {
+                if (tags.indexOf('存貨跟營收高相關') === -1) {
+                    tags.push('存貨跟營收高相關');
+                }
             }
+            if (managementStatus[ly][lq].receivableRelative > 0.7) {
+                if (tags.indexOf('應收跟營收高相關') === -1) {
+                    tags.push('應收跟營收高相關');
+                }
+            }
+            if (managementStatus[ly][lq].payableRelative > 0.7) {
+                if (tags.indexOf('應付跟營收高相關') === -1) {
+                    tags.push('應付跟營收高相關');
+                }
+            }
+            var revenue = [];
+            var revenueP = [];
+            var revenueN = [];
+            y = ly - 5, q = lq;
+            var revenueF = [];
+            for (var i = 0; i < 100; i++) {
+                if (managementStatus[ly] && managementStatus[ly][lq]) {
+                    revenueN.push(managementStatus[ly][lq].revenue);
+                    if (revenue[lq]) {
+                        revenueP.push(Math.pow(revenue[lq].n / managementStatus[ly][lq].revenue,1/(revenue[lq].y - ly)) - 1);
+                    } else {
+                        revenue[lq] = {y: ly, n: managementStatus[ly][lq].revenue};
+                    }
+                }
+                if (ly === y && lq === q) {
+                    break;
+                } else {
+                    if (lq > 0) {
+                        lq--;
+                    } else {
+                        lq = 3;
+                        ly--;
+                    }
+                }
+            }
+
+            getSD(revenueN, revenueP, '營收');
         }
-        if (managementStatus[ly][lq].cashRelative > 0.7) {
-            if (tags.indexOf('現金跟營收高相關') === -1) {
-                tags.push('現金跟營收高相關');
-            }
-        } else if (managementStatus[ly][lq].cashRelative > 0.3) {
-            if (tags.indexOf('現金跟營收中相關') === -1) {
-                tags.push('現金跟營收中相關');
-            }
-        } else {
-            if (tags.indexOf('現金跟營收低相關') === -1) {
-                tags.push('現金跟營收低相關');
-            }
-        }
-        if (managementStatus[ly][lq].inventoriesRelative > 0.7) {
-            if (tags.indexOf('存貨跟營收高相關') === -1) {
-                tags.push('存貨跟營收高相關');
-            }
-        } else if (managementStatus[ly][lq].inventoriesRelative > 0.3) {
-            if (tags.indexOf('存貨跟營收中相關') === -1) {
-                tags.push('存貨跟營收中相關');
-            }
-        } else {
-            if (tags.indexOf('存貨跟營收低相關') === -1) {
-                tags.push('存貨跟營收低相關');
-            }
-        }
-        if (managementStatus[ly][lq].receivableRelative > 0.7) {
-            if (tags.indexOf('應收跟營收高相關') === -1) {
-                tags.push('應收跟營收高相關');
-            }
-        } else if (managementStatus[ly][lq].receivableRelative > 0.3) {
-            if (tags.indexOf('應收跟營收中相關') === -1) {
-                tags.push('應收跟營收中相關');
-            }
-        } else {
-            if (tags.indexOf('應收跟營收低相關') === -1) {
-                tags.push('應收跟營收低相關');
-            }
-        }
-        if (managementStatus[ly][lq].payableRelative > 0.7) {
-            if (tags.indexOf('應付跟營收高相關') === -1) {
-                tags.push('應付跟營收高相關');
-            }
-        } else if (managementStatus[ly][lq].payableRelative > 0.3) {
-            if (tags.indexOf('應付跟營收中相關') === -1) {
-                tags.push('應付跟營收中相關');
-            }
-        } else {
-            if (tags.indexOf('應付跟營收低相關') === -1) {
-                tags.push('應付跟營收低相關');
-            }
-        }
-        var revenue = [];
-        var revenueP = [];
-        var profit = [];
-        var profitP = [];
-        var cash = [];
-        var cashP = [];
-        var inventories = [];
-        var inventoriesP = [];
-        var receivable = [];
-        var receivableP = [];
-        var payable = [];
-        var payableP = [];
-        for (var i = 0; i < 100; i++) {
-            if (managementStatus[ly] && managementStatus[ly][lq]) {
-                if (revenue[lq]) {
-                    revenueP.push(Math.pow(revenue[lq].n / managementStatus[ly][lq].revenue,1/(revenue[lq].y - ly)) - 1);
-                } else {
-                    revenue[lq] = {y: ly, n: managementStatus[ly][lq].revenue};
-                }
-                if (profit[lq]) {
-                    profitP.push(Math.pow(profit[lq].n / managementStatus[ly][lq].profit,1/(profit[lq].y - ly)) - 1);
-                } else {
-                    profit[lq] = {y: ly, n: managementStatus[ly][lq].profit};
-                }
-                if (cash[lq]) {
-                    cashP.push(Math.pow(cash[lq].n / managementStatus[ly][lq].cash,1/(cash[lq].y - ly)) - 1);
-                } else {
-                    cash[lq] = {y: ly, n: managementStatus[ly][lq].cash};
-                }
-                if (inventories[lq]) {
-                    inventoriesP.push(Math.pow(inventories[lq].n / managementStatus[ly][lq].inventories,1/(inventories[lq].y - ly)) - 1);
-                } else {
-                    inventories[lq] = {y: ly, n: managementStatus[ly][lq].inventories};
-                }
-                if (receivable[lq]) {
-                    receivableP.push(Math.pow(receivable[lq].n / managementStatus[ly][lq].receivable,1/(receivable[lq].y - ly)) - 1);
-                } else {
-                    receivable[lq] = {y: ly, n: managementStatus[ly][lq].receivable};
-                }
-                if (payable[lq]) {
-                    payableP.push(Math.pow(payable[lq].n / managementStatus[ly][lq].payable,1/(payable[lq].y - ly)) - 1);
-                } else {
-                    payable[lq] = {y: ly, n: managementStatus[ly][lq].payable};
-                }
-            }
-            if (ly === earliestYear && lq === earliestQuarter-1) {
-                break;
-            } else {
-                if (lq > 0) {
-                    lq--;
-                } else {
-                    lq = 3;
-                    ly--;
-                }
-            }
-        }
-        getSD(revenueP, '營收');
-        function getSD(pp, name) {
+        function getSD(p, pp, name) {
             var even = caculateEven(pp, true);
             var sd = 0;
-            if (pp.length < 8 && pp.length > 3) {
-                for (var i = 0; i < 4; i++) {
-                    sd = sd + (pp[i] - even[1]) * (pp[i] - even[1]);
+            var start = 0;
+            var end = 0;
+            var yearp = 0
+            if (pp.length < 16) {
+                for (var i = 0; i < pp.length; i++) {
+                    sd = sd + (pp[i] - even[pp.length - 3]) * (pp[i] - even[pp.length - 3]);
                 }
-                sd = Math.sqrt(sd/4);
-                if (even[1] > 0.05) {
-                    if (tags.indexOf('短期' + name + '成長') === -1) {
-                        tags.push('短期' + name + '成長');
-                    }
-                } else if (even[1] < -0.05) {
-                    if (tags.indexOf('短期' + name + '衰退') === -1) {
-                        tags.push('短期' + name + '衰退');
-                    }
-                }
-                if (sd < 0.1) {
-                    if (tags.indexOf('短期' + name + '穩定') === -1) {
-                        tags.push('短期' + name + '穩定');
-                    }
-                } else {
-                    if (tags.indexOf('短期' + name + '不穩定') === -1) {
-                        tags.push('短期' + name + '不穩定');
-                    }
-                }
-            } else if (pp.length < 16) {
-                for (var i = 0; i < 8; i++) {
-                    sd = sd + (pp[i] - even[5]) * (pp[i] - even[5]);
-                }
-                sd = Math.sqrt(sd/8);
-                var even2 = caculateEven(pp.slice(4, 8), true);
-                if (even2[1] > 0.05) {
-                    if (tags.indexOf('中期' + name + '成長') === -1) {
-                        tags.push('中期' + name + '成長');
-                    }
-                } else if (even2[1] < -0.05) {
-                    if (tags.indexOf('中期' + name + '衰退') === -1) {
-                        tags.push('中期' + name + '衰退');
+                sd = Math.sqrt(sd/pp.length);
+                var yy = Math.floor(p.length / 4);
+                if (yy > 1) {
+                    start = p[yy*4-1] + p [yy*4-2] + p[yy*4-3] + p [yy*4-4];
+
+                    end = p[0] + p[1] + p[2] + p[3];
+
+                    yearp = Math.pow(end/start,1/yy) - 1;
+                    if (yearp > 0.05) {
+                        if (tags.indexOf(name + '成長') === -1) {
+                            tags.push(name + '成長');
+                        }
+                    } else if (yearp < -0.05) {
+                        if (tags.indexOf(name + '衰退') === -1) {
+                            tags.push(name + '衰退');
+                        }
                     }
                 }
                 if (sd < 0.1) {
-                    if (tags.indexOf('中期' + name + '穩定') === -1) {
-                        tags.push('中期' + name + '穩定');
+                    if (tags.indexOf(name + '穩定') === -1) {
+                        tags.push(name + '穩定');
                     }
                 } else {
-                    if (tags.indexOf('中期' + name + '不穩定') === -1) {
-                        tags.push('中期' + name + '不穩定');
+                    if (tags.indexOf(name + '不穩定') === -1) {
+                        tags.push(name + '不穩定');
                     }
                 }
             } else {
@@ -2876,23 +2930,31 @@ function handleStockTag(type, index, earliestYear, earliestQuarter, latestYear, 
                     sd = sd + (pp[i] - even[13]) * (pp[i] - even[13]);
                 }
                 sd = Math.sqrt(sd/16);
-                var even3 = caculateEven(pp.slice(12, 16), true);
-                if (even3[1] > 0.05) {
-                    if (tags.indexOf('長期' + name + '成長') === -1) {
-                        tags.push('長期' + name + '成長');
+
+                start = p[16] + p [17] + p[18] + p [19];
+
+                end = p[0] + p[1] + p[2] + p[3];
+
+                console.log(p);
+
+                yearp = Math.pow(end/start,1/5) - 1;
+                console.log(yearp);
+                if (yearp > 0.05) {
+                    if (tags.indexOf(name + '成長') === -1) {
+                        tags.push(name + '成長');
                     }
-                } else if (even3[1] < -0.05) {
-                    if (tags.indexOf('長期' + name + '衰退') === -1) {
-                        tags.push('長期' + name + '衰退');
+                } else if (yearp < -0.05) {
+                    if (tags.indexOf(name + '衰退') === -1) {
+                        tags.push(name + '衰退');
                     }
                 }
                 if (sd < 0.1) {
-                    if (tags.indexOf('長期' + name + '穩定') === -1) {
-                        tags.push('長期' + name + '穩定');
+                    if (tags.indexOf(name + '穩定') === -1) {
+                        tags.push(name + '穩定');
                     }
                 } else {
-                    if (tags.indexOf('長期' + name + '不穩定') === -1) {
-                        tags.push('長期' + name + '不穩定');
+                    if (tags.indexOf(name + '不穩定') === -1) {
+                        tags.push(name + '不穩定');
                     }
                 }
             }
@@ -2984,6 +3046,16 @@ function caculateVariance(data, dataEven, is_dot) {
         }
     }
     return dataVariance;
+}
+
+function caculateRelativeLine(data, dataEven, data2, data2Even, data2Variance) {
+    var Relative = 0;
+    for (var i = 0; i < data2.length; i++) {
+        Relative += (data[i] - dataEven[data2Even.length-1]) * (data2[i] - data2Even[data2Even.length-1]);
+    }
+    var b = Relative / data2Variance[data2Even.length-1] / data2Variance[data2Even.length-1];
+    var a = dataEven[dataEven.length-1] - b * data2Even[data2Even.length-1];
+    return {a: a, b: b};
 }
 
 function getParameter(xml, name, index) {
