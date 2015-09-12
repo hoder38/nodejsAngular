@@ -1764,7 +1764,7 @@ module.exports = {
         }
     },
     //抓上市及上櫃
-    getStockList: function(type, callback) {
+    getStockList: function(type, callback, stocktype) {
         switch(type) {
             case 'twse':
             var url = 'http://mops.twse.com.tw/mops/web/ajax_t51sb01?encodeURIComponent=1&step=1&firstin=1&code=&TYPEK=';
@@ -1773,144 +1773,194 @@ module.exports = {
             var raw = [];
             var list = [];
             var index = [];
-            api.xuiteDownload(url + "sii", filePath, function(err) {
-                if (err) {
-                    util.handleError(err, callback, callback);
+            if (stocktype) {
+                var market = 'sii';
+                if (stocktype === 3 || stocktype  === 4) {
+                    market = 'otc';
                 }
-                if(!fs.existsSync(filePath)) {
-                    util.handleError({hoerror: 2, message: "cannot get basic data"}, callback, callback);
-                }
-                fs.readFile(filePath, function (err,data) {
+                api.xuiteDownload(url + market, filePath, function(err) {
                     if (err) {
                         util.handleError(err, callback, callback);
                     }
-                    data = util.bufferToString(data);
-                    fs.unlink(filePath, function(err) {
+                    if(!fs.existsSync(filePath)) {
+                        util.handleError({hoerror: 2, message: "cannot get basic data"}, callback, callback);
+                    }
+                    fs.readFile(filePath, function (err,data) {
                         if (err) {
                             util.handleError(err, callback, callback);
                         }
-                        raw = data.match(/<tr class=\'even\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
-                        for (var i in raw) {
-                            index = raw[i].match(/\d+/);
-                            if (index) {
-                                list.push(index[0]);
-                            }
-                        }
-                        raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
-                        for (var i in raw) {
-                            index = raw[i].match(/\d+/);
-                            if (index) {
-                                list.push(index[0]);
-                            }
-                        }
-                        api.xuiteDownload(url + "otc", filePath, function(err) {
+                        data = util.bufferToString(data);
+                        fs.unlink(filePath, function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
-                            if(!fs.existsSync(filePath)) {
-                                util.handleError({hoerror: 2, message: "cannot get basic data"}, callback, callback);
+                            var odd = 1;
+                            if (stocktype === 2 || stocktype === 4) {
+                                odd = 0;
                             }
-                            fs.readFile(filePath, function (err,data) {
+                            if (odd) {
+                                raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                                for (var i in raw) {
+                                    index = raw[i].match(/\d+/);
+                                    if (index) {
+                                        list.push(index[0]);
+                                    }
+                                }
+                            } else {
+                                raw = data.match(/<tr class=\'even\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                                for (var i in raw) {
+                                    index = raw[i].match(/\d+/);
+                                    if (index) {
+                                        list.push(index[0]);
+                                    }
+                                }
+                            }
+                            setTimeout(function(){
+                                callback(null, list);
+                            }, 0);
+                        });
+                    });
+                }, 600000, false);
+            } else {
+                api.xuiteDownload(url + "sii", filePath, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    if(!fs.existsSync(filePath)) {
+                        util.handleError({hoerror: 2, message: "cannot get basic data"}, callback, callback);
+                    }
+                    fs.readFile(filePath, function (err,data) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        data = util.bufferToString(data);
+                        fs.unlink(filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            raw = data.match(/<tr class=\'even\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                            for (var i in raw) {
+                                index = raw[i].match(/\d+/);
+                                if (index) {
+                                    list.push(index[0]);
+                                }
+                            }
+                            raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                            for (var i in raw) {
+                                index = raw[i].match(/\d+/);
+                                if (index) {
+                                    list.push(index[0]);
+                                }
+                            }
+                            api.xuiteDownload(url + "otc", filePath, function(err) {
                                 if (err) {
                                     util.handleError(err, callback, callback);
                                 }
-                                data = util.bufferToString(data);
-                                fs.unlink(filePath, function(err) {
+                                if(!fs.existsSync(filePath)) {
+                                    util.handleError({hoerror: 2, message: "cannot get basic data"}, callback, callback);
+                                }
+                                fs.readFile(filePath, function (err,data) {
                                     if (err) {
                                         util.handleError(err, callback, callback);
                                     }
-                                    raw = data.match(/<tr class=\'even\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
-                                    for (var i in raw) {
-                                        index = raw[i].match(/\d+/);
-                                        if (index) {
-                                            list.push(index[0]);
-                                        }
-                                    }
-                                    raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
-                                    for (var i in raw) {
-                                        index = raw[i].match(/\d+/);
-                                        if (index) {
-                                            list.push(index[0]);
-                                        }
-                                    }
-                                    setTimeout(function(){
-                                        callback(null, list);
-                                    }, 0);
-                                    /*api.xuiteDownload(url + "rotc", filePath, function(err) {
+                                    data = util.bufferToString(data);
+                                    fs.unlink(filePath, function(err) {
                                         if (err) {
                                             util.handleError(err, callback, callback);
                                         }
-                                        if(!fs.existsSync(filePath)) {
-                                            util.handleError({hoerror: 2, message: "cannot get basic data"}, callback, callback);
+                                        raw = data.match(/<tr class=\'even\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                                        for (var i in raw) {
+                                            index = raw[i].match(/\d+/);
+                                            if (index) {
+                                                list.push(index[0]);
+                                            }
                                         }
-                                        fs.readFile(filePath, function (err,data) {
+                                        raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                                        for (var i in raw) {
+                                            index = raw[i].match(/\d+/);
+                                            if (index) {
+                                                list.push(index[0]);
+                                            }
+                                        }
+                                        setTimeout(function(){
+                                            callback(null, list);
+                                        }, 0);
+                                        /*api.xuiteDownload(url + "rotc", filePath, function(err) {
                                             if (err) {
                                                 util.handleError(err, callback, callback);
                                             }
-                                            data = util.bufferToString(data);
-                                            fs.unlink(filePath, function(err) {
+                                            if(!fs.existsSync(filePath)) {
+                                                util.handleError({hoerror: 2, message: "cannot get basic data"}, callback, callback);
+                                            }
+                                            fs.readFile(filePath, function (err,data) {
                                                 if (err) {
                                                     util.handleError(err, callback, callback);
                                                 }
-                                                raw = data.match(/<tr class=\'even\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
-                                                for (var i in raw) {
-                                                    index = raw[i].match(/\d+/);
-                                                    if (index) {
-                                                        list.push(index[0]);
-                                                    }
-                                                }
-                                                raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
-                                                for (var i in raw) {
-                                                    index = raw[i].match(/\d+/);
-                                                    if (index) {
-                                                        list.push(index[0]);
-                                                    }
-                                                }
-                                                api.xuiteDownload(url + "pub", filePath, function(err) {
+                                                data = util.bufferToString(data);
+                                                fs.unlink(filePath, function(err) {
                                                     if (err) {
                                                         util.handleError(err, callback, callback);
                                                     }
-                                                    if(!fs.existsSync(filePath)) {
-                                                        util.handleError({hoerror: 2, message: "cannot get basic data"}, callback, callback);
+                                                    raw = data.match(/<tr class=\'even\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                                                    for (var i in raw) {
+                                                        index = raw[i].match(/\d+/);
+                                                        if (index) {
+                                                            list.push(index[0]);
+                                                        }
                                                     }
-                                                    fs.readFile(filePath, function (err,data) {
+                                                    raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                                                    for (var i in raw) {
+                                                        index = raw[i].match(/\d+/);
+                                                        if (index) {
+                                                            list.push(index[0]);
+                                                        }
+                                                    }
+                                                    api.xuiteDownload(url + "pub", filePath, function(err) {
                                                         if (err) {
                                                             util.handleError(err, callback, callback);
                                                         }
-                                                        data = util.bufferToString(data);
-                                                        fs.unlink(filePath, function(err) {
+                                                        if(!fs.existsSync(filePath)) {
+                                                            util.handleError({hoerror: 2, message: "cannot get basic data"}, callback, callback);
+                                                        }
+                                                        fs.readFile(filePath, function (err,data) {
                                                             if (err) {
                                                                 util.handleError(err, callback, callback);
                                                             }
-                                                            raw = data.match(/<tr class=\'even\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
-                                                            for (var i in raw) {
-                                                                index = raw[i].match(/\d+/);
-                                                                if (index) {
-                                                                    list.push(index[0]);
+                                                            data = util.bufferToString(data);
+                                                            fs.unlink(filePath, function(err) {
+                                                                if (err) {
+                                                                    util.handleError(err, callback, callback);
                                                                 }
-                                                            }
-                                                            raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
-                                                            for (var i in raw) {
-                                                                index = raw[i].match(/\d+/);
-                                                                if (index) {
-                                                                    list.push(index[0]);
+                                                                raw = data.match(/<tr class=\'even\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                                                                for (var i in raw) {
+                                                                    index = raw[i].match(/\d+/);
+                                                                    if (index) {
+                                                                        list.push(index[0]);
+                                                                    }
                                                                 }
-                                                            }
-                                                            setTimeout(function(){
-                                                                callback(null, list);
-                                                            }, 0);
+                                                                raw = data.match(/<tr class=\'odd\'><td nowrap>\&nbsp\;\d+\&nbsp\;/g);
+                                                                for (var i in raw) {
+                                                                    index = raw[i].match(/\d+/);
+                                                                    if (index) {
+                                                                        list.push(index[0]);
+                                                                    }
+                                                                }
+                                                                setTimeout(function(){
+                                                                    callback(null, list);
+                                                                }, 0);
+                                                            });
                                                         });
-                                                    });
-                                                }, 600000, false);
+                                                    }, 600000, false);
+                                                });
                                             });
-                                        });
-                                    }, 600000, false);*/
+                                        }, 600000, false);*/
+                                    });
                                 });
-                            });
-                        }, 600000, false);
+                            }, 600000, false);
+                        });
                     });
-                });
-            }, 600000, false);
+                }, 600000, false);
+            }
             break;
             default:
             util.handleError({hoerror: 2, message: "stock type unknown!!!"}, callback, callback);

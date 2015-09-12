@@ -21,7 +21,7 @@ function cmdUpdateStock(updateType, singleIndex) {
     console.log('cmdUpdateStock');
     console.log(new Date());
     console.log('update stock');
-    if (singleIndex) {
+    if (singleIndex && singleIndex !== '1' && singleIndex !== '2' && singleIndex !== '3' && singleIndex !== '4') {
         updateStock(updateType, 'twse', [singleIndex], 0, function(err) {
             if(err) {
                 util.handleError(err);
@@ -46,7 +46,7 @@ function cmdUpdateStock(updateType, singleIndex) {
                     });
                 }
             }
-        });
+        }, Number(singleIndex));
     }
 }
 
@@ -290,6 +290,6 @@ rl.on('line', function(line){
         default:
         console.log('help:');
         console.log('stock updateType [single index]');
-        console.log('drive batchNumber [single username]');
+        console.log('drive batchNumber [single username] [market type]');
     }
 });
