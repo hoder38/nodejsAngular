@@ -60,7 +60,7 @@ function updateStock(updateType, type, stocklist, index, callback) {
         }
         index++;
         if (index < stocklist.length) {
-            updateStock(type, stocklist, index, callback);
+            updateStock(updateType, type, stocklist, index, callback);
         } else {
             setTimeout(function(){
                 callback(null);
