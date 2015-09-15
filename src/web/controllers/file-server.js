@@ -35,6 +35,8 @@ var stock_interval = 86400000;
 
 var stock_time = 0;
 
+var stock_batch_list = [];
+
 var drive_batch = 100;
 
 var https = require('https'),
@@ -1820,63 +1822,53 @@ function loopUpdateStock(error, countdown) {
     setTimeout(function() {*/
     stock_time = new Date().getTime();
     var day = new Date().getDate();
-    if (day === config_type.updateStockDate[0]) {
-        console.log('update stock');
-        stockTool.getStockList('twse', function(err, stocklist){
-            if(err) {
-                util.handleError(err);
-                stock_time = 1;
-                console.log('loopUpdateStock end');
-                //loopUpdateStock(null, stock_interval);
-            } else {
-                if (stocklist.length < 1) {
-                    console.log('empty stock list');
+    var stocklist = [];
+    if (stock_batch_list.length === 0) {
+        if (day === config_type.updateStockDate[0]) {
+            console.log('update stock');
+            stockTool.getStockList('twse', function(err, tw_stocklist){
+                if(err) {
+                    util.handleError(err);
                     stock_time = 1;
                     console.log('loopUpdateStock end');
                     //loopUpdateStock(null, stock_interval);
                 } else {
-                    updateStock('twse', stocklist, 0, function(err) {
-                        if (err) {
-                            util.handleError(err);
-                        }
-                        stock_time = 1;
-                        console.log('loopUpdateStock end');
-                    });
+                    stock_batch_list = tw_stocklist;
                 }
-            }
-        });
-    } else if (config_type.updateStockDate.indexOf(day) !== -1) {
-        console.log('update important stock');
-        mongo.orig("find", "stock", {important: 1}, function(err, items){
-            if(err) {
-                util.handleError(err);
-                //loopUpdateStock(null, stock_interval);
-                stock_time = 1;
-                console.log('loopUpdateStock end');
-            } else {
-                var stocklist = [];
-                for (var i in items) {
-                    stocklist.push(items[i].index);
-                }
-                if (stocklist.length < 1) {
-                    console.log('empty stock list');
+            });
+        } else if (config_type.updateStockDate.indexOf(day) !== -1) {
+            console.log('update important stock');
+            mongo.orig("find", "stock", {important: 1}, function(err, items){
+                if(err) {
+                    util.handleError(err);
+                    //loopUpdateStock(null, stock_interval);
                     stock_time = 1;
                     console.log('loopUpdateStock end');
-                    //loopUpdateStock(null, stock_interval);
                 } else {
-                    updateStock('twse', stocklist, 0, function(err) {
-                        if (err) {
-                            util.handleError(err);
-                        }
-                        stock_time = 1;
-                        console.log('loopUpdateStock end');
-                    });
+                    for (var i in items) {
+                        stock_batch_list.push(items[i].index);
+                    }
                 }
-            }
-        });
+            });
+        }
     } else {
+        console.log('stock_batch_list remain');
+        console.log(stock_batch_list.length);
+    }
+    stocklist = stock_batch_list;
+    if (stocklist.length < 1) {
+        console.log('empty stock list');
         stock_time = 1;
         console.log('loopUpdateStock end');
+        //loopUpdateStock(null, stock_interval);
+    } else {
+        updateStock('twse', stocklist, 0, function(err) {
+            if (err) {
+                util.handleError(err);
+            }
+            stock_time = 1;
+            console.log('loopUpdateStock end');
+        });
     }
     //}, countdown);
 }
@@ -1886,6 +1878,9 @@ function updateStock(type, stocklist, index, callback) {
     console.log('updateStock');
     console.log(new Date());
     console.log(stocklist[index]);
+    if (stock_batch_list.indexOf(stocklist[index]) !== -1) {
+        stock_batch_list.splice(stock_batch_list.indexOf(stocklist[index]), 1);
+    }
     stockTool.getSingleStock(type, stocklist[index], function(err) {
         if (err) {
             util.handleError(err, callback, callback);

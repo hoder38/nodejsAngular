@@ -1256,12 +1256,14 @@ module.exports = {
                         salesStatus[i][j].quarterGross = Math.ceil((sales[i][j].gross_profit - sales[i][Number(j)-1].gross_profit)/salesStatus[i][j].quarterRevenue*1000)/10;
                         salesStatus[i][j].quarterOperating = Math.ceil((sales[i][j].operating - sales[i][Number(j)-1].operating)/salesStatus[i][j].quarterRevenue*1000)/10;
                         salesStatus[i][j].quarterProfit = Math.ceil((sales[i][j].profit - sales[i][Number(j)-1].profit)/salesStatus[i][j].quarterRevenue*1000)/10;
+                        salesStatus[i][j].quarterTax = Math.ceil((sales[i][j].tax - sales[i][Number(j)-1].tax)/salesStatus[i][j].quarterRevenue*1000)/10;
                         salesStatus[i][j].quarterEPS = Math.ceil((sales[i][j].eps - sales[i][Number(j)-1].eps)*1000)/1000;
                     } else {
                         salesStatus[i][j].quarterRevenue = sales[i][j].revenue;
                         salesStatus[i][j].quarterGross = Math.ceil(sales[i][j].gross_profit/salesStatus[i][j].quarterRevenue*1000)/10;
                         salesStatus[i][j].quarterOperating = Math.ceil(sales[i][j].operating/salesStatus[i][j].quarterRevenue*1000)/10;
                         salesStatus[i][j].quarterProfit = Math.ceil(sales[i][j].profit/salesStatus[i][j].quarterRevenue*1000)/10;
+                        salesStatus[i][j].quarterTax = Math.ceil(sales[i][j].tax/salesStatus[i][j].quarterRevenue*1000)/10;
                         salesStatus[i][j].quarterEPS = sales[i][j].eps;
                     }
                     salesStatus[i][j].salesPerAsset = Math.ceil(sales[i][j].revenue/asset[i][j].total*1000)/1000;
@@ -1539,6 +1541,8 @@ module.exports = {
                             if (items[0].stock_default.indexOf(items[0].tags[i]) === -1) {
                                 normal_tags.push(items[0].tags[i]);
                             }
+                        } else {
+                            normal_tags.push(items[0].tags[i]);
                         }
                     }
                     if (stage < 2) {
@@ -2062,6 +2066,7 @@ module.exports = {
         if (month < 10) {
             month_str = '0' + month_str;
         }
+        var start_month = 0;
         console.log(year);
         console.log(month_str);
         mongo.orig("find", "stock", {_id: id}, {limit: 1}, function(err, items){
@@ -2088,6 +2093,9 @@ module.exports = {
                                 util.handleError({hoerror: 2, message: "can not find month sales!!!"}, callback, callback);
                             }
                             sales_num.push(Number(raw[0].match(/[0-9,]+/)[0].replace(/,/g, '')));
+                            if (!start_month) {
+                                start_month = month;
+                            }
                             if (raw.length > 10) {
                                 sales_per.push(Number(raw[6].match(/-?[0-9\.]+/)[0]));
                             } else {
@@ -2111,38 +2119,60 @@ module.exports = {
                         console.log(year);
                         console.log(month_str);
                         if (index >= 20 || sales_num.length > 11) {
-                            var len = sales_num.length;
-                            var time = [];
-                            var t = 100;
-                            for (var i = 0; i < len; i++) {
-                                sales_num.push(sales_num[i] * (100-sales_per[i])/100);
-                                time.push(t);
-                                t--;
-                                time.push(t);
-                                t--;
-                            }
-                            var salesEven = caculateEven(sales_num, true);
-                            var timeEven = caculateEven(time, true);
-                            var timeVariance = caculateVariance(time, timeEven, true);
-                            var line = caculateRelativeLine(sales_num, salesEven, time, timeEven, timeVariance);
-                            //算標準差
+                            var perEven = caculateEven(sales_per, true);
                             var sd = 0;
-                            for (var i = 0; i < sales_num.length; i++) {
-                                sd = sd + (sales_num[i] - salesEven[salesEven.length-1]) * (sales_num[i] - salesEven[salesEven.length-1]);
+                            for (var i = 0; i < sales_per.length; i++) {
+                                sd = sd + (sales_per[i] - perEven[perEven.length-1]) * (sales_per[i] - perEven[perEven.length-1]);
                             }
-                            sd = Math.sqrt(sd/sales_num.length);
+                            sd = Math.sqrt(sd/sales_per.length);
+                            //console.log(perEven[perEven.length-1]);
+                            //console.log(sd);
                             var diff = 0;
-                            var predict_sales = 0;
-                            for (t = 101; t < 113; t++) {
-                                diff = sales_num[t-101] - (line.a + line.b * (t - 12));
-                                if (diff > 0) {
-                                    diff = Math.ceil(diff/sd);
-                                } else if (diff < 0){
-                                    diff = -Math.ceil(-diff/sd);
+                            var predict_per = 0;
+                            var predict_sales_0 = 0;
+                            var predict_sales_1 = 0;
+                            var predict_sales_2 = 0;
+                            var predict_sales_3 = 0;
+                            for (var i = 0; i < 3; i++) {
+                                diff = sales_per[i] - perEven[perEven.length-1];
+                                if (diff >= 0) {
+                                    predict_per = predict_per + Math.ceil(diff/sd)*(3-i)/6;
+                                } else {
+                                    predict_per = predict_per - Math.ceil(-diff/sd) * (3-i)/6;
                                 }
-                                predict_sales = predict_sales + line.a + line.b * t + sd * diff;
                             }
-                            console.log(predict_sales);
+                            //console.log(100 + perEven[perEven.length-1] + sd * predict_per);
+
+                            for (var i = 0; i < sales_per.length; i++) {
+                                //predict_sales = predict_sales + line.a + line.b * t + sd * diff;
+                                if (start_month > 1) {
+                                    start_month--;
+                                } else {
+                                    start_month = 12;
+                                }
+                                switch (start_month) {
+                                    case 1:
+                                    case 2:
+                                    case 3:
+                                    predict_sales_0 = predict_sales_0 + sales_num[i] * (100 + perEven[perEven.length-1] + sd * predict_per)/100;
+                                    break;
+                                    case 4:
+                                    case 5:
+                                    case 6:
+                                    predict_sales_1 = predict_sales_1 + sales_num[i] * (100 + perEven[perEven.length-1] + sd * predict_per)/100;
+                                    break;
+                                    case 7:
+                                    case 8:
+                                    case 9:
+                                    predict_sales_2 = predict_sales_2 + sales_num[i] * (100 + perEven[perEven.length-1] + sd * predict_per)/100;
+                                    break;
+                                    case 10:
+                                    case 11:
+                                    case 12:
+                                    predict_sales_3 = predict_sales_3 + sales_num[i] * (100 + perEven[perEven.length-1] + sd * predict_per)/100;
+                                }
+                            }
+                            console.log(predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3);
                             sales = items[0].sales;
                             asset = items[0].asset;
                             year = date.getFullYear();
@@ -2166,10 +2196,13 @@ module.exports = {
                             for (var i = sales_num.length-1; i >= 0; i--) {
                                 true_sales += sales_num[i];
                             }
-                            ret_str = Math.ceil((predict_sales/true_sales-1)*1000)/10 + '%';
-                            if (predict_sales > 0) {
-                                var predict_profit = managementStatus.a + managementStatus.b * predict_sales * 1000;
-                                var predict_eps = predict_profit / asset[y][q].share;
+                            ret_str = Math.ceil(((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3)/true_sales-1)*1000)/10 + '%';
+                            if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) > 0) {
+                                var predict_profit = managementStatus.a + managementStatus.b * predict_sales_0 * 1000;
+                                predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_1 * 1000;
+                                predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_2 * 1000;
+                                predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_3 * 1000;
+                                var predict_eps = predict_profit / asset[y][q].share * 10;
                                 console.log(predict_eps);
                                 if (predict_eps > 0) {
                                     getStockPrice(items[0].type, items[0].index, function(err, price) {
@@ -2183,7 +2216,7 @@ module.exports = {
                                     });
                                 }
                             }
-                            if (predict_sales <= 0 || predict_eps <= 0) {
+                            if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) <= 0 || predict_eps <= 0) {
                                 setTimeout(function(){
                                     callback(null, ret_str);
                                 }, 0);
@@ -2475,7 +2508,11 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
                 operation = operation + (cashStatus[ly][lq].operation + cashStatus[ly][lq].invest) * cashStatus[ly][lq].end;
                 financial += (cashStatus[ly][lq].without_dividends * cashStatus[ly][lq].end);
                 minor += (cashStatus[ly][lq].minor * cashStatus[ly][lq].end);
-                profit_flow += (cashStatus[ly][lq].profitBT * cashStatus[ly][lq].end);
+                if (salesStatus[ly] && salesStatus[ly][lq]) {
+                    profit_flow = profit_flow + cashStatus[ly][lq].profitBT * cashStatus[ly][lq].end - salesStatus[ly][lq].quarterTax * salesStatus[ly][lq].quarterRevenue;
+                } else {
+                    profit_flow += (cashStatus[ly][lq].profitBT * cashStatus[ly][lq].end);
+                }
                 divided_flow += (cashStatus[ly][lq].dividends * cashStatus[ly][lq].end);
             }
             if (ly === y && q === lq) {
@@ -2489,6 +2526,7 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
                 }
             }
         }
+
         for (var i = 0; i < 20; i++) {
             if (cashStatus[ey] && cashStatus[ey][eq]) {
                 break;
@@ -2637,8 +2675,8 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
         var shortcashEven = caculateEven(shortcash, true);
 
         periodChange(opcash, '營運資金', 5, false, 0, '充足', '不足');
-        periodChange(cdcash, '短債資金', 5, false, 100, '充足', '不足');
-        periodChange(shortcash, '安全資金', 5, false, 100, '充足', '不足');
+        periodChange(cdcash, '短債資金', 5, true, 100, '充足', '不足');
+        periodChange(shortcash, '安全資金', 5, true, 100, '充足', '不足');
 
         function periodChange(data, name, speed, reverse, interval1, d1, d2, interval2, d3, interval3, d4, interval4, d5) {
             var even = caculateEven(data, true);
@@ -2784,6 +2822,7 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
         var gross_profit = [];
         var operating_profit = [];
         var profit = [];
+        var roe = [];
         var leverage = [];
         var turnover = [];
         time = [];
@@ -2793,6 +2832,7 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
                 gross_profit.push(profitStatus[ly][lq].gross_profit);
                 operating_profit.push(profitStatus[ly][lq].operating_profit);
                 profit.push(profitStatus[ly][lq].profit);
+                roe.push(profitStatus[ly][lq].roe);
                 leverage.push(profitStatus[ly][lq].leverage);
                 turnover.push(profitStatus[ly][lq].turnover);
                 time.push(t);
@@ -2815,6 +2855,7 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
         periodChange(gross_profit, '毛利率', 1, false, 20, '高', '中', 10, '低');
         periodChange(operating_profit, '營益率', 0.5, false, 10, '高', '中', 5, '低');
         periodChange(profit, '淨利率', 0.5, false, 10, '高', '中', 5, '低');
+        periodChange(roe, 'ROE', 0.1, false, 4, '高', '中', 2, '低');
         periodChange(leverage, '槓桿', 0.02, true, 0.6, '低', '中', 0.3, '高');
         periodChange(turnover, '週轉率', 0.015, false, 0.5, '極高', '高', 0.25, '中', 0.125, '低', 0.0625, '極低');
 
@@ -3056,8 +3097,16 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
                 }
             }
         }
+        var valid_tags = [];
+        var valid_name = false;
+        for (var i in tags) {
+            valid_name = util.isValidString(tags[i], 'name');
+            if (valid_name) {
+                valid_tags.push(valid_name);
+            }
+        }
         setTimeout(function(){
-            callback(null, name, tags);
+            callback(null, name, valid_tags);
         }, 0);
     });
 }
