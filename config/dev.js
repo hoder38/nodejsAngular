@@ -6,6 +6,7 @@ module.exports = {
     ip: '192.168.2.101',
     file_ip: '192.168.2.101',
     port: 8080,
+    extent_port: 8081,
     file_port: 8081,
     //file_http_port: 8082,
     extent_file_port: 8081,

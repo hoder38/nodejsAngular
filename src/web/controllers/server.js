@@ -2331,4 +2331,4 @@ function getPasswordItem(user, items) {
 
 console.log('start express server\n');
 
-console.log("Server running at https://" + config_glb.extent_ip + ":" + config_glb.port + ' ' + new Date());
+console.log("Server running at https://" + config_glb.extent_ip + ":" + config_glb.extent_port + ' ' + new Date());
