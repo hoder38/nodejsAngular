@@ -465,12 +465,37 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
                 tags.setSingleArray(name);
             }
         }
-        googleApi.googleApi('search', {keyword: req.params.name}, function(err, metadata) {
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            res.json({itemList: metadata});
-        });
+
+        var tags = tagTool.searchTags(req.session);
+        if (!tags) {
+            util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
+        }
+        var parentList = tags.getArray();
+        if (!req.params.name) {
+            res.json({itemList: [], parentList: parentList});
+        } else {
+            googleApi.googleApi('y search', {keyword: req.params.name}, function(err, metadata) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (!metadata.items) {
+                    util.handleError({hoerror: 2, message: "search error"}, next, res);
+                }
+                var video_id = [];
+                for (var i in metadata.items) {
+                    if (metadata.items[i].id && metadata.items[i].id.videoId) {
+                        video_id.push(metadata.items[i].id.videoId);
+                    }
+                }
+                googleApi.googleApi('y video', {id: video_id.join(',')}, function(err, detaildata) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    var itemList = getYoutubeItem(detaildata.items);
+                    res.json({itemList: itemList, parentList: parentList});
+                });
+            });
+        }
         /*
         tagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
@@ -2210,6 +2235,21 @@ function checkLogin(req, res, next, callback) {
             callback(req, res, next);
         }, 0);
     }
+}
+
+function getYoutubeItem(items) {
+    var itemList = [];
+    var yd = null;
+    var data = null;
+    for (var i in items) {
+        if (items[i].snippet && items[i].statistics) {
+            items[i].snippet.tags.push('first item');
+            yd = new Date(items[i].snippet.publishedAt.match(/^\d\d\d\d-\d\d-\d\d/)[0]);
+            data = {name: items[i].snippet.title, id: items[i].id, tags: items[i].snippet.tags, recycle: 0, isOwn: true, status: 3, utime: yd.getTime()/1000, count: items[i].statistics.viewCount, thumb: items[i].snippet.thumbnails.default.url};
+            itemList.push(data);
+        }
+    }
+    return itemList;
 }
 
 function getStorageItem(user, items, mediaHandle) {

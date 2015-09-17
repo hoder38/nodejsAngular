@@ -44,7 +44,7 @@ function youtubeAPI(method, data, callback) {
     var youtube = googleapis.youtube({ version: 'v3', auth: oauth2Client });
     var param = {};
     switch(method) {
-        case 'search':
+        case 'y search':
         if (!data['keyword']) {
             util.handleError({hoerror: 2, message: 'search parameter lost!!!'}, callback, callback);
         }
@@ -52,10 +52,29 @@ function youtubeAPI(method, data, callback) {
             part: 'id',
             maxResults: 20,
             order: 'viewCount',
-            type: 'video,playlist',
+            //type: 'video,playlist',
+            type: 'video',
             q: data['keyword']
         };
         youtube.search.list(param, function(err, metadata) {
+            if (err && err.code !== 'ECONNRESET') {
+                util.handleError(err, callback, callback, null);
+            }
+            setTimeout(function(){
+                callback(null, metadata);
+            }, 0);
+        });
+        break;
+        case 'y video':
+        if (!data['id']) {
+            util.handleError({hoerror: 2, message: 'search parameter lost!!!'}, callback, callback);
+        }
+        param = {
+            part: 'snippet,statistics',
+            order: 'viewCount',
+            id: data['id']
+        };
+        youtube.videos.list(param, function(err, metadata) {
             if (err && err.code !== 'ECONNRESET') {
                 util.handleError(err, callback, callback, null);
             }
@@ -361,7 +380,7 @@ var exports = module.exports = {
                 }
                 util.handleError(err, callback, callback, null);
             }
-            if (method === 'search') {
+            if (method.match(/^y /)) {
                 youtubeAPI(method, data, callback);
             } else {
                 sendAPI(method, data, callback);

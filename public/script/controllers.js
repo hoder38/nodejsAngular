@@ -1010,7 +1010,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 $window.location.href = $location.path();
             } else {
                 console.log(result);
-                return;
                 if (this_obj.page === 0) {
                     this_obj.itemList = [];
                 }
@@ -1503,6 +1502,48 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         } else {
             this.showUrl(item);
         }
+    }
+
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    $scope.showYoutube = function(item) {
+        if (player) {
+            player.destroy();
+        }
+        this.$parent.mediaToggle("video", true);
+        onYouTubeIframeAPIReady(item.id);
+    }
+
+    var player = null;
+    function onYouTubeIframeAPIReady(id) {
+        player = new YT.Player('youtube-player', {
+            height: '100%',
+            width: '100%',
+            videoId: id,
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange
+            }
+        });
+    }
+
+    // 4. The API will call this function when the video player is ready.
+    function onPlayerReady(event) {
+        event.target.playVideo();
+    }
+
+    //var done = false;
+    function onPlayerStateChange(event) {
+        /*if (event.data == YT.PlayerState.PLAYING && !done) {
+            setTimeout(stopVideo, 6000);
+            done = true;
+        }*/
+    }
+    function stopVideo() {
+        player.stopVideo();
     }
 
     $scope.showUrl = function(item) {
