@@ -1465,14 +1465,14 @@ function normalize(tag) {
         }
     }
     result = result.toLowerCase(result);
-    result = result.replace(/[零一二三四五六七八九十十百佰千仟万萬0123456789]+/g, function (a) {
+    result = result.replace(/[零一二三四五六七八九十十百千萬0123456789]+/g, function (a) {
         return CN2ArabNum(a);
     });
     return result;
 }
 function CN2ArabNum(cn) {
     var cnChars = '零一二三四五六七八九',
-    mulChars = '十十百佰千仟万萬',
+    mulChars = '十十百千萬',
     arab = 0, tmp = [], mul = 0, state = 0, aum = 0;
     if (!cn) {
         return 0;
@@ -1480,7 +1480,7 @@ function CN2ArabNum(cn) {
     cn = cn.replace(/[零一二三四五六七八九]/g, function (a) {
         return cnChars.indexOf(a);
     });
-    if (cn.match(/^[十百佰千仟万萬]/)) {
+    if (cn.match(/^[十百千萬]/)) {
         cn = '1' + cn;
     }
     var pow = 1, i = 0;

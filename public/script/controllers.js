@@ -1009,6 +1009,8 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
+                console.log(result);
+                return;
                 if (this_obj.page === 0) {
                     this_obj.itemList = [];
                 }

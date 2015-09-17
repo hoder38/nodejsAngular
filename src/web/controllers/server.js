@@ -26,6 +26,8 @@ var pwTagTool = require("../models/tag-tool.js")("password");
 
 var pwTool = require("../models/password-tool.js");
 
+var googleApi = require("../models/api-tool-google.js");
+
 var util = require("../util/utility.js");
 
 var https = require('https'),
@@ -463,13 +465,20 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
                 tags.setSingleArray(name);
             }
         }
+        googleApi.googleApi('search', {keyword: req.params.name}, function(err, metadata) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json({itemList: metadata});
+        });
+        /*
         tagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
             var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
             res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
-        });
+        });*/
     });
 });
 

@@ -39,6 +39,35 @@ var api_pool = [];
 var api_ing = 0;
 
 var oath_waiting = 60000;
+//[^\x00-\x7F]+
+function youtubeAPI(method, data, callback) {
+    var youtube = googleapis.youtube({ version: 'v3', auth: oauth2Client });
+    var param = {};
+    switch(method) {
+        case 'search':
+        if (!data['keyword']) {
+            util.handleError({hoerror: 2, message: 'search parameter lost!!!'}, callback, callback);
+        }
+        param = {
+            part: 'id',
+            maxResults: 20,
+            order: 'viewCount',
+            type: 'video,playlist',
+            q: data['keyword']
+        };
+        youtube.search.list(param, function(err, metadata) {
+            if (err && err.code !== 'ECONNRESET') {
+                util.handleError(err, callback, callback, null);
+            }
+            setTimeout(function(){
+                callback(null, metadata);
+            }, 0);
+        });
+        break;
+        default:
+        util.handleError({hoerror: 2, message: 'youtube api unknown!!!'}, callback, callback);
+    }
+}
 
 function sendAPI(method, data, callback) {
     var drive = googleapis.drive({ version: 'v2', auth: oauth2Client });
@@ -332,7 +361,11 @@ var exports = module.exports = {
                 }
                 util.handleError(err, callback, callback, null);
             }
-            sendAPI(method, data, callback);
+            if (method === 'search') {
+                youtubeAPI(method, data, callback);
+            } else {
+                sendAPI(method, data, callback);
+            }
         });
     },
     googleDownload: function(url, filePath, callback, threshold, is_one) {

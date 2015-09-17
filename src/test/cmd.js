@@ -290,6 +290,6 @@ rl.on('line', function(line){
         default:
         console.log('help:');
         console.log('stock updateType [single index]');
-        console.log('drive batchNumber [single username] [market type]');
+        console.log('drive batchNumber [single username]');
     }
 });
