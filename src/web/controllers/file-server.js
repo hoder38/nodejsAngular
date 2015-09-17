@@ -1134,7 +1134,7 @@ app.get('/video/:uid', function (req, res, next) {
                     var total = video.size;
                     if (req.headers['range']) {
                         var range = req.headers.range;
-                        var parts = range.replace(/bytes=/, "").split("-");
+                        var parts = range.replace(/bytes(=|: )/, "").split("-");
                         var partialstart = parts[0];
                         var partialend = parts[1];
 
@@ -1712,7 +1712,7 @@ if (config_glb.updateStock) {
 
 function checkLogin(req, res, next, callback) {
     if(!req.isAuthenticated()){
-        if (util.isMobile(req.headers['user-agent']) || req.headers['user-agent'].match(/Firefox/i)) {
+        if (util.isMobile(req.headers['user-agent']) || req.headers['user-agent'].match(/Firefox/i)|| req.headers['user-agent'].match(/armv7l/i)) {
             if (/^\/video\//.test(req.path) || /^\/subtitle\//.test(req.path)) {
                 console.log("mobile or firefox");
                 setTimeout(function(){
