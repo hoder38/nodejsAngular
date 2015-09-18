@@ -775,10 +775,18 @@ audio.media-screen {
 }
 
 .recycled .item-point:hover,.recycled .item-point:link,.recycled .item-point:visited,.recycled .item-point:active {
-    color: red;
+    color: #B40404;
 }
 
 .recycled {
+    color: #B40404;
+}
+
+.youtubed .item-point:hover,.youtubed .item-point:link,.youtubed .item-point:visited,.youtubed .item-point:active {
+    color: red;
+}
+
+.youtubed {
     color: red;
 }
 

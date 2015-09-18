@@ -249,7 +249,7 @@
     <div class="table-responsive">
         <table class="table table-hover">
             <tbody>
-                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'recycling' || ''}} {{item.recycle === 4 && 'recycled' || ''}}" ng-if="$index <= dirLocation">
+                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'recycling' || ''}} {{item.recycle === 4 && 'recycled' || ''}} {{item.thumb && 'youtubed' || ''}}" ng-if="$index <= dirLocation">
                     <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
                     <td class="item-name" ng-if="item.media" confirmed-click="handleMedia('act', item)" ng-confirm-click="Would you sure to handle this media?">
                         {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}} {{item.media.split}}
@@ -355,7 +355,7 @@
                         </button>
                     </td>
                 </tr>
-                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'recycling' || ''}} {{item.recycle === 4 && 'recycled' || ''}}" ng-if="$index > dirLocation">
+                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'recycling' || ''}} {{item.recycle === 4 && 'recycled' || ''}} {{item.thumb && 'youtubed' || ''}}" ng-if="$index > dirLocation">
                     <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
                     <td class="item-name" ng-if="item.media" confirmed-click="handleMedia('act', item)" ng-confirm-click="Would you sure to handle this media?">
                         {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}} {{item.media.split}}

@@ -465,23 +465,44 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
                 tags.setSingleArray(name);
             }
         }
+        tagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
+        });
+    });
+});
 
+app.get('/api/youtube/get/:pageToken?', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("youtube get");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
         var tags = tagTool.searchTags(req.session);
         if (!tags) {
             util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
         }
         var parentList = tags.getArray();
-        if (!req.params.name) {
-            res.json({itemList: [], parentList: parentList});
-        } else {
-            googleApi.googleApi('y search', {keyword: req.params.name}, function(err, metadata) {
-                if (err) {
-                    util.handleError(err, next, res);
-                }
-                if (!metadata.items) {
-                    util.handleError({hoerror: 2, message: "search error"}, next, res);
-                }
-                var video_id = [];
+        var sortName = 'name';
+        if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
+            sortName = req.cookies.fileSortName;
+        }
+        var query = tagTool.getYoutubeQuery(parentList.cur, sortName, req.params.pageToken);
+        if (!query) {
+            util.handleError({hoerror: 2, message: 'error youtube search!!!'}, next, res);
+        }
+        googleApi.googleApi('y search', query, function(err, metadata) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (!metadata.items) {
+                util.handleError({hoerror: 2, message: "search error"}, next, res);
+            }
+            var video_id = [];
+            if (metadata.items.length > 0) {
                 for (var i in metadata.items) {
                     if (metadata.items[i].id && metadata.items[i].id.videoId) {
                         video_id.push(metadata.items[i].id.videoId);
@@ -492,18 +513,20 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
                         util.handleError(err, next, res);
                     }
                     var itemList = getYoutubeItem(detaildata.items);
-                    res.json({itemList: itemList, parentList: parentList});
+                    if (metadata.nextPageToken) {
+                        res.json({itemList: itemList, pageToken: metadata.nextPageToken});
+                    } else {
+                        res.json({itemList: itemList});
+                    }
                 });
-            });
-        }
-        /*
-        tagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
-            if (err) {
-                util.handleError(err, next, res);
+            } else {
+                if (metadata.nextPageToken) {
+                    res.json({itemList: [], pageToken: metadata.nextPageToken});
+                } else {
+                    res.json({itemList: []});
+                }
             }
-            var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
-            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
-        });*/
+        });
     });
 });
 
@@ -639,10 +662,10 @@ app.get('/api/storage/reset', function(req, res, next){
         console.log(req.body);
         var sortName = 'name';
         var sortType = 'desc';
-        if (req.cookies.fileSortName === 'name' || req.cookies.fileSortName === 'mtime') {
+        if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
             sortName = req.cookies.fileSortName;
         }
-        if (req.cookies.fileSortType === 'desc' || req.cookies.fileSortType === 'asc') {
+        if (req.cookies.fileSortType === 'asc') {
             sortType = req.cookies.fileSortType;
         }
         tagTool.resetQuery(sortName, sortType, req.user, req.session, next, function(err, result) {
@@ -1001,10 +1024,10 @@ app.get('/api/parent/query/:id/:single?', function(req, res, next) {
         }
         var sortName = 'name';
         var sortType = 'desc';
-        if (req.cookies.fileSortName === 'name' || req.cookies.fileSortName === 'mtime') {
+        if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
             sortName = req.cookies.fileSortName;
         }
-        if (req.cookies.fileSortType === 'desc' || req.cookies.fileSortType === 'asc') {
+        if (req.cookies.fileSortType === 'asc') {
             sortType = req.cookies.fileSortType;
         }
         tagTool.queryParentTag(id, req.params.single, sortName, sortType, req.user, req.session, next, function(err, result) {
@@ -1091,10 +1114,10 @@ app.get('/api/bookmark/get/:id', function (req, res, next) {
         }
         var sortName = 'name';
         var sortType = 'desc';
-        if (req.cookies.fileSortName === 'name' || req.cookies.fileSortName === 'mtime') {
+        if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
             sortName = req.cookies.fileSortName;
         }
-        if (req.cookies.fileSortType === 'desc' || req.cookies.fileSortType === 'asc') {
+        if (req.cookies.fileSortType === 'asc') {
             sortType = req.cookies.fileSortType;
         }
         tagTool.getBookmark(id, sortName, sortType, req.user, req.session, next, function(err, result) {
@@ -1273,13 +1296,13 @@ app.post('/api/media/saveParent', function(req, res, next) {
         }
         var sortName = 'name';
         var sortType = 'desc';
-        if (req.cookies.fileSortName === 'name' || req.cookies.fileSortName === 'mtime') {
+        if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
             sortName = req.cookies.fileSortName;
             if (sortName === 'mtime') {
                 sortName = 'utime';
             }
         }
-        if (req.cookies.fileSortType === 'desc' || req.cookies.fileSortType === 'asc') {
+        if (req.cookies.fileSortType === 'asc') {
             sortType = req.cookies.fileSortType;
         }
         tags.saveArray(name, sortName, sortType);
@@ -1287,15 +1310,24 @@ app.post('/api/media/saveParent', function(req, res, next) {
     });
 });
 
-app.get('/api/media/record/:id/:time(\\d+)', function(req, res, next){
+app.get('/api/media/record/:id/:time(\\d+)/:type(youtube)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('media doc record');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = util.isValidString(req.params.id, 'uid');
-        if (id === false) {
-            util.handleError({hoerror: 2, message: "file is not vaild"}, next, res);
+        var id = false;
+        if (req.params.type === 'youtube') {
+            id = util.isValidString(req.params.id, 'name');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+            }
+            id += 'y ';
+        } else {
+            id = util.isValidString(req.params.id, 'uid');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "file is not vaild"}, next, res);
+            }
         }
         if (req.params.time === '0') {
             mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: id, $isolated: 1}, function(err,user){
@@ -1349,15 +1381,24 @@ app.get('/api/media/record/:id/:time(\\d+)', function(req, res, next){
     });
 });
 
-app.get('/api/media/setTime/:id/:type', function(req, res, next){
+app.get('/api/media/setTime/:id/:type/:mType(youtube)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('media setTime');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = util.isValidString(req.params.id, 'uid');
-        if (id === false) {
-            util.handleError({hoerror: 2, message: "file is not vaild"}, next, res);
+        var id = false;
+        if (req.params.mType === 'youtube') {
+            id = util.isValidString(req.params.id, 'name');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+            }
+            id += 'y ';
+        } else {
+            id = util.isValidString(req.params.id, 'uid');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "file is not vaild"}, next, res);
+            }
         }
         var type = util.isValidString(req.params.type, 'name');
         if (type === false) {
@@ -2243,7 +2284,11 @@ function getYoutubeItem(items) {
     var data = null;
     for (var i in items) {
         if (items[i].snippet && items[i].statistics) {
-            items[i].snippet.tags.push('first item');
+            if (items[i].snippet.tags) {
+                items[i].snippet.tags.push('first item');
+            } else {
+                items[i].snippet.tags = ['first item'];
+            }
             yd = new Date(items[i].snippet.publishedAt.match(/^\d\d\d\d-\d\d-\d\d/)[0]);
             data = {name: items[i].snippet.title, id: items[i].id, tags: items[i].snippet.tags, recycle: 0, isOwn: true, status: 3, utime: yd.getTime()/1000, count: items[i].statistics.viewCount, thumb: items[i].snippet.thumbnails.default.url};
             itemList.push(data);

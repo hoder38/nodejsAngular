@@ -1,7 +1,7 @@
 //壓縮 手動排序跟新增
 //cat script/angular.min.js script/angular-route.min.js script/angular-resource.min.js script/angular-cookies.min.js script/angular-sanitize.min.js script/angular-file-upload.js script/Chart.min.js script/angular-chart.min.js script/controllers.js script/stock-controllers.js script/password-controllers.js script/frontend.js script/ui-bootstrap-tpls-0.12.0.min.js script/vtt.js > script/release.js
 //cat css/angular-chart.css css/bootstrap.min.css css/bootstrap-theme.min.css font-awesome/css/font-awesome.min.css css/sb-admin.css > css/release.css
-var video, music, subtitles, videoStart=0, musicStart=0, confirm_str='';
+var video, music, subtitles, videoStart=0, musicStart=0, confirm_str='', yplayer = null;;
 var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSanitize', 'angularFileUpload', 'ui.bootstrap', 'chart.js'], function($routeProvider, $locationProvider) {
     $routeProvider.when('/', {
         templateUrl: '/views/homepage',
@@ -110,6 +110,7 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
 }).directive('ngEnded', function() {
     return function (scope, element, attrs) {
         element.bind('ended',function (event) {
+            //event.preventDefault();
             scope.$apply(function (){
                 scope.$eval(attrs.ngEnded);
             });
@@ -585,6 +586,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.isRelative = false;
     $scope.tCD = false;
     $scope.relativeList = [];
+    $scope.pageToken = '';
     //cookie
     $scope.fileSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
     $scope.dirSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
@@ -922,7 +924,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     getItemlist = function (this_obj, name, index, isExactly) {
         name = typeof name !== 'undefined' ? name : null;
         index = typeof index !== 'undefined' ? index : 0;
-        var Info, exactly = 'false';
+        var Info, exactly = 'false', more = true;
         if (isExactly) {
             exactly = 'true';
         } else if (index) {
@@ -1009,8 +1011,8 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
-                console.log(result);
                 if (this_obj.page === 0) {
+                    this_obj.pageToken = '';
                     this_obj.itemList = [];
                 }
                 if (result.itemList.length > 0) {
@@ -1024,7 +1026,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                         }
                     }
                 } else {
-                    $scope.more = false;
+                    more = false;
                 }
                 this_obj.page = this_obj.page + result.itemList.length;
                 this_obj.latest = result.latest;
@@ -1032,8 +1034,50 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 this_obj.parentList = result.parentList.cur;
                 this_obj.historyList = result.parentList.his;
                 this_obj.exactlyList = result.parentList.exactly;
-                this_obj.moreDisabled = false;
-                this_obj.searchBlur = true;
+                if (this_obj.pageToken) {
+                    Info = $resource('/api/youtube/get/' + this_obj.pageToken, {}, {
+                        'youtube': { method:'GET' }
+                    });
+                } else {
+                    Info = $resource('/api/youtube/get', {}, {
+                        'youtube': { method:'GET' }
+                    });
+                }
+                Info.youtube({}, function(result) {
+                    console.log(result);
+                    if (result.pageToken) {
+                        this_obj.pageToken = result.pageToken;
+                    }
+                    if (result.itemList.length > 0) {
+                        var date;
+                        for (var i in result.itemList) {
+                            if (arrayObjectIndexOf(this_obj.itemList, result.itemList[i].id, 'id') === -1) {
+                                result.itemList[i].select = false;
+                                date = new Date(result.itemList[i].utime*1000);
+                                result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                                this_obj.itemList.push(result.itemList[i]);
+                            }
+                        }
+                        $scope.more = true;
+                    } else {
+                        if (!more) {
+                            $scope.more = false;
+                        } else {
+                            $scope.more = true;
+                        }
+                    }
+                    this_obj.moreDisabled = false;
+                    this_obj.searchBlur = true;
+                }, function(errorResult) {
+                    this_obj.moreDisabled = false;
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
             }
         }, function(errorResult) {
             this_obj.moreDisabled = false;
@@ -1504,48 +1548,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         }
     }
 
-    var tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    var firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-    $scope.showYoutube = function(item) {
-        if (player) {
-            player.destroy();
-        }
-        this.$parent.mediaToggle("video", true);
-        onYouTubeIframeAPIReady(item.id);
-    }
-
-    var player = null;
-    function onYouTubeIframeAPIReady(id) {
-        player = new YT.Player('youtube-player', {
-            height: '100%',
-            width: '100%',
-            videoId: id,
-            events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange
-            }
-        });
-    }
-
-    // 4. The API will call this function when the video player is ready.
-    function onPlayerReady(event) {
-        event.target.playVideo();
-    }
-
-    //var done = false;
-    function onPlayerStateChange(event) {
-        /*if (event.data == YT.PlayerState.PLAYING && !done) {
-            setTimeout(stopVideo, 6000);
-            done = true;
-        }*/
-    }
-    function stopVideo() {
-        player.stopVideo();
-    }
-
     $scope.showUrl = function(item) {
         if (!item) {
             item = this.toolList.item;
@@ -1619,7 +1621,11 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 if (this_obj[type].id) {
                     this_obj.mediaRecord(type, docRecord);
                 }
-                var mediaApi = $resource('/api/media/setTime/' + item.id + '/' + type, {}, {
+                var append = '';
+                if (item.thumb) {
+                    append = '/youtube';
+                }
+                var mediaApi = $resource('/api/media/setTime/' + item.id + '/' + type + append, {}, {
                     'setTime': { method:'GET' }
                 });
                 mediaApi.setTime({}, function (result) {
@@ -1635,16 +1641,23 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                                 this_obj.$parent[type].presentId = this_obj.$parent[type].showId = result.time;
                             }
                         }
+                        if (type === 'video') {
+                            if (yplayer) {
+                                yplayer.destroy();
+                                yplayer = null;
+                            }
+                        }
                         if (type === 'doc') {
                             this_obj.$parent[type].iframeOffset = null;
                             this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id + '/doc';
-                        } else if (type === 'present') {
-                            this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id;
+                        } else if (type === 'video' && item.thumb) {
+                            this_obj.$parent[type].src = null;
+                            onYouTubeIframeAPIReady(item.id);
                         } else {
                             this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id;
                         }
                         this_obj.$parent[type].maxId = item.present;
-                        if (type === 'video') {
+                        if (type === 'video' && !item.thumb) {
                             removeCue();
                             this_obj.$parent[type].sub = $scope.main_url + '/subtitle/' + item.id;
                         }
@@ -2692,10 +2705,18 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.mediaRecord = function(type, record, end) {
         var id = this[type].id;
         var time = 0;
+        var append = '';
         if (id) {
             if (type === 'video') {
-                if (!end) {
-                    time = parseInt(video.currentTime);
+                if (this[type].src) {
+                    if (!end) {
+                        time = parseInt(video.currentTime);
+                    }
+                } else {
+                    if (!end) {
+                        time = parseInt(yplayer.getCurrentTime());
+                    }
+                    append = '/youtube';
                 }
             } else if (type === 'music') {
                 return false;
@@ -2710,7 +2731,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             } else {
                 return;
             }
-            var mediaApi = $resource('/api/media/record/' + id + '/' + time, {}, {
+            var mediaApi = $resource('/api/media/record/' + id + '/' + time + append, {}, {
                 'record': { method:'GET' }
             });
             mediaApi.record({}, function (result) {
@@ -2916,7 +2937,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         if (this_obj[type].id) {
                            this_obj.mediaRecord(type, docRecord, end);
                         }
-                        var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/' + type, {}, {
+                        var append = '';
+                        if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
+                            append = '/youtube';
+                        }
+                        var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/' + type + append, {}, {
                             'setTime': { method:'GET' }
                         });
                         mediaApi.setTime({}, function (result) {
@@ -2932,8 +2957,19 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                         this_obj[type].presentId = this_obj[type].showId = result.time;
                                     }
                                 }
+                                if (type === 'video') {
+                                    if (yplayer) {
+                                        yplayer.destroy();
+                                        yplayer = null;
+                                    }
+                                }
                                 if (this_obj[type].list.length === 1 && type === 'video') {
-                                    video.currentTime = 0;
+                                    if (video) {
+                                        video.currentTime = 0;
+                                    }
+                                    if (yplayer) {
+                                        yplayer.seekTo(0, true);
+                                    }
                                     //video.play();
                                 } else if (this_obj[type].list.length === 1 && type === 'music') {
                                     music.currentTime = 0;
@@ -2943,12 +2979,13 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     if (type === 'doc') {
                                         this_obj[type].iframeOffset = null;
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                                    } else if (type === 'present') {
-                                        this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                    } else if (type === 'video' && this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
+                                        this_obj[type].src = null;
+                                        onYouTubeIframeAPIReady(this_obj[type].list[this_obj[type].index + this_obj[type].back].id);
                                     } else {
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
-                                    if (type === 'video') {
+                                    if (type === 'video' && !this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
                                         removeCue();
                                         this_obj[type].sub = $scope.main_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
@@ -3024,7 +3061,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         if (this_obj[type].id) {
                            this_obj.mediaRecord(type, docRecord, end);
                         }
-                        var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/' + type, {}, {
+                        var append = '';
+                        if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
+                            append = '/youtube';
+                        }
+                        var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/' + type + append, {}, {
                             'setTime': { method:'GET' }
                         });
                         mediaApi.setTime({}, function (result) {
@@ -3040,8 +3081,19 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                         this_obj[type].presentId = this_obj[type].showId = result.time;
                                     }
                                 }
+                                if (type === 'video') {
+                                    if (yplayer) {
+                                        yplayer.destroy();
+                                        yplayer = null;
+                                    }
+                                }
                                 if (this_obj[type].list.length === 1 && type === 'video') {
-                                    video.currentTime = 0;
+                                    if (video) {
+                                        video.currentTime = 0;
+                                    }
+                                    if (yplayer) {
+                                        yplayer.seekTo(0, true);
+                                    }
                                     //video.play();
                                 } else if (this_obj[type].list.length === 1 && type === 'music') {
                                     music.currentTime = 0;
@@ -3051,12 +3103,13 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     if (type === 'doc') {
                                         this_obj[type].iframeOffset = null;
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                                    } else if (type === 'present') {
-                                        this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                    } else if (type === 'video' && this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
+                                        this_obj[type].src = null;
+                                        onYouTubeIframeAPIReady(this_obj[type].list[this_obj[type].index + this_obj[type].back].id);
                                     } else {
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
-                                    if (type === 'video') {
+                                    if (type === 'video' && !this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
                                         removeCue();
                                         this_obj[type].sub = $scope.main_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
@@ -3093,7 +3146,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             if (this[type].id) {
                 this.mediaRecord(type, docRecord, end);
             }
-            var mediaApi = $resource('/api/media/setTime/' + this[type].list[this[type].index + this[type].back].id + '/' + type, {}, {
+            var append = '';
+            if (this[type].list[this[type].index + this[type].back].thumb) {
+                append = '/youtube';
+            }
+            var mediaApi = $resource('/api/media/setTime/' + this[type].list[this[type].index + this[type].back].id + '/' + type + append, {}, {
                 'setTime': { method:'GET' }
             });
             mediaApi.setTime({}, function (result) {
@@ -3109,8 +3166,19 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             this_obj[type].presentId = this_obj[type].showId = result.time;
                         }
                     }
+                    if (type === 'video') {
+                        if (yplayer) {
+                            yplayer.destroy();
+                            yplayer = null;
+                        }
+                    }
                     if (this_obj[type].list.length === 1 && type === 'video') {
-                        video.currentTime = 0;
+                        if (video) {
+                            video.currentTime = 0;
+                        }
+                        if (yplayer) {
+                            yplayer.seekTo(0, true);
+                        }
                         //video.play();
                     } else if (this_obj[type].list.length === 1 && type === 'music') {
                         music.currentTime = 0;
@@ -3120,12 +3188,13 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         if (type === 'doc') {
                             this_obj[type].iframeOffset = null;
                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                        } else if (type === 'present') {
-                            this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                        } else if (type === 'video' && this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
+                            this_obj[type].src = null;
+                            onYouTubeIframeAPIReady(this_obj[type].list[this_obj[type].index + this_obj[type].back].id);
                         } else {
                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         }
-                        if (type === 'video') {
+                        if (type === 'video' && !this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
                             removeCue();
                             this_obj[type].sub = $scope.main_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         }
@@ -3150,20 +3219,20 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         var this_obj = this;
         if (this.music.shuffle) {
             if (this.music.end) {
-                console.log('end');
+                //console.log('end');
                 do {
                     index = randomFloor(-this.music.back, +this.music.front);
                 } while(index === +this.music.index);
             } else {
-                console.log('not');
+                //console.log('not');
                 do {
                     index = randomFloor(-this.music.back - 20, +this.music.front + 20);
                 } while(index === +this.music.index);
             }
-            console.log(this.music.front);
-            console.log(this.music.back);
-            console.log(index);
-            console.log(index - this.music.index);
+            //console.log(this.music.front);
+            //console.log(this.music.back);
+            //console.log(index);
+            //console.log(index - this.music.index);
             this.mediaMove(index - this.music.index, 'music', true);
         } else {
             this.mediaMove(1, 'music', true);
@@ -3182,6 +3251,39 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             }
         }
     }
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    onYouTubeIframeAPIReady = function (id) {
+        yplayer = new YT.Player('youtube-player', {
+            height: '100%',
+            width: '100%',
+            videoId: id,
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange
+            }
+        });
+    }
+    // 4. The API will call this function when the video player is ready.
+    function onPlayerReady(event) {
+        if (videoStart) {
+            event.target.seekTo(parseInt(videoStart), true);
+            videoStart = 0;
+        }
+        event.target.playVideo();
+    }
+    function onPlayerStateChange(event) {
+        if (event.data === YT.PlayerState.PLAYING) {
+            $scope.testLogin();
+        } else if (event.data === YT.PlayerState.PAUSED) {
+            $scope.mediaRecord("video");
+        }
+    }
+    /*function stopVideo() {
+        yplayer.stopVideo();
+    }*/
     $scope.setDoc = function(iframeWindow, iframeOffset, textNode) {
         this.doc.win = typeof iframeWindow !== 'undefined' ? iframeWindow : this.doc.win;
         if (this.isPdf) {
@@ -3231,7 +3333,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             if (!open) {
                 this.mediaShow.splice(0,1);
                 if (type === 'video') {
-                    video.pause();
+                    if (video) {
+                        video.pause();
+                    }
+                    if (yplayer){
+                        yplayer.pauseVideo();
+                    }
                 } else if (type === 'doc' && this.doc.iframeOffset) {
                     this.mediaRecord(type, this.doc.showId);
                 }

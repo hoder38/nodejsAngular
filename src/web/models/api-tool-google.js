@@ -45,17 +45,26 @@ function youtubeAPI(method, data, callback) {
     var param = {};
     switch(method) {
         case 'y search':
-        if (!data['keyword']) {
+        console.log(data);
+        if ((!data['keyword'] && !data['channelId']) || !data['order']) {
             util.handleError({hoerror: 2, message: 'search parameter lost!!!'}, callback, callback);
         }
         param = {
             part: 'id',
             maxResults: 20,
-            order: 'viewCount',
+            order: data['order'],
             //type: 'video,playlist',
-            type: 'video',
-            q: data['keyword']
+            type: 'video'
         };
+        if (data['keyword']) {
+            param.q = data['keyword'];
+        }
+        if (data['channelId']) {
+            param.channelId = data['channelId'];
+        }
+        if (data['pageToken']) {
+            param.pageToken = data['pageToken'];
+        }
         youtube.search.list(param, function(err, metadata) {
             if (err && err.code !== 'ECONNRESET') {
                 util.handleError(err, callback, callback, null);
@@ -71,7 +80,6 @@ function youtubeAPI(method, data, callback) {
         }
         param = {
             part: 'snippet,statistics',
-            order: 'viewCount',
             id: data['id']
         };
         youtube.videos.list(param, function(err, metadata) {

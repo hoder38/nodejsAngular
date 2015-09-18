@@ -1150,6 +1150,26 @@ module.exports = function(collection) {
                     callback(null, pre_arr.concat(relative_arr));
                 }, 0);
             });
+        },
+        getYoutubeQuery: function(search_arr, sortName, pageToken) {
+            var query = {};
+            if (search_arr.length > 0) {
+                query.keyword = search_arr.join(' ');
+            } else {
+                //#YouTube熱門影片台灣
+                query.channelId = 'UCBcIWZhWqUwknlxikVHQoyA';
+            }
+            if (sortName === 'count') {
+                query.order = 'viewCount';
+            } else if (sortName === 'mtime') {
+                query.order = 'date';
+            } else {
+                query.order = 'relevance';
+            }
+            if (pageToken) {
+                query.pageToken = pageToken;
+            }
+            return query;
         }
     };
 };
