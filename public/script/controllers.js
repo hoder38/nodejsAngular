@@ -566,7 +566,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
-    $scope.toolList = {download: false, edit: false, upload:false, del: false, dir: false, first: false, item: null};
+    $scope.toolList = {download: false, edit: false, upload:false, del: false, dir: false, download2local: false, downloadMusic: false, first: false, recordUrl: false, fixYoutube: false, item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -667,8 +667,8 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                         $scope.page--;
                     }
                 } else {
-                    $scope.latest = result.latest;
-                    $scope.bookmarkID = result.bookmarkID;
+                    //$scope.latest = result.latest;
+                    //$scope.bookmarkID = result.bookmarkID;
                     if (index !== -1) {
                         result.item.select = $scope.itemList[index].select;
                         date = new Date(result.item.utime*1000);
@@ -695,6 +695,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
 
     $scope.init = function(){
         this.page = 0;
+        this.pageToken = '';
         this.more = true;
         if ($cookies.fileSortName === 'mtime') {
             this.fileSort.sort = 'mtime/';
@@ -785,6 +786,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             }
             if (sort === 'fileSort') {
                 this.page = 0;
+                this.pageToken = '';
                 this.image.end = false;
                 this.video.end = false;
                 this.music.end = false;
@@ -831,6 +833,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         }
         var this_obj = this;
         this.page = 0;
+        this.pageToken = '';
         this.more = true;
         this.image.end = false;
         this.video.end = false;
@@ -843,6 +846,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
 
     $scope.exactlyStorage = function(this_obj, item) {
         this_obj.page = 0;
+        this_obj.pageToken = '';
         this_obj.more = true;
         this_obj.image.end = false;
         this_obj.video.end = false;
@@ -852,8 +856,13 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         getItemlist(this_obj, item, 0, true);
     }
 
+    $scope.fixYoutube = function() {
+        this.exactlyStorage(this, 'yid_' + this.toolList.item.id);
+    }
+
     $scope.gotoStorage = function(this_obj, item, index) {
         this_obj.page = 0;
+        this_obj.pageToken = '';
         this_obj.more = true;
         this_obj.image.end = false;
         this_obj.video.end = false;
@@ -880,7 +889,9 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 'query': { method:'get' }
             });
         }
+        var more = true;
         this_obj.page = 0;
+        this_obj.pageToken = '';
         this_obj.more = true;
         this_obj.image.end = false;
         this_obj.video.end = false;
@@ -901,14 +912,57 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     }
                 }
             } else {
-                this_obj.more = false;
+                more = false;
             }
             this_obj.page = result.itemList.length;
             this_obj.parentList = result.parentList.cur;
             this_obj.historyList = result.parentList.his;
             this_obj.exactlyList = result.parentList.exactly;
-            this_obj.moreDisabled = false;
+            //this_obj.moreDisabled = false;
             this_obj.$parent.collapse.storage = true;
+            if (this_obj.pageToken) {
+                Info = $resource('/api/youtube/get/' + this_obj.pageToken, {}, {
+                    'youtube': { method:'GET' }
+                });
+            } else {
+                Info = $resource('/api/youtube/get', {}, {
+                    'youtube': { method:'GET' }
+                });
+            }
+            Info.youtube({}, function(result) {
+                console.log(result);
+                if (result.pageToken) {
+                    this_obj.pageToken = result.pageToken;
+                }
+                if (result.itemList.length > 0) {
+                    var date;
+                    for (var i in result.itemList) {
+                        if (arrayObjectIndexOf(this_obj.itemList, result.itemList[i].id, 'id') === -1) {
+                            result.itemList[i].select = false;
+                            date = new Date(result.itemList[i].utime*1000);
+                            result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                            this_obj.itemList.push(result.itemList[i]);
+                        }
+                    }
+                    $scope.more = true;
+                } else {
+                    if (!more) {
+                        $scope.more = false;
+                    } else {
+                        $scope.more = true;
+                    }
+                }
+                this_obj.moreDisabled = false;
+            }, function(errorResult) {
+                this_obj.moreDisabled = false;
+                if (errorResult.status === 400) {
+                    addAlert(errorResult.data);
+                } else if (errorResult.status === 403) {
+                    addAlert('unknown API!!!');
+                } else if (errorResult.status === 401) {
+                    $window.location.href = $location.path();
+                }
+            });
         }, function(errorResult) {
             this_obj.moreDisabled = false;
             if (errorResult.status === 400) {
@@ -1011,8 +1065,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
-                if (this_obj.page === 0) {
-                    this_obj.pageToken = '';
+                if (this_obj.page === 0 && !this_obj.pageToken) {
                     this_obj.itemList = [];
                 }
                 if (result.itemList.length > 0) {
@@ -1094,6 +1147,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.resetStorage = function() {
         var this_obj = this;
         this.page = 0;
+        this.pageToken = '';
         this.image.end = false;
         this.video.end = false;
         this.music.end = false;
@@ -1122,7 +1176,43 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 this_obj.parentList = result.parentList.cur;
                 this_obj.historyList = result.parentList.his;
                 this_obj.exactlyList = result.parentList.exactly;
-                this_obj.moreDisabled = false;
+                //this_obj.moreDisabled = false;
+                if (this_obj.pageToken) {
+                    Info = $resource('/api/youtube/get/' + this_obj.pageToken, {}, {
+                        'youtube': { method:'GET' }
+                    });
+                } else {
+                    Info = $resource('/api/youtube/get', {}, {
+                        'youtube': { method:'GET' }
+                    });
+                }
+                Info.youtube({}, function(result) {
+                    console.log(result);
+                    if (result.pageToken) {
+                        this_obj.pageToken = result.pageToken;
+                    }
+                    if (result.itemList.length > 0) {
+                        var date;
+                        for (var i in result.itemList) {
+                            if (arrayObjectIndexOf(this_obj.itemList, result.itemList[i].id, 'id') === -1) {
+                                result.itemList[i].select = false;
+                                date = new Date(result.itemList[i].utime*1000);
+                                result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                                this_obj.itemList.push(result.itemList[i]);
+                            }
+                        }
+                    }
+                    this_obj.moreDisabled = false;
+                }, function(errorResult) {
+                    this_obj.moreDisabled = false;
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
             }
         }, function(errorResult) {
             this_obj.moreDisabled = false;
@@ -1542,6 +1632,10 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.upload = false;
             this.$parent.toolList.delMedia = false;
             this.$parent.toolList.vlogMedia = false;
+            this.$parent.toolList.download2local = false;
+            this.$parent.toolList.downloadMusic = false;
+            this.$parent.toolList.recordUrl = false;
+            this.$parent.toolList.fixYoutube = false;
             this.toggleDropdown($event, 'item');
         } else {
             this.showUrl(item);
@@ -1653,6 +1747,9 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                         } else if (type === 'video' && item.thumb) {
                             this_obj.$parent[type].src = null;
                             onYouTubeIframeAPIReady(item.id);
+                            if ($scope.pageToken) {
+                                this_obj.$parent[type].pageToken = $scope.pageToken;
+                            }
                         } else {
                             this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id;
                         }
@@ -1747,10 +1844,14 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.upload = false;
             this.$parent.toolList.delMedia = false;
             this.$parent.toolList.vlogMedia = false;
+            this.$parent.toolList.download2local = false;
+            this.$parent.toolList.downloadMusic = false;
             this.$parent.toolList.first = false;
+            this.$parent.toolList.recordUrl = false;
+            this.$parent.toolList.fixYoutube = false;
             confirm_str = item;
         } else {
-            if (item.status === 7) {
+            if (item.status === 7 || item.thumb) {
                 this.$parent.toolList.download = false;
             } else {
                 this.$parent.toolList.download = true;
@@ -1769,7 +1870,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             } else {
                 this.$parent.toolList.recover = false;
             }
-            if (item.status === 3) {
+            if (item.status === 3 && !item.thumb) {
                 this.$parent.toolList.upload = true;
             } else {
                 this.$parent.toolList.upload = false;
@@ -1780,6 +1881,17 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             } else {
                 this.$parent.toolList.delMedia = false;
                 this.$parent.toolList.vlogMedia = false;
+            }
+            if (item.thumb) {
+                this.$parent.toolList.download2local = true;
+                this.$parent.toolList.downloadMusic = true;
+                this.$parent.toolList.recordUrl = true;
+                this.$parent.toolList.fixYoutube = true;
+            } else {
+                this.$parent.toolList.download2local = false;
+                this.$parent.toolList.downloadMusic = false;
+                this.$parent.toolList.recordUrl = false;
+                this.$parent.toolList.fixYoutube = false;
             }
         }
         this.toggleDropdown($event, 'item');
@@ -1819,6 +1931,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         var bookmarkapi = $resource('/api/bookmark/get/' + id, {}, {
             'getbookmark': { method:'GET' }
         });
+        var more = true;
         this.$parent.moreDisabled = true;
         this.$parent.more = true;
         bookmarkapi.getbookmark({}, function(result) {
@@ -1835,7 +1948,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                         this_obj.$parent.itemList.push(result.itemList[i]);
                     }
                 } else {
-                    this_obj.$parent.more = false;
+                    more = false;
                 }
                 this_obj.$parent.page = result.itemList.length;
                 this_obj.$parent.latest = result.latest;
@@ -1843,8 +1956,51 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 this_obj.$parent.parentList = result.parentList.cur;
                 this_obj.$parent.historyList = result.parentList.his;
                 this_obj.$parent.exactlyList = result.parentList.exactly;
-                this_obj.$parent.moreDisabled = false;
+                //this_obj.$parent.moreDisabled = false;
                 this_obj.$parent.$parent.collapse.storage = true;
+                if (this_obj.$parent.pageToken) {
+                    Info = $resource('/api/youtube/get/' + this_obj.$parent.pageToken, {}, {
+                        'youtube': { method:'GET' }
+                    });
+                } else {
+                    Info = $resource('/api/youtube/get', {}, {
+                        'youtube': { method:'GET' }
+                    });
+                }
+                Info.youtube({}, function(result) {
+                    console.log(result);
+                    if (result.pageToken) {
+                        this_obj.$parent.pageToken = result.pageToken;
+                    }
+                    if (result.itemList.length > 0) {
+                        var date;
+                        for (var i in result.itemList) {
+                            if (arrayObjectIndexOf(this_obj.$parent.itemList, result.itemList[i].id, 'id') === -1) {
+                                result.itemList[i].select = false;
+                                date = new Date(result.itemList[i].utime*1000);
+                                result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                                this_obj.$parent.itemList.push(result.itemList[i]);
+                            }
+                        }
+                        $scope.more = true;
+                    } else {
+                        if (!more) {
+                            $scope.more = false;
+                        } else {
+                            $scope.more = true;
+                        }
+                    }
+                    this_obj.$parent.moreDisabled = false;
+                }, function(errorResult) {
+                    this_obj.$parent.moreDisabled = false;
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
             }
         }, function(errorResult) {
             this_obj.$parent.moreDisabled = false;
@@ -2209,9 +2365,16 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     window.onbeforeunload = function (event) {
         var vId = $scope.video.id;
         if (vId) {
-            var vTime = parseInt(video.currentTime);
+            var append = '';
+            var vTime = 0;
+            if (!$scope.video.src) {
+                append = '/youtube';
+                vTime = parseInt(yplayer.getCurrentTime());
+            } else {
+                vTime = parseInt(video.currentTime);
+            }
             var vXmlhttp = new XMLHttpRequest();
-            vXmlhttp.open("GET", "/api/media/record/" + vId + '/' + vTime, false);//the false is for making the call synchronous
+            vXmlhttp.open("GET", "/api/media/record/" + vId + '/' + vTime + append, false);//the false is for making the call synchronous
             vXmlhttp.setRequestHeader("Content-type", "application/json");
             vXmlhttp.send('');
         }
@@ -2627,6 +2790,102 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
     }
 
+    $scope.download2local = function(music) {
+        var url =  'https://www.youtube.com/watch?v=' + this.toolList.item.id;
+        if (music) {
+            url = url + ':music';
+        }
+        var this_obj = this;
+        this.inputUrl = '';
+        if (isValidString(url, 'url')) {
+            var uploadurl = this.main_url + '/api/upload/url';
+            if (this.adultonly) {
+                uploadurl = this.main_url + '/api/upload/url/1';
+            }
+            var api = $resource(uploadurl, {}, {
+                'uploadUrl': { method:'POST', withCredentials: true }
+            });
+            api.uploadUrl({url: url}, function (result) {
+                this_obj.inputUrl = '';
+                if (result.loginOK) {
+                    $window.location.href = $location.path();
+                } else {
+                    if (this_obj.feedback.run) {
+                        if (this_obj.feedback.uid === result.id) {
+                            showFeedback(result);
+                        } else {
+                            if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                this_obj.feedback.queue.push(result);
+                            } else {
+                                this_obj.feedback.queue.splice(index, 1, result);
+                            }
+                        }
+                    } else {
+                        this_obj.feedback.run = true;
+                        showFeedback(result);
+                    }
+                }
+            }, function(errorResult) {
+                if (errorResult.status === 400) {
+                    addAlert(errorResult.data);
+                } else if (errorResult.status === 403) {
+                    addAlert('unknown API!!!');
+                } else if (errorResult.status === 401) {
+                    $window.location.href = $location.path();
+                }
+            });
+        } else {
+            addAlert("invalid url!!!");
+        }
+    }
+
+    $scope.recordUrl = function() {
+        var url =  'https://www.youtube.com/watch?v=' + this.toolList.item.id;
+        var this_obj = this;
+        if (isValidString(url, 'url') && !this.disableUrlSave) {
+            this.disableUrlSave = true;
+            var addurl = this.main_url + '/api/addurl';
+            if (this.adultonly) {
+                addurl = this.main_url + '/api/addurl/1';
+            }
+            var api = $resource(addurl, {}, {
+                'addurl': { method:'POST', withCredentials: true }
+            });
+            api.addurl({url: url}, function (result) {
+                this_obj.disableUrlSave = false;
+                if (result.loginOK) {
+                    $window.location.href = $location.path();
+                } else {
+                    if (this_obj.feedback.run) {
+                        if (this_obj.feedback.uid === result.id) {
+                            showFeedback(result);
+                        } else {
+                            if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                this_obj.feedback.queue.push(result);
+                            } else {
+                                this_obj.feedback.queue.splice(index, 1, result);
+                            }
+                        }
+                    } else {
+                        this_obj.feedback.run = true;
+                        showFeedback(result);
+                    }
+                }
+            }, function(errorResult) {
+                this_obj.disableUrlSave = false;
+                if (errorResult.status === 400) {
+                    addAlert(errorResult.data);
+                } else if (errorResult.status === 403) {
+                    addAlert('unknown API!!!');
+                } else if (errorResult.status === 401) {
+                    $window.location.href = $location.path();
+                }
+            });
+        } else {
+            addAlert("invalid url!!!");
+        }
+    }
+
     $scope.urlSave = function() {
         var url = this.inputUrl;
         this.inputUrl = '';
@@ -2714,7 +2973,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     }
                 } else {
                     if (!end) {
-                        time = parseInt(yplayer.getCurrentTime());
+                        if (yplayer) {
+                            time = parseInt(yplayer.getCurrentTime());
+                        }
                     }
                     append = '/youtube';
                 }
@@ -2893,6 +3154,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 return false;
         }
         var this_obj = this;
+        var end = false;
         this[type].index = +this[type].index + number;
         if (this[type].index >= this[type].front) {
             if (!this[type].end) {
@@ -2927,74 +3189,125 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             }
                             this_obj[type].frontPage = this_obj[type].frontPage + result.itemList.length;
                         } else {
-                            $scope[type].end = true;
+                            end = true;
                             //this_obj[type].index = -this_obj[type].back;
                         }
-                        if (this_obj[type].index >= this_obj[type].front) {
-                            this_obj[type].index = this_obj[type].index - this_obj[type].front - this_obj[type].back;
+
+                        if (this_obj[type].pageToken) {
+                            Info = $resource('/api/youtube/get/' + this_obj[type].pageToken, {}, {
+                                'youtube': { method:'GET' }
+                            });
+                        } else {
+                            Info = $resource('/api/youtube/get', {}, {
+                                'youtube': { method:'GET' }
+                            });
                         }
-                        $scope.mediaMoreDisabled = false;
-                        if (this_obj[type].id) {
-                           this_obj.mediaRecord(type, docRecord, end);
-                        }
-                        var append = '';
-                        if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
-                            append = '/youtube';
-                        }
-                        var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/' + type + append, {}, {
-                            'setTime': { method:'GET' }
-                        });
-                        mediaApi.setTime({}, function (result) {
-                            if (result.loginOK) {
-                                $window.location.href = $location.path();
-                            } else {
-                                if (result.time) {
-                                    if (type === 'video') {
-                                        videoStart = result.time;
-                                    } else if (type === 'music'){
-                                        musicStart = result.time;
-                                    } else {
-                                        this_obj[type].presentId = this_obj[type].showId = result.time;
-                                    }
-                                }
-                                if (type === 'video') {
-                                    if (yplayer) {
-                                        yplayer.destroy();
-                                        yplayer = null;
-                                    }
-                                }
-                                if (this_obj[type].list.length === 1 && type === 'video') {
-                                    if (video) {
-                                        video.currentTime = 0;
-                                    }
-                                    if (yplayer) {
-                                        yplayer.seekTo(0, true);
-                                    }
-                                    //video.play();
-                                } else if (this_obj[type].list.length === 1 && type === 'music') {
-                                    music.currentTime = 0;
-                                    music.play();
-                                } else {
-                                    this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
-                                    if (type === 'doc') {
-                                        this_obj[type].iframeOffset = null;
-                                        this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
-                                    } else if (type === 'video' && this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
-                                        this_obj[type].src = null;
-                                        onYouTubeIframeAPIReady(this_obj[type].list[this_obj[type].index + this_obj[type].back].id);
-                                    } else {
-                                        this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                    }
-                                    if (type === 'video' && !this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
-                                        removeCue();
-                                        this_obj[type].sub = $scope.main_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                    }
-                                }
-                                this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
-                                this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
-                                this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
+                        Info.youtube({}, function(result) {
+                            console.log(result);
+                            if (result.pageToken) {
+                                this_obj[type].pageToken = result.pageToken;
                             }
+                            if (result.itemList.length > 0) {
+                                var length = this_obj[type].list.length;
+                                if (this_obj[type].back) {
+                                    for (var i in result.itemList) {
+                                        if (arrayObjectIndexOf(this_obj[type].list, result.itemList[i].id, 'id') === -1) {
+                                            this_obj[type].list.push(result.itemList[i]);
+                                        }
+                                    }
+                                } else {
+                                    this_obj[type].list = this_obj[type].list.concat(result.itemList);
+                                }
+                                if (length === this_obj[type].list.length) {
+                                    //this_obj[type].index = -this_obj[type].back;
+                                } else {
+                                    this_obj[type].front = this_obj[type].front + this_obj[type].list.length - length;
+                                }
+                                this_obj[type].frontPage = this_obj[type].frontPage + result.itemList.length;
+                                $scope[type].end = false;
+                            } else {
+                                if (end) {
+                                    $scope[type].end = true;
+                                } else {
+                                    $scope[type].end = false;
+                                }
+                            }
+                            $scope.mediaMoreDisabled = false;
+                            if (this_obj[type].index >= this_obj[type].front) {
+                                this_obj[type].index = this_obj[type].index - this_obj[type].front - this_obj[type].back;
+                            }
+                            $scope.mediaMoreDisabled = false;
+                            if (this_obj[type].id) {
+                               this_obj.mediaRecord(type, docRecord, end);
+                            }
+                            var append = '';
+                            if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
+                                append = '/youtube';
+                            }
+                            var mediaApi = $resource('/api/media/setTime/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/' + type + append, {}, {
+                                'setTime': { method:'GET' }
+                            });
+                            mediaApi.setTime({}, function (result) {
+                                if (result.loginOK) {
+                                    $window.location.href = $location.path();
+                                } else {
+                                    if (result.time) {
+                                        if (type === 'video') {
+                                            videoStart = result.time;
+                                        } else if (type === 'music'){
+                                            musicStart = result.time;
+                                        } else {
+                                            this_obj[type].presentId = this_obj[type].showId = result.time;
+                                        }
+                                    }
+                                    if (type === 'video') {
+                                        if (yplayer) {
+                                            yplayer.destroy();
+                                            yplayer = null;
+                                        }
+                                    }
+                                    if (this_obj[type].list.length === 1 && type === 'video') {
+                                        if (video) {
+                                            video.currentTime = 0;
+                                        }
+                                        if (yplayer) {
+                                            yplayer.seekTo(0, true);
+                                        }
+                                        //video.play();
+                                    } else if (this_obj[type].list.length === 1 && type === 'music') {
+                                        music.currentTime = 0;
+                                        music.play();
+                                    } else {
+                                        this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
+                                        if (type === 'doc') {
+                                            this_obj[type].iframeOffset = null;
+                                            this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                        } else if (type === 'video' && this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
+                                            this_obj[type].src = null;
+                                            onYouTubeIframeAPIReady(this_obj[type].list[this_obj[type].index + this_obj[type].back].id);
+                                        } else {
+                                            this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        }
+                                        if (type === 'video' && !this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
+                                            removeCue();
+                                            this_obj[type].sub = $scope.main_url + '/subtitle/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                        }
+                                    }
+                                    this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
+                                    this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
+                                    this_obj[type].name = this_obj[type].list[this_obj[type].index + this_obj[type].back].name;
+                                }
+                            }, function(errorResult) {
+                                if (errorResult.status === 400) {
+                                    addAlert(errorResult.data);
+                                } else if (errorResult.status === 403) {
+                                    addAlert('unknown API!!!');
+                                } else if (errorResult.status === 401) {
+                                    $window.location.href = $location.path();
+                                }
+                            });
                         }, function(errorResult) {
+                            this_obj.mediaMoreDisabled = false;
                             if (errorResult.status === 400) {
                                 addAlert(errorResult.data);
                             } else if (errorResult.status === 403) {
@@ -3279,6 +3592,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             $scope.testLogin();
         } else if (event.data === YT.PlayerState.PAUSED) {
             $scope.mediaRecord("video");
+        } else if (event.data === YT.PlayerState.ENDED) {
+            $scope.mediaMove(1, 'video', true);
         }
     }
     /*function stopVideo() {

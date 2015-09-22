@@ -236,6 +236,18 @@
             <li ng-show="toolList.dir" ng-repeat="item in dirList">
                 <a confirmed-click="add2Parent(item)" ng-confirm-click="Would you sure to add" ng-sub-msg="to {{item.show}}?" href="#">{{item.show}}</a>
             </li>
+            <li ng-show="toolList.download2local">
+                <a ng-click="download2local()" href="#">下載到local</a>
+            </li>
+            <li ng-show="toolList.downloadMusic">
+                <a ng-click="download2local(true)" href="#">下載音樂</a>
+            </li>
+            <li ng-show="toolList.fixYoutube">
+                <a ng-click="fixYoutube()" href="#">固定Youtube</a>
+            </li>
+            <li ng-show="toolList.recordUrl">
+                <a ng-click="recordUrl()" href="#">記錄Url</a>
+            </li>
             <li ng-show="toolList.first">
                 <a ng-click="showUrl()" href="#">開啟Url</a>
             </li>

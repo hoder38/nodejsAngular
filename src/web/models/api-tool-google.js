@@ -46,12 +46,19 @@ function youtubeAPI(method, data, callback) {
     switch(method) {
         case 'y search':
         console.log(data);
-        if ((!data['keyword'] && !data['channelId']) || !data['order']) {
+        if ((!data['keyword'] && !data['channelId']) || !data['order'] || !data['maxResults']) {
             util.handleError({hoerror: 2, message: 'search parameter lost!!!'}, callback, callback);
+        }
+        if (data['id_arr'] && data['id_arr'].length > 0) {
+            if (data['id_arr'].length > 20) {
+                data['maxResults'] = 0;
+            } else {
+                data['maxResults'] -= data['id_arr'].length;
+            }
         }
         param = {
             part: 'id',
-            maxResults: 20,
+            maxResults: data['maxResults'],
             order: data['order'],
             //type: 'video,playlist',
             type: 'video'

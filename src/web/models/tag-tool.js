@@ -1,7 +1,7 @@
 var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 
-var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important'];
+var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'no youtube'];
 
 var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'publisher', 'tw': '出版社'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
 var stock_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'country', 'tw': '國家'}, {'name': 'market type', 'tw': '市場種類'}, {'name': 'category', 'tw': '產業分類'}];
@@ -20,6 +20,8 @@ var bookmarkLimit = 50;
 var search_limit = 100;
 var union_number = 2;
 var inter_number = 3;
+
+var youtube_id_pattern = /^yid_([a-zA-z\d\-\_]+)/;
 
 var config_type = require('../../../ver.js');
 
@@ -190,12 +192,12 @@ module.exports = function(collection) {
                 },
                 setSingleArray: function(value) {
                     var normal = normalize(value);
-                    if (normal === 'all item' || normal === '18+' || normal === 'important' || normal.match(/^>\d+$/) || normal.match(/^profit>\d+$/) || normal.match(/^safety>-?\d+$/) || normal.match(/^manag>\d+$/)) {
+                    if (normal === 'all item' || normal === '18+' || normal === 'important' || normal.match(/^>\d+$/) || normal.match(/^profit>\d+$/) || normal.match(/^safety>-?\d+$/) || normal.match(/^manag>\d+$/) || normal.match(youtube_id_pattern)) {
                         return true;
                     } else {
                         for (var i = 0; i < search[name].index; i++) {
                             normal = search[name].tags[i];
-                            if (normal !== 'all item' && normal !== '18+' && normal !== 'important' && !normal.match(/^>\d+$/) && !normal.match(/^profit>\d+$/) && !normal.match(/^safety>-?\d+$/) && !normal.match(/^manag>\d+$/)) {
+                            if (normal !== 'all item' && normal !== '18+' && normal !== 'important' && !normal.match(/^>\d+$/) && !normal.match(/^profit>\d+$/) && !normal.match(/^safety>-?\d+$/) && !normal.match(/^manag>\d+$/) && !normal.match(youtube_id_pattern)) {
                                 search[name].tags = search[name].tags.slice(0, i);
                                 search[name].exactly = search[name].exactly.slice(0, i);
                                 search[name].index = search[name].tags.length;
@@ -450,23 +452,29 @@ module.exports = function(collection) {
             }
             var parentList = tags.resetArray();
             var sql = getQuerySql(user, parentList.cur, parentList.exactly);
-            var options = {"limit": queryLimit, "sort": [[getSortName(sortName), sortType]]};
-            if (sql.hint) {
-                options["hint"] = sql.hint;
-            }
-            var select = {};
-            if (sql.select) {
-                select = sql.select;
-            }
             delete tags;
-            mongo.orig("find", collection, sql.nosql, select, options, function(err, items){
-                if(err) {
-                    util.handleError(err, next, callback);
+            if (sql) {
+                var options = {"limit": queryLimit, "sort": [[getSortName(sortName), sortType]]};
+                if (sql.hint) {
+                    options["hint"] = sql.hint;
                 }
+                var select = {};
+                if (sql.select) {
+                    select = sql.select;
+                }
+                mongo.orig("find", collection, sql.nosql, select, options, function(err, items){
+                    if(err) {
+                        util.handleError(err, next, callback);
+                    }
+                    setTimeout(function(){
+                        callback(null, {items: items, parentList: parentList});
+                    }, 0);
+                });
+            } else {
                 setTimeout(function(){
-                    callback(null, {items: items, parentList: parentList});
+                    callback(null, {items: [], parentList: parentList});
                 }, 0);
-            });
+            }
         },
         tagQuery: function(page, tagName, exactly, index, sortName, sortType, user, session, next, callback) {
             var this_obj = this;
@@ -478,45 +486,65 @@ module.exports = function(collection) {
                 }
                 var parentList = tags.getArray();
                 var sql = getQuerySql(user, parentList.cur, parentList.exactly);
-                if (sql.skip) {
-                    options["skip"] = page + sql.skip;
-                }
-                if (sql.hint) {
-                    options["hint"] = sql.hint;
-                }
-                var select = {};
-                if (sql.select) {
-                    select = sql.select;
-                }
                 delete tags;
-                mongo.orig("find", collection, sql.nosql, select, options, function(err, items){
-                    if(err) {
-                        util.handleError(err, next, callback);
+                if (sql) {
+                    if (sql.skip) {
+                        options["skip"] = page + sql.skip;
                     }
-                    if (sql.nosql.mediaType) {
-                        setTimeout(function(){
-                            callback(null, {items: items, parentList: parentList, mediaHadle: 1});
-                        }, 0);
-                    } else {
-                        if (parentList.bookmark) {
-                            this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
-                                if (latest) {
-                                    setTimeout(function(){
-                                        callback(null, {items: items, parentList: parentList, latest: latest, bookmark: parentList.bookmark});
-                                    }, 0);
-                                } else {
-                                    setTimeout(function(){
-                                        callback(null, {items: items, parentList: parentList, bookmark: parentList.bookmark});
-                                    }, 0);
-                                }
-                            });
-                        } else {
-                            setTimeout(function(){
-                                callback(null, {items: items, parentList: parentList});
-                            }, 0);
+                    if (sql.hint) {
+                        options["hint"] = sql.hint;
+                    }
+                    var select = {};
+                    if (sql.select) {
+                        select = sql.select;
+                    }
+                    mongo.orig("find", collection, sql.nosql, select, options, function(err, items){
+                        if(err) {
+                            util.handleError(err, next, callback);
                         }
+                        if (sql.nosql.mediaType) {
+                            setTimeout(function(){
+                                callback(null, {items: items, parentList: parentList, mediaHadle: 1});
+                            }, 0);
+                        } else {
+                            if (parentList.bookmark) {
+                                this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
+                                    if (latest) {
+                                        setTimeout(function(){
+                                            callback(null, {items: items, parentList: parentList, latest: latest, bookmark: parentList.bookmark});
+                                        }, 0);
+                                    } else {
+                                        setTimeout(function(){
+                                            callback(null, {items: items, parentList: parentList, bookmark: parentList.bookmark});
+                                        }, 0);
+                                    }
+                                });
+                            } else {
+                                setTimeout(function(){
+                                    callback(null, {items: items, parentList: parentList});
+                                }, 0);
+                            }
+                        }
+                    });
+                } else {
+                    if (parentList.bookmark) {
+                        this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
+                            if (latest) {
+                                setTimeout(function(){
+                                    callback(null, {items: [], parentList: parentList, latest: latest, bookmark: parentList.bookmark});
+                                }, 0);
+                            } else {
+                                setTimeout(function(){
+                                    callback(null, {items: [], parentList: parentList, bookmark: parentList.bookmark});
+                                }, 0);
+                            }
+                        });
+                    } else {
+                        setTimeout(function(){
+                            callback(null, {items: [], parentList: parentList});
+                        }, 0);
                     }
-                });
+                }
             } else if (!index) {
                 var name_arr = tagName.split(' : ');
                 var name = false;
@@ -542,45 +570,65 @@ module.exports = function(collection) {
                     parentList = tags.getArray(name_arr[i], exactly);
                 }
                 var sql = getQuerySql(user, parentList.cur, parentList.exactly);
-                if (sql.skip) {
-                    options["skip"] = page + sql.skip;
-                }
-                if (sql.hint) {
-                    options["hint"] = sql.hint;
-                }
-                var select = {};
-                if (sql.select) {
-                    select = sql.select;
-                }
                 delete tags;
-                mongo.orig("find", collection, sql.nosql, select, options, function(err, items){
-                    if(err) {
-                        util.handleError(err, next, callback);
+                if (sql) {
+                    if (sql.skip) {
+                        options["skip"] = page + sql.skip;
                     }
-                    if (sql.nosql.mediaType) {
-                        setTimeout(function(){
-                            callback(null, {items: items, parentList: parentList, mediaHadle: 1});
-                        }, 0);
-                    } else {
-                        if (parentList.bookmark) {
-                            this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
-                                if (latest) {
-                                    setTimeout(function(){
-                                        callback(null, {items: items, parentList: parentList, latest: latest, bookmark: parentList.bookmark});
-                                    }, 0);
-                                } else {
-                                    setTimeout(function(){
-                                        callback(null, {items: items, parentList: parentList, bookmark: parentList.bookmark});
-                                    }, 0);
-                                }
-                            });
-                        } else {
-                            setTimeout(function(){
-                                callback(null, {items: items, parentList: parentList});
-                            }, 0);
+                    if (sql.hint) {
+                        options["hint"] = sql.hint;
+                    }
+                    var select = {};
+                    if (sql.select) {
+                        select = sql.select;
+                    }
+                    mongo.orig("find", collection, sql.nosql, select, options, function(err, items){
+                        if(err) {
+                            util.handleError(err, next, callback);
                         }
+                        if (sql.nosql.mediaType) {
+                            setTimeout(function(){
+                                callback(null, {items: items, parentList: parentList, mediaHadle: 1});
+                            }, 0);
+                        } else {
+                            if (parentList.bookmark) {
+                                this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
+                                    if (latest) {
+                                        setTimeout(function(){
+                                            callback(null, {items: items, parentList: parentList, latest: latest, bookmark: parentList.bookmark});
+                                        }, 0);
+                                    } else {
+                                        setTimeout(function(){
+                                            callback(null, {items: items, parentList: parentList, bookmark: parentList.bookmark});
+                                        }, 0);
+                                    }
+                                });
+                            } else {
+                                setTimeout(function(){
+                                    callback(null, {items: items, parentList: parentList});
+                                }, 0);
+                            }
+                        }
+                    });
+                } else {
+                    if (parentList.bookmark) {
+                        this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
+                            if (latest) {
+                                setTimeout(function(){
+                                    callback(null, {items: [], parentList: parentList, latest: latest, bookmark: parentList.bookmark});
+                                }, 0);
+                            } else {
+                                setTimeout(function(){
+                                    callback(null, {items: [], parentList: parentList, bookmark: parentList.bookmark});
+                                }, 0);
+                            }
+                        });
+                    } else {
+                        setTimeout(function(){
+                            callback(null, {items: [], parentList: parentList});
+                        }, 0);
                     }
-                });
+                }
             } else {
                 var name = false,
                     Pindex = util.isValidString(index, 'parentIndex');
@@ -611,45 +659,65 @@ module.exports = function(collection) {
                     Pindex++;
                 }
                 var sql = getQuerySql(user, parentList.cur, parentList.exactly);
-                if (sql.skip) {
-                    options["skip"] = page + sql.skip;
-                }
-                if (sql.hint) {
-                    options["hint"] = sql.hint;
-                }
-                var select = {};
-                if (sql.select) {
-                    select = sql.select;
-                }
                 delete tags;
-                mongo.orig("find", collection, sql.nosql, select, options, function(err, items){
-                    if(err) {
-                        util.handleError(err, next, callback);
+                if (sql) {
+                    if (sql.skip) {
+                        options["skip"] = page + sql.skip;
                     }
-                    if (sql.nosql.mediaType) {
-                        setTimeout(function(){
-                            callback(null, {items: items, parentList: parentList, mediaHadle: 1});
-                        }, 0);
-                    } else {
-                        if (parentList.bookmark) {
-                            this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
-                                if (latest) {
-                                    setTimeout(function(){
-                                        callback(null, {items: items, parentList: parentList, latest: latest, bookmark: parentList.bookmark});
-                                    }, 0);
-                                } else {
-                                    setTimeout(function(){
-                                        callback(null, {items: items, parentList: parentList, bookmark: parentList.bookmark});
-                                    }, 0);
-                                }
-                            });
-                        } else {
-                            setTimeout(function(){
-                                callback(null, {items: items, parentList: parentList});
-                            }, 0);
+                    if (sql.hint) {
+                        options["hint"] = sql.hint;
+                    }
+                    var select = {};
+                    if (sql.select) {
+                        select = sql.select;
+                    }
+                    mongo.orig("find", collection, sql.nosql, select, options, function(err, items){
+                        if(err) {
+                            util.handleError(err, next, callback);
                         }
+                        if (sql.nosql.mediaType) {
+                            setTimeout(function(){
+                                callback(null, {items: items, parentList: parentList, mediaHadle: 1});
+                            }, 0);
+                        } else {
+                            if (parentList.bookmark) {
+                                this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
+                                    if (latest) {
+                                        setTimeout(function(){
+                                            callback(null, {items: items, parentList: parentList, latest: latest, bookmark: parentList.bookmark});
+                                        }, 0);
+                                    } else {
+                                        setTimeout(function(){
+                                            callback(null, {items: items, parentList: parentList, bookmark: parentList.bookmark});
+                                        }, 0);
+                                    }
+                                });
+                            } else {
+                                setTimeout(function(){
+                                    callback(null, {items: items, parentList: parentList});
+                                }, 0);
+                            }
+                        }
+                    });
+                } else {
+                    if (parentList.bookmark) {
+                        this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
+                            if (latest) {
+                                setTimeout(function(){
+                                    callback(null, {items: [], parentList: parentList, latest: latest, bookmark: parentList.bookmark});
+                                }, 0);
+                            } else {
+                                setTimeout(function(){
+                                    callback(null, {items: [], parentList: parentList, bookmark: parentList.bookmark});
+                                }, 0);
+                            }
+                        });
+                    } else {
+                        setTimeout(function(){
+                            callback(null, {items: [], parentList: parentList});
+                        }, 0);
                     }
-                });
+                }
             }
         },
         singleQuery: function(uid, user, session, next, callback) {
@@ -664,46 +732,52 @@ module.exports = function(collection) {
             }
             var parentList = tags.getArray();
             var sql = getQuerySql(user, parentList.cur, parentList.exactly);
-            sql.nosql['_id'] = id;
-            var select = {};
-            if (sql.select) {
-                select = sql.select;
-            }
             delete tags;
-            mongo.orig("find", collection, sql.nosql, select, {limit: 1, hint: {_id: 1}}, function(err, items){
-                if(err) {
-                    util.handleError(err, next, callback);
+            if (sql) {
+                sql.nosql['_id'] = id;
+                var select = {};
+                if (sql.select) {
+                    select = sql.select;
                 }
-                if (items.length === 0) {
-                    setTimeout(function(){
-                        callback(null, {empty: true});
-                    }, 0);
-                } else {
-                    if (sql.nosql.mediaType) {
+                mongo.orig("find", collection, sql.nosql, select, {limit: 1, hint: {_id: 1}}, function(err, items){
+                    if(err) {
+                        util.handleError(err, next, callback);
+                    }
+                    if (items.length === 0) {
                         setTimeout(function(){
-                            callback(null, {item: items[0], mediaHadle: 1});
+                            callback(null, {empty: true});
                         }, 0);
                     } else {
-                        if (parentList.bookmark) {
-                            this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
-                                if (latest) {
-                                    setTimeout(function(){
-                                        callback(null, {item: items[0], latest: latest, bookmark: parentList.bookmark});
-                                    }, 0);
-                                } else {
-                                    setTimeout(function(){
-                                        callback(null, {item: items[0], bookmark: parentList.bookmark});
-                                    }, 0);
-                                }
-                            });
-                        } else {
+                        if (sql.nosql.mediaType) {
                             setTimeout(function(){
-                                callback(null, {item: items[0]});
+                                callback(null, {item: items[0], mediaHadle: 1});
                             }, 0);
+                        } else {
+                            /*if (parentList.bookmark) {
+                                this_obj.getLatest(parentList.bookmark, next, function(err, latest) {
+                                    if (latest) {
+                                        setTimeout(function(){
+                                            callback(null, {item: items[0], latest: latest, bookmark: parentList.bookmark});
+                                        }, 0);
+                                    } else {
+                                        setTimeout(function(){
+                                            callback(null, {item: items[0], bookmark: parentList.bookmark});
+                                        }, 0);
+                                    }
+                                });
+                            } else {*/
+                                setTimeout(function(){
+                                    callback(null, {item: items[0]});
+                                }, 0);
+                            //}
                         }
                     }
-                }
-            });
+                });
+            } else {
+                setTimeout(function(){
+                    callback(null, {empty: true});
+                }, 0);
+            }
         },
         saveSql: function(page, saveName, back, user, session) {
             var this_obj = this;
@@ -724,18 +798,22 @@ module.exports = function(collection) {
             }
             var options = {"limit": queryLimit, "skip" : page, "sort": [[save.sortName, save.sortType]]};
             var sql = getQuerySql(user, save.tags, save.exactly);
-            if (sql.skip) {
-                options['skip'] = page + sql.skip;
-            }
-            if (sql.hint) {
-                options["hint"] = sql.hint;
-            }
-            var select = {};
-            if (sql.select) {
-                select = sql.select;
-            }
             delete tags;
-            return {nosql: sql.nosql, options: options, select: select};
+            if (sql) {
+                if (sql.skip) {
+                    options['skip'] = page + sql.skip;
+                }
+                if (sql.hint) {
+                    options["hint"] = sql.hint;
+                }
+                var select = {};
+                if (sql.select) {
+                    select = sql.select;
+                }
+                return {nosql: sql.nosql, options: options, select: select};
+            } else {
+                return {empty: true};
+            }
         },
         normalizeTag: function(tag) {
             return normalize(tag);
@@ -886,7 +964,12 @@ module.exports = function(collection) {
                 }
                 var latest = false;
                 if (items.length > 0 && items[0].latest) {
-                    latest = items[0].latest;
+                    var youtubeMatch = items[0].latest.match(/^y_(.*)$/);
+                    if (youtubeMatch) {
+                        latest = youtubeMatch[1];
+                    } else {
+                        latest = items[0].latest;
+                    }
                 }
                 setTimeout(function(){
                     callback(null, latest);
@@ -1153,12 +1236,32 @@ module.exports = function(collection) {
         },
         getYoutubeQuery: function(search_arr, sortName, pageToken) {
             var query = {};
-            if (search_arr.length > 0) {
-                query.keyword = search_arr.join(' ');
+            var index = -1;
+            var query_arr = [];
+            var id_arr = [];
+            var is_id = false;
+            for (var i in search_arr) {
+                index = default_tags.indexOf(search_arr[i]);
+                if (index === 8) {
+                    return  false;
+                } else if (index === 0 || index === 6){
+                    query_arr.push(search_arr[i]);
+                } else {
+                    is_id = search_arr[i].match(youtube_id_pattern);
+                    if (is_id) {
+                        id_arr.push(is_id[1]);
+                    } else {
+                        query_arr.push(search_arr[i]);
+                    }
+                }
+            }
+            if (query_arr.length > 0) {
+                query.keyword = query_arr.join(' ');
             } else {
                 //#YouTube熱門影片台灣
                 query.channelId = 'UCBcIWZhWqUwknlxikVHQoyA';
             }
+            query.maxResults = queryLimit;
             if (sortName === 'count') {
                 query.order = 'viewCount';
             } else if (sortName === 'mtime') {
@@ -1168,6 +1271,10 @@ module.exports = function(collection) {
             }
             if (pageToken) {
                 query.pageToken = pageToken;
+            } else {
+                if (id_arr.length > 0) {
+                    query.id_arr = id_arr;
+                }
             }
             return query;
         }
@@ -1206,6 +1313,9 @@ var getStorageQuerySql = function(user, tagList, exactly) {
                 skip = Number(skip_number[1]);
                 continue;
             }
+            if (tagList[i].match(youtube_id_pattern)) {
+                continue;
+            }
             var normal = normalize(tagList[i]);
             var index = default_tags.indexOf(normal);
             if (index === 0) {
@@ -1233,10 +1343,12 @@ var getStorageQuerySql = function(user, tagList, exactly) {
                     console.log({recycle: {$ne: 0}, utime: {$lt: time}});
                     return {nosql: {recycle: {$ne: 0}, utime: {$lt: time}}};
                 }
-            } else if (index === 4 || index === 6) {
+            } else if (index === 4 || index === 6 || index === 8) {
             } else if (index === 5) {
                 delete nosql['first'];
                 is_first = false;
+            } else if (index === 7) {
+                return false;
             } else {
                 if (exactly[i]) {
                     nosql.$and.push({tags: normal});
@@ -1321,6 +1433,8 @@ function getStockQuerySql(user, tagList, exactly) {
             } else if (index === 3) {
             } else if (index === 4) {
             } else if (index === 5) {
+            } else if (index === 7) {
+            } else if (index === 8) {
             } else if (index === 6) {
                 nosql['important'] = 1;
                 is_important = true;
@@ -1384,6 +1498,8 @@ function getPasswordQuerySql(user, tagList, exactly) {
             } else if (index === 3) {
             } else if (index === 4) {
             } else if (index === 5) {
+            } else if (index === 7) {
+            } else if (index === 8) {
             } else if (index === 6) {
                 nosql['important'] = 1;
                 is_important = true;
@@ -1438,7 +1554,7 @@ function getStorageQueryTag(user, tag, del) {
         }
     } else if (index === 4) {
         return {tag: {first: del}, type: 2, name: default_tags[4]};
-    } else if (index === 1 || index === 2 || index === 3 || index === 5 || index === 6) {
+    } else if (index === 1 || index === 2 || index === 3 || index === 5 || index === 6 || index === 7 || index === 8) {
         return {type: 0};
     } else {
         return {tag: {tags: normal}, type: 1};
@@ -1449,7 +1565,7 @@ function getStockQueryTag(user, tag, del) {
     del = typeof del !== 'undefined' ? del : 1;
     var normal = normalize(tag);
     var index = default_tags.indexOf(normal);
-    if (index === 0 || index === 1 || index === 2 || index === 3 || index === 4 || index === 5) {
+    if (index === 0 || index === 1 || index === 2 || index === 3 || index === 4 || index === 5 || index === 7 || index === 8) {
         return {type: 0};
     } else if (index === 6) {
         return {tag: {important: del}, type: 2, name: default_tags[6]};
@@ -1462,7 +1578,7 @@ function getPasswordQueryTag(user, tag, del) {
     del = typeof del !== 'undefined' ? del : 1;
     var normal = normalize(tag);
     var index = default_tags.indexOf(normal);
-    if (index === 0 || index === 1 || index === 2 || index === 3 || index === 4 || index === 5) {
+    if (index === 0 || index === 1 || index === 2 || index === 3 || index === 4 || index === 5 || index === 7 || index === 8) {
         return {type: 0};
     } else if (index === 6) {
         return {type: 3, name: ''};

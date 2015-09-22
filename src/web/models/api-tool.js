@@ -376,7 +376,7 @@ module.exports = {
                                 }
                             }
                         }
-                    } else if (res.statusCode === 301 || res.statusCode === 302){
+                    } else if (res.statusCode === 301 || res.statusCode === 302) {
                         this_obj.getApiQueue();
                         if (!res.headers.location) {
                             console.log(res.headers);
@@ -385,6 +385,9 @@ module.exports = {
                         setTimeout(function(){
                             this_obj.xuiteDownload(res.headers.location, filePath, callback, threshold, is_check);
                         }, 0);
+                    } else if (res.statusCode === 400) {
+                        this_obj.getApiQueue();
+                        util.handleError({hoerror: 2, message: res.statusCode + ': download location cannot be fund'}, callback, callback);
                     } else {
                         console.log(res);
                         this_obj.getApiQueue();
