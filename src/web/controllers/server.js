@@ -453,7 +453,7 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
             var name = false;
-            if (tagTool.isDefaultTag(req.params.name).index === 10) {
+            if (tagTool.isDefaultTag(req.params.name).index === 21) {
                 name = req.params.name;
             } else {
                 name = util.isValidString(req.params.name, 'name');
@@ -600,7 +600,7 @@ app.get('/api/stock/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/:p
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
             var name = false;
-            if (stockTagTool.isDefaultTag(req.params.name).index === 10) {
+            if (stockTagTool.isDefaultTag(req.params.name).index === 21) {
                 name = req.params.name;
             } else {
                 name = util.isValidString(req.params.name, 'name');
@@ -2039,7 +2039,7 @@ app.get('/api/password/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
             var name = false;
-            if (pwTagTool.isDefaultTag(req.params.name).index === 10) {
+            if (pwTagTool.isDefaultTag(req.params.name).index === 21) {
                 name = req.params.name;
             } else {
                 name = util.isValidString(req.params.name, 'name');
@@ -2585,7 +2585,7 @@ app.get('/views/homepage', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    var msg = "hello<br/> 壓縮檔加上.book或是cbr、cbz檔可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/>no local: 不顯示本地搜尋結果<br/>no youtube: 不顯示youtube搜尋結果<br/><br/>增加bookmark物件：<br/>在儲存bookmark或訂閱youtube channel時產生，<br/>方便整理完的bookmark給其它人參考<br/><br/>指令不算在單項搜尋裡<br/>預設只會搜尋到有first item的檔案<br/>方便尋找，可以縮小範圍後再下all item顯示全部<br/><br/>播放器 快捷鍵:<br/>空白鍵: 播放/暫停<br/>c: 字幕 開/關<br/>左: 後退15秒<br/>右: 前進15秒<br/>上: 音量變大<br/>下: 音量變小<br/><br/>URL上傳支援:<br/>Youtube (with字幕)<br/>Youtube music: url結尾加上 :music 會下載成mp3格式(限制20分鐘以下的影片)";
+    var msg = "hello<br/> 壓縮檔加上.book或是cbr、cbz檔可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/>no local: 不顯示本地搜尋結果<br/>no youtube: 不顯示youtube搜尋結果<br/>youtube video: youtube只顯示video<br/>youtube playlist: youtube只顯示playlist<br/><br/>增加bookmark物件：<br/>在儲存bookmark或訂閱youtube channel時產生，<br/>方便整理完的bookmark給其它人參考<br/><br/>指令不算在單項搜尋裡<br/>預設只會搜尋到有first item的檔案<br/>方便尋找，可以縮小範圍後再下all item顯示全部<br/><br/>播放器 快捷鍵:<br/>空白鍵: 播放/暫停<br/>c: 字幕 開/關<br/>左: 後退15秒<br/>右: 前進15秒<br/>上: 音量變大<br/>下: 音量變小<br/><br/>URL上傳支援:<br/>Youtube (with字幕)<br/>Youtube music: url結尾加上 :music 會下載成mp3格式(限制20分鐘以下的影片)";
     var adult_msg = "<br/><br/>18+指令: <br/><br/>18+: 只顯示十八禁的檔案"
     if (util.checkAdmin(2, req.user)) {
         msg += adult_msg;

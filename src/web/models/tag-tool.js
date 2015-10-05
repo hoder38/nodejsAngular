@@ -1,7 +1,7 @@
 var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 
-var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'no youtube'];
+var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'no youtube', 'youtube video', 'youtube playlist'];
 
 var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'publisher', 'tw': '出版社'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
 var stock_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'country', 'tw': '國家'}, {'name': 'market type', 'tw': '市場種類'}, {'name': 'category', 'tw': '產業分類'}];
@@ -193,13 +193,13 @@ module.exports = function(collection) {
                 setSingleArray: function(value) {
                     var normal = normalize(value);
                     var defau = isDefaultTag(normal);
-                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10) {
+                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10 || defau.index === 20 || defau.index === 21) {
                         return true;
                     } else {
                         for (var i = 0; i < search[name].index; i++) {
                             normal = search[name].tags[i];
                             defau = isDefaultTag(normal);
-                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10) {
+                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10 && defau.index !== 20 && defau.index !== 21) {
                                 search[name].tags = search[name].tags.slice(0, i);
                                 search[name].exactly = search[name].exactly.slice(0, i);
                                 search[name].index = search[name].tags.length;
@@ -549,9 +549,9 @@ module.exports = function(collection) {
                 }
             } else if (!index) {
                 var defau = isDefaultTag(normalize(tagName));
-                if (collection === 'stock' && defau.index === 10) {
+                if (collection === 'stock' && defau.index === 21) {
                     name = tagName;
-                } else if (collection === 'storage' && defau.index === 10) {
+                } else if (collection === 'storage' && defau.index === 21) {
                     name = tagName;
                 } else {
                     name = util.isValidString(tagName, 'name');
@@ -628,9 +628,9 @@ module.exports = function(collection) {
                 var name = false,
                     Pindex = util.isValidString(index, 'parentIndex');
                 var defau = isDefaultTag(normalize(tagName));
-                if (collection === 'stock' && defau.index === 10) {
+                if (collection === 'stock' && defau.index === 21) {
                     name = tagName;
-                } else if (collection === 'storage' && defau.index === 10) {
+                } else if (collection === 'storage' && defau.index === 21) {
                     name = tagName;
                 } else {
                     name = util.isValidString(tagName, 'name');
@@ -1257,13 +1257,18 @@ module.exports = function(collection) {
             var pl_arr = [];
             var is_y = false;
             var ch = false;
+            query.type = 0;
             for (var i in search_arr) {
                 index = isDefaultTag(normalize(search_arr[i]));
                 if (!index || index.index === 0 || index.index === 6){
                     query_arr.push(denormalize(search_arr[i]));
+                } else if (index.index === 9) {
+                    query.type = 1;
+                } else if (index.index === 10) {
+                    query.type = 2;
                 } else if (index.index === 8) {
                     return false;
-                } else if (index.index === 9) {
+                } else if (index.index === 20) {
                     index = isDefaultTag(search_arr[i]);
                     if (index[1] === 'id') {
                         id_arr.push(index[2]);
@@ -1336,9 +1341,9 @@ var getStorageQuerySql = function(user, tagList, exactly) {
         for (var i in tagList) {
             var normal = normalize(tagList[i]);
             var index = isDefaultTag(normal);
-            if (index.index === 9) {
+            if (index.index === 20) {
                 continue;
-            } else if (index.index === 10) {
+            } else if (index.index === 21) {
                 if (index[1] === '') {
                     skip = Number(index.index[2]);
                 }
@@ -1368,7 +1373,7 @@ var getStorageQuerySql = function(user, tagList, exactly) {
                     console.log({recycle: {$ne: 0}, utime: {$lt: time}});
                     return {nosql: {recycle: {$ne: 0}, utime: {$lt: time}}};
                 }
-            } else if (index.index === 4 || index.index === 6 || index.index === 8) {
+            } else if (index.index === 4 || index.index === 6 || index.index === 8 || index.index === 9 || index.index === 10) {
             } else if (index.index === 5) {
                 delete nosql['first'];
                 is_first = false;
@@ -1435,7 +1440,7 @@ function getStockQuerySql(user, tagList, exactly) {
             if (index.index === 6) {
                 nosql['important'] = 1;
                 is_important = true;
-            } else if (index.index === 10) {
+            } else if (index.index === 21) {
                 if (index.index[1] === '') {
                     skip = Number(index.index[1]);
                 } else if (index.index[1] === 'profit') {
@@ -1499,7 +1504,7 @@ function getPasswordQuerySql(user, tagList, exactly) {
             if (index.index === 6) {
                 nosql['important'] = 1;
                 is_important = true;
-            } else if (index.index === 10) {
+            } else if (index.index === 21) {
                 if (index.index[1] === '') {
                     skip = Number(index.index[1]);
                 }
@@ -1661,12 +1666,12 @@ function isDefaultTag(tag) {
     } else {
         ret = tag.match(youtube_id_pattern);
         if (ret) {
-            ret.index = 9;
+            ret.index = 20;
             return ret;
         }
         ret = tag.match(/^(profit|safety|manag|)>(-?\d+)$/)
         if (ret) {
-            ret.index = 10;
+            ret.index = 21;
             return ret;
         }
     }

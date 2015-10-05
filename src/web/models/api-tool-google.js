@@ -55,11 +55,17 @@ function youtubeAPI(method, data, callback) {
                 data['maxResults'] -= data['id_arr'].length;
             }
         }
+        var type = 'video,playlist';
+        if (data['type'] === 1) {
+            type = 'video';
+        } else if (data['type'] === 2) {
+            type = 'playlist';
+        }
         param = {
             part: 'id',
             maxResults: data['maxResults'],
             order: data['order'],
-            type: 'video,playlist',
+            type: type,
             //type: 'video'
         };
         if (data['keyword']) {
