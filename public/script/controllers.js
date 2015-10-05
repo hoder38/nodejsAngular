@@ -877,7 +877,8 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 } else {
                     if (result.id) {
                         this_obj.bookmarkList.push({id: result.id, name: result.name});
-                        if (result.select) {
+                        if (result.bid) {
+                            result.id = result.bid;
                             if (this_obj.feedback.run) {
                                 if (this_obj.feedback.uid === result.id) {
                                     showFeedback(result);
@@ -2147,7 +2148,8 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 } else {
                     if (result.id) {
                         this_obj.bookmarkList.push({id: result.id, name: result.name});
-                        if (result.select) {
+                        if (result.bid) {
+                            result.id = result.bid;
                             if (this_obj.feedback.run) {
                                 if (this_obj.feedback.uid === result.id) {
                                     showFeedback(result);
