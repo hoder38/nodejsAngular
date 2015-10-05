@@ -2675,8 +2675,8 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
         var shortcashEven = caculateEven(shortcash, true);
 
         periodChange(opcash, '營運資金', 5, false, 0, '充足', '不足');
-        periodChange(cdcash, '短債資金', 5, true, 100, '充足', '不足');
-        periodChange(shortcash, '安全資金', 5, true, 100, '充足', '不足');
+        periodChange(cdcash, '短債資金', 5, true, 100, '不足', '充足');
+        periodChange(shortcash, '安全資金', 5, true, 100, '不足', '充足');
 
         function periodChange(data, name, speed, reverse, interval1, d1, d2, interval2, d3, interval3, d4, interval4, d5) {
             var even = caculateEven(data, true);
