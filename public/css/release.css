@@ -390,6 +390,11 @@ ul.alert-dropdown {
     height: auto;
 }
 
+.full-youtube-screen {
+    width: 640px;
+    height: 390px;
+}
+
 #non-blue {
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -782,10 +787,18 @@ audio.media-screen {
 }
 
 .recycled .item-point:hover,.recycled .item-point:link,.recycled .item-point:visited,.recycled .item-point:active {
-    color: red;
+    color: #B40404;
 }
 
 .recycled {
+    color: #B40404;
+}
+
+.youtubed .item-point:hover,.youtubed .item-point:link,.youtubed .item-point:visited,.youtubed .item-point:active {
+    color: red;
+}
+
+.youtubed {
     color: red;
 }
 
