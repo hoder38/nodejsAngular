@@ -983,7 +983,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 });
             }
             Info.youtube({}, function(result) {
-                console.log(result);
                 if (result.pageToken) {
                     this_obj.pageToken = result.pageToken;
                 }
@@ -1108,7 +1107,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     });
                 }
                 Info.youtube({}, function(result) {
-                    console.log(result);
                     if (result.pageToken) {
                         this_obj.pageToken = result.pageToken;
                     }
@@ -1198,7 +1196,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     });
                 }
                 Info.youtube({}, function(result) {
-                    console.log(result);
                     if (result.pageToken) {
                         this_obj.pageToken = result.pageToken;
                     }
@@ -1701,7 +1698,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     });
                 }
                 Info.youtube({}, function(result) {
-                    console.log(result);
                     if (result.pageToken) {
                         this_obj.pageToken = result.pageToken;
                     }
@@ -2062,7 +2058,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     });
                 }
                 Info.youtube({}, function(result) {
-                    console.log(result);
                     if (result.pageToken) {
                         this_obj.$parent.pageToken = result.pageToken;
                     }
@@ -3285,7 +3280,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             });
                         }
                         Info.youtube({}, function(result) {
-                            console.log(result);
                             if (result.pageToken) {
                                 this_obj[type].pageToken = result.pageToken;
                             }
@@ -3641,20 +3635,14 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         var this_obj = this;
         if (this.music.shuffle) {
             if (this.music.end) {
-                //console.log('end');
                 do {
                     index = randomFloor(-this.music.back, +this.music.front);
                 } while(index === +this.music.index);
             } else {
-                //console.log('not');
                 do {
                     index = randomFloor(-this.music.back - 20, +this.music.front + 20);
                 } while(index === +this.music.index);
             }
-            //console.log(this.music.front);
-            //console.log(this.music.back);
-            //console.log(index);
-            //console.log(index - this.music.index);
             this.mediaMove(index - this.music.index, 'music', true);
         } else {
             this.mediaMove(1, 'music', true);
