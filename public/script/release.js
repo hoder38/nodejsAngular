@@ -3353,7 +3353,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                         $window.location.href = $location.path();
                     } else {
                         if (result.time) {
-                            var setTime = result.time.match(/^(\d+)(&(\d+))?$/);
+                            var setTime = result.time.toString().match(/^(\d+)(&(\d+))?$/);
                             if (setTime) {
                                 if (type === 'video') {
                                     videoStart = setTime[1];
@@ -4880,7 +4880,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     $window.location.href = $location.path();
                                 } else {
                                     if (result.time) {
-                                        var setTime = result.time.match(/^(\d+)(&(\d+))?$/);
+                                        var setTime = result.time.toString().match(/^(\d+)(&(\d+))?$/);
                                         if (setTime) {
                                             if (type === 'video') {
                                                 videoStart = setTime[1];
@@ -5023,7 +5023,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 $window.location.href = $location.path();
                             } else {
                                 if (result.time) {
-                                    var setTime = result.time.match(/^(\d+)(&(\d+))?$/);
+                                    var setTime = result.time.toString().match(/^(\d+)(&(\d+))?$/);
                                     if (setTime) {
                                         if (type === 'video') {
                                             videoStart = setTime[1];
@@ -5117,7 +5117,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     $window.location.href = $location.path();
                 } else {
                     if (result.time) {
-                        var setTime = result.time.match(/^(\d+)(&(\d+))?$/);
+                        var setTime = result.time.toString().match(/^(\d+)(&(\d+))?$/);
                         if (setTime) {
                             if (type === 'video') {
                                 videoStart = setTime[1];
