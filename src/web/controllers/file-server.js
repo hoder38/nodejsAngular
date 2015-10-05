@@ -243,14 +243,16 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                     var tags = tagTool.searchTags(req.session);
                     if (tags) {
                         var parentList = tags.getArray();
+                        var is_d = false;
                         for (var i in parentList.cur) {
                             normal = tagTool.normalizeTag(parentList.cur[i]);
-                            if (!tagTool.isDefaultTag(normal)) {
+                            is_d = tagTool.isDefaultTag(normal);
+                            if (!is_d) {
                                 if (mediaTag.def.indexOf(normal) === -1) {
                                     mediaTag.def.push(normal);
                                 }
                             } else {
-                                if (normal === '18+') {
+                                if (is_d.index === 0) {
                                     DBdata['adultonly'] = 1;
                                 }
                             }
@@ -357,7 +359,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     util.handleError(err, next, res);
                 }
                 url = decodeURIComponent(url);
-                if (url.match(/^(https|http):\/\/www\.youtube\.com\//)) {
+                if (url.match(/^(https|http):\/\/(www\.youtube\.com|youtu\.be)\//)) {
                     var is_music = url.match(/^(.*):music$/);
                     if (is_music) {
                          is_media = 4;
@@ -395,7 +397,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
             });
         } else {
             url = decodeURIComponent(url);
-            if (url.match(/^(https|http):\/\/www\.youtube\.com\//)) {
+            if (url.match(/^(https|http):\/\/(www\.youtube\.com|youtu\.be)\//)) {
                 var is_music = url.match(/^(.*):music$/);
                 if (is_music) {
                     is_media = 4;
@@ -476,14 +478,16 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     mediaTag.def.push('url upload');
                 }
                 if (tag_arr) {
+                    var is_d = false;
                     for (var i in tag_arr) {
                         normal = tagTool.normalizeTag(tag_arr[i]);
-                        if (!tagTool.isDefaultTag(normal)) {
+                        is_d = tagTool.isDefaultTag(normal);
+                        if (!is_d) {
                             if (mediaTag.def.indexOf(normal) === -1) {
                                 mediaTag.def.push(normal);
                             }
                         } else {
-                            if (normal === '18+') {
+                            if (is_d.index === 0) {
                                 DBdata['adultonly'] = 1;
                             }
                         }
@@ -492,14 +496,16 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 var tags = tagTool.searchTags(req.session);
                 if (tags) {
                     var parentList = tags.getArray();
+                    var is_d = false;
                     for (var i in parentList.cur) {
                         normal = tagTool.normalizeTag(parentList.cur[i]);
-                        if (!tagTool.isDefaultTag(normal)) {
+                        is_d = tagTool.isDefaultTag(normal);
+                        if (!is_d) {
                             if (mediaTag.def.indexOf(normal) === -1) {
                                 mediaTag.def.push(normal);
                             }
                         } else {
-                            if (normal === '18+') {
+                            if (is_d.index === 0) {
                                 DBdata['adultonly'] = 1;
                             }
                         }
@@ -514,8 +520,6 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         }
                     }
                     mediaTag.opt = temp_tag;
-                    console.log(123);
-                    console.log(mediaTag.def);
                 }
                 DBdata['tags'] = mediaTag.def;
                 DBdata[oUser_id] = mediaTag.def;
@@ -640,14 +644,16 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
             var tags = tagTool.searchTags(req.session);
             if (tags) {
                 var parentList = tags.getArray();
+                var is_d = false;
                 for (var i in parentList.cur) {
                     normal = tagTool.normalizeTag(parentList.cur[i]);
-                    if (!tagTool.isDefaultTag(normal)) {
+                    is_d = tagTool.isDefaultTag(normal);
+                    if (!is_d) {
                         if (mediaTag.def.indexOf(normal) === -1) {
                             mediaTag.def.push(normal);
                         }
                     } else {
-                        if (normal === '18+') {
+                        if (is_d.index === 0) {
                             DBdata['adultonly'] = 1;
                         }
                     }
@@ -1209,7 +1215,7 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                 if (items[0].recycle !== 4) {
                     util.handleError({hoerror: 2, message: 'recycle file first!!!'}, next, res);
                 }
-                if (items[0].status === 7) {
+                if (items[0].status === 7 || items[0].status === 8) {
                     mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
                         if(err) {
                             util.handleError(err, next, res);
@@ -1285,7 +1291,7 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                 recur_backup();
             }
             function recur_backup() {
-                if (items[0].status === 7) {
+                if (items[0].status === 7 || items[0].status === 8) {
                     mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 4}}, function(err, item3){
                         if(err) {
                             util.handleError(err);

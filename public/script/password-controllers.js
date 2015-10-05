@@ -184,7 +184,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
     getItemlist = function (this_obj, name, index, isExactly) {
         name = typeof name !== 'undefined' ? name : null;
         index = typeof index !== 'undefined' ? index : 0;
-        var Info, exactly = 'false';
+        var Info = null, exactly = 'false';
         if (isExactly) {
             exactly = 'true';
         } else if (index) {
@@ -195,15 +195,9 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
             exactly = 'true';
         }
         if (!name && !index) {
-            if (this_obj.multiSearch) {
-                Info = $resource('/api/password/get/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
-                    'password': { method:'GET' }
-                });
-            } else {
-                Info = $resource('/api/password/getSingle/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
-                    'password': { method:'GET' }
-                });
-            }
+            Info = $resource('/api/password/get/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
+                'password': { method:'GET' }
+            });
         } else if (name && !index) {
             if (isValidString(name, 'name')) {
                 if (this_obj.multiSearch) {
@@ -295,7 +289,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
     }
 
     getPasswordParentlist = function() {
-        Info = $resource('/api/parent/password/list', {}, {
+        var Info = $resource('/api/parent/password/list', {}, {
             'parentlist': { method:'GET' }
         });
         Info.parentlist({}, function (result) {
@@ -334,7 +328,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         this.page = 0;
         $scope.more = true;
         $scope.moreDisabled = true;
-        Info = $resource('/api/password/reset', {}, {
+        var Info = $resource('/api/password/reset', {}, {
             'password': { method:'GET' }
         });
         Info.password({}, function (result) {

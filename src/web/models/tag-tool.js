@@ -21,7 +21,7 @@ var search_limit = 100;
 var union_number = 2;
 var inter_number = 3;
 
-var youtube_id_pattern = /^yid_([a-zA-z\d\-\_]+)/;
+var youtube_id_pattern = /^y(id|ch|pl)_([a-zA-z\d\-\_]+)/;
 
 var config_type = require('../../../ver.js');
 
@@ -192,12 +192,14 @@ module.exports = function(collection) {
                 },
                 setSingleArray: function(value) {
                     var normal = normalize(value);
-                    if (normal === 'all item' || normal === '18+' || normal === 'important' || normal.match(/^>\d+$/) || normal.match(/^profit>\d+$/) || normal.match(/^safety>-?\d+$/) || normal.match(/^manag>\d+$/) || normal.match(youtube_id_pattern)) {
+                    var defau = isDefaultTag(normal);
+                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10) {
                         return true;
                     } else {
                         for (var i = 0; i < search[name].index; i++) {
                             normal = search[name].tags[i];
-                            if (normal !== 'all item' && normal !== '18+' && normal !== 'important' && !normal.match(/^>\d+$/) && !normal.match(/^profit>\d+$/) && !normal.match(/^safety>-?\d+$/) && !normal.match(/^manag>\d+$/) && !normal.match(youtube_id_pattern)) {
+                            defau = isDefaultTag(normal);
+                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10) {
                                 search[name].tags = search[name].tags.slice(0, i);
                                 search[name].exactly = search[name].exactly.slice(0, i);
                                 search[name].index = search[name].tags.length;
@@ -546,29 +548,22 @@ module.exports = function(collection) {
                     }
                 }
             } else if (!index) {
-                var name_arr = tagName.split(' : ');
-                var name = false;
-                for (var i in name_arr) {
-                    if (collection === 'stock' && (name_arr[i].match(/^>\d+$/) || name_arr[i].match(/^profit>\d+$/) || name_arr[i].match(/^safety>-?\d+$/) || name_arr[i].match(/^manag>\d+$/))) {
-                        name = name_arr[i];
-                    } else if (collection === 'storage' && name_arr[i].match(/^>\d+$/)) {
-                        name = name_arr[i];
-                    } else {
-                        name = util.isValidString(name_arr[i], 'name');
-                    }
-                    if (name === false) {
-                        util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
-                    }
-                    name_arr[i] = name;
+                var defau = isDefaultTag(normalize(tagName));
+                if (collection === 'stock' && defau.index === 10) {
+                    name = tagName;
+                } else if (collection === 'storage' && defau.index === 10) {
+                    name = tagName;
+                } else {
+                    name = util.isValidString(tagName, 'name');
+                }
+                if (name === false) {
+                    util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
                 }
                 var tags = this_obj.searchTags(session);
                 if (!tags) {
                     util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
-                var parentList = null;
-                for (var i in name_arr) {
-                    parentList = tags.getArray(name_arr[i], exactly);
-                }
+                var parentList = tags.getArray(name, exactly);
                 var sql = getQuerySql(user, parentList.cur, parentList.exactly);
                 delete tags;
                 if (sql) {
@@ -632,19 +627,16 @@ module.exports = function(collection) {
             } else {
                 var name = false,
                     Pindex = util.isValidString(index, 'parentIndex');
-                var name_arr = tagName.split(' : ');
-                for (var i in name_arr) {
-                    if (collection === 'stock' && (name_arr[i].match(/^>\d+$/) || name_arr[i].match(/^profit>\d+$/) || name_arr[i].match(/^safety>-?\d+$/) || name_arr[i].match(/^manag>\d+$/))) {
-                        name = name_arr[i];
-                    } else if (collection === 'storage' && name_arr[i].match(/^>\d+$/)) {
-                        name = name_arr[i];
-                    } else {
-                        name = util.isValidString(name_arr[i], 'name');
-                    }
-                    if (name === false) {
-                        util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
-                    }
-                    name_arr[i] = name;
+                var defau = isDefaultTag(normalize(tagName));
+                if (collection === 'stock' && defau.index === 10) {
+                    name = tagName;
+                } else if (collection === 'storage' && defau.index === 10) {
+                    name = tagName;
+                } else {
+                    name = util.isValidString(tagName, 'name');
+                }
+                if (name === false) {
+                    util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
                 }
                 if (Pindex === false) {
                     util.handleError({hoerror: 2, message: "parentIndex is not vaild"}, next, callback);
@@ -653,11 +645,7 @@ module.exports = function(collection) {
                 if (!tags) {
                     util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                 }
-                var parentList = null;
-                for (var i in name_arr) {
-                    parentList = tags.getArray(name_arr[i], exactly, Pindex);
-                    Pindex++;
-                }
+                var parentList = tags.getArray(name, exactly, Pindex);
                 var sql = getQuerySql(user, parentList.cur, parentList.exactly);
                 delete tags;
                 if (sql) {
@@ -825,11 +813,7 @@ module.exports = function(collection) {
             return adultonly_arr;
         },
         isDefaultTag: function(tag) {
-            if (default_tags.indexOf(tag) !== -1) {
-                return true;
-            } else {
-                return false;
-            }
+            return isDefaultTag(tag);
         },
         parentQuery: function(tagName, sortName, sortType, page, user, next, callback) {
             var name = util.isValidString(tagName, 'name');
@@ -964,7 +948,7 @@ module.exports = function(collection) {
                 }
                 var latest = false;
                 if (items.length > 0 && items[0].latest) {
-                    var youtubeMatch = items[0].latest.match(/^y_(.*)$/);
+                    var youtubeMatch = items[0].latest.toString().match(/^y_(.*)$/);
                     if (youtubeMatch) {
                         latest = youtubeMatch[1];
                     } else {
@@ -1043,6 +1027,21 @@ module.exports = function(collection) {
                 });
             });
         },
+        setBookmark: function(btag, bexactly, sortName, sortType, user, session, next, callback) {
+            var tags = this.searchTags(session);
+            if (!tags) {
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
+            }
+            tags.setArray('', btag, bexactly);
+            this.tagQuery(0, null, null, null, sortName, sortType, user, session, next, function(err, result) {
+                if (err) {
+                    util.handleError(err, next, callback);
+                }
+                setTimeout(function(){
+                    callback(null, result);
+                }, 0);
+            });
+        },
         delBookmark: function(id, next, callback) {
             mongo.orig("remove", collection + "User", {_id: id, $isolated: 1}, function(err,item){
                 if(err) {
@@ -1053,13 +1052,17 @@ module.exports = function(collection) {
                 }, 0);
             });
         },
-        addBookmark: function(name, user, session, next, callback) {
-            var tags = this.searchTags(session);
-            if (!tags) {
-                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
+        addBookmark: function(name, user, session, next, callback, bpath, bexactly) {
+            if (!bpath || !bexactly) {
+                var tags = this.searchTags(session);
+                if (!tags) {
+                    util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
+                }
+                var parentList = tags.getArray();
+                bpath = parentList.cur;
+                bexactly = parentList.exactly;
             }
-            var parentList = tags.getArray();
-            if (parentList.cur.length <= 0) {
+            if (bpath.length <= 0) {
                 util.handleError({hoerror: 2, message: 'empty parent list!!!'}, next, callback);
             }
             mongo.orig("find", collection + "User", {userId: user._id, name: name}, {limit: 1}, function(err, items){
@@ -1069,14 +1072,16 @@ module.exports = function(collection) {
                 if (items.length > 0) {
                     var utime = Math.round(new Date().getTime() / 1000);
                     var data = {};
-                    data['tag'] = parentList.cur;
-                    data['exactly'] = parentList.exactly;
+                    data['tag'] = bpath;
+                    data['exactly'] = bexactly;
                     data['mtime'] = utime;
                     mongo.orig("update", collection + "User", {userId: user._id, name: name}, {$set: data}, function(err, item1){
                         if(err) {
                             util.handleError(err, next, callback);
                         }
-                        tags.setArray(items[0]._id);
+                        if (tags) {
+                            tags.setArray(items[0]._id);
+                        }
                         setTimeout(function(){
                             callback(null, {apiOk: true});
                         }, 0);
@@ -1094,14 +1099,16 @@ module.exports = function(collection) {
                         var data = {};
                         data['userId'] = user._id;
                         data['name'] = name;
-                        data['tag'] = parentList.cur;
-                        data['exactly'] = parentList.exactly;
+                        data['tag'] = bpath;
+                        data['exactly'] = bexactly;
                         data['mtime'] = utime;
                         mongo.orig("insert", collection + "User", data, function(err, item1){
                             if(err) {
                                 util.handleError(err, next, callback);
                             }
-                            tags.setArray(item1[0]._id);
+                            if (tags) {
+                                tags.setArray(item1[0]._id);
+                            }
                             setTimeout(function(){
                                 callback(null, {name: item1[0].name, id: item1[0]._id});
                             }, 0);
@@ -1119,25 +1126,33 @@ module.exports = function(collection) {
                 return 0;
             }
         },
-        getRelativeTag: function(tag, user, pre_arr, next, callback) {
-            var name = util.isValidString(tag, 'name');
-            if (name === false) {
-                setTimeout(function(){
-                    callback(null, pre_arr);
-                }, 0);
-                return false;
-            }
-            var normal = normalize(tag);
-            var index = default_tags.indexOf(normal);
-            if (index !== -1) {
-                setTimeout(function(){
-                    callback(null, pre_arr);
-                }, 0);
-                return false;
+        getRelativeTag: function(tag_arr, user, pre_arr, next, callback, exactly_arr) {
+            var name = false, q_path = [], index = -1, normal = null;
+            if (Array.isArray(tag_arr)) {
+                q_path = tag_arr;
+            } else {
+                q_path = ['all item'];
+                name = util.isValidString(tag_arr, 'name');
+                if (name === false) {
+                    setTimeout(function(){
+                        callback(null, pre_arr);
+                    }, 0);
+                    return false;
+                }
+                normal = normalize(tag_arr);
+                index = isDefaultTag(normal);
+                if (!index) {
+                    setTimeout(function(){
+                        callback(null, pre_arr);
+                    }, 0);
+                    return false;
+                }
+                q_path.push(normal);
+                exactly_arr = [true, false];
             }
             var hint = {};
             var options = {"limit": queryLimit, "sort": [[getSortName('name'), 'desc']]};
-            var sql = getQuerySql(user, [normal, 'all item'], [true, false]);
+            var sql = getQuerySql(user, q_path, exactly_arr);
             if (sql.hint) {
                 options["hint"] = sql.hint;
             }
@@ -1239,27 +1254,35 @@ module.exports = function(collection) {
             var index = -1;
             var query_arr = [];
             var id_arr = [];
-            var is_id = false;
+            var pl_arr = [];
+            var is_y = false;
+            var ch = false;
             for (var i in search_arr) {
-                index = default_tags.indexOf(search_arr[i]);
-                if (index === 8) {
-                    return  false;
-                } else if (index === 0 || index === 6){
-                    query_arr.push(search_arr[i]);
-                } else {
-                    is_id = search_arr[i].match(youtube_id_pattern);
-                    if (is_id) {
-                        id_arr.push(is_id[1]);
+                index = isDefaultTag(normalize(search_arr[i]));
+                if (!index || index.index === 0 || index.index === 6){
+                    query_arr.push(denormalize(search_arr[i]));
+                } else if (index.index === 8) {
+                    return false;
+                } else if (index.index === 9) {
+                    index = isDefaultTag(search_arr[i]);
+                    if (index[1] === 'id') {
+                        id_arr.push(index[2]);
+                    } else if (index[1] === 'pl') {
+                        pl_arr.push(index[2]);
+                    } else if (index[1] === 'ch') {
+                        query.channelId = index[2];
                     } else {
                         query_arr.push(search_arr[i]);
                     }
                 }
             }
-            if (query_arr.length > 0) {
-                query.keyword = query_arr.join(' ');
-            } else {
-                //#YouTube熱門影片台灣
-                query.channelId = 'UCBcIWZhWqUwknlxikVHQoyA';
+            if (!query.channelId) {
+                if (query_arr.length > 0) {
+                    query.keyword = query_arr.join(' ');
+                } else {
+                    //#YouTube熱門影片台灣
+                    query.channelId = 'UCBcIWZhWqUwknlxikVHQoyA';
+                }
             }
             query.maxResults = queryLimit;
             if (sortName === 'count') {
@@ -1274,6 +1297,9 @@ module.exports = function(collection) {
             } else {
                 if (id_arr.length > 0) {
                     query.id_arr = id_arr;
+                }
+                if (pl_arr.length > 0) {
+                    query.pl_arr = pl_arr;
                 }
             }
             return query;
@@ -1308,28 +1334,27 @@ var getStorageQuerySql = function(user, tagList, exactly) {
         var isAdult = false;
         nosql['$and'] = [];
         for (var i in tagList) {
-            var skip_number = tagList[i].match(/^>(\d+)$/);
-            if (skip_number) {
-                skip = Number(skip_number[1]);
-                continue;
-            }
-            if (tagList[i].match(youtube_id_pattern)) {
-                continue;
-            }
             var normal = normalize(tagList[i]);
-            var index = default_tags.indexOf(normal);
-            if (index === 0) {
+            var index = isDefaultTag(normal);
+            if (index.index === 9) {
+                continue;
+            } else if (index.index === 10) {
+                if (index[1] === '') {
+                    skip = Number(index.index[2]);
+                }
+                continue;
+            } else if (index.index === 0) {
                 if (util.checkAdmin(2, user)) {
                     nosql['adultonly'] = 1;
                     is_adultonly = true;
                 }
-            } else if (index === 1) {
+            } else if (index.index === 1) {
                 if (util.checkAdmin(1, user)) {
                     var time = Math.round(new Date().getTime() / 1000) - handleTime;
                     console.log({mediaType: {$exists: true}, utime: {$lt: time}});
                     return {nosql: {mediaType: {$exists: true}, utime: {$lt: time}}};
                 }
-            } else if (index === 2) {
+            } else if (index.index === 2) {
                 if (util.checkAdmin(1, user)) {
                     var unDay = user.unDay? user.unDay: unactive_day;
                     var unHit = user.unHit? user.unHit: unactive_hit;
@@ -1337,17 +1362,17 @@ var getStorageQuerySql = function(user, tagList, exactly) {
                     console.log({count: {$lt: unHit}, utime: {$lt: time}});
                     return {nosql: {count: {$lt: unHit}, utime: {$lt: time}}};
                 }
-            } else if (index === 3) {
+            } else if (index.index === 3) {
                 if (util.checkAdmin(1, user)) {
                     var time = Math.round(new Date().getTime() / 1000) - handleTime;
                     console.log({recycle: {$ne: 0}, utime: {$lt: time}});
                     return {nosql: {recycle: {$ne: 0}, utime: {$lt: time}}};
                 }
-            } else if (index === 4 || index === 6 || index === 8) {
-            } else if (index === 5) {
+            } else if (index.index === 4 || index.index === 6 || index.index === 8) {
+            } else if (index.index === 5) {
                 delete nosql['first'];
                 is_first = false;
-            } else if (index === 7) {
+            } else if (index.index === 7) {
                 return false;
             } else {
                 if (exactly[i]) {
@@ -1405,39 +1430,23 @@ function getStockQuerySql(user, tagList, exactly) {
     } else {
         nosql['$and'] = [];
         for (var i in tagList) {
-            var skip_number = tagList[i].match(/^>(\d+)$/);
-            if (skip_number) {
-                skip = Number(skip_number[1]);
-                continue;
-            }
-            var profit_number = tagList[i].match(/^profit>(\d+)$/);
-            if (profit_number) {
-                nosql['profitIndex'] = {$gte: Number(profit_number[1])};
-                continue;
-            }
-            var safety_number = tagList[i].match(/^safety>(-?\d+)$/);
-            if (safety_number) {
-                nosql['safetyIndex'] = {$gte: Number(safety_number[1])};
-                continue;
-            }
-            var management_number = tagList[i].match(/^manag>(\d+)$/);
-            if (management_number) {
-                nosql['managementIndex'] = {$gte: Number(management_number[1])};
-                continue;
-            }
             var normal = normalize(tagList[i]);
-            var index = default_tags.indexOf(normal);
-            if (index === 0) {
-            } else if (index === 1) {
-            } else if (index === 2) {
-            } else if (index === 3) {
-            } else if (index === 4) {
-            } else if (index === 5) {
-            } else if (index === 7) {
-            } else if (index === 8) {
-            } else if (index === 6) {
+            var index = isDefaultTag(normal);
+            if (index.index === 6) {
                 nosql['important'] = 1;
                 is_important = true;
+            } else if (index.index === 10) {
+                if (index.index[1] === '') {
+                    skip = Number(index.index[1]);
+                } else if (index.index[1] === 'profit') {
+                    nosql['profitIndex'] = {$gte: Number(index.index[1])};
+                } else if (index.index[1] === 'safety') {
+                    nosql['safetyIndex'] = {$gte: Number(index.index[1])};
+                } else if (index.index[1] === 'manag') {
+                    nosql['managementIndex'] = {$gte: Number(index.index[1])};
+                }
+                continue;
+            } else if (index) {
             } else {
                 if (exactly[i]) {
                     nosql.$and.push({tags: normal});
@@ -1485,24 +1494,17 @@ function getPasswordQuerySql(user, tagList, exactly) {
     } else {
         nosql['$and'] = [];
         for (var i in tagList) {
-            var skip_number = tagList[i].match(/^>(\d+)$/);
-            if (skip_number) {
-                skip = Number(skip_number[1]);
-                continue;
-            }
             var normal = normalize(tagList[i]);
-            var index = default_tags.indexOf(normal);
-            if (index === 0) {
-            } else if (index === 1) {
-            } else if (index === 2) {
-            } else if (index === 3) {
-            } else if (index === 4) {
-            } else if (index === 5) {
-            } else if (index === 7) {
-            } else if (index === 8) {
-            } else if (index === 6) {
+            var index = isDefaultTag(normal);
+            if (index.index === 6) {
                 nosql['important'] = 1;
                 is_important = true;
+            } else if (index.index === 10) {
+                if (index.index[1] === '') {
+                    skip = Number(index.index[1]);
+                }
+                continue;
+            } else if (index) {
             } else {
                 if (exactly[i]) {
                     nosql.$and.push({tags: normal});
@@ -1545,16 +1547,16 @@ function getPasswordQuerySql(user, tagList, exactly) {
 function getStorageQueryTag(user, tag, del) {
     del = typeof del !== 'undefined' ? del : 1;
     var normal = normalize(tag);
-    var index = default_tags.indexOf(normal);
-    if (index === 0) {
+    var index = isDefaultTag(normal);
+    if (index.index === 0) {
         if (util.checkAdmin(2, user)) {
             return {tag: {adultonly: del}, type: 2, name: default_tags[0]};
         } else {
             return {type: 0};
         }
-    } else if (index === 4) {
+    } else if (index.index === 4) {
         return {tag: {first: del}, type: 2, name: default_tags[4]};
-    } else if (index === 1 || index === 2 || index === 3 || index === 5 || index === 6 || index === 7 || index === 8) {
+    } else if (index) {
         return {type: 0};
     } else {
         return {tag: {tags: normal}, type: 1};
@@ -1564,11 +1566,11 @@ function getStorageQueryTag(user, tag, del) {
 function getStockQueryTag(user, tag, del) {
     del = typeof del !== 'undefined' ? del : 1;
     var normal = normalize(tag);
-    var index = default_tags.indexOf(normal);
-    if (index === 0 || index === 1 || index === 2 || index === 3 || index === 4 || index === 5 || index === 7 || index === 8) {
-        return {type: 0};
-    } else if (index === 6) {
+    var index = isDefaultTag(normal);
+    if (index.index === 6) {
         return {tag: {important: del}, type: 2, name: default_tags[6]};
+    } else if (index) {
+        return {type: 0};
     } else {
         return {tag: {tags: normal}, type: 1};
     }
@@ -1577,11 +1579,11 @@ function getStockQueryTag(user, tag, del) {
 function getPasswordQueryTag(user, tag, del) {
     del = typeof del !== 'undefined' ? del : 1;
     var normal = normalize(tag);
-    var index = default_tags.indexOf(normal);
-    if (index === 0 || index === 1 || index === 2 || index === 3 || index === 4 || index === 5 || index === 7 || index === 8) {
-        return {type: 0};
-    } else if (index === 6) {
+    var index = isDefaultTag(normal);
+    if (index.index === 6) {
         return {type: 3, name: ''};
+    } else if (index) {
+        return {type: 0};
     } else {
         return {tag: {tags: normal}, type: 1};
     }
@@ -1652,6 +1654,25 @@ function CN2ArabNum(cn) {
     return arab;
 }
 
+function isDefaultTag(tag) {
+    var ret = {index: default_tags.indexOf(tag)};
+    if (ret.index !== -1) {
+        return ret;
+    } else {
+        ret = tag.match(youtube_id_pattern);
+        if (ret) {
+            ret.index = 9;
+            return ret;
+        }
+        ret = tag.match(/^(profit|safety|manag|)>(-?\d+)$/)
+        if (ret) {
+            ret.index = 10;
+            return ret;
+        }
+    }
+    return false;
+}
+
 function getStorageSortName(sortName) {
     var sort = 'name';
     switch (sortName) {
@@ -1702,4 +1723,16 @@ function getPasswordSortName(sortName) {
 
 function escapeRegExp(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+
+//[^\x00-\x7F]+ 非英數
+function denormalize(tag) {
+    var o = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100, 1000, 10000];
+    var r = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '百', '千', '萬'];
+    var regex = null;
+    for (var i in o) {
+        regex = new RegExp('(^|[^\x00-\x7F])' + o[i] + '([^\x00-\x7F]|$)');
+        tag = tag.replace(regex, "$1" + r[i] + "$2");
+    }
+    return tag;
 }

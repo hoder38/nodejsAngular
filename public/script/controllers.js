@@ -1,7 +1,7 @@
 //壓縮 手動排序跟新增
 //cat script/angular.min.js script/angular-route.min.js script/angular-resource.min.js script/angular-cookies.min.js script/angular-sanitize.min.js script/angular-file-upload.js script/Chart.min.js script/angular-chart.min.js script/controllers.js script/stock-controllers.js script/password-controllers.js script/frontend.js script/ui-bootstrap-tpls-0.12.0.min.js script/vtt.js > script/release.js
 //cat css/angular-chart.css css/bootstrap.min.css css/bootstrap-theme.min.css font-awesome/css/font-awesome.min.css css/sb-admin.css > css/release.css
-var video, music, subtitles, videoStart=0, musicStart=0, confirm_str='', yplayer = null;;
+var video, music, subtitles, videoStart=0, videoIndex=0, musicStart=0, confirm_str='', yplayer = null;;
 var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSanitize', 'angularFileUpload', 'ui.bootstrap', 'chart.js'], function($routeProvider, $locationProvider) {
     $routeProvider.when('/', {
         templateUrl: '/views/homepage',
@@ -455,12 +455,13 @@ function UserInfoCntl($route, $routeParams, $resource, $scope, $window, $timeout
         return false;
     }
     $scope.saveAll = function(item, data) {
+        var editInfo = null;
         if (item.key) {
-            var editInfo = $resource('/api/edituser/' + item.key, {}, {
+            editInfo = $resource('/api/edituser/' + item.key, {}, {
                 'editinfo': { method:'PUT' }
             });
         } else {
-            var editInfo = $resource('/api/edituser', {}, {
+            editInfo = $resource('/api/edituser', {}, {
                 'editinfo': { method:'PUT' }
             });
         }
@@ -566,7 +567,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
-    $scope.toolList = {download: false, edit: false, upload:false, del: false, dir: false, download2local: false, downloadMusic: false, first: false, recordUrl: false, fixYoutube: false, item: null};
+    $scope.toolList = {download: false, edit: false, upload:false, del: false, dir: false, download2local: false, downloadMusic: false, fixYoutube: false, subscription: false, title: '', item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -857,7 +858,57 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     }
 
     $scope.fixYoutube = function() {
-        this.exactlyStorage(this, 'yid_' + this.toolList.item.id);
+        if (this.toolList.item.playlist) {
+            this.exactlyStorage(this, 'ypl_' + this.toolList.item.id);
+        } else {
+            this.exactlyStorage(this, 'yid_' + this.toolList.item.id);
+        }
+    }
+
+    $scope.subscription = function() {
+        if (isValidString(this.toolList.title, 'name')) {
+            var this_obj = this;
+            var bookmarkapi = $resource('/api/bookmark/subscipt', {}, {
+                'subscipt': { method:'POST' }
+            });
+            bookmarkapi.subscipt({name: this.toolList.title, path: ['ych_' + this.toolList.item.cid, 'no local'], exactly: [false, false]}, function(result) {
+                if (result.loginOK) {
+                    $window.location.href = $location.path();
+                } else {
+                    if (result.id) {
+                        this_obj.bookmarkList.push({id: result.id, name: result.name});
+                        if (result.select) {
+                            if (this_obj.feedback.run) {
+                                if (this_obj.feedback.uid === result.id) {
+                                    showFeedback(result);
+                                } else {
+                                    if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                        this_obj.feedback.queue.push(result);
+                                    } else {
+                                        this_obj.feedback.queue.splice(index, 1, result);
+                                    }
+                                }
+                            } else {
+                                this_obj.feedback.run = true;
+                                showFeedback(result);
+                            }
+                        }
+                    }
+                    this_obj.bookmarkNew = false;
+                    this_obj.bookmarkName = '';
+                }
+            }, function(errorResult) {
+                if (errorResult.status === 400) {
+                    addAlert(errorResult.data);
+                } else if (errorResult.status === 403) {
+                    addAlert('unknown API!!!');
+                } else if (errorResult.status === 401) {
+                    $window.location.href = $location.path();
+                }
+            });
+        } else {
+            addAlert('Bookmark name is not valid!!!');
+        }
     }
 
     $scope.gotoStorage = function(this_obj, item, index) {
@@ -920,6 +971,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this_obj.exactlyList = result.parentList.exactly;
             //this_obj.moreDisabled = false;
             this_obj.$parent.collapse.storage = true;
+            var Info = null;
             if (this_obj.pageToken) {
                 Info = $resource('/api/youtube/get/' + this_obj.pageToken, {}, {
                     'youtube': { method:'GET' }
@@ -978,7 +1030,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     getItemlist = function (this_obj, name, index, isExactly) {
         name = typeof name !== 'undefined' ? name : null;
         index = typeof index !== 'undefined' ? index : 0;
-        var Info, exactly = 'false', more = true;
+        var Info = null, exactly = 'false', more = true;
         if (isExactly) {
             exactly = 'true';
         } else if (index) {
@@ -989,41 +1041,20 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             exactly = 'true';
         }
         if (!name && !index) {
-            if (this_obj.multiSearch) {
-                Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
-                    'storage': { method:'GET' }
-                });
-            } else {
-                Info = $resource('/api/storage/getSingle/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
-                    'storage': { method:'GET' }
-                });
-            }
+            Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
+                'storage': { method:'GET' }
+            });
         } else if (name && !index) {
-            var query_name = '';
-            if (Array.isArray(name)) {
-                for (var i in name) {
-                    if (name[i].match(/^>\d+$/) || isValidString(name[i], 'name')) {
-
-                    } else {
-                        addAlert('search tag is not vaild!!!');
-                        return false;
-                    }
-                }
-                query_name = name.join(' : ');
-            } else {
-                if (name.match(/^>\d+$/) || isValidString(name, 'name')) {
-                    query_name = name;
-                } else {
-                    addAlert('search tag is not vaild!!!');
-                    return false;
-                }
+            if (!isValidString(name, 'name')) {
+                addAlert('search tag is not vaild!!!');
+                return false;
             }
             if (this_obj.multiSearch) {
-                Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + query_name + '/' + exactly, {}, {
+                Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly, {}, {
                     'storage': { method:'GET' }
                 });
             } else {
-                Info = $resource('/api/storage/getSingle/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + query_name + '/' + exactly, {}, {
+                Info = $resource('/api/storage/getSingle/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly, {}, {
                     'storage': { method:'GET' }
                 });
             }
@@ -1031,34 +1062,13 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             addAlert("not enough parameter");
             return false;
         } else {
-            var query_name = '';
-            if (Array.isArray(name)) {
-                for (var i in name) {
-                    if (name[i].match(/^>\d+$/) || isValidString(name[i], 'name')) {
-
-                    } else {
-                        addAlert('search tag is not vaild!!!');
-                        return false;
-                    }
-                }
-                query_name = name.join(':');
-            } else {
-                if (name.match(/^>\d+$/) || isValidString(name, 'name')) {
-                    query_name = name;
-                } else {
-                    addAlert('search tag is not vaild!!!');
-                    return false;
-                }
+            if (!isValidString(name, 'name')) {
+                addAlert('search tag is not vaild!!!');
+                return false;
             }
-            if (this_obj.multiSearch) {
-                Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + query_name + '/' + exactly + '/' + index, {}, {
-                    'storage': { method:'GET' }
-                });
-            } else {
-                Info = $resource('/api/storage/getSingle/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + query_name + '/' + exactly, {}, {
-                    'storage': { method:'GET' }
-                });
-            }
+            Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page + '/' + name + '/' + exactly + '/' + index, {}, {
+                'storage': { method:'GET' }
+            });
         }
         this_obj.moreDisabled = true;
         Info.storage({}, function (result) {
@@ -1155,7 +1165,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         this.present.end = false;
         $scope.more = true;
         $scope.moreDisabled = true;
-        Info = $resource('/api/storage/reset', {}, {
+        var Info = $resource('/api/storage/reset', {}, {
             'storage': { method:'GET' }
         });
         Info.storage({}, function (result) {
@@ -1620,28 +1630,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         return false;
     }
 
-    $scope.selectFirst = function($event, item) {
-        if (item.tags.indexOf('first item') !== -1) {
-            this.$parent.toolList.item = item;
-            this.$parent.toolList.first = true;
-            this.$parent.toolList.dir = false;
-            this.$parent.toolList.download = false;
-            this.$parent.toolList.edit = false;
-            this.$parent.toolList.del = false;
-            this.$parent.toolList.recover = false;
-            this.$parent.toolList.upload = false;
-            this.$parent.toolList.delMedia = false;
-            this.$parent.toolList.vlogMedia = false;
-            this.$parent.toolList.download2local = false;
-            this.$parent.toolList.downloadMusic = false;
-            this.$parent.toolList.recordUrl = false;
-            this.$parent.toolList.fixYoutube = false;
-            this.toggleDropdown($event, 'item');
-        } else {
-            this.showUrl(item);
-        }
-    }
-
     $scope.showUrl = function(item) {
         if (!item) {
             item = this.toolList.item;
@@ -1659,6 +1647,95 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 }
             }
         }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
+    }
+
+    $scope.setBookmark = function(item) {
+        var this_obj = this.$parent.$parent.$parent;
+        var bookmarkapi = $resource('/api/bookmark/set/' + item.id, {}, {
+            'setbookmark': { method:'GET' }
+        });
+        var more = true;
+        this_obj.moreDisabled = true;
+        this_obj.more = true;
+        bookmarkapi.setbookmark({}, function(result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                this_obj.itemList = [];
+                if (result.itemList.length > 0) {
+                    var date;
+                    for (var i in result.itemList) {
+                        result.itemList[i].select = false;
+                        date = new Date(result.itemList[i].utime*1000);
+                        result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                        this_obj.itemList.push(result.itemList[i]);
+                    }
+                } else {
+                    more = false;
+                }
+                this_obj.page = result.itemList.length;
+                this_obj.latest = result.latest;
+                this_obj.bookmarkID = result.bookmarkID;
+                this_obj.parentList = result.parentList.cur;
+                this_obj.historyList = result.parentList.his;
+                this_obj.exactlyList = result.parentList.exactly;
+                //this_obj.moreDisabled = false;
+                this_obj.$parent.collapse.storage = true;
+                var Info = null;
+                if (this_obj.pageToken) {
+                    Info = $resource('/api/youtube/get/' + this_obj.pageToken, {}, {
+                        'youtube': { method:'GET' }
+                    });
+                } else {
+                    Info = $resource('/api/youtube/get', {}, {
+                        'youtube': { method:'GET' }
+                    });
+                }
+                Info.youtube({}, function(result) {
+                    console.log(result);
+                    if (result.pageToken) {
+                        this_obj.pageToken = result.pageToken;
+                    }
+                    if (result.itemList.length > 0) {
+                        var date;
+                        for (var i in result.itemList) {
+                            if (arrayObjectIndexOf(this_obj.itemList, result.itemList[i].id, 'id') === -1) {
+                                result.itemList[i].select = false;
+                                date = new Date(result.itemList[i].utime*1000);
+                                result.itemList[i].utime = date.getFullYear() + '/' + (date.getMonth()+1)+'/'+date.getDate();
+                                this_obj.itemList.push(result.itemList[i]);
+                            }
+                        }
+                        $scope.more = true;
+                    } else {
+                        if (!more) {
+                            $scope.more = false;
+                        } else {
+                            $scope.more = true;
+                        }
+                    }
+                    this_obj.moreDisabled = false;
+                }, function(errorResult) {
+                    this_obj.moreDisabled = false;
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
+            }
+        }, function(errorResult) {
+            this_obj.moreDisabled = false;
             if (errorResult.status === 400) {
                 addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
@@ -1727,12 +1804,18 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                         $window.location.href = $location.path();
                     } else {
                         if (result.time) {
-                            if (type === 'video') {
-                                videoStart = result.time;
-                            } else if (type === 'music'){
-                                musicStart = result.time;
-                            } else {
-                                this_obj.$parent[type].presentId = this_obj.$parent[type].showId = result.time;
+                            var setTime = result.time.match(/^(\d+)(&(\d+))?$/);
+                            if (setTime) {
+                                if (type === 'video') {
+                                    videoStart = setTime[1];
+                                    if (setTime[3]) {
+                                        videoIndex = setTime[3];
+                                    }
+                                } else if (type === 'music'){
+                                    musicStart = setTime[1];
+                                } else {
+                                    this_obj.$parent[type].presentId = this_obj.$parent[type].showId = setTime[1];
+                                }
                             }
                         }
                         if (type === 'video') {
@@ -1746,7 +1829,8 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                             this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id + '/doc';
                         } else if (type === 'video' && item.thumb) {
                             this_obj.$parent[type].src = null;
-                            onYouTubeIframeAPIReady(item.id);
+                            onYouTubeIframeAPIReady(item.id, item.playlist);
+                            this_obj.$parent[type].playlist = item.playlist;
                             if ($scope.pageToken) {
                                 this_obj.$parent[type].pageToken = $scope.pageToken;
                             }
@@ -1846,18 +1930,16 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.vlogMedia = false;
             this.$parent.toolList.download2local = false;
             this.$parent.toolList.downloadMusic = false;
-            this.$parent.toolList.first = false;
-            this.$parent.toolList.recordUrl = false;
             this.$parent.toolList.fixYoutube = false;
+            this.$parent.toolList.subscription = false;
             confirm_str = item;
         } else {
-            if (item.status === 7 || item.thumb) {
+            if (item.status === 7 || item.status === 8 || item.thumb) {
                 this.$parent.toolList.download = false;
             } else {
                 this.$parent.toolList.download = true;
             }
             this.$parent.toolList.dir = false;
-            this.$parent.toolList.first = false;
             if (item.isOwn) {
                 this.$parent.toolList.edit = true;
                 this.$parent.toolList.del = true;
@@ -1883,15 +1965,25 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 this.$parent.toolList.vlogMedia = false;
             }
             if (item.thumb) {
-                this.$parent.toolList.download2local = true;
-                this.$parent.toolList.downloadMusic = true;
-                this.$parent.toolList.recordUrl = true;
+                if (item.playlist) {
+                    this.$parent.toolList.download2local = false;
+                    this.$parent.toolList.downloadMusic = false;
+                } else {
+                    this.$parent.toolList.download2local = true;
+                    this.$parent.toolList.downloadMusic = true;
+                }
                 this.$parent.toolList.fixYoutube = true;
+                if (item.cid) {
+                    this.$parent.toolList.subscription = true;
+                    this.$parent.toolList.title = item.ctitle;
+                }
             } else {
                 this.$parent.toolList.download2local = false;
                 this.$parent.toolList.downloadMusic = false;
-                this.$parent.toolList.recordUrl = false;
+                this.$parent.toolList.downloadO2local = false;
+                this.$parent.toolList.downloadOMusic = false;
                 this.$parent.toolList.fixYoutube = false;
+                this.$parent.toolList.subscription = false;
             }
         }
         this.toggleDropdown($event, 'item');
@@ -1958,6 +2050,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 this_obj.$parent.exactlyList = result.parentList.exactly;
                 //this_obj.$parent.moreDisabled = false;
                 this_obj.$parent.$parent.collapse.storage = true;
+                var Info = null;
                 if (this_obj.$parent.pageToken) {
                     Info = $resource('/api/youtube/get/' + this_obj.$parent.pageToken, {}, {
                         'youtube': { method:'GET' }
@@ -2053,7 +2146,23 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     $window.location.href = $location.path();
                 } else {
                     if (result.id) {
-                        this_obj.bookmarkList.push(result);
+                        this_obj.bookmarkList.push({id: result.id, name: result.name});
+                        if (result.select) {
+                            if (this_obj.feedback.run) {
+                                if (this_obj.feedback.uid === result.id) {
+                                    showFeedback(result);
+                                } else {
+                                    if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                        this_obj.feedback.queue.push(result);
+                                    } else {
+                                        this_obj.feedback.queue.splice(index, 1, result);
+                                    }
+                                }
+                            } else {
+                                this_obj.feedback.run = true;
+                                showFeedback(result);
+                            }
+                        }
                     }
                     this_obj.bookmarkNew = false;
                     this_obj.bookmarkName = '';
@@ -2145,7 +2254,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.adultonly = false;
     $scope.mediaShow = [];
     $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
-    $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: ''};
+    $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', download: 0};
     $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', shuffle: false};
     $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, mode: false};
     $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
@@ -2367,11 +2476,16 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         if (vId) {
             var append = '';
             var vTime = 0;
-            if (!$scope.video.src) {
+            if ($scope.video.src) {
+                vTime = parseInt(video.currentTime);
+            } else {
                 append = '/youtube';
                 vTime = parseInt(yplayer.getCurrentTime());
-            } else {
-                vTime = parseInt(video.currentTime);
+                var index = -1;
+                index = yplayer.getPlaylistIndex();
+                if (index !== -1) {
+                    vTime = vTime + '&' + index;
+                }
             }
             var vXmlhttp = new XMLHttpRequest();
             vXmlhttp.open("GET", "/api/media/record/" + vId + '/' + vTime + append, false);//the false is for making the call synchronous
@@ -2790,8 +2904,16 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
     }
 
-    $scope.download2local = function(music) {
-        var url =  'https://www.youtube.com/watch?v=' + this.toolList.item.id;
+    $scope.download2local = function(music, playlist, url) {
+        if (!url) {
+            if (playlist) {
+                url =  'https://www.youtube.com/watch?list=' + this.toolList.item.id;
+            } else {
+                url =  'https://www.youtube.com/watch?v=' + this.toolList.item.id;
+            }
+        } else if (playlist) {
+            url = url.replace(/&v=([^&]+)/, '');
+        }
         if (music) {
             url = url + ':music';
         }
@@ -2826,53 +2948,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     }
                 }
             }, function(errorResult) {
-                if (errorResult.status === 400) {
-                    addAlert(errorResult.data);
-                } else if (errorResult.status === 403) {
-                    addAlert('unknown API!!!');
-                } else if (errorResult.status === 401) {
-                    $window.location.href = $location.path();
-                }
-            });
-        } else {
-            addAlert("invalid url!!!");
-        }
-    }
-
-    $scope.recordUrl = function() {
-        var url =  'https://www.youtube.com/watch?v=' + this.toolList.item.id;
-        var this_obj = this;
-        if (isValidString(url, 'url') && !this.disableUrlSave) {
-            this.disableUrlSave = true;
-            var addurl = this.main_url + '/api/addurl';
-            if (this.adultonly) {
-                addurl = this.main_url + '/api/addurl/1';
-            }
-            var api = $resource(addurl, {}, {
-                'addurl': { method:'POST', withCredentials: true }
-            });
-            api.addurl({url: url}, function (result) {
-                this_obj.disableUrlSave = false;
-                if (result.loginOK) {
-                    $window.location.href = $location.path();
-                } else {
-                    if (this_obj.feedback.run) {
-                        if (this_obj.feedback.uid === result.id) {
-                            showFeedback(result);
-                        } else {
-                            if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
-                                this_obj.feedback.queue.push(result);
-                            } else {
-                                this_obj.feedback.queue.splice(index, 1, result);
-                            }
-                        }
-                    } else {
-                        this_obj.feedback.run = true;
-                        showFeedback(result);
-                    }
-                }
-            }, function(errorResult) {
-                this_obj.disableUrlSave = false;
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -2965,6 +3040,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         var id = this[type].id;
         var time = 0;
         var append = '';
+        var index = -1;
         if (id) {
             if (type === 'video') {
                 if (this[type].src) {
@@ -2975,6 +3051,10 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     if (!end) {
                         if (yplayer) {
                             time = parseInt(yplayer.getCurrentTime());
+                            index = yplayer.getPlaylistIndex();
+                            if (index !== -1) {
+                                time = time + '&' + index;
+                            }
                         }
                     }
                     append = '/youtube';
@@ -3192,7 +3272,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             end = true;
                             //this_obj[type].index = -this_obj[type].back;
                         }
-
+                        var Info = null;
                         if (this_obj[type].pageToken) {
                             Info = $resource('/api/youtube/get/' + this_obj[type].pageToken, {}, {
                                 'youtube': { method:'GET' }
@@ -3252,12 +3332,18 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     $window.location.href = $location.path();
                                 } else {
                                     if (result.time) {
-                                        if (type === 'video') {
-                                            videoStart = result.time;
-                                        } else if (type === 'music'){
-                                            musicStart = result.time;
-                                        } else {
-                                            this_obj[type].presentId = this_obj[type].showId = result.time;
+                                        var setTime = result.time.match(/^(\d+)(&(\d+))?$/);
+                                        if (setTime) {
+                                            if (type === 'video') {
+                                                videoStart = setTime[1];
+                                                if (setTime[3]) {
+                                                    videoIndex = setTime[3];
+                                                }
+                                            } else if (type === 'music'){
+                                                musicStart = setTime[1];
+                                            } else {
+                                                this_obj[type].presentId = this_obj[type].showId = setTime[1];
+                                            }
                                         }
                                     }
                                     if (type === 'video') {
@@ -3269,9 +3355,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     if (this_obj[type].list.length === 1 && type === 'video') {
                                         if (video) {
                                             video.currentTime = 0;
+                                            video.pause();
                                         }
                                         if (yplayer) {
                                             yplayer.seekTo(0, true);
+                                            yplayer.pauseVideo();
                                         }
                                         //video.play();
                                     } else if (this_obj[type].list.length === 1 && type === 'music') {
@@ -3284,7 +3372,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                         } else if (type === 'video' && this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
                                             this_obj[type].src = null;
-                                            onYouTubeIframeAPIReady(this_obj[type].list[this_obj[type].index + this_obj[type].back].id);
+                                            onYouTubeIframeAPIReady(this_obj[type].list[this_obj[type].index + this_obj[type].back].id, this_obj[type].list[this_obj[type].index + this_obj[type].back].playlist);
+                                            this_obj[type].playlist = this_obj[type].list[this_obj[type].index + this_obj[type].back].playlist;
                                         } else {
                                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                         }
@@ -3386,12 +3475,18 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 $window.location.href = $location.path();
                             } else {
                                 if (result.time) {
-                                    if (type === 'video') {
-                                        videoStart = result.time;
-                                    } else if (type === 'music'){
-                                        musicStart = result.time;
-                                    } else {
-                                        this_obj[type].presentId = this_obj[type].showId = result.time;
+                                    var setTime = result.time.match(/^(\d+)(&(\d+))?$/);
+                                    if (setTime) {
+                                        if (type === 'video') {
+                                            videoStart = setTime[1];
+                                            if (setTime[3]) {
+                                                videoIndex = setTime[3];
+                                            }
+                                        } else if (type === 'music'){
+                                            musicStart = setTime[1];
+                                        } else {
+                                            this_obj[type].presentId = this_obj[type].showId = setTime[1];
+                                        }
                                     }
                                 }
                                 if (type === 'video') {
@@ -3403,9 +3498,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 if (this_obj[type].list.length === 1 && type === 'video') {
                                     if (video) {
                                         video.currentTime = 0;
+                                        video.pause();
                                     }
                                     if (yplayer) {
                                         yplayer.seekTo(0, true);
+                                        yplayer.pauseVideo();
                                     }
                                     //video.play();
                                 } else if (this_obj[type].list.length === 1 && type === 'music') {
@@ -3418,7 +3515,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                     } else if (type === 'video' && this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
                                         this_obj[type].src = null;
-                                        onYouTubeIframeAPIReady(this_obj[type].list[this_obj[type].index + this_obj[type].back].id);
+                                        onYouTubeIframeAPIReady(this_obj[type].list[this_obj[type].index + this_obj[type].back].id, this_obj[type].list[this_obj[type].index + this_obj[type].back].playlist);
+                                        this_obj[type].playlist = this_obj[type].list[this_obj[type].index + this_obj[type].back].playlist;
                                     } else {
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     }
@@ -3471,12 +3569,18 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     $window.location.href = $location.path();
                 } else {
                     if (result.time) {
-                        if (type === 'video') {
-                            videoStart = result.time;
-                        } else if (type === 'music'){
-                            musicStart = result.time;
-                        } else {
-                            this_obj[type].presentId = this_obj[type].showId = result.time;
+                        var setTime = result.time.match(/^(\d+)(&(\d+))?$/);
+                        if (setTime) {
+                            if (type === 'video') {
+                                videoStart = setTime[1];
+                                if (setTime[3]) {
+                                    videoIndex = setTime[3];
+                                }
+                            } else if (type === 'music'){
+                                musicStart = setTime[1];
+                            } else {
+                                this_obj[type].presentId = this_obj[type].showId = setTime[1];
+                            }
                         }
                     }
                     if (type === 'video') {
@@ -3488,9 +3592,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     if (this_obj[type].list.length === 1 && type === 'video') {
                         if (video) {
                             video.currentTime = 0;
+                            video.pause();
                         }
                         if (yplayer) {
                             yplayer.seekTo(0, true);
+                            yplayer.pauseVideo();
                         }
                         //video.play();
                     } else if (this_obj[type].list.length === 1 && type === 'music') {
@@ -3503,7 +3609,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                         } else if (type === 'video' && this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
                             this_obj[type].src = null;
-                            onYouTubeIframeAPIReady(this_obj[type].list[this_obj[type].index + this_obj[type].back].id);
+                            onYouTubeIframeAPIReady(this_obj[type].list[this_obj[type].index + this_obj[type].back].id, this_obj[type].list[this_obj[type].index + this_obj[type].back].playlist);
+                            this_obj[type].playlist = this_obj[type].list[this_obj[type].index + this_obj[type].back].playlist;
                         } else {
                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         }
@@ -3554,6 +3661,23 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.$watch("this.doc.mode", function(newVal, oldVal) {
         $scope.setDoc();
     }, true);
+    $scope.$watch("this.video.download", function(newVal, oldVal) {
+        newVal = parseInt(newVal);
+        if (newVal) {
+            if (newVal === 1) {
+                openModal("確定要下載影片到網站上?").then(function () {
+                    $scope.download2local(false, false, yplayer.getVideoUrl());
+                }, function () {
+                });
+            } else if (newVal === 2) {
+                openModal("確定要把影片轉檔成音樂並下載到網站上?").then(function () {
+                    $scope.download2local(true, false, yplayer.getVideoUrl());
+                }, function () {
+                });
+            }
+            $scope.video.download = 0;
+        }
+    }, true);
     $scope.numberDoc = function() {
         if (this.doc.iframeOffset) {
             for (var i in this.doc.iframeOffset) {
@@ -3568,17 +3692,47 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     tag.src = "https://www.youtube.com/iframe_api";
     var firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-    onYouTubeIframeAPIReady = function (id) {
-        yplayer = new YT.Player('youtube-player', {
-            height: '100%',
-            width: '100%',
-            videoId: id,
-            events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange
+    onYouTubeIframeAPIReady = function (id, isPlaylist) {
+        if (isPlaylist) {
+            yplayer = new YT.Player('youtube-player', {
+                height: '100%',
+                width: '100%',
+                videoId: 'videoseries',
+                events: {
+                    'onReady': loadPlaylist,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+            function loadPlaylist() {
+                if (videoStart || videoIndex) {
+                    yplayer.loadPlaylist({
+                        list: id,
+                        listType: "playlist",
+                        index: videoIndex,
+                        startSeconds: parseInt(videoStart)
+                    });
+                    videoStart = 0;
+                    videoIndex = 0;
+                } else {
+                    yplayer.loadPlaylist({
+                        list: id,
+                        listType: "playlist"
+                    });
+                }
             }
-        });
+        } else {
+            yplayer = new YT.Player('youtube-player', {
+                height: '100%',
+                width: '100%',
+                videoId: id,
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
     }
+
     // 4. The API will call this function when the video player is ready.
     function onPlayerReady(event) {
         if (videoStart) {
@@ -3669,7 +3823,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
     }
     getParentlist = function() {
-        Info = $resource('/api/parent/list', {}, {
+        var Info = $resource('/api/parent/list', {}, {
             'parentlist': { method:'GET' }
         });
         Info.parentlist({}, function (result) {

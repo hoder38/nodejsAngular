@@ -453,17 +453,15 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
             var name = false;
-            var name_arr = req.params.name.split(' : ');
-            for (var i in name_arr) {
-                name = util.isValidString(name_arr[i], 'name');
-                if (name_arr[i].match(/^>(\d+)$/)) {
-                    name = name_arr[i];
-                }
-                if (name === false) {
-                    util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
-                }
-                tags.setSingleArray(name);
+            if (tagTool.isDefaultTag(req.params.name).index === 10) {
+                name = req.params.name;
+            } else {
+                name = util.isValidString(req.params.name, 'name');
             }
+            if (name === false) {
+                util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
+            }
+            tags.setSingleArray(name);
         }
         tagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
@@ -500,28 +498,75 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                     util.handleError({hoerror: 2, message: "search error"}, next, res);
                 }
                 var video_id = [];
-                if (metadata.items.length > 0 || (query.id_arr && query.id_arr.length > 0)) {
+                var playlist_id = [];
+                if (metadata.items.length > 0 || (query.id_arr && query.id_arr.length > 0) || (query.pl_arr && query.pl_arr.length > 0)) {
                     if (query.id_arr) {
                         for (var i in query.id_arr) {
                             video_id.push(query.id_arr[i]);
                         }
                     }
-                    for (var i in metadata.items) {
-                        if (metadata.items[i].id && metadata.items[i].id.videoId) {
-                            video_id.push(metadata.items[i].id.videoId);
+                    if (query.pl_arr) {
+                        for (var i in query.pl_arr) {
+                            playlist_id.push(query.pl_arr[i]);
                         }
                     }
-                    googleApi.googleApi('y video', {id: video_id.join(',')}, function(err, detaildata) {
-                        if (err) {
-                            util.handleError(err, next, res);
+                    for (var i in metadata.items) {
+                        if (metadata.items[i].id) {
+                            if (metadata.items[i].id.videoId) {
+                                video_id.push(metadata.items[i].id.videoId);
+                            } else if (metadata.items[i].id.playlistId) {
+                                playlist_id.push(metadata.items[i].id.playlistId);
+                            }
                         }
-                        var itemList = getYoutubeItem(detaildata.items);
-                        if (metadata.nextPageToken) {
-                            res.json({itemList: itemList, pageToken: metadata.nextPageToken});
-                        } else {
-                            res.json({itemList: itemList});
-                        }
-                    });
+                    }
+                    if (video_id.length > 0) {
+                        googleApi.googleApi('y video', {id: video_id.join(',')}, function(err, detaildata) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (playlist_id.length > 0) {
+                                googleApi.googleApi('y playlist', {id: playlist_id.join(',')}, function(err, detaildata1) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    for (var i in query.pl_arr) {
+                                        for (var j in detaildata1.items) {
+                                            if (detaildata1.items[j].id === query.pl_arr[i]) {
+                                                detaildata.items.splice(0, 0, detaildata1.items.splice(j, 1)[0]);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    detaildata.items = detaildata.items.concat(detaildata1.items);
+                                    var itemList = getYoutubeItem(detaildata.items);
+                                    if (metadata.nextPageToken) {
+                                        res.json({itemList: itemList, pageToken: metadata.nextPageToken});
+                                    } else {
+                                        res.json({itemList: itemList});
+                                    }
+                                });
+                            } else {
+                                var itemList = getYoutubeItem(detaildata.items);
+                                if (metadata.nextPageToken) {
+                                    res.json({itemList: itemList, pageToken: metadata.nextPageToken});
+                                } else {
+                                    res.json({itemList: itemList});
+                                }
+                            }
+                        });
+                    } else if (playlist_id.length > 0) {
+                        googleApi.googleApi('y playlist', {id: playlist_id.join(',')}, function(err, detaildata) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            var itemList = getYoutubeItem(detaildata.items);
+                            if (metadata.nextPageToken) {
+                                res.json({itemList: itemList, pageToken: metadata.nextPageToken});
+                            } else {
+                                res.json({itemList: itemList});
+                            }
+                        });
+                    }
                 } else {
                     if (metadata.nextPageToken) {
                         res.json({itemList: [], pageToken: metadata.nextPageToken});
@@ -554,9 +599,11 @@ app.get('/api/stock/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/:p
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
-            var name = util.isValidString(req.params.name, 'name');
-            if (req.params.name.match(/^>\d+$/) || req.params.name.match(/^profit>\d+$/) || req.params.name.match(/^safety>-?\d+$/) || req.params.name.match(/^manag>\d+$/)) {
+            var name = false;
+            if (stockTagTool.isDefaultTag(req.params.name).index === 10) {
                 name = req.params.name;
+            } else {
+                name = util.isValidString(req.params.name, 'name');
             }
             if (name === false) {
                 util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
@@ -613,7 +660,6 @@ app.get('/api/stock/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(\\
             if (err) {
                 util.handleError(err, next, res);
             }
-            console.log(result.items);
             var itemList = getStockItem(req.user, result.items);
             res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
         });
@@ -1118,6 +1164,52 @@ app.get('/api/bookmark/stock/getList/:sortName(name|mtime)/:sortType(desc|asc)',
     });
 });
 
+app.get('/api/bookmark/set/:id', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("set bookmark");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.id, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
+        }
+        var sortName = 'name';
+        var sortType = 'desc';
+        if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
+            sortName = req.cookies.fileSortName;
+        }
+        if (req.cookies.fileSortType === 'asc') {
+            sortType = req.cookies.fileSortType;
+        }
+        mongo.orig("find", "storage", {_id: id, status: 8}, {limit: 1}, function(err, items){
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            if (items.length < 1 || !items[0].btag || !items[0].bexactly) {
+                util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, res);
+            }
+            tagTool.setBookmark(items[0].btag, items[0].bexactly, sortName, sortType, req.user, req.session, next, function(err, result) {
+                if(err) {
+                    util.handleError(err, next, res);
+                }
+                var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
+                res.json({itemList: itemList, parentList: result.parentList, latest: result.latest});
+                tagTool.setLatest('', id, req.session, function(err) {
+                    if (err) {
+                        util.handleError(err);
+                    }
+                    mongo.orig("update", "storage", {_id: id}, {$inc: { count: 1}}, function(err, item2){
+                        if(err) {
+                            util.handleError(err);
+                        }
+                    });
+                });
+            });
+        });
+    });
+});
+
 app.get('/api/bookmark/get/:id', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get bookmark");
@@ -1174,6 +1266,267 @@ app.get('/api/bookmark/stock/get/:id', function (req, res, next) {
     });
 });
 
+app.post('/api/bookmark/subscipt', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("subscipt bookmark");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var name = util.isValidString(req.body.name, 'name');
+        if (name === false) {
+            util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
+        }
+        var bpath = [];
+        var bexactly = [];
+        var path_name = false;
+        if (req.body.path.length <= 0 || req.body.exactly.length <= 0) {
+            util.handleError({hoerror: 2, message: "empty parent list!!!"}, next, res);
+        }
+        for (var i in req.body.path) {
+            path_name = util.isValidString(req.body.path[i], 'name');
+            if (path_name === false) {
+                util.handleError({hoerror: 2, message: "path name is not vaild"}, next, res);
+            }
+            bpath.push(path_name);
+        }
+        for (var i in req.body.exactly) {
+            if (req.body.exactly[i]) {
+                bexactly.push(true);
+            } else {
+                bexactly.push(false);
+            }
+        }
+        tagTool.addBookmark(name, req.user, req.session, next, function(err, result){
+            if(err) {
+                util.handleError(err, next, res);
+            }
+            newBookmarkItem(name, req.user, req.session, bpath, bexactly, function (err, select, option) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (select) {
+                    result['select'] = select;
+                }
+                if (option) {
+                    result['option'] = option;
+                }
+                res.json(result);
+            });
+        }, bpath, bexactly);
+    });
+});
+
+function newBookmarkItem(name, user, session, bpath, bexactly, callback) {
+    var bookmark_path = [];
+    for (var i = 0; i < bpath.length; i++) {
+        if (bexactly[i]) {
+            bookmark_path.push(bpath[i] + '/1');
+        } else {
+            bookmark_path.push(bpath[i] + '/0');
+        }
+    }
+    var bookmark_md5 = crypto.createHash('md5').update(bookmark_path.join('/')).digest('hex');
+    console.log(bookmark_path.join('/'));
+    console.log(bookmark_md5);
+    mongo.orig("count", "storage", {bmd5: bookmark_md5}, function(err, count){
+        if (err) {
+            util.handleError(err, callback, callback);
+        }
+        if (count > 0) {
+            setTimeout(function(){
+                callback(null, null, null);
+            }, 0);
+        } else {
+            //000開頭讓排序在前
+            if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
+                name = mime.addPost(name, '1');
+            }
+            var bookName = '000 Bookmark ' + name;
+            var oOID = mongo.objectID();
+            var utime = Math.round(new Date().getTime() / 1000);
+            var oUser_id = user._id;
+            var ownerTag = [];
+            var data = {};
+            data['_id'] = oOID;
+            data['owner'] = oUser_id;
+            data['utime'] = utime;
+
+            data['bmd5'] = bookmark_md5;
+            data['btag'] = bpath;
+            data['bexactly'] = bexactly;
+
+            data['size'] = 0;
+            data['count'] = 0;
+            data['first'] = 1;
+            data['recycle'] = 0;
+            data['adultonly'] = 0;
+            data['untag'] = 1;
+            data['status'] = 8;//media type
+            var tags = ['bookmark', '書籤'];
+            var normal = tagTool.normalizeTag(name);
+            if (tags.indexOf(normal) === -1) {
+                tags.push(normal);
+            }
+            normal = tagTool.normalizeTag(user.username);
+            if (tags.indexOf(normal) === -1) {
+                tags.push(normal);
+            }
+            var is_d = false;
+            var channel = false;
+            for (var i in bpath) {
+                normal = tagTool.normalizeTag(bpath[i]);
+                is_d = tagTool.isDefaultTag(normal);
+                if (!is_d) {
+                    if (tags.indexOf(normal) === -1) {
+                        tags.push(normal);
+                    }
+                } else if (is_d.index === 0) {
+                    data['adultonly'] = 1;
+                } else if (is_d.index === 9) {
+                    is_d = tagTool.isDefaultTag(bpath[i]);
+                    if (is_d[1] === 'ch') {
+                        channel = is_d[2];
+                    }
+                }
+            }
+            var stags = tagTool.searchTags(session);
+            if (!stags) {
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, callback, callback);
+            }
+            var parentList = stags.getArray();
+            for (var i in parentList.cur) {
+                normal = tagTool.normalizeTag(parentList.cur[i]);
+                is_d = tagTool.isDefaultTag(normal);
+                if (!is_d) {
+                    if (tags.indexOf(normal) === -1) {
+                        tags.push(normal);
+                    }
+                } else if (is_d.index === 0) {
+                    data['adultonly'] = 1;
+                }
+            }
+            tagTool.getRelativeTag(bpath, user, [], callback, function(err, btags) {
+                if (err) {
+                    util.handleError(err, callback, callback);
+                }
+                for (var i in btags) {
+                    if (tags.indexOf(btags[i]) === -1) {
+                        tags.push(btags[i]);
+                    }
+                }
+                if (channel) {
+                    googleApi.googleApi('y channel', {id: channel}, function(err, metadata) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        bookName = '000 Channel ' + name;
+                        normal = tagTool.normalizeTag(bookName);
+                        if (tags.indexOf(normal) === -1) {
+                            tags.push(normal);
+                        }
+                        data['name'] = bookName;
+                        var keywords = metadata.items[0].brandingSettings.channel.keywords;
+                        console.log(keywords);
+                        keywords = keywords.split(',');
+                        if (keywords.length === 1) {
+                            keywords = keywords[0].split(' ');
+                        }
+                        if (tags.indexOf('channel') === -1) {
+                            tags.push('channel');
+                        }
+                        if (tags.indexOf('youtube') === -1) {
+                            tags.push('youtube');
+                        }
+                        if (tags.indexOf('頻道') === -1) {
+                            tags.push('頻道');
+                        }
+                        for (var i in keywords) {
+                            normal = tagTool.normalizeTag(keywords[i]);
+                            is_d = tagTool.isDefaultTag(normal);
+                            if (!is_d) {
+                                if (tags.indexOf(normal) === -1) {
+                                    tags.push(normal);
+                                }
+                            } else if (is_d.index === 0) {
+                                data['adultonly'] = 1;
+                            }
+                        }
+                        saveDB();
+                    });
+                } else {
+                    normal = tagTool.normalizeTag(bookName);
+                    if (tags.indexOf(normal) === -1) {
+                        tags.push(normal);
+                    }
+                    data['name'] = bookName;
+                    saveDB();
+                }
+                function saveDB() {
+                    data['tags'] = tags;
+                    data[oUser_id] = tags;
+                    mongo.orig("insert", "storage", data, function(err, item){
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(item);
+                        console.log('save end');
+                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                        var opt = [];
+                        if (util.checkAdmin(2, user)) {
+                            if (item[0].adultonly === 1) {
+                                tags.push('18+');
+                            } else {
+                                opt.push('18+');
+                            }
+                        }
+                        if (item[0].first === 1) {
+                            tags.push('first item');
+                        } else {
+                            opt.push('first item');
+                        }
+                        var relative_arr = [];
+                        tags.forEach(function (e) {
+                            relative_arr.push(e);
+                        });
+                        opt.forEach(function (e) {
+                            relative_arr.push(e);
+                        });
+                        var index = 0;
+                        recur_relative();
+                        function recur_relative() {
+                            tagTool.getRelativeTag(relative_arr[index], user, opt, callback, function(err, relative) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                index++;
+                                opt = relative;
+                                if (index < relative_arr.length) {
+                                    recur_relative();
+                                } else {
+                                    var temp_tag = [];
+                                    var normal = '';
+                                    for (var j in opt) {
+                                        normal = tagTool.normalizeTag(opt[j]);
+                                        if (!tagTool.isDefaultTag(normal)) {
+                                            if (tags.indexOf(normal) === -1) {
+                                                temp_tag.push(normal);
+                                            }
+                                        }
+                                    }
+                                    opt = temp_tag;
+                                    setTimeout(function(){
+                                        callback(null, tags, opt);
+                                    }, 0);
+                                }
+                            });
+                        }
+                    });
+                }
+            }, bexactly);
+        }
+    });
+}
+
 app.post('/api/bookmark/add', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("addbookmark");
@@ -1188,7 +1541,26 @@ app.post('/api/bookmark/add', function (req, res, next) {
             if(err) {
                 util.handleError(err, next, res);
             }
-            res.json(result);
+            var tags = tagTool.searchTags(req.session);
+            if (!tags) {
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
+            }
+            var parentList = tags.getArray();
+            if (parentList.cur.length <= 0) {
+                util.handleError({hoerror: 2, message: 'empty parent list!!!'}, next, res);
+            }
+            newBookmarkItem(name, req.user, req.session, parentList.cur, parentList.exactly, function (err, select, option) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (select) {
+                    result['select'] = select;
+                }
+                if (option) {
+                    result['option'] = option;
+                }
+                res.json(result);
+            });
         });
     });
 });
@@ -1330,12 +1702,15 @@ app.post('/api/media/saveParent', function(req, res, next) {
     });
 });
 
-app.get('/api/media/record/:id/:time(\\d+)/:type(youtube)?', function(req, res, next){
+app.get('/api/media/record/:id/:time/:type(youtube)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('media doc record');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
+        if (!req.params.time.match(/^\d+(&\d+)?$/)) {
+            util.handleError({hoerror: 2, message: "timestamp is not vaild"}, next, res);
+        }
         var id = false;
         if (req.params.type === 'youtube') {
             id = util.isValidString(req.params.id, 'name');
@@ -1437,7 +1812,6 @@ app.get('/api/media/setTime/:id/:type/:mType(youtube)?', function(req, res, next
                 });
             });
         } else {
-
             mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: id}, {limit: 1}, function(err, items){
                 if (err) {
                     util.handleError(err, next, res);
@@ -1656,7 +2030,12 @@ app.get('/api/password/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
-            var name = util.isValidString(req.params.name, 'name');
+            var name = false;
+            if (pwTagTool.isDefaultTag(req.params.name).index === 10) {
+                name = req.params.name;
+            } else {
+                name = util.isValidString(req.params.name, 'name');
+            }
             if (name === false) {
                 util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
             }
@@ -2304,14 +2683,23 @@ function getYoutubeItem(items) {
     var yd = null;
     var data = null;
     for (var i in items) {
-        if (items[i].snippet && items[i].statistics) {
+        if (items[i].snippet) {
             if (items[i].snippet.tags) {
                 items[i].snippet.tags.push('first item');
             } else {
                 items[i].snippet.tags = ['first item'];
             }
             yd = new Date(items[i].snippet.publishedAt.match(/^\d\d\d\d-\d\d-\d\d/)[0]);
-            data = {name: items[i].snippet.title, id: items[i].id, tags: items[i].snippet.tags, recycle: 0, isOwn: false, status: 3, utime: yd.getTime()/1000, count: items[i].statistics.viewCount, thumb: items[i].snippet.thumbnails.default.url};
+            data = {name: items[i].snippet.title, id: items[i].id, tags: items[i].snippet.tags, recycle: 0, isOwn: false, status: 3, utime: yd.getTime()/1000, thumb: items[i].snippet.thumbnails.default.url, cid: items[i].snippet.channelId, ctitle: items[i].snippet.channelTitle};
+            if (items[i].statistics) {
+                data['count'] = items[i].statistics.viewCount;
+            } else {
+                data['count'] = 301;
+            }
+            if (items[i].kind === 'youtube#playlist') {
+                data['name'] = data['name'] + ' [playlist]';
+                data['playlist'] = true;
+            }
             itemList.push(data);
         }
     }

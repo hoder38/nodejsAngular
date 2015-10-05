@@ -237,22 +237,16 @@
                 <a confirmed-click="add2Parent(item)" ng-confirm-click="Would you sure to add" ng-sub-msg="to {{item.show}}?" href="#">{{item.show}}</a>
             </li>
             <li ng-show="toolList.download2local">
-                <a ng-click="download2local()" href="#">下載到local</a>
+                <a confirmed-click="download2local()" ng-confirm-click="確定要下載影片到網站上?" href="#">下載到local</a>
             </li>
             <li ng-show="toolList.downloadMusic">
-                <a ng-click="download2local(true)" href="#">下載音樂</a>
+                <a confirmed-click="download2local(true)" ng-confirm-click="確定要把影片轉檔成音樂並下載到網站上?" href="#">下載音樂</a>
             </li>
             <li ng-show="toolList.fixYoutube">
                 <a ng-click="fixYoutube()" href="#">固定Youtube</a>
             </li>
-            <li ng-show="toolList.recordUrl">
-                <a ng-click="recordUrl()" href="#">記錄Url</a>
-            </li>
-            <li ng-show="toolList.first">
-                <a ng-click="showUrl()" href="#">開啟Url</a>
-            </li>
-            <li ng-show="toolList.first" ng-repeat="tag in toolList.item.tags">
-                <a ng-click="exactlyStorage($parent.this, [tag, 'all item'])" href="#">{{tag}}</a>
+            <li ng-show="toolList.subscription">
+                <a ng-click="subscription()" href="#">訂閱{{toolList.title}}</a>
             </li>
         </ul>
     </div>
@@ -296,8 +290,11 @@
                     <td class="item-name" ng-if="item.status === 6 && !item.media" ng-click="showMedia(item, 'present')">
                         <a href="#" class="item-point"><i class="glyphicon glyphicon-list-alt item-icon"></i>{{item.name}}</a>
                     </td>
-                    <td class="item-name" ng-if="item.status === 7 && !item.media" ng-click="selectFirst($event, item)">
+                    <td class="item-name" ng-if="item.status === 7 && !item.media" ng-click="showUrl(item)">
                         <a href="#" class="item-point"><i class="glyphicon glyphicon-bookmark item-icon"></i>{{item.name}}</a>
+                    </td>
+                    <td class="item-name" ng-if="item.status === 8 && !item.media" ng-click="setBookmark(item)">
+                        <a href="#" class="item-point"><i class="glyphicon glyphicon-tags item-icon"></i>{{item.name}}</a>
                     </td>
                     <td class="item-mtime">{{item.utime}}</td>
                     <td class="item-count">{{item.count}}</td>
@@ -402,8 +399,11 @@
                     <td class="item-name" ng-if="item.status === 6 && !item.media" ng-click="showMedia(item, 'present')">
                         <a href="#" class="item-point"><i class="glyphicon glyphicon-list-alt item-icon"></i>{{item.name}}</a>
                     </td>
-                    <td class="item-name" ng-if="item.status === 7 && !item.media" ng-click="selectFirst($event, item)">
+                    <td class="item-name" ng-if="item.status === 7 && !item.media" ng-click="showUrl(item)">
                         <a href="#" class="item-point"><i class="glyphicon glyphicon-bookmark item-icon"></i>{{item.name}}</a>
+                    </td>
+                    <td class="item-name" ng-if="item.status === 8 && !item.media" ng-click="setBookmark(item)">
+                        <a href="#" class="item-point"><i class="glyphicon glyphicon-tags item-icon"></i>{{item.name}}</a>
                     </td>
                     <td class="item-mtime">{{item.utime}}</td>
                     <td class="item-count">{{item.count}}</td>

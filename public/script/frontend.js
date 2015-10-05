@@ -6,7 +6,9 @@ function isValidString(str, type)
     if (type === 'name')
     {
         if (str !== '.' && str !== '..') {
-            if (str.search(/^[^\\\/\|\*\?"<>:]{1,255}$/) != -1)
+            //if (str.search(/^[^\\\/\|\*\?"<>:]{1,255}$/) != -1)
+            //為了方便開放 < ，但是後端只接受default的
+            if (str.search(/^[^\\\/\|\*\?"<:]{1,255}$/) != -1)
             {
                 if (str.replace(/[\s　]+/g, '') !== '')
                 {

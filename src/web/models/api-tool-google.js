@@ -39,7 +39,6 @@ var api_pool = [];
 var api_ing = 0;
 
 var oath_waiting = 60000;
-//[^\x00-\x7F]+
 function youtubeAPI(method, data, callback) {
     var youtube = googleapis.youtube({ version: 'v3', auth: oauth2Client });
     var param = {};
@@ -60,8 +59,8 @@ function youtubeAPI(method, data, callback) {
             part: 'id',
             maxResults: data['maxResults'],
             order: data['order'],
-            //type: 'video,playlist',
-            type: 'video'
+            type: 'video,playlist',
+            //type: 'video'
         };
         if (data['keyword']) {
             param.q = data['keyword'];
@@ -90,6 +89,40 @@ function youtubeAPI(method, data, callback) {
             id: data['id']
         };
         youtube.videos.list(param, function(err, metadata) {
+            if (err && err.code !== 'ECONNRESET') {
+                util.handleError(err, callback, callback, null);
+            }
+            setTimeout(function(){
+                callback(null, metadata);
+            }, 0);
+        });
+        break;
+        case 'y channel':
+        if (!data['id']) {
+            util.handleError({hoerror: 2, message: 'channel parameter lost!!!'}, callback, callback);
+        }
+        param = {
+            part: 'snippet, brandingSettings',
+            id: data['id']
+        };
+        youtube.channels.list(param, function(err, metadata) {
+            if (err && err.code !== 'ECONNRESET') {
+                util.handleError(err, callback, callback, null);
+            }
+            setTimeout(function(){
+                callback(null, metadata);
+            }, 0);
+        });
+        break;
+        case 'y playlist':
+        if (!data['id']) {
+            util.handleError({hoerror: 2, message: 'search parameter lost!!!'}, callback, callback);
+        }
+        param = {
+            part: 'snippet',
+            id: data['id']
+        };
+        youtube.playlists.list(param, function(err, metadata) {
             if (err && err.code !== 'ECONNRESET') {
                 util.handleError(err, callback, callback, null);
             }
@@ -723,151 +756,139 @@ var exports = module.exports = {
     //sudo chmod a+x /usr/bin/youtube-dl
     googleDownloadYoutube: function(url, filePath, callback, is_music) {
         var this_obj = this;
-        this.googleDownload(url, filePath + ".htm", function(err) {
+        var youtube_id = url.match(/v=([^&]+)/);
+        if (!youtube_id) {
+            util.handleError({hoerror: 2, message: 'can not find youtube id!!!'}, callback, callback);
+        }
+        youtube_id = youtube_id[1];
+        this.googleApi('y video', {id: youtube_id, caption: true}, function(err, detaildata) {
             if (err) {
                 util.handleError(err, callback, callback);
             }
-            var cmdline = 'grep ,\\\"url_encoded_fmt_stream_map\\\": ' + filePath + ".htm";
-            var media_code = 37;
-            child_process.exec(cmdline, function (err, output) {
-                if (err) {
-                    util.handleError(err, callback, callback);
-                }
-                var media_name, media_tag, tag_arr = [];
-                var name_pattern = ',"title":"(.+?)",';
-                var tag_pattern = ',"keywords":"(.*?)",';
-                media_tag = output.match(tag_pattern);
-                if (media_tag) {
-                    media_tag = media_tag[1];
-                    if (media_tag) {
-                        tag_arr = media_tag.split(/,/);
+            if (detaildata.items.length < 1) {
+                util.handleError({hoerror: 2, message: 'can not find video'}, callback, callback);
+            }
+            var media_name = null, tag_arr = [], media_thumb = null;
+            media_name = detaildata.items[0].snippet.title;
+            if (detaildata.items[0].snippet.tags) {
+                tag_arr = detaildata.items[0].snippet.tags;
+            }
+            if (detaildata.items[0].snippet.channelTitle) {
+                tag_arr.push(detaildata.items[0].snippet.channelTitle);
+            }
+            media_thumb = detaildata.items[0].snippet.thumbnails.default.url;
+            console.log(media_name);
+            if (is_music) {
+                var mp3_time = new Date;
+                var push_url = '/a/pushItem/?item=http%3A//www.youtube.com/watch%3Fv%3D' + youtube_id + '&el=na&bf=false&r=' + mp3_time.getTime();
+                var info_url = '/a/itemInfo/?video_id=' + youtube_id + '&ac=www&t=grp&r=' + mp3_time.getTime();
+                var siged = sig_url(push_url);
+                console.log('http://www.youtube-mp3.org' + siged);
+                api.xuiteDownload('http://www.youtube-mp3.org' + siged, '', function(err, music_id) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
                     }
-                }
-                media_name = output.match(name_pattern);
-                if (!media_name) {
-                    media_name = 'youtube video';
-                } else {
-                    media_name = media_name[1];
-                }
-                console.log(media_name);
-                if (is_music) {
-                    var mp3_time = new Date;
-                    var youtube_id = url.match(/v=([^&]+)/)[1];
-                    console.log(youtube_id);
-                    var push_url = '/a/pushItem/?item=http%3A//www.youtube.com/watch%3Fv%3D' + youtube_id + '&el=na&bf=false&r=' + mp3_time.getTime();
-                    var info_url = '/a/itemInfo/?video_id=' + youtube_id + '&ac=www&t=grp&r=' + mp3_time.getTime();
-                    var siged = sig_url(push_url);
+                    console.log(music_id);
+                    if (music_id !== youtube_id) {
+                        util.handleError({hoerror: 2, message: 'push music data failed!!!'}, callback, callback);
+                    }
+                    siged = sig_url(info_url);
                     console.log('http://www.youtube-mp3.org' + siged);
-                    api.xuiteDownload('http://www.youtube-mp3.org' + siged, '', function(err, music_id) {
+                    api.xuiteDownload('http://www.youtube-mp3.org' + siged, '', function(err, music_data) {
                         if (err) {
                             util.handleError(err, callback, callback);
                         }
-                        console.log(music_id);
-                        if (music_id !== youtube_id) {
-                            util.handleError({hoerror: 2, message: 'push music data failed!!!'}, callback, callback);
+                        console.log(music_data);
+                        var music_json = music_data.match(/^info = (.*);$/);
+                        if (!music_json) {
+                            util.handleError({hoerror: 2, message: 'get music info failed!!!'}, callback, callback);
                         }
-                        siged = sig_url(info_url);
+                        var music_info = JSON.parse(music_json[1]);
+                        var ts_create = music_info.ts_create;
+                        var r = encodeURIComponent(music_info.r);
+                        var h2 = music_info.h2;
+                        var download_url = '/get?video_id=' + youtube_id + '&ts_create=' + ts_create + '&r=' + r + '&h2=' + h2;
+                        siged = sig_url(download_url);
                         console.log('http://www.youtube-mp3.org' + siged);
-                        api.xuiteDownload('http://www.youtube-mp3.org' + siged, '', function(err, music_data) {
+                        api.xuiteDownload('http://www.youtube-mp3.org' + siged, filePath, function(err, pathname, filename) {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
-                            console.log(music_data);
-                            var music_json = music_data.match(/^info = (.*);$/);
-                            if (!music_json) {
-                                util.handleError({hoerror: 2, message: 'get music info failed!!!'}, callback, callback);
+                            if (!filename) {
+                                filename = path.basename(pathname);
                             }
-                            var music_info = JSON.parse(music_json[1]);
-                            var ts_create = music_info.ts_create;
-                            var r = encodeURIComponent(music_info.r);
-                            var h2 = music_info.h2;
-                            var download_url = '/get?video_id=' + youtube_id + '&ts_create=' + ts_create + '&r=' + r + '&h2=' + h2;
-                            siged = sig_url(download_url);
-                            console.log('http://www.youtube-mp3.org' + siged);
-                            api.xuiteDownload('http://www.youtube-mp3.org' + siged, filePath, function(err, pathname, filename) {
-                                if (err) {
-                                    util.handleError(err, callback, callback);
-                                }
-                                if (!filename) {
-                                    filename = path.basename(pathname);
-                                }
-                                setTimeout(function(){
-                                    callback(null, media_name + '.mp3', tag_arr);
-                                }, 0);
-                            });
-                        }, 60000, false, false);
+                            setTimeout(function(){
+                                callback(null, media_name + '.mp3', tag_arr);
+                            }, 0);
+                        });
                     }, 60000, false, false);
-                } else {
-                    /*var pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
-                    var media_location, media_thumb=null;
-                    media_location = output.match(pattern);
-                    if (!media_location) {
-                        media_code = 22;
-                        pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
-                        media_location = output.match(pattern);
-                        if (!media_location) {
-                            media_code = 18;
-                            pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
-                            media_location = output.match(pattern);
-                            if (!media_location) {
-                                media_code = 43;
-                                pattern = 'url=(https[^\\\\,]+itag%3D' + media_code + '[^\\\\,]*)';
-                                media_location = output.match(pattern);
-                                if (!media_location) {
-                                    console.log(output);
-                                    util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
-                                }
-                            }
-                        }
+                }, 60000, false, false);
+            } else {
+                this_obj.googleDownload(url, filePath + ".htm", function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
                     }
-                    media_location = media_location[1];
-                    media_location = decodeURIComponent(media_location);*/
-                    var thumb_pattern = ',"thumbnail_url":"(.+?)",';
-                    var media_thumb = null, media_track = null;
-                    media_thumb = output.match(thumb_pattern);
-                    if (media_thumb) {
-                        media_thumb = media_thumb[1];
-                        media_thumb = media_thumb.replace(/\\\//g, '/');
-                    }
-                    var track_pattern = ',"caption_tracks":"(.+?)",';
-                    media_track = output.match(track_pattern);
-                    if (media_track) {
-                        media_track = media_track[1];
-                        media_track = media_track.split('\\u0026');
-                        var lang_arr = [];
-                        var temp = null;
-                        for (var i in media_track) {
-                            temp = media_track[i].match(/,?lc=([^,]+)/);
-                            if (temp) {
-                                lang_arr.push(temp[1]);
-                            }
-                        }
-                        console.log(lang_arr);
-                        if (lang_arr.indexOf('zh-TW') !== -1) {
-                            media_track = 'zh-TW';
-                        } else if (lang_arr.indexOf('zh-CN') !== -1) {
-                            media_track = 'zh-CN';
-                        } else if (lang_arr.indexOf('en') !== -1) {
-                            media_track = 'en';
-                        } else {
-                            media_track = null;
-                        }
-                    }
-                    var cmdline = 'youtube-dl "' + url + '" --output ' + filePath;
-                    if (media_track) {
-                        cmdline += ' --write-srt --write-auto-sub --sub-lang ' + media_track;
-                    }
+                    var cmdline = 'grep ,\\\"url_encoded_fmt_stream_map\\\": ' + filePath + ".htm";
                     child_process.exec(cmdline, function (err, output) {
                         if (err) {
                             util.handleError(err, callback, callback);
                         }
-                        console.log(output);
-                        if (fs.existsSync(filePath + '.' + media_track + '.srt')) {
-                            fs.renameSync(filePath + '.' + media_track + '.srt', filePath + '.srt');
-                            util.SRT2VTT(filePath, 'srt', function(err) {
-                                if (err) {
-                                    util.handleError(err, callback, callback);
+                        var track_pattern = ',"caption_tracks":"(.+?)",';
+                        var media_track = output.match(track_pattern);
+                        if (media_track) {
+                            media_track = media_track[1];
+                            media_track = media_track.split('\\u0026');
+                            var lang_arr = [];
+                            var temp = null;
+                            for (var i in media_track) {
+                                temp = media_track[i].match(/,?lc=([^,]+)/);
+                                if (temp) {
+                                    lang_arr.push(temp[1]);
                                 }
+                            }
+                            console.log(lang_arr);
+                            if (lang_arr.indexOf('zh-TW') !== -1) {
+                                media_track = 'zh-TW';
+                            } else if (lang_arr.indexOf('zh-CN') !== -1) {
+                                media_track = 'zh-CN';
+                            } else if (lang_arr.indexOf('en') !== -1) {
+                                media_track = 'en';
+                            } else {
+                                media_track = null;
+                            }
+                        }
+
+                        var cmdline = 'youtube-dl "' + url + '" --output ' + filePath;
+                        if (media_track) {
+                            cmdline += ' --write-srt --write-auto-sub --sub-lang ' + media_track;
+                        }
+                        child_process.exec(cmdline, function (err, output) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(output);
+                            if (fs.existsSync(filePath + '.' + media_track + '.srt')) {
+                                fs.renameSync(filePath + '.' + media_track + '.srt', filePath + '.srt');
+                                util.SRT2VTT(filePath, 'srt', function(err) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    if (media_thumb) {
+                                        this_obj.googleDownload(media_thumb, filePath + '_s.jpg', function(err) {
+                                            if (err) {
+                                                util.handleError(err, callback, callback);
+                                            }
+                                            setTimeout(function(){
+                                                callback(null, media_name + '.mp4', tag_arr);
+                                            }, 0);
+                                        });
+                                    } else {
+                                        setTimeout(function(){
+                                            callback(null, media_name + '.mp4', tag_arr);
+                                        }, 0);
+                                    }
+                                });
+                            } else {
                                 if (media_thumb) {
                                     this_obj.googleDownload(media_thumb, filePath + '_s.jpg', function(err) {
                                         if (err) {
@@ -882,26 +903,11 @@ var exports = module.exports = {
                                         callback(null, media_name + '.mp4', tag_arr);
                                     }, 0);
                                 }
-                            });
-                        } else {
-                            if (media_thumb) {
-                                this_obj.googleDownload(media_thumb, filePath + '_s.jpg', function(err) {
-                                    if (err) {
-                                        util.handleError(err, callback, callback);
-                                    }
-                                    setTimeout(function(){
-                                        callback(null, media_name + '.mp4', tag_arr);
-                                    }, 0);
-                                });
-                            } else {
-                                setTimeout(function(){
-                                    callback(null, media_name + '.mp4', tag_arr);
-                                }, 0);
                             }
-                        }
+                        });
                     });
-                }
-            });
+                });
+            }
         });
     },
     googleDownloadMedia: function(threshold, alternate, key, filePath, hd, callback, is_ok) {

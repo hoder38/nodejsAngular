@@ -211,7 +211,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     getItemlist = function (this_obj, name, index, isExactly) {
         name = typeof name !== 'undefined' ? name : null;
         index = typeof index !== 'undefined' ? index : 0;
-        var Info, exactly = 'false';
+        var Info = null, exactly = 'false';
         if (isExactly) {
             exactly = 'true';
         } else if (index) {
@@ -222,15 +222,9 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             exactly = 'true';
         }
         if (!name && !index) {
-            if (this_obj.multiSearch) {
-                Info = $resource('/api/stock/get/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
-                    'stock': { method:'GET' }
-                });
-            } else {
-                Info = $resource('/api/stock/getSingle/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
-                    'stock': { method:'GET' }
-                });
-            }
+            Info = $resource('/api/stock/get/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
+                'stock': { method:'GET' }
+            });
         } else if (name && !index) {
             if (name.match(/^>\d+$/) || name.match(/^profit>\d+$/) || name.match(/^safety>-?\d+$/) || name.match(/^manag>\d+$/) || isValidString(name, 'name')) {
                 if (this_obj.multiSearch) {
@@ -320,7 +314,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     }
 
     getStockParentlist = function() {
-        Info = $resource('/api/parent/stock/list', {}, {
+        var Info = $resource('/api/parent/stock/list', {}, {
             'parentlist': { method:'GET' }
         });
         Info.parentlist({}, function (result) {
@@ -359,7 +353,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         this.page = 0;
         $scope.more = true;
         $scope.moreDisabled = true;
-        Info = $resource('/api/stock/reset', {}, {
+        var Info = $resource('/api/stock/reset', {}, {
             'stock': { method:'GET' }
         });
         Info.stock({}, function (result) {
