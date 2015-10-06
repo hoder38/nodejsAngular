@@ -1561,7 +1561,7 @@ app.post('/api/bookmark/add', function (req, res, next) {
                 }
                 if (bid) {
                     result['bid'] = bid;
-                    result['bname'] = bname;
+                    result['bname'] = name;
                 }
                 if (select) {
                     result['select'] = select;
