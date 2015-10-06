@@ -1386,7 +1386,7 @@ function newBookmarkItem(name, user, session, bpath, bexactly, callback) {
                     }
                 } else if (is_d.index === 0) {
                     data['adultonly'] = 1;
-                } else if (is_d.index === 9) {
+                } else if (is_d.index === 20) {
                     is_d = tagTool.isDefaultTag(bpath[i]);
                     if (is_d[1] === 'ch') {
                         channel = is_d[2];
@@ -1439,11 +1439,15 @@ function newBookmarkItem(name, user, session, bpath, bexactly, callback) {
                             tags.push('頻道');
                         }
                         var keywords = metadata.items[0].brandingSettings.channel.keywords;
-                        console.log(keywords);
                         if (keywords) {
                             keywords = keywords.split(',');
                             if (keywords.length === 1) {
-                                keywords = keywords[0].split(' ');
+                                var k1 = keywords[0].match(/\"[^\"]+\"/g);
+                                var k2 = keywords[0].replace(/\"[^\"]+\"/g,'');
+                                keywords = k2.trim().split(/[\s]+/);
+                                for (var i in k1) {
+                                    keywords.push(k1[i].match(/[^\"]+/)[0]);
+                                }
                             }
                             for (var i in keywords) {
                                 normal = tagTool.normalizeTag(keywords[i]);

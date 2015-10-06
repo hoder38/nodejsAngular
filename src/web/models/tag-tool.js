@@ -1140,8 +1140,7 @@ module.exports = function(collection) {
                     return false;
                 }
                 normal = normalize(tag_arr);
-                index = isDefaultTag(normal);
-                if (index) {
+                if (isDefaultTag(normal)) {
                     setTimeout(function(){
                         callback(null, pre_arr);
                     }, 0);
