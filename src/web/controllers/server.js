@@ -1409,130 +1409,130 @@ function newBookmarkItem(name, user, session, bpath, bexactly, callback) {
                     data['adultonly'] = 1;
                 }
             }
-            tagTool.getRelativeTag(bpath, user, [], callback, function(err, btags) {
-                if (err) {
-                    util.handleError(err, callback, callback);
-                }
-                for (var i in btags) {
-                    if (tags.indexOf(btags[i]) === -1) {
-                        tags.push(btags[i]);
+            function saveDB() {
+                data['tags'] = tags;
+                data[oUser_id] = tags;
+                mongo.orig("insert", "storage", data, function(err, item){
+                    if(err) {
+                        util.handleError(err, callback, callback);
                     }
-                }
-                if (channel) {
-                    googleApi.googleApi('y channel', {id: channel}, function(err, metadata) {
-                        if (err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        bookName = '000 Channel ' + name;
-                        normal = tagTool.normalizeTag(bookName);
-                        if (tags.indexOf(normal) === -1) {
-                            tags.push(normal);
-                        }
-                        data['name'] = bookName;
-                        if (tags.indexOf('channel') === -1) {
-                            tags.push('channel');
-                        }
-                        if (tags.indexOf('youtube') === -1) {
-                            tags.push('youtube');
-                        }
-                        if (tags.indexOf('頻道') === -1) {
-                            tags.push('頻道');
-                        }
-                        var keywords = metadata.items[0].brandingSettings.channel.keywords;
-                        if (keywords) {
-                            keywords = keywords.split(',');
-                            if (keywords.length === 1) {
-                                var k1 = keywords[0].match(/\"[^\"]+\"/g);
-                                var k2 = keywords[0].replace(/\"[^\"]+\"/g,'');
-                                keywords = k2.trim().split(/[\s]+/);
-                                for (var i in k1) {
-                                    keywords.push(k1[i].match(/[^\"]+/)[0]);
-                                }
-                            }
-                            for (var i in keywords) {
-                                normal = tagTool.normalizeTag(keywords[i]);
-                                is_d = tagTool.isDefaultTag(normal);
-                                if (!is_d) {
-                                    if (tags.indexOf(normal) === -1) {
-                                        tags.push(normal);
-                                    }
-                                } else if (is_d.index === 0) {
-                                    data['adultonly'] = 1;
-                                }
-                            }
-                        }
-                        saveDB();
+                    console.log(item);
+                    console.log('save end');
+                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                    var opt = [];
+                    var relative_arr = [];
+                    tags.forEach(function (e) {
+                        relative_arr.push(e);
                     });
-                } else {
+                    opt.forEach(function (e) {
+                        relative_arr.push(e);
+                    });
+                    var index = 0;
+                    recur_relative();
+                    function recur_relative() {
+                        tagTool.getRelativeTag(relative_arr[index], user, opt, callback, function(err, relative) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            index++;
+                            opt = relative;
+                            if (index < relative_arr.length) {
+                                recur_relative();
+                            } else {
+                                var temp_tag = [];
+                                var normal = '';
+                                for (var j in opt) {
+                                    normal = tagTool.normalizeTag(opt[j]);
+                                    if (!tagTool.isDefaultTag(normal)) {
+                                        if (tags.indexOf(normal) === -1) {
+                                            temp_tag.push(normal);
+                                        }
+                                    }
+                                }
+                                opt = temp_tag;
+                                if (util.checkAdmin(2, user)) {
+                                    if (item[0].adultonly === 1) {
+                                        tags.push('18+');
+                                    } else {
+                                        opt.push('18+');
+                                    }
+                                }
+                                if (item[0].first === 1) {
+                                    tags.push('first item');
+                                } else {
+                                    opt.push('first item');
+                                }
+                                setTimeout(function(){
+                                    callback(null, item[0]._id, bookName, tags, opt);
+                                }, 0);
+                            }
+                        });
+                    }
+                });
+            }
+            if (channel) {
+                googleApi.googleApi('y channel', {id: channel}, function(err, metadata) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    bookName = '000 Channel ' + name;
+                    normal = tagTool.normalizeTag(bookName);
+                    if (tags.indexOf(normal) === -1) {
+                        tags.push(normal);
+                    }
+                    data['name'] = bookName;
+                    if (tags.indexOf('channel') === -1) {
+                        tags.push('channel');
+                    }
+                    if (tags.indexOf('youtube') === -1) {
+                        tags.push('youtube');
+                    }
+                    if (tags.indexOf('頻道') === -1) {
+                        tags.push('頻道');
+                    }
+                    var keywords = metadata.items[0].brandingSettings.channel.keywords;
+                    if (keywords) {
+                        keywords = keywords.split(',');
+                        if (keywords.length === 1) {
+                            var k1 = keywords[0].match(/\"[^\"]+\"/g);
+                            var k2 = keywords[0].replace(/\"[^\"]+\"/g,'');
+                            keywords = k2.trim().split(/[\s]+/);
+                            for (var i in k1) {
+                                keywords.push(k1[i].match(/[^\"]+/)[0]);
+                            }
+                        }
+                        for (var i in keywords) {
+                            normal = tagTool.normalizeTag(keywords[i]);
+                            is_d = tagTool.isDefaultTag(normal);
+                            if (!is_d) {
+                                if (tags.indexOf(normal) === -1) {
+                                    tags.push(normal);
+                                }
+                            } else if (is_d.index === 0) {
+                                data['adultonly'] = 1;
+                            }
+                        }
+                    }
+                    saveDB();
+                });
+            } else {
+                tagTool.getRelativeTag(bpath, user, [], callback, function(err, btags) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    for (var i in btags) {
+                        if (tags.indexOf(btags[i]) === -1) {
+                            tags.push(btags[i]);
+                        }
+                    }
                     normal = tagTool.normalizeTag(bookName);
                     if (tags.indexOf(normal) === -1) {
                         tags.push(normal);
                     }
                     data['name'] = bookName;
                     saveDB();
-                }
-                function saveDB() {
-                    data['tags'] = tags;
-                    data[oUser_id] = tags;
-                    mongo.orig("insert", "storage", data, function(err, item){
-                        if(err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        console.log(item);
-                        console.log('save end');
-                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                        var opt = [];
-                        var relative_arr = [];
-                        tags.forEach(function (e) {
-                            relative_arr.push(e);
-                        });
-                        opt.forEach(function (e) {
-                            relative_arr.push(e);
-                        });
-                        var index = 0;
-                        recur_relative();
-                        function recur_relative() {
-                            tagTool.getRelativeTag(relative_arr[index], user, opt, callback, function(err, relative) {
-                                if (err) {
-                                    util.handleError(err, callback, callback);
-                                }
-                                index++;
-                                opt = relative;
-                                if (index < relative_arr.length) {
-                                    recur_relative();
-                                } else {
-                                    var temp_tag = [];
-                                    var normal = '';
-                                    for (var j in opt) {
-                                        normal = tagTool.normalizeTag(opt[j]);
-                                        if (!tagTool.isDefaultTag(normal)) {
-                                            if (tags.indexOf(normal) === -1) {
-                                                temp_tag.push(normal);
-                                            }
-                                        }
-                                    }
-                                    opt = temp_tag;
-                                    if (util.checkAdmin(2, user)) {
-                                        if (item[0].adultonly === 1) {
-                                            tags.push('18+');
-                                        } else {
-                                            opt.push('18+');
-                                        }
-                                    }
-                                    if (item[0].first === 1) {
-                                        tags.push('first item');
-                                    } else {
-                                        opt.push('first item');
-                                    }
-                                    setTimeout(function(){
-                                        callback(null, item[0]._id, bookName, tags, opt);
-                                    }, 0);
-                                }
-                            });
-                        }
-                    });
-                }
-            }, bexactly);
+                }, bexactly);
+            }
         }
     });
 }
