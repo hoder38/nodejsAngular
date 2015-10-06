@@ -880,6 +880,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     }
                     if (result.bid) {
                         result.id = result.bid;
+                        result.name = result.bname;
                         if (this_obj.feedback.run) {
                             if (this_obj.feedback.uid === result.id) {
                                 showFeedback(result);
@@ -2146,6 +2147,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     }
                     if (result.bid) {
                         result.id = result.bid;
+                        result.name = result.bname;
                         if (this_obj.feedback.run) {
                             if (this_obj.feedback.uid === result.id) {
                                 showFeedback(result);

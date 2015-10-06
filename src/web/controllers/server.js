@@ -1300,13 +1300,13 @@ app.post('/api/bookmark/subscipt', function(req, res, next) {
             if(err) {
                 util.handleError(err, next, res);
             }
-            newBookmarkItem(name, req.user, req.session, bpath, bexactly, function (err, bid, name, select, option) {
+            newBookmarkItem(name, req.user, req.session, bpath, bexactly, function (err, bid, bname, select, option) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
                 if (bid) {
                     result['bid'] = bid;
-                    result['name'] = name;
+                    result['bname'] = name;
                 }
                 if (select) {
                     result['select'] = select;
@@ -1555,13 +1555,13 @@ app.post('/api/bookmark/add', function (req, res, next) {
             if (parentList.cur.length <= 0) {
                 util.handleError({hoerror: 2, message: 'empty parent list!!!'}, next, res);
             }
-            newBookmarkItem(name, req.user, req.session, parentList.cur, parentList.exactly, function (err, bid, name, select, option) {
+            newBookmarkItem(name, req.user, req.session, parentList.cur, parentList.exactly, function (err, bid, bname, select, option) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
                 if (bid) {
                     result['bid'] = bid;
-                    result['name'] = name;
+                    result['bname'] = name;
                 }
                 if (select) {
                     result['select'] = select;
