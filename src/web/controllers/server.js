@@ -1300,12 +1300,13 @@ app.post('/api/bookmark/subscipt', function(req, res, next) {
             if(err) {
                 util.handleError(err, next, res);
             }
-            newBookmarkItem(name, req.user, req.session, bpath, bexactly, function (err, bid, select, option) {
+            newBookmarkItem(name, req.user, req.session, bpath, bexactly, function (err, bid, name, select, option) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
                 if (bid) {
                     result['bid'] = bid;
+                    result['name'] = name;
                 }
                 if (select) {
                     result['select'] = select;
@@ -1337,7 +1338,7 @@ function newBookmarkItem(name, user, session, bpath, bexactly, callback) {
         }
         if (count > 0) {
             setTimeout(function(){
-                callback(null, null, null, null);
+                callback(null, null, null, null, null);
             }, 0);
         } else {
             //000開頭讓排序在前
@@ -1520,7 +1521,7 @@ function newBookmarkItem(name, user, session, bpath, bexactly, callback) {
                                     }
                                     opt = temp_tag;
                                     setTimeout(function(){
-                                        callback(null, item[0]._id, tags, opt);
+                                        callback(null, item[0]._id, bookName, tags, opt);
                                     }, 0);
                                 }
                             });
@@ -1554,12 +1555,13 @@ app.post('/api/bookmark/add', function (req, res, next) {
             if (parentList.cur.length <= 0) {
                 util.handleError({hoerror: 2, message: 'empty parent list!!!'}, next, res);
             }
-            newBookmarkItem(name, req.user, req.session, parentList.cur, parentList.exactly, function (err, bid, select, option) {
+            newBookmarkItem(name, req.user, req.session, parentList.cur, parentList.exactly, function (err, bid, name, select, option) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
                 if (bid) {
                     result['bid'] = bid;
+                    result['name'] = name;
                 }
                 if (select) {
                     result['select'] = select;

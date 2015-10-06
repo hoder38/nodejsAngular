@@ -2429,22 +2429,22 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 } else {
                     if (result.id) {
                         this_obj.bookmarkList.push({id: result.id, name: result.name});
-                        if (result.bid) {
-                            result.id = result.bid;
-                            if (this_obj.feedback.run) {
-                                if (this_obj.feedback.uid === result.id) {
-                                    showFeedback(result);
-                                } else {
-                                    if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
-                                        this_obj.feedback.queue.push(result);
-                                    } else {
-                                        this_obj.feedback.queue.splice(index, 1, result);
-                                    }
-                                }
-                            } else {
-                                this_obj.feedback.run = true;
+                    }
+                    if (result.bid) {
+                        result.id = result.bid;
+                        if (this_obj.feedback.run) {
+                            if (this_obj.feedback.uid === result.id) {
                                 showFeedback(result);
+                            } else {
+                                if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                    this_obj.feedback.queue.push(result);
+                                } else {
+                                    this_obj.feedback.queue.splice(index, 1, result);
+                                }
                             }
+                        } else {
+                            this_obj.feedback.run = true;
+                            showFeedback(result);
                         }
                     }
                     this_obj.bookmarkNew = false;
@@ -3695,22 +3695,22 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 } else {
                     if (result.id) {
                         this_obj.bookmarkList.push({id: result.id, name: result.name});
-                        if (result.bid) {
-                            result.id = result.bid;
-                            if (this_obj.feedback.run) {
-                                if (this_obj.feedback.uid === result.id) {
-                                    showFeedback(result);
-                                } else {
-                                    if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
-                                        this_obj.feedback.queue.push(result);
-                                    } else {
-                                        this_obj.feedback.queue.splice(index, 1, result);
-                                    }
-                                }
-                            } else {
-                                this_obj.feedback.run = true;
+                    }
+                    if (result.bid) {
+                        result.id = result.bid;
+                        if (this_obj.feedback.run) {
+                            if (this_obj.feedback.uid === result.id) {
                                 showFeedback(result);
+                            } else {
+                                if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                    this_obj.feedback.queue.push(result);
+                                } else {
+                                    this_obj.feedback.queue.splice(index, 1, result);
+                                }
                             }
+                        } else {
+                            this_obj.feedback.run = true;
+                            showFeedback(result);
                         }
                     }
                     this_obj.bookmarkNew = false;
