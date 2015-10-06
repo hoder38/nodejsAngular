@@ -1478,18 +1478,6 @@ function newBookmarkItem(name, user, session, bpath, bexactly, callback) {
                         console.log('save end');
                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                         var opt = [];
-                        if (util.checkAdmin(2, user)) {
-                            if (item[0].adultonly === 1) {
-                                tags.push('18+');
-                            } else {
-                                opt.push('18+');
-                            }
-                        }
-                        if (item[0].first === 1) {
-                            tags.push('first item');
-                        } else {
-                            opt.push('first item');
-                        }
                         var relative_arr = [];
                         tags.forEach(function (e) {
                             relative_arr.push(e);
@@ -1520,6 +1508,18 @@ function newBookmarkItem(name, user, session, bpath, bexactly, callback) {
                                         }
                                     }
                                     opt = temp_tag;
+                                    if (util.checkAdmin(2, user)) {
+                                        if (item[0].adultonly === 1) {
+                                            tags.push('18+');
+                                        } else {
+                                            opt.push('18+');
+                                        }
+                                    }
+                                    if (item[0].first === 1) {
+                                        tags.push('first item');
+                                    } else {
+                                        opt.push('first item');
+                                    }
                                     setTimeout(function(){
                                         callback(null, item[0]._id, bookName, tags, opt);
                                     }, 0);
@@ -1561,7 +1561,7 @@ app.post('/api/bookmark/add', function (req, res, next) {
                 }
                 if (bid) {
                     result['bid'] = bid;
-                    result['bname'] = name;
+                    result['bname'] = bname;
                 }
                 if (select) {
                     result['select'] = select;

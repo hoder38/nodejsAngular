@@ -277,18 +277,6 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                         console.log(item);
                         console.log('save end');
                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                        if (util.checkAdmin(2 ,req.user)) {
-                            if (item[0].adultonly === 1) {
-                                mediaTag.def.push('18+');
-                            } else {
-                                mediaTag.opt.push('18+');
-                            }
-                        }
-                        if (item[0].first === 1) {
-                            mediaTag.def.push('first item');
-                        } else {
-                            mediaTag.opt.push('first item');
-                        }
                         var relative_arr = [];
                         mediaTag.def.forEach(function (e) {
                             relative_arr.push(e);
@@ -319,6 +307,18 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                                         }
                                     }
                                     mediaTag.opt = temp_arr;
+                                    if (util.checkAdmin(2 ,req.user)) {
+                                        if (item[0].adultonly === 1) {
+                                            mediaTag.def.push('18+');
+                                        } else {
+                                            mediaTag.opt.push('18+');
+                                        }
+                                    }
+                                    if (item[0].first === 1) {
+                                        mediaTag.def.push('first item');
+                                    } else {
+                                        mediaTag.opt.push('first item');
+                                    }
                                     res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
                                     mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
                                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
@@ -532,18 +532,6 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     console.log('save end');
                     sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                     sendWs({type: req.user.username, data: name + ' upload complete'}, item[0].adultonly);
-                    if (util.checkAdmin(2 ,req.user)) {
-                        if (item[0].adultonly === 1) {
-                            mediaTag.def.push('18+');
-                        } else {
-                            mediaTag.opt.push('18+');
-                        }
-                    }
-                    if (item[0].first === 1) {
-                        mediaTag.def.push('first item');
-                    } else {
-                        mediaTag.opt.push('first item');
-                    }
                     var relative_arr = [];
                     mediaTag.def.forEach(function (e) {
                         relative_arr.push(e);
@@ -574,6 +562,18 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                     }
                                 }
                                 mediaTag.opt = temp_tag;
+                                if (util.checkAdmin(2 ,req.user)) {
+                                    if (item[0].adultonly === 1) {
+                                        mediaTag.def.push('18+');
+                                    } else {
+                                        mediaTag.opt.push('18+');
+                                    }
+                                }
+                                if (item[0].first === 1) {
+                                    mediaTag.def.push('first item');
+                                } else {
+                                    mediaTag.opt.push('first item');
+                                }
                                 res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
                                 if (!is_media) {
                                     mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
@@ -678,18 +678,6 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
                 console.log(item);
                 console.log('save end');
                 sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                if (util.checkAdmin(2 ,req.user)) {
-                    if (item[0].adultonly === 1) {
-                        mediaTag.def.push('18+');
-                    } else {
-                        mediaTag.opt.push('18+');
-                    }
-                }
-                if (item[0].first === 1) {
-                    mediaTag.def.push('first item');
-                } else {
-                    mediaTag.opt.push('first item');
-                }
                 var relative_arr = [];
                 mediaTag.def.forEach(function (e) {
                     relative_arr.push(e);
@@ -720,6 +708,18 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
                                 }
                             }
                             mediaTag.opt = temp_tag;
+                            if (util.checkAdmin(2 ,req.user)) {
+                                if (item[0].adultonly === 1) {
+                                    mediaTag.def.push('18+');
+                                } else {
+                                    mediaTag.opt.push('18+');
+                                }
+                            }
+                            if (item[0].first === 1) {
+                                mediaTag.def.push('first item');
+                            } else {
+                                mediaTag.opt.push('first item');
+                            }
                             res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
                         }
                     });
@@ -1751,18 +1751,6 @@ function getFeedback(item, callback, user) {
                 temp_tag.push(mediaTag.opt[i]);
             }
         }
-        if (item.first === 1) {
-            item.tags.push('first item');
-        } else {
-            temp_tag.push('first item');
-        }
-        if (item.adultonly === 1) {
-            item.tags.push('18+');
-        } else {
-            if (util.checkAdmin(2, user)) {
-                temp_tag.push('18+');
-            }
-        }
         var relative_arr = [];
         item.tags.forEach(function (e) {
             relative_arr.push(e);
@@ -1793,6 +1781,18 @@ function getFeedback(item, callback, user) {
                         }
                     }
                     temp_tag = temp_arr;
+                    if (item.first === 1) {
+                        item.tags.push('first item');
+                    } else {
+                        temp_tag.push('first item');
+                    }
+                    if (item.adultonly === 1) {
+                        item.tags.push('18+');
+                    } else {
+                        if (util.checkAdmin(2, user)) {
+                            temp_tag.push('18+');
+                        }
+                    }
                     if (!util.checkAdmin(1, user)) {
                         var index_tag = 0;
                         for (var i in item[user._id.toString()]) {
