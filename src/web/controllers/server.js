@@ -1306,7 +1306,7 @@ app.post('/api/bookmark/subscipt', function(req, res, next) {
                 }
                 if (bid) {
                     result['bid'] = bid;
-                    result['bname'] = name;
+                    result['bname'] = bname;
                 }
                 if (select) {
                     result['select'] = select;
@@ -1561,7 +1561,7 @@ app.post('/api/bookmark/add', function (req, res, next) {
                 }
                 if (bid) {
                     result['bid'] = bid;
-                    result['bname'] = name;
+                    result['bname'] = bname;
                 }
                 if (select) {
                     result['select'] = select;
