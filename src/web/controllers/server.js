@@ -54,6 +54,7 @@ var https = require('https'),
     ].join(':'), honorCipherOrder: true};
     credentials.agent = new https.Agent(credentials);
 var express = require('express'),
+    express_session = require('express-session'),
     crypto = require('crypto'),
     net = require('net'),
     passport = require('passport'),
@@ -64,13 +65,13 @@ var express = require('express'),
     encode = "utf8",
     viewsPath = path.join(__dirname, "../../../views"),
     staticPath = path.join(__dirname, "../../../public"),
-    sessionStore = require("../models/session-tool.js")(express);
+    sessionStore = require("../models/session-tool.js")(express_session);
 
 app.use(express.favicon());
 app.use(express.cookieParser());
 app.use(express.urlencoded());
 app.use(express.json());
-app.use(express.session(sessionStore.config));
+app.use(express_session(sessionStore.config));
 //app.use(require('connect-multiparty')({ uploadDir: config_glb.nas_tmp }));
 //app.use(express.session({ secret: 'holyhoderhome' }));
 app.use(passport.initialize());

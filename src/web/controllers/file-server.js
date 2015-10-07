@@ -64,6 +64,7 @@ var https = require('https'),
     ].join(':'), honorCipherOrder: true};
     credentials.agent = new https.Agent(credentials);
 var express = require('express'),
+    express_session = require('express-session'),
     crypto = require('crypto'),
     passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy,
@@ -71,13 +72,13 @@ var express = require('express'),
     app = express(),
     server = https.createServer(credentials, app),
     mkdirp = require('mkdirp'),
-    sessionStore = require("../models/session-tool.js")(express);
+    sessionStore = require("../models/session-tool.js")(express_session);
 
 app.use(express.favicon());
 app.use(express.cookieParser());
 app.use(express.urlencoded());
 app.use(express.json());
-app.use(express.session(sessionStore.config));
+app.use(express_session(sessionStore.config));
 app.use(require('connect-multiparty')({ uploadDir: config_glb.nas_tmp }));
 app.use(passport.initialize());
 app.use(passport.session());
