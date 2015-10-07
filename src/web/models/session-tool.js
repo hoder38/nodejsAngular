@@ -10,7 +10,9 @@ module.exports = function(express) {
             cookie: { maxAge: 86400 * 1000 * 3 },
             store: new redisStore({
                 host: config_glb.session_ip,
-                port: config_glb.session_port
+                port: config_glb.session_port,
+                resave: false,
+                saveUninitialized: false
             })
         }
     };
