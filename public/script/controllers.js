@@ -896,8 +896,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                             showFeedback(result);
                         }
                     }
-                    this_obj.bookmarkNew = false;
-                    this_obj.bookmarkName = '';
                 }
             }, function(errorResult) {
                 if (errorResult.status === 400) {
@@ -2135,6 +2133,8 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         }
         if (isValidString(bookmarkName, 'name')) {
             var this_obj = this;
+            this.bookmarkNew = false;
+            this.bookmarkName = '';
             var bookmarkapi = $resource('/api/bookmark/add', {}, {
                 'addbookmark': { method:'POST' }
             });
@@ -2163,8 +2163,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                             showFeedback(result);
                         }
                     }
-                    this_obj.bookmarkNew = false;
-                    this_obj.bookmarkName = '';
                 }
             }, function(errorResult) {
                 if (errorResult.status === 400) {
@@ -2763,6 +2761,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 if ($scope.feedback.list[index].select !== $scope.feedback.history[i].select) {
                     $scope.feedback.list[index].history = true;
                     $scope.feedback.list[index].select = $scope.feedback.history[i].select;
+                    $scope.feedback.list.splice(0, 0, $scope.feedback.list.splice(i, 1)[0]);
                 }
             }
         }
