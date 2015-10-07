@@ -2761,7 +2761,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 if ($scope.feedback.list[index].select !== $scope.feedback.history[i].select) {
                     $scope.feedback.list[index].history = true;
                     $scope.feedback.list[index].select = $scope.feedback.history[i].select;
-                    $scope.feedback.list.splice(0, 0, $scope.feedback.list.splice(i, 1)[0]);
+                    $scope.feedback.list.splice(0, 0, $scope.feedback.list.splice(index, 1)[0]);
                 }
             }
         }
