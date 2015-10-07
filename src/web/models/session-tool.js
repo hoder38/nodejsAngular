@@ -11,9 +11,9 @@ module.exports = function(express) {
             store: new redisStore({
                 host: config_glb.session_ip,
                 port: config_glb.session_port,
-                resave: false,
-                saveUninitialized: false
-            })
+            }),
+            resave: false,
+            saveUninitialized: false
         }
     };
 };
