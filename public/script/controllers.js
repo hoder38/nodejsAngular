@@ -1678,6 +1678,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 } else {
                     more = false;
                 }
+                this_obj.pageToken = '';
                 this_obj.page = result.itemList.length;
                 this_obj.latest = result.latest;
                 this_obj.bookmarkID = result.bookmarkID;
@@ -1827,6 +1828,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                             this_obj.$parent[type].src = null;
                             onYouTubeIframeAPIReady(item.id, item.playlist);
                             this_obj.$parent[type].playlist = item.playlist;
+                            this_obj.$parent[type].pageToken = '';
                             if ($scope.pageToken) {
                                 this_obj.$parent[type].pageToken = $scope.pageToken;
                             }
@@ -2038,6 +2040,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 } else {
                     more = false;
                 }
+                this_obj.$parent.pageToken = '';
                 this_obj.$parent.page = result.itemList.length;
                 this_obj.$parent.latest = result.latest;
                 this_obj.$parent.bookmarkID = result.bookmarkID;
