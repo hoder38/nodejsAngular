@@ -1199,27 +1199,36 @@ module.exports = {
             cashStatus[i] = [];
             for (var j in cash[i]) {
                 if (cash[i][j]) {
-                    cashStatus[i][j] = {end: cash[i][j].end, begin: Math.ceil(cash[i][j].begin/cash[i][j].end*100)};
-                    if ((j === '1' || j === '2' || j === '3') && cash[i][Number(j)-1]) {
-                        cashStatus[i][j].profitBT = Math.ceil((cash[i][j].profitBT - cash[i][Number(j)-1].profitBT)/cash[i][j].end*100);
-                        cashStatus[i][j].real = Math.ceil((cash[i][j].change - cash[i][Number(j)-1].change)/cash[i][j].end*100);
-                        cashStatus[i][j].operation = Math.ceil((cash[i][j].operation - cash[i][Number(j)-1].operation)/cash[i][j].end*100);
-                        cashStatus[i][j].invest = Math.ceil((cash[i][j].invest - cash[i][Number(j)-1].invest)/cash[i][j].end*100);
-                        cashStatus[i][j].dividends = Math.ceil((cash[i][j].dividends - cash[i][Number(j)-1].dividends)/cash[i][j].end*100);
-                        cashStatus[i][j].without_dividends = Math.ceil(((cash[i][j].finance - cash[i][j].dividends) - (cash[i][Number(j)-1].finance - cash[i][Number(j)-1].dividends))/cash[i][j].end*100);
-                        cashStatus[i][j].minor = Math.ceil(((cash[i][j].change - cash[i][j].operation - cash[i][j].invest - cash[i][j].finance) - (cash[i][Number(j)-1].change - cash[i][Number(j)-1].operation - cash[i][Number(j)-1].invest - cash[i][Number(j)-1].finance))/cash[i][j].end*100);
-                        cashStatus[i][j].investPerProperty = Math.ceil((cash[i][j].operation - cash[i][Number(j)-1].operation)/asset[i][j].property*100);
-                        cashStatus[i][j].financePerLiabilities = Math.ceil(((cash[i][j].finance - cash[i][j].dividends) - (cash[i][Number(j)-1].finance - cash[i][Number(j)-1].dividends))/(asset[i][j].current_liabilities + asset[i][j].noncurrent_liabilities)*100);
+                    //去除差異太大的
+                    if (((j === '1' || j === '2' || j === '3') && cash[i][Number(j)-1]) || j === '0') {
+                        if (cashStatus[i-1] && cashStatus[i-1].length === 0) {
+                            delete cashStatus[i-1];
+                        }
+                        cashStatus[i][j] = {end: cash[i][j].end, begin: Math.ceil(cash[i][j].begin/cash[i][j].end*100)};
+                        if (j === '0') {
+                            cashStatus[i][j].profitBT = Math.ceil(cash[i][j].profitBT/cash[i][j].end*100);
+                            cashStatus[i][j].real = Math.ceil(cash[i][j].change/cash[i][j].end*100);
+                            cashStatus[i][j].operation = Math.ceil(cash[i][j].operation/cash[i][j].end*100);
+                            cashStatus[i][j].invest = Math.ceil(cash[i][j].invest/cash[i][j].end*100);
+                            cashStatus[i][j].dividends = Math.ceil(cash[i][j].dividends/cash[i][j].end*100);
+                            cashStatus[i][j].without_dividends = Math.ceil((cash[i][j].finance - cash[i][j].dividends)/cash[i][j].end*100);
+                            cashStatus[i][j].minor = Math.ceil((cash[i][j].change - cash[i][j].operation - cash[i][j].invest - cash[i][j].finance)/cash[i][j].end*100);
+                            cashStatus[i][j].investPerProperty = Math.ceil(cash[i][j].operation/asset[i][j].property*100);
+                            cashStatus[i][j].financePerLiabilities = Math.ceil((cash[i][j].finance - cash[i][j].dividends)/(asset[i][j].current_liabilities + asset[i][j].noncurrent_liabilities)*100);
+                        } else {
+                            cashStatus[i][j].profitBT = Math.ceil((cash[i][j].profitBT - cash[i][Number(j)-1].profitBT)/cash[i][j].end*100);
+                            cashStatus[i][j].real = Math.ceil((cash[i][j].change - cash[i][Number(j)-1].change)/cash[i][j].end*100);
+                            cashStatus[i][j].operation = Math.ceil((cash[i][j].operation - cash[i][Number(j)-1].operation)/cash[i][j].end*100);
+                            cashStatus[i][j].invest = Math.ceil((cash[i][j].invest - cash[i][Number(j)-1].invest)/cash[i][j].end*100);
+                            cashStatus[i][j].dividends = Math.ceil((cash[i][j].dividends - cash[i][Number(j)-1].dividends)/cash[i][j].end*100);
+                            cashStatus[i][j].without_dividends = Math.ceil(((cash[i][j].finance - cash[i][j].dividends) - (cash[i][Number(j)-1].finance - cash[i][Number(j)-1].dividends))/cash[i][j].end*100);
+                            cashStatus[i][j].minor = Math.ceil(((cash[i][j].change - cash[i][j].operation - cash[i][j].invest - cash[i][j].finance) - (cash[i][Number(j)-1].change - cash[i][Number(j)-1].operation - cash[i][Number(j)-1].invest - cash[i][Number(j)-1].finance))/cash[i][j].end*100);
+                            cashStatus[i][j].investPerProperty = Math.ceil((cash[i][j].operation - cash[i][Number(j)-1].operation)/asset[i][j].property*100);
+                            cashStatus[i][j].financePerLiabilities = Math.ceil(((cash[i][j].finance - cash[i][j].dividends) - (cash[i][Number(j)-1].finance - cash[i][Number(j)-1].dividends))/(asset[i][j].current_liabilities + asset[i][j].noncurrent_liabilities)*100);
+                        }
                     } else {
-                        cashStatus[i][j].profitBT = Math.ceil(cash[i][j].profitBT/cash[i][j].end*100);
-                        cashStatus[i][j].real = Math.ceil(cash[i][j].change/cash[i][j].end*100);
-                        cashStatus[i][j].operation = Math.ceil(cash[i][j].operation/cash[i][j].end*100);
-                        cashStatus[i][j].invest = Math.ceil(cash[i][j].invest/cash[i][j].end*100);
-                        cashStatus[i][j].dividends = Math.ceil(cash[i][j].dividends/cash[i][j].end*100);
-                        cashStatus[i][j].without_dividends = Math.ceil((cash[i][j].finance - cash[i][j].dividends)/cash[i][j].end*100);
-                        cashStatus[i][j].minor = Math.ceil((cash[i][j].change - cash[i][j].operation - cash[i][j].invest - cash[i][j].finance)/cash[i][j].end*100);
-                        cashStatus[i][j].investPerProperty = Math.ceil(cash[i][j].operation/asset[i][j].property*100);
-                        cashStatus[i][j].financePerLiabilities = Math.ceil((cash[i][j].finance - cash[i][j].dividends)/(asset[i][j].current_liabilities + asset[i][j].noncurrent_liabilities)*100);
+                        cashStatus[i] = [];
+                        delete cashStatus[i-1];
                     }
                 }
             }
@@ -1232,7 +1241,16 @@ module.exports = {
             assetStatus[i] = [];
             for (var j in asset[i]) {
                 if (asset[i][j]) {
-                    assetStatus[i][j] = {total: asset[i][j].total, receivable: Math.ceil(asset[i][j].receivable/asset[i][j].total*1000)/10, cash: Math.ceil(asset[i][j].cash/asset[i][j].total*1000)/10, OCFA: Math.ceil(asset[i][j].OCFA/asset[i][j].total*1000)/10, inventories: Math.ceil(asset[i][j].inventories/asset[i][j].total*1000)/10, property: Math.ceil(asset[i][j].property/asset[i][j].total*1000)/10, longterm: Math.ceil(asset[i][j].longterm/asset[i][j].total*1000)/10, other: Math.ceil((asset[i][j].total - asset[i][j].cash - asset[i][j].inventories - asset[i][j].receivable - asset[i][j].OCFA - asset[i][j].property - asset[i][j].longterm)/asset[i][j].total*1000)/10, equityChild: Math.ceil(asset[i][j].equityChild/asset[i][j].total*1000)/10 , equityParent: Math.ceil(asset[i][j].equityParent/asset[i][j].total*1000)/10, noncurrent_liabilities: Math.ceil(asset[i][j].noncurrent_liabilities/asset[i][j].total*1000)/10, current_liabilities_without_payable: Math.ceil((asset[i][j].current_liabilities - asset[i][j].payable)/asset[i][j].total*1000)/10, payable: Math.ceil(asset[i][j].payable/asset[i][j].total*1000)/10};
+                    //去除差異太大的
+                    if (((j === '1' || j === '2' || j === '3') && asset[i][Number(j)-1]) || j === '0') {
+                        if (assetStatus[i-1] && assetStatus[i-1].length === 0) {
+                            delete assetStatus[i-1];
+                        }
+                        assetStatus[i][j] = {total: asset[i][j].total, receivable: Math.ceil(asset[i][j].receivable/asset[i][j].total*1000)/10, cash: Math.ceil(asset[i][j].cash/asset[i][j].total*1000)/10, OCFA: Math.ceil(asset[i][j].OCFA/asset[i][j].total*1000)/10, inventories: Math.ceil(asset[i][j].inventories/asset[i][j].total*1000)/10, property: Math.ceil(asset[i][j].property/asset[i][j].total*1000)/10, longterm: Math.ceil(asset[i][j].longterm/asset[i][j].total*1000)/10, other: Math.ceil((asset[i][j].total - asset[i][j].cash - asset[i][j].inventories - asset[i][j].receivable - asset[i][j].OCFA - asset[i][j].property - asset[i][j].longterm)/asset[i][j].total*1000)/10, equityChild: Math.ceil(asset[i][j].equityChild/asset[i][j].total*1000)/10 , equityParent: Math.ceil(asset[i][j].equityParent/asset[i][j].total*1000)/10, noncurrent_liabilities: Math.ceil(asset[i][j].noncurrent_liabilities/asset[i][j].total*1000)/10, current_liabilities_without_payable: Math.ceil((asset[i][j].current_liabilities - asset[i][j].payable)/asset[i][j].total*1000)/10, payable: Math.ceil(asset[i][j].payable/asset[i][j].total*1000)/10};
+                    } else {
+                        assetStatus[i] = [];
+                        delete assetStatus[i-1];
+                    }
                 }
             }
         }
@@ -1244,30 +1262,39 @@ module.exports = {
             salesStatus[i] = [];
             for (var j in sales[i]) {
                 if (sales[i][j]) {
-                    if (!sales[i][j].revenue) {
-                        sales[i][j].revenue = 1;
-                    }
-                    salesStatus[i][j] = {revenue: sales[i][j].revenue, cost: Math.ceil(sales[i][j].cost/sales[i][j].revenue*1000)/10, expenses: Math.ceil(sales[i][j].expenses/sales[i][j].revenue*1000)/10, finance_cost: Math.ceil(sales[i][j].finance_cost/sales[i][j].revenue*1000)/10, nonoperating_without_FC: Math.ceil((sales[i][j].nonoperating+sales[i][j].finance_cost)/sales[i][j].revenue*1000)/10, tax: Math.ceil(sales[i][j].tax/sales[i][j].revenue*1000)/10, comprehensive: Math.ceil(sales[i][j].comprehensive/sales[i][j].revenue*1000)/10, profit: Math.ceil(sales[i][j].profit/sales[i][j].revenue*1000)/10, profit_comprehensive: Math.ceil((sales[i][j].profit+sales[i][j].comprehensive)/sales[i][j].revenue*1000)/10, eps: sales[i][j].eps};
-                    if ((j === '1' || j === '2' || j === '3') && sales[i][Number(j)-1]) {
-                        salesStatus[i][j].quarterRevenue = sales[i][j].revenue - sales[i][Number(j)-1].revenue;
-                        if (!salesStatus[i][j].quarterRevenue) {
-                            salesStatus[i][j].quarterRevenue = 1;
+                    //去除差異太大的
+                    if (((j === '1' || j === '2' || j === '3') && sales[i][Number(j)-1]) || j === '0') {
+                        if (salesStatus[i-1] && salesStatus[i-1].length === 0) {
+                            delete salesStatus[i-1];
                         }
-                        salesStatus[i][j].quarterGross = Math.ceil((sales[i][j].gross_profit - sales[i][Number(j)-1].gross_profit)/salesStatus[i][j].quarterRevenue*1000)/10;
-                        salesStatus[i][j].quarterOperating = Math.ceil((sales[i][j].operating - sales[i][Number(j)-1].operating)/salesStatus[i][j].quarterRevenue*1000)/10;
-                        salesStatus[i][j].quarterProfit = Math.ceil((sales[i][j].profit - sales[i][Number(j)-1].profit)/salesStatus[i][j].quarterRevenue*1000)/10;
-                        salesStatus[i][j].quarterTax = Math.ceil((sales[i][j].tax - sales[i][Number(j)-1].tax)/salesStatus[i][j].quarterRevenue*1000)/10;
-                        salesStatus[i][j].quarterEPS = Math.ceil((sales[i][j].eps - sales[i][Number(j)-1].eps)*1000)/1000;
+                        if (!sales[i][j].revenue) {
+                            sales[i][j].revenue = 1;
+                        }
+                        salesStatus[i][j] = {revenue: sales[i][j].revenue, cost: Math.ceil(sales[i][j].cost/sales[i][j].revenue*1000)/10, expenses: Math.ceil(sales[i][j].expenses/sales[i][j].revenue*1000)/10, finance_cost: Math.ceil(sales[i][j].finance_cost/sales[i][j].revenue*1000)/10, nonoperating_without_FC: Math.ceil((sales[i][j].nonoperating+sales[i][j].finance_cost)/sales[i][j].revenue*1000)/10, tax: Math.ceil(sales[i][j].tax/sales[i][j].revenue*1000)/10, comprehensive: Math.ceil(sales[i][j].comprehensive/sales[i][j].revenue*1000)/10, profit: Math.ceil(sales[i][j].profit/sales[i][j].revenue*1000)/10, profit_comprehensive: Math.ceil((sales[i][j].profit+sales[i][j].comprehensive)/sales[i][j].revenue*1000)/10, eps: sales[i][j].eps};
+                        if (j === '0') {
+                            salesStatus[i][j].quarterRevenue = sales[i][j].revenue;
+                            salesStatus[i][j].quarterGross = Math.ceil(sales[i][j].gross_profit/salesStatus[i][j].quarterRevenue*1000)/10;
+                            salesStatus[i][j].quarterOperating = Math.ceil(sales[i][j].operating/salesStatus[i][j].quarterRevenue*1000)/10;
+                            salesStatus[i][j].quarterProfit = Math.ceil(sales[i][j].profit/salesStatus[i][j].quarterRevenue*1000)/10;
+                            salesStatus[i][j].quarterTax = Math.ceil(sales[i][j].tax/salesStatus[i][j].quarterRevenue*1000)/10;
+                            salesStatus[i][j].quarterEPS = sales[i][j].eps;
+                        } else {
+                            salesStatus[i][j].quarterRevenue = sales[i][j].revenue - sales[i][Number(j)-1].revenue;
+                            if (!salesStatus[i][j].quarterRevenue) {
+                                salesStatus[i][j].quarterRevenue = 1;
+                            }
+                            salesStatus[i][j].quarterGross = Math.ceil((sales[i][j].gross_profit - sales[i][Number(j)-1].gross_profit)/salesStatus[i][j].quarterRevenue*1000)/10;
+                            salesStatus[i][j].quarterOperating = Math.ceil((sales[i][j].operating - sales[i][Number(j)-1].operating)/salesStatus[i][j].quarterRevenue*1000)/10;
+                            salesStatus[i][j].quarterProfit = Math.ceil((sales[i][j].profit - sales[i][Number(j)-1].profit)/salesStatus[i][j].quarterRevenue*1000)/10;
+                            salesStatus[i][j].quarterTax = Math.ceil((sales[i][j].tax - sales[i][Number(j)-1].tax)/salesStatus[i][j].quarterRevenue*1000)/10;
+                            salesStatus[i][j].quarterEPS = Math.ceil((sales[i][j].eps - sales[i][Number(j)-1].eps)*1000)/1000;
+                        }
+                        salesStatus[i][j].salesPerAsset = Math.ceil(sales[i][j].revenue/asset[i][j].total*1000)/1000;
+                        salesStatus[i][j].quarterSalesPerAsset = Math.ceil(salesStatus[i][j].quarterRevenue/asset[i][j].total*1000)/1000;
                     } else {
-                        salesStatus[i][j].quarterRevenue = sales[i][j].revenue;
-                        salesStatus[i][j].quarterGross = Math.ceil(sales[i][j].gross_profit/salesStatus[i][j].quarterRevenue*1000)/10;
-                        salesStatus[i][j].quarterOperating = Math.ceil(sales[i][j].operating/salesStatus[i][j].quarterRevenue*1000)/10;
-                        salesStatus[i][j].quarterProfit = Math.ceil(sales[i][j].profit/salesStatus[i][j].quarterRevenue*1000)/10;
-                        salesStatus[i][j].quarterTax = Math.ceil(sales[i][j].tax/salesStatus[i][j].quarterRevenue*1000)/10;
-                        salesStatus[i][j].quarterEPS = sales[i][j].eps;
+                        salesStatus[i] = [];
+                        delete salesStatus[i-1];
                     }
-                    salesStatus[i][j].salesPerAsset = Math.ceil(sales[i][j].revenue/asset[i][j].total*1000)/1000;
-                    salesStatus[i][j].quarterSalesPerAsset = Math.ceil(salesStatus[i][j].quarterRevenue/asset[i][j].total*1000)/1000;
                 }
             }
         }
@@ -1343,7 +1370,7 @@ module.exports = {
                     inventories.push(asset[i][j].inventories);
                     receivable.push(asset[i][j].receivable);
                     payable.push(asset[i][j].payable);
-                    managementStatus[i][j] = {revenue: salesStatus[i][j].quarterRevenue, profit: Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100), cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable};
+                    managementStatus[i][j] = {revenue: salesStatus[i][j].quarterRevenue, profit: Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100), cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable, share: asset[i][j].share};
                 } else if (j === '0'){
                     if (!startY && !startQ) {
                         startY = i;
@@ -1355,7 +1382,7 @@ module.exports = {
                     inventories.push(asset[i][j].inventories);
                     receivable.push(asset[i][j].receivable);
                     payable.push(asset[i][j].payable);
-                    managementStatus[i][j] = {revenue: salesStatus[i][j].quarterRevenue, profit: Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100), cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable};
+                    managementStatus[i][j] = {revenue: salesStatus[i][j].quarterRevenue, profit: Math.ceil(salesStatus[i][j].quarterProfit * salesStatus[i][j].quarterRevenue/100), cash: asset[i][j].cash, inventories: asset[i][j].inventories, receivable: asset[i][j].receivable, payable: asset[i][j].payable, share: asset[i][j].share};
                 } else {
                     startY = 0;
                     startQ = 0;
@@ -1503,12 +1530,12 @@ module.exports = {
                 var managementStatus = this_obj.getManagementStatus(salesStatus, asset);
                 var earliestYear = 0;
                 var earliestQuarter = 0;
-                for (var i in cash) {
+                for (var i in cashStatus) {
                     if (!earliestYear) {
                         earliestYear = Number(i);
                     }
                     latestYear = Number(i);
-                    for (var j in cash[i]) {
+                    for (var j in cashStatus[i]) {
                         if (cash[i][j]) {
                             if (!earliestQuarter) {
                                 earliestQuarter = Number(j) + 1;
@@ -3047,7 +3074,11 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
                     end = p[0] + p[1] + p[2] + p[3];
 
                     yearp = Math.pow(end/start,1/yy) - 1;
-                    if (yearp > 0.05) {
+                    if (yearp > 0.1) {
+                        if (tags.indexOf(name + '快速成長') === -1) {
+                            tags.push(name + '快速成長');
+                        }
+                    } else if (yearp > 0.05) {
                         if (tags.indexOf(name + '成長') === -1) {
                             tags.push(name + '成長');
                         }
@@ -3077,7 +3108,11 @@ function handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cas
                 end = p[0] + p[1] + p[2] + p[3];
 
                 yearp = Math.pow(end/start,1/5) - 1;
-                if (yearp > 0.05) {
+                if (yearp > 0.1) {
+                    if (tags.indexOf(name + '快速成長') === -1) {
+                        tags.push(name + '快速成長');
+                    }
+                } else if (yearp > 0.05) {
                     if (tags.indexOf(name + '成長') === -1) {
                         tags.push(name + '成長');
                     }

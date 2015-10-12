@@ -534,6 +534,28 @@
         </div>
         <div class="panel-body">
             <div class="row">
+                <div class="input-group">
+                    <span class="form-control">
+                        Item:
+                    </span>
+                    <span class="input-group-addon" tooltip="profit"  tooltip-trigger="mouseenter">
+                        <input type="checkbox" ng-model="relative.profit" />
+                    </span>
+                    <span class="input-group-addon" tooltip="cash"  tooltip-trigger="mouseenter">
+                        <input type="checkbox" ng-model="relative.cash" />
+                    </span>
+                    <span class="input-group-addon" tooltip="inventories"  tooltip-trigger="mouseenter">
+                        <input type="checkbox" ng-model="relative.inventories" />
+                    </span>
+                    <span class="input-group-addon" tooltip="receivable"  tooltip-trigger="mouseenter">
+                        <input type="checkbox" ng-model="relative.receivable" />
+                    </span>
+                    <span class="input-group-addon" tooltip="payable"  tooltip-trigger="mouseenter">
+                        <input type="checkbox" ng-model="relative.payable" />
+                    </span>
+                </div>
+            </div>
+            <div class="row">
                 <div class="col-md-2">
                     <select class="form-control" ng-model="managementStartYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
                     </select>
@@ -549,27 +571,16 @@
                     <select class="form-control" ng-model="managementEndYear" ng-options="m.value as m.name for m in parseYear" convert-to-number>
                     </select>
                 </div>
-                <div class="col-md-5">
-                    <div class="input-group">
-                        <select class="form-control" ng-model="managementEndQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
+                <div class="col-md-2">
+                    <select class="form-control" ng-model="managementEndQuarter" ng-options="m.value as m.name for m in parseQuarter" convert-to-number>
                         </select>
-                        <span class="input-group-addon" tooltip="profit"  tooltip-trigger="mouseenter">
-                            <input type="checkbox" ng-model="relative.profit" />
-                        </span>
-                        <span class="input-group-addon" tooltip="cash"  tooltip-trigger="mouseenter">
-                            <input type="checkbox" ng-model="relative.cash" />
-                        </span>
-                        <span class="input-group-addon" tooltip="inventories"  tooltip-trigger="mouseenter">
-                            <input type="checkbox" ng-model="relative.inventories" />
-                        </span>
-                        <span class="input-group-addon" tooltip="receivable"  tooltip-trigger="mouseenter">
-                            <input type="checkbox" ng-model="relative.receivable" />
-                        </span>
-                        <span class="input-group-addon" tooltip="payable"  tooltip-trigger="mouseenter">
-                            <input type="checkbox" ng-model="relative.payable" />
-                        </span>
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <select class="form-control" ng-model="managementMode" ng-options="m.value as m.name for m in parseManagementMode" convert-to-number>
+                        </select>
                         <span class="input-group-btn">
-                            <button class="btn btn-info" ng-click="drawManagement(relative, managementStartYear, managementStartQuarter, managementEndYear, managementEndQuarter)" type="button">
+                            <button class="btn btn-info" ng-click="drawManagement(managementMode, relative, managementStartYear, managementStartQuarter, managementEndYear, managementEndQuarter)" type="button">
                                 <i class="fa fa-line-chart"></i>
                             </button>
                         </span>
