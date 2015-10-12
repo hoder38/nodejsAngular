@@ -1668,56 +1668,64 @@ module.exports = {
                                 var profitStatus = this_obj.getProfitStatus(salesStatus, cashStatus, asset);
                                 var safetyStatus = this_obj.getSafetyStatus(salesStatus, cashStatus, asset);
                                 var managementStatus = this_obj.getManagementStatus(salesStatus, asset);
+                                console.log(cashStatus);
                                 var earliestYear = 0;
                                 var earliestQuarter = 0;
-                                for (var i in cash) {
+                                for (var i in cashStatus) {
                                     earliestYear = Number(i);
-                                    for (var j in cash[i]) {
-                                        if (cash[i][j]) {
+                                    for (var j in cashStatus[i]) {
+                                        if (cashStatus[i][j]) {
                                             earliestQuarter = Number(j) + 1;
                                             break;
                                         }
                                     }
                                     break;
                                 }
-                                var profitIndex = this_obj.getProfitIndex(profitStatus, earliestYear, latestYear);
-                                var safetyIndex = this_obj.getSafetyIndex(safetyStatus, earliestYear, latestYear);
-                                var managementIndex = this_obj.getManagementIndex(managementStatus, latestYear, latestQuarter);
-                                handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cashStatus, safetyStatus, profitStatus, salesStatus, managementStatus, function (err, name, tags){
-                                    if (err) {
-                                        util.handleError(err, callback, callback);
-                                    }
-                                    var normal = '';
-                                    var stock_default = [];
-                                    for (var i in tags) {
-                                        normal = stockTagTool.normalizeTag(tags[i]);
-                                        if (!stockTagTool.isDefaultTag(normal)) {
-                                            if (normal_tags.indexOf(normal) === -1) {
-                                                normal_tags.push(normal);
-                                                stock_default.push(normal);
+                                if (cashStatus[earliestYear].length === 0) {
+                                    console.log('stock finance data not exist');
+                                    setTimeout(function(){
+                                        callback(null, null);
+                                    }, 0);
+                                } else {
+                                    var profitIndex = this_obj.getProfitIndex(profitStatus, earliestYear, latestYear);
+                                    var safetyIndex = this_obj.getSafetyIndex(safetyStatus, earliestYear, latestYear);
+                                    var managementIndex = this_obj.getManagementIndex(managementStatus, latestYear, latestQuarter);
+                                    handleStockTag(type, index, latestYear, latestQuarter, assetStatus, cashStatus, safetyStatus, profitStatus, salesStatus, managementStatus, function (err, name, tags){
+                                        if (err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        var normal = '';
+                                        var stock_default = [];
+                                        for (var i in tags) {
+                                            normal = stockTagTool.normalizeTag(tags[i]);
+                                            if (!stockTagTool.isDefaultTag(normal)) {
+                                                if (normal_tags.indexOf(normal) === -1) {
+                                                    normal_tags.push(normal);
+                                                    stock_default.push(normal);
+                                                }
                                             }
                                         }
-                                    }
-                                    if (id_db) {
-                                        mongo.orig("update", "stock", {_id: id_db}, {$set: {cash: cash, asset: asset, sales: sales, profitIndex: profitIndex, safetyIndex: safetyIndex, managementIndex: managementIndex, tags: normal_tags, name: name, stock_default: stock_default}}, function(err, item2){
-                                            if(err) {
-                                                util.handleError(err, callback, callback);
-                                            }
-                                            setTimeout(function(){
-                                                callback(null, {cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter, profitIndex: profitIndex, managementIndex: managementIndex, safetyIndex: safetyIndex, stockName: type+index+name, id: id_db});
-                                            }, 0);
-                                        });
-                                    } else {
-                                        mongo.orig("insert", "stock", {type: type, index: index, name: name, cash: cash, asset: asset, sales: sales, profitIndex: profitIndex, safetyIndex: safetyIndex, managementIndex: managementIndex, tags: normal_tags, important: 0, stock_default: stock_default}, function(err, item2){
-                                            if(err) {
-                                                util.handleError(err, callback, callback);
-                                            }
-                                            setTimeout(function(){
-                                                callback(null, {cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter, profitIndex: profitIndex, managementIndex: managementIndex, safetyIndex: safetyIndex, stockName: type+index+name, id: item2[0]._id});
-                                            }, 0);
-                                        });
-                                    }
-                                });
+                                        if (id_db) {
+                                            mongo.orig("update", "stock", {_id: id_db}, {$set: {cash: cash, asset: asset, sales: sales, profitIndex: profitIndex, safetyIndex: safetyIndex, managementIndex: managementIndex, tags: normal_tags, name: name, stock_default: stock_default}}, function(err, item2){
+                                                if(err) {
+                                                    util.handleError(err, callback, callback);
+                                                }
+                                                setTimeout(function(){
+                                                    callback(null, {cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter, profitIndex: profitIndex, managementIndex: managementIndex, safetyIndex: safetyIndex, stockName: type+index+name, id: id_db});
+                                                }, 0);
+                                            });
+                                        } else {
+                                            mongo.orig("insert", "stock", {type: type, index: index, name: name, cash: cash, asset: asset, sales: sales, profitIndex: profitIndex, safetyIndex: safetyIndex, managementIndex: managementIndex, tags: normal_tags, important: 0, stock_default: stock_default}, function(err, item2){
+                                                if(err) {
+                                                    util.handleError(err, callback, callback);
+                                                }
+                                                setTimeout(function(){
+                                                    callback(null, {cash: cash, asset: asset, sales: sales, cashStatus: cashStatus, assetStatus: assetStatus, salesStatus: salesStatus, profitStatus: profitStatus, safetyStatus: safetyStatus, managementStatus: managementStatus, latestYear: latestYear, latestQuarter: latestQuarter, earliestYear: earliestYear, earliestQuarter: earliestQuarter, profitIndex: profitIndex, managementIndex: managementIndex, safetyIndex: safetyIndex, stockName: type+index+name, id: item2[0]._id});
+                                                }, 0);
+                                            });
+                                        }
+                                    });
+                                }
                             } else {
                                 console.log('not');
                                 if (not > 4) {
