@@ -5589,7 +5589,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.managementNumberData = [];
     $scope.managementNumberSeries = [];
     $scope.parseManagementMode = [{name: 'Season', value: 1}, {name: 'Year', value: 2}, {name: 'SShare', value: 3}, {name: 'YShare', value: 4}];
-    $scope.relative = {profit: true, cash: true, inventories: true, receivable: true, payable: true};
+    $scope.relative = {revenue: true, profit: true, cash: true, inventories: true, receivable: true, payable: true};
     $scope.profitIndex = 0;
     $scope.safetyIndex = 0;
     $scope.managementIndex = 0;
@@ -7019,14 +7019,14 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         this.managementNumberSeries = [];
         for (var i in relative) {
             if (relative[i]) {
-                this.managementSeries.push(i);
-                this.managementData.push([]);
+                if (i !== 'revenue') {
+                    this.managementSeries.push(i);
+                    this.managementData.push([]);
+                }
                 this.managementNumberSeries.push(i);
                 this.managementNumberData.push([]);
             }
         }
-        this.managementNumberSeries.push('revenue');
-        this.managementNumberData.push([]);
         var index = -1;
         var ry = 0, rs = 0;
         for(var i = managementStartDate.year; i<=managementEndDate.year; i++) {
@@ -7258,7 +7258,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                 this_obj.parseYear = [];
                 this_obj.accumulate = false;
                 this_obj.comprehensive = true;
-                this_obj.relative = {profit: true, cash: true, inventories: true, receivable: true, payable: true};
+                this_obj.relative = {revenue: true, profit: true, cash: true, inventories: true, receivable: true, payable: true};
                 console.log(result);
                 if ($scope.bookmarkID) {
                     $scope.latest = item.id;
