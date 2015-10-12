@@ -5588,6 +5588,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.managementNumberLabels = [];
     $scope.managementNumberData = [];
     $scope.managementNumberSeries = [];
+    $scope.parseManagementMode = [{name: 'Season', value: 1}, {name: 'Year', value: 2}, {name: 'SShare', value: 3}, {name: 'YShare', value: 4}];
     $scope.relative = {profit: true, cash: true, inventories: true, receivable: true, payable: true};
     $scope.profitIndex = 0;
     $scope.safetyIndex = 0;
@@ -7001,7 +7002,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         this.profitEndQuarter = profitEndDate.quarter;
         this.profitMode = mode;
     }
-    $scope.drawManagement = function(mode, startYear, startQuarter, endYear, endQuarter) {
+    $scope.drawManagement = function(mode, relative, startYear, startQuarter, endYear, endQuarter) {
         var managementStartDate = caculateDate(this.parseResult, startYear, startQuarter, true);
         var managementEndDate = caculateDate(this.parseResult, endYear, endQuarter);
         if (managementStartDate.year > managementEndDate.year) {
@@ -7016,8 +7017,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         this.managementNumberLabels = [];
         this.managementNumberData = [];
         this.managementNumberSeries = [];
-        for (var i in mode) {
-            if (mode[i]) {
+        for (var i in relative) {
+            if (relative[i]) {
                 this.managementSeries.push(i);
                 this.managementData.push([]);
                 this.managementNumberSeries.push(i);
@@ -7027,6 +7028,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         this.managementNumberSeries.push('revenue');
         this.managementNumberData.push([]);
         var index = -1;
+        var ry = 0, rs = 0;
         for(var i = managementStartDate.year; i<=managementEndDate.year; i++) {
             for (var j in this.parseResult.managementStatus[i]) {
                 if (this.parseResult.managementStatus[i][j]) {
@@ -7034,7 +7036,11 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                         continue;
                     }
                     this.managementLabels.push(i.toString() + (Number(j)+1));
-                    this.managementNumberLabels.push(i.toString() + (Number(j)+1));
+                    if ((mode === 2 || mode === 4) && j === '0') {
+                        this.managementNumberLabels.push(i.toString());
+                    } else if (mode === 1 || mode === 3) {
+                        this.managementNumberLabels.push(i.toString() + (Number(j)+1));
+                    }
                     for (var k in this.parseResult.managementStatus[i][j]) {
                         switch(k) {
                             case 'profitRelative':
@@ -7067,40 +7073,140 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                                 this.managementData[index].push(this.parseResult.managementStatus[i][j][k]);
                             }
                             break;
-                            case 'profit':
-                            index = this.managementNumberSeries.indexOf('profit');
-                            if (index !== -1) {
-                                this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
-                            }
-                            break;
                             case 'cash':
                             index = this.managementNumberSeries.indexOf('cash');
                             if (index !== -1) {
-                                this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                                if ((mode === 2 || mode === 4) && j === '0') {
+                                    rs = 0;
+                                    for (var l in this.parseResult.managementStatus[i]) {
+                                        if (rs < l) {
+                                            rs = l;
+                                        }
+                                    }
+                                    if (mode === 2) {
+                                        this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][rs][k]/1000000));
+                                    } else if (mode === 4) {
+                                        this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][rs][k]/this.parseResult.managementStatus[i][rs]['share']*10000)/1000);
+                                    }
+                                } else if (mode === 1) {
+                                    this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                                } else if (mode === 3) {
+                                    this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/this.parseResult.managementStatus[i][j]['share']*10000)/1000);
+                                }
                             }
                             break;
                             case 'inventories':
                             index = this.managementNumberSeries.indexOf('inventories');
                             if (index !== -1) {
-                                this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                                if ((mode === 2 || mode === 4) && j === '0') {
+                                    rs = 0;
+                                    for (var l in this.parseResult.managementStatus[i]) {
+                                        if (rs < l) {
+                                            rs = l;
+                                        }
+                                    }
+                                    if (mode === 2) {
+                                        this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][rs][k]/1000000));
+                                    } else if (mode === 4) {
+                                        this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][rs][k]/this.parseResult.managementStatus[i][rs]['share']*10000)/1000);
+                                    }
+                                } else if (mode === 1) {
+                                    this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                                } else if (mode === 3) {
+                                    this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/this.parseResult.managementStatus[i][j]['share']*10000)/1000);
+                                }
                             }
                             break;
                             case 'receivable':
                             index = this.managementNumberSeries.indexOf('receivable');
                             if (index !== -1) {
-                                this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                                if ((mode === 2 || mode === 4) && j === '0') {
+                                    rs = 0;
+                                    for (var l in this.parseResult.managementStatus[i]) {
+                                        if (rs < l) {
+                                            rs = l;
+                                        }
+                                    }
+                                    if (mode === 2) {
+                                        this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][rs][k]/1000000));
+                                    } else if (mode === 4) {
+                                        this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][rs][k]/this.parseResult.managementStatus[i][rs]['share']*10000)/1000);
+                                    }
+                                } else if (mode === 1) {
+                                    this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                                } else if (mode === 3) {
+                                    this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/this.parseResult.managementStatus[i][j]['share']*10000)/1000);
+                                }
                             }
                             break;
                             case 'payable':
                             index = this.managementNumberSeries.indexOf('payable');
                             if (index !== -1) {
-                                this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                                if ((mode === 2 || mode === 4) && j === '0') {
+                                    rs = 0;
+                                    for (var l in this.parseResult.managementStatus[i]) {
+                                        if (rs < l) {
+                                            rs = l;
+                                        }
+                                    }
+                                    if (mode === 2) {
+                                        this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][rs][k]/1000000));
+                                    } else if (mode === 4) {
+                                        this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][rs][k]/this.parseResult.managementStatus[i][rs]['share']*10000)/1000);
+                                    }
+                                } else if (mode === 1) {
+                                    this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                                } else if (mode === 3) {
+                                    this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/this.parseResult.managementStatus[i][j]['share']*10000)/1000);
+                                }
+                            }
+                            break;
+                            case 'profit':
+                            index = this.managementNumberSeries.indexOf('profit');
+                            if (index !== -1) {
+                                if ((mode === 2 || mode === 4) && j === '0') {
+                                    ry = 0;
+                                    rs = 0;
+                                    for (var l in this.parseResult.managementStatus[i]) {
+                                        if (rs < l) {
+                                            rs = l;
+                                        }
+                                        ry += this.parseResult.managementStatus[i][l][k];
+                                    }
+                                    if (mode === 2) {
+                                        this.managementNumberData[index].push(Math.ceil(ry/1000000));
+                                    } else if (mode === 4){
+                                        this.managementNumberData[index].push(Math.ceil(ry/this.parseResult.managementStatus[i][rs]['share']*10000)/1000);
+                                    }
+                                } else if (mode === 1) {
+                                    this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                                } else if (mode === 3) {
+                                    this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/this.parseResult.managementStatus[i][j]['share']*10000)/1000);
+                                }
                             }
                             break;
                             case 'revenue':
                             index = this.managementNumberSeries.indexOf('revenue');
                             if (index !== -1) {
-                                this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                                if ((mode === 2 || mode === 4) && j === '0') {
+                                    ry = 0;
+                                    rs = 0;
+                                    for (var l in this.parseResult.managementStatus[i]) {
+                                        if (rs < l) {
+                                            rs = l;
+                                        }
+                                        ry += this.parseResult.managementStatus[i][l][k];
+                                    }
+                                    if (mode === 2) {
+                                        this.managementNumberData[index].push(Math.ceil(ry/1000000));
+                                    } else if (mode === 4){
+                                        this.managementNumberData[index].push(Math.ceil(ry/this.parseResult.managementStatus[i][rs]['share']*10000)/1000);
+                                    }
+                                } else if (mode === 1) {
+                                    this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/1000000));
+                                } else if (mode === 3) {
+                                    this.managementNumberData[index].push(Math.ceil(this.parseResult.managementStatus[i][j][k]/this.parseResult.managementStatus[i][j]['share']*10000)/1000);
+                                }
                             }
                             break;
                         }
@@ -7108,7 +7214,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                 }
             }
         }
-
+        this.managementMode = mode;
         this.managementStartYear = managementStartDate.year;
         this.managementStartQuarter = managementStartDate.quarter;
         this.managementEndYear = managementEndDate.year;
@@ -7184,7 +7290,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                 this_obj.drawCash(4, this_obj.accumulate);
                 this_obj.drawSafety(1);
                 this_obj.drawProfit(1);
-                this_obj.drawManagement(this_obj.relative);
+                this_obj.drawManagement(2, this_obj.relative);
             }
         }, function(errorResult) {
             if (errorResult.status === 400) {
