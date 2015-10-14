@@ -3784,7 +3784,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.collapse.storage = true;
     $scope.collapse.stock = true;
     $scope.collapse.password = true;
-    $scope.navList = [{title: "homepage", hash: "/", css: "fa fa-fw fa-dashboard"}, {title: "Storage", hash: "/Storage", css: "fa fa-fw fa-desktop"}];
+    $scope.navList = [{title: "homepage", hash: "/", css: "fa fa-fw fa-dashboard"}, {title: "Storage", hash: "/Storage", css: "fa fa-fw fa-desktop"}, {title: "Password", hash: "/Password", css: "fa fa-fw fa-key"}];
     //right
     $scope.dirList = [];
     $scope.dirEdit = false;

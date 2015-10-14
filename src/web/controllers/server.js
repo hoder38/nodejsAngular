@@ -2175,7 +2175,7 @@ app.put('/api/password/addTag/:tag', function(req, res, next){
                     util.handleError(err, next, res);
                 }
                 index++;
-                sendWs({type: 'password', data: result.id}, 0, 1);
+                sendWs({type: 'password', data: result.id});
                 if (index < req.body.uids.length) {
                     recur_add(index);
                 } else {
@@ -2204,7 +2204,7 @@ app.put('/api/password/delTag/:tag', function(req, res, next){
                     util.handleError(err, next, res);
                 }
                 index++;
-                sendWs({type: 'password', data: result.id}, 0, 1);
+                sendWs({type: 'password', data: result.id});
                 if (index < req.body.uids.length) {
                     recur_del();
                 } else {
@@ -2359,7 +2359,7 @@ app.post('/api/password/newRow', function (req, res, next) {
             if(err) {
                 util.handleError(err, next, res);
             }
-            sendWs({type: 'password', data: result.id}, 0, 1);
+            sendWs({type: 'password', data: result.id});
             res.json({id: result.id});
         });
     });
@@ -2374,7 +2374,7 @@ app.put('/api/password/editRow/:uid', function (req, res, next) {
             if(err) {
                 util.handleError(err, next, res);
             }
-            sendWs({type: 'password', data: req.params.uid}, 0, 1);
+            sendWs({type: 'password', data: req.params.uid});
             res.json({apiOK: true});
         });
     });
@@ -2404,7 +2404,7 @@ app.put('/api/password/delRow/:uid', function (req, res, next) {
             if(err) {
                 util.handleError(err, next, res);
             }
-            sendWs({type: 'password', data: req.params.uid}, 0, 1);
+            sendWs({type: 'password', data: req.params.uid});
             res.json({apiOK: true});
         });
     });
@@ -2430,10 +2430,9 @@ app.get('/api/getUser', function(req, res, next){
         var level = 0;
         if (util.checkAdmin(1, req.user)) {
             level = 2;
-            nav = [{title: "Stock", hash: "/Stock", css: "fa fa-fw fa-line-chart"}, {title: "Password", hash: "/Password", css: "fa fa-fw fa-key"}];
+            nav = [{title: "Stock", hash: "/Stock", css: "fa fa-fw fa-line-chart"}];
         } else if (util.checkAdmin(2, req.user)) {
             level = 1;
-            ws_url = 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port;
         }
         var isAdult = false;
         if (util.checkAdmin(2 ,req.user)) {
@@ -2575,15 +2574,11 @@ app.get('/views/Password', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    if (util.checkAdmin(1, req.user)) {
-         var stream = fs.createReadStream(viewsPath + '/Password.html');
-        stream.on('error', function(err){
-            util.handleError(err, next, res);
-        });
-        stream.pipe(res);
-    } else {
-        res.send('permission denied');
-    }
+    var stream = fs.createReadStream(viewsPath + '/Password.html');
+    stream.on('error', function(err){
+        util.handleError(err, next, res);
+    });
+    stream.pipe(res);
 });
 
 app.get('/views/homepage', function(req, res, next) {
@@ -2821,19 +2816,17 @@ function getStockItem(user, items) {
 
 function getPasswordItem(user, items) {
     var itemList = [];
-    if (util.checkAdmin(1, user)) {
-        for (var i in items) {
-            if (items[i].important === 1) {
-                items[i].tags.push('important');
-            }
-            var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, username: items[i].username, url: items[i].url, email: items[i].email, utime: items[i].utime};
-            if (items[i].important === 0) {
-                data['important'] = false;
-            } else {
-                data['important'] = true;
-            }
-            itemList.push(data);
+    for (var i in items) {
+        if (items[i].important === 1) {
+            items[i].tags.push('important');
         }
+        var data = {name: items[i].name, id: items[i]._id, tags: items[i].tags, username: items[i].username, url: items[i].url, email: items[i].email, utime: items[i].utime};
+        if (items[i].important === 0) {
+            data['important'] = false;
+        } else {
+            data['important'] = true;
+        }
+        itemList.push(data);
     }
     return itemList;
 }
