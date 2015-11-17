@@ -57,7 +57,7 @@ module.exports = function(sendWs) {
                         zipbook();
                     }
                     function zipbook() {
-                        var cmdline = 'unzip ' + filePath + ' -d ' + filePath + '_img/temp';
+                        var cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + ' ' + filePath + '_img/temp';
                         if (zip_ext === 'rar' || zip_ext === 'cbr') {
                             cmdline = 'unrar x ' + filePath + ' ' + filePath + '_img/temp';
                         } else if (zip_ext === '7z') {
@@ -636,6 +636,7 @@ module.exports = function(sendWs) {
                         }
                         var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                         var time = Math.round(new Date().getTime() / 1000);
+                        console.log(items[0]);
                         this_obj.handleTag(filePath, {utime: time, untag: 1, time: items[0].time, height: items[0].height}, newName, items[0].name, items[0].status, function(err, mediaType, mediaTag, DBdata) {
                             if(err) {
                                 util.handleError(err, next, callback);
@@ -672,29 +673,61 @@ module.exports = function(sendWs) {
                                         items[0].tags.splice(index_tag, 1);
                                     }
                                 }
-                                if (items[0].adultonly === 1) {
-                                    result_tag.push('18+');
-                                } else {
-                                    if (util.checkAdmin(2, user)) {
-                                        mediaTag.opt.push('18+');
-                                    }
-                                }
-                                if (items[0].first === 1) {
-                                    result_tag.push('first item');
-                                } else {
-                                    mediaTag.opt.push('first item');
-                                }
-                                setTimeout(function(){
-                                    callback(null, {id: id, name: name, select: result_tag, option: mediaTag.opt, other: items[0].tags, adultonly: items[0].adultonly});
-                                }, 0);
-                                this_obj.handleMediaUpload(mediaType, filePath, id, name, items[0].size, user, function(err) {
-                                    //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
-                                    if(err) {
-                                        util.handleError(err);
-                                    }
-                                    console.log('transcode done');
-                                    console.log(new Date());
+                                var relative_arr = [];
+                                result_tag.forEach(function (e) {
+                                    relative_arr.push(e);
                                 });
+                                mediaTag.opt.forEach(function (e) {
+                                    relative_arr.push(e);
+                                });
+                                recur_relative(0);
+                                function recur_relative(index) {
+                                    tagTool.getRelativeTag(relative_arr[index], user, mediaTag.opt, next, function(err, relative) {
+                                        if (err) {
+                                            util.handleError(err, next, callback);
+                                        }
+                                        index++;
+                                        mediaTag.opt = relative;
+                                        if (index < relative_arr.length) {
+                                            recur_relative(index);
+                                        } else {
+                                            var temp_arr = [];
+                                            var normal = '';
+                                            for (var j in mediaTag.opt) {
+                                                normal = tagTool.normalizeTag(mediaTag.opt[j]);
+                                                if (!tagTool.isDefaultTag(normal)) {
+                                                    if (result_tag.indexOf(normal) === -1) {
+                                                        temp_arr.push(normal);
+                                                    }
+                                                }
+                                            }
+                                            mediaTag.opt = temp_arr;
+                                            if (util.checkAdmin(2, user)) {
+                                                if (items[0].adultonly === 1) {
+                                                    result_tag.push('18+');
+                                                } else {
+                                                    mediaTag.opt.push('18+');
+                                                }
+                                            }
+                                            if (items[0].first === 1) {
+                                                result_tag.push('first item');
+                                            } else {
+                                                mediaTag.opt.push('first item');
+                                            }
+                                            setTimeout(function(){
+                                                callback(null, {id: id, name: name, select: result_tag, option: mediaTag.opt, other: items[0].tags, adultonly: items[0].adultonly});
+                                            }, 0);
+                                            this_obj.handleMediaUpload(mediaType, filePath, id, name, items[0].size, user, function(err) {
+                                                //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                                if(err) {
+                                                    util.handleError(err);
+                                                }
+                                                console.log('transcode done');
+                                                console.log(new Date());
+                                            });
+                                        }
+                                    });
+                                }
                             });
                         });
                     });
@@ -1183,6 +1216,14 @@ module.exports = function(sendWs) {
             if (status === 7) {
                 setTimeout(function(){
                     callback(null, false, mime.mediaTag('url'), DBdata);
+                }, 0);
+            } else if (status === 8) {
+                setTimeout(function(){
+                    callback(null, false, {def: [], opt: []}, DBdata);
+                }, 0);
+            } else if (status === 9) {
+                setTimeout(function(){
+                    callback(null, false, {def: [], opt: []}, DBdata);
                 }, 0);
             } else {
                 var mediaType = mime.mediaType(newName),

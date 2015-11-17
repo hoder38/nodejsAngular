@@ -11,7 +11,7 @@ function addCommas(nStr) {
 }
 function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, $scope, $location) {
     //left
-    $scope.$parent.currentPage = 2;
+    $scope.$parent.currentPage = 3;
     $scope.$parent.collapse.nav = true;
     //right
     $scope.$parent.isRight = true;

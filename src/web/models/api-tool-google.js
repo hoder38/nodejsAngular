@@ -613,7 +613,7 @@ var exports = module.exports = {
                 console.log(filePath + '.zip');
                 util.handleError({hoerror: 2, message: 'cannot find zip'}, callback, callback);
             }
-            var cmdline = 'unzip ' + filePath + '.zip -d ' + filePath + '_doc';
+            var cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '.zip ' + filePath + '_doc';
             if (!fs.existsSync(filePath + '_doc')) {
                 mkdirp(filePath + '_doc', function(err) {
                     if(err) {
@@ -712,9 +712,12 @@ var exports = module.exports = {
             }
         });
     },
-    googleBackup: function(id, name, filePath, tags, recycle, callback) {
+    googleBackup: function(id, name, filePath, tags, recycle, callback, append) {
         switch (recycle) {
             case 1:
+                if (append) {
+                    filePath = filePath + append;
+                }
                 var data = {type: 'backup', name: id + '.' + name, filePath: filePath};
                 this.googleApi('upload', data, function(err, metadata) {
                     if (err) {
@@ -728,6 +731,26 @@ var exports = module.exports = {
             case 2:
                 if (fs.existsSync(filePath + '.srt')) {
                     var data = {type: 'backup', name: id + '.' + name + '.srt', filePath: filePath + '.srt'};
+                    this.googleApi('upload', data, function(err, metadata) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    });
+                } else if (fs.existsSync(filePath + '.ass')) {
+                    var data = {type: 'backup', name: id + '.' + name + '.ass', filePath: filePath + '.ass'};
+                    this.googleApi('upload', data, function(err, metadata) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    });
+                } else if (fs.existsSync(filePath + '.ssa')) {
+                    var data = {type: 'backup', name: id + '.' + name + '.ssa', filePath: filePath + '.ssa'};
                     this.googleApi('upload', data, function(err, metadata) {
                         if (err) {
                             util.handleError(err, callback, callback);

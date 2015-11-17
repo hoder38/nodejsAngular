@@ -541,6 +541,10 @@ audio.media-screen {
     z-index: 5;
 }
 
+#search-sub {
+    margin-top: -34px;
+}
+
 #add-tag {
     margin-top: -34px;
 }
@@ -583,6 +587,15 @@ audio.media-screen {
         top: 50px;
         border-top: 5px solid white;
     }
+}
+
+.double-input .form-control {
+    width: 50%;
+    border-right-width: 0px;
+}
+
+.double-input .form-control:focus {
+    border-right-width: 1px;
 }
 
 #page-wrapper {

@@ -1,6 +1,6 @@
 function PasswordCntl($route, $routeParams, $location, $resource, $window, $cookies, $filter, $scope) {
     //left
-    $scope.$parent.currentPage = 3;
+    $scope.$parent.currentPage = 2;
     $scope.$parent.collapse.nav = true;
     //right
     $scope.$parent.isRight = true;

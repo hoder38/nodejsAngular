@@ -1,4 +1,5 @@
 //sudo -i node /home/pi/app/nodejsAngular/src/test/cmd.js
+//sudo -i npm install torrent-stream -g --unsafe-perm
 //記得等db connect
 
 var stockTool = require("../web/models/stock-tool.js");

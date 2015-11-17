@@ -386,6 +386,8 @@ module.exports = {
                             this_obj.xuiteDownload(res.headers.location, filePath, callback, threshold, is_check);
                         }, 0);
                     } else if (res.statusCode === 400) {
+                        console.log(url);
+                        console.log(options);
                         this_obj.getApiQueue();
                         util.handleError({hoerror: 2, message: res.statusCode + ': download location cannot be fund'}, callback, callback);
                     } else {
@@ -704,6 +706,31 @@ module.exports = {
                 callback(null, filePath);
             }, 0);
         }, filePath);
+    },
+    getSubHdUrl: function(id, callback) {
+        var url = 'http://subhd.com/ajax/down_ajax';
+        var urlParse = urlMod.parse(url);
+
+        // An object of options to indicate where to post to
+        var options = {
+            host: urlParse.hostname,
+            port: 80,
+            path: urlParse.path,
+            method: 'POST',
+            encoding : 'utf8'
+        };
+        postData({sub_id: id}, null, options, {}, function(err, res) {
+            if (err) {
+                util.handleError(err, callback, callback);
+            }
+            //console.log(filePath);
+            //var stats = fs.statSync(filePath);
+            //console.log(stats);
+            var result = JSON.parse(res.body);
+            setTimeout(function(){
+                callback(null, result);
+            }, 0);
+        });
     },
     setApiQueue: function(name, param) {
         if (api_ing >= config_glb.api_limit) {

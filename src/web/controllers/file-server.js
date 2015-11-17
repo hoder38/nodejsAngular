@@ -39,8 +39,11 @@ var stock_batch_list = [];
 
 var drive_batch = 100;
 
+var torrent_pool = [];
+
 var https = require('https'),
     net = require('net'),
+    child_process = require('child_process'),
     //privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
     //certificate = fs.readFileSync(config_type.certificate, 'utf8'),
     pfx = fs.readFileSync(config_type.pfx),
@@ -69,10 +72,15 @@ var express = require('express'),
     passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy,
     WebSocketServer = require('ws').Server,
+    openSubtitle = require('opensubtitles-api'),
+    oth = require('os-torrent-hash'),
     app = express(),
     server = https.createServer(credentials, app),
     mkdirp = require('mkdirp'),
     sessionStore = require("../models/session-tool.js")(express_session);
+
+var torrentStream = require('torrent-stream');
+var avconv = require('avconv');
 
 app.use(express.favicon());
 app.use(express.cookieParser());
@@ -94,15 +102,16 @@ app.use(function(req, res, next) {
     }
 });
 
-app.post('/upload/subtitle/:uid', function(req, res, next) {
+app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
-        console.log('upload substitle');
+        console.log('upload subtitle');
         console.log(new Date());
         console.log(req.url);
         console.log(req.files);
         if (req.files.file.size > (10 * 1024 * 1024)) {
             util.handleError({hoerror: 2, message: "size too large!!!"}, next, res);
         }
+        var fileIndex = 0;
         var ext = mime.isSub(req.files.file.name);
         if (!ext) {
             util.handleError({hoerror: 2, message: "not valid subtitle!!!"}, next, res);
@@ -119,6 +128,10 @@ app.post('/upload/subtitle/:uid', function(req, res, next) {
                 util.handleError({hoerror: 2, message: 'file not exist!!!'}, next, callback);
             }
             var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            if (items[0].status === 9 && req.params.index) {
+                fileIndex = Number(req.params.index);
+                filePath = filePath + '/' + fileIndex;
+            }
             var folderPath = path.dirname(filePath);
             if (!fs.existsSync(folderPath)) {
                 mkdirp(folderPath, function(err) {
@@ -353,17 +366,72 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
         var filePath = util.getFileLocation(req.user._id, oOID);
         var folderPath = path.dirname(filePath);
         var is_media = 0;
+        var encodeTorrent = url;
+        url = decodeURIComponent(url);
+        var shortTorrent = url.match(/^magnet:[^&]+/);
+        if (shortTorrent) {
+            folderPath = filePath;
+        }
         if (!fs.existsSync(folderPath)) {
             mkdirp(folderPath, function(err) {
                 if(err) {
                     console.log(filePath);
                     util.handleError(err, next, res);
                 }
-                url = decodeURIComponent(url);
-                if (url.match(/^(https|http):\/\/(www\.youtube\.com|youtu\.be)\//)) {
+                if (shortTorrent) {
+                    shortTorrent = shortTorrent[0];
+                    mongo.orig("find", "storage", {magnet: encodeTorrent}, {limit: 1}, function(err, items){
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (items.length === 0) {
+                            var realPath = folderPath + '/real';
+                            var engine = torrentStream(url, {tmp: config_glb.nas_tmp, path: realPath, connections: 100, uploads: 5});
+                            var playList = [];
+                            var tag_arr = ['torrent', 'playlist'];
+                            var opt_arr = [];
+                            var mediaType = null, mediaTag = null;
+                            engine.on('ready', function() {
+                                engine.files.forEach(function(file) {
+                                    //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
+                                    playList.push(file.path);
+                                    console.log(file.name);
+                                    mediaType = mime.mediaType(file.name);
+                                        if (mediaType) {
+                                        mediaTag = mime.mediaTag(mediaType['type']);
+                                        for (var i in mediaTag.def) {
+                                            if (tag_arr.indexOf(mediaTag.def[i]) === -1) {
+                                                tag_arr.push(mediaTag.def[i]);
+                                            }
+                                        }
+                                        for (var i in mediaTag.opt) {
+                                            if (tag_arr.indexOf(mediaTag.opt[i]) === -1 && opt_arr.indexOf(mediaTag.opt[i]) === -1) {
+                                                opt_arr.push(mediaTag.opt[i]);
+                                            }
+                                        }
+                                    }
+                                    //}
+                                });
+                                //insert
+                                if (playList.length <= 0) {
+                                    engine.destroy();
+                                    util.handleError({hoerror: 2, message: "empty content!!!"}, next, res);
+                                }
+                                var filename = 'Playlist torrent ';
+                                if (engine.torrent.name) {
+                                    filename = 'Playlist ' + engine.torrent.name;
+                                }
+                                engine.destroy();
+                                streamClose(filename, tag_arr, opt_arr, encodeTorrent, playList);
+                            });
+                        } else {
+                            util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                        }
+                    });
+                } else if (url.match(/^(https|http):\/\/(www\.youtube\.com|youtu\.be)\//)) {
                     var is_music = url.match(/^(.*):music$/);
                     if (is_music) {
-                         is_media = 4;
+                        is_media = 4;
                         console.log('youtube music');
                         googleApi.googleDownloadYoutube(is_music[1], filePath, function(err, filename, tag_arr) {
                             if (err) {
@@ -373,7 +441,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             streamClose(filename, tag_arr);
                         }, true);
                     } else {
-                         is_media = 3;
+                        is_media = 3;
                         console.log('youtube');
                         googleApi.googleDownloadYoutube(url, filePath, function(err, filename, tag_arr) {
                             if (err) {
@@ -397,8 +465,57 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 }
             });
         } else {
-            url = decodeURIComponent(url);
-            if (url.match(/^(https|http):\/\/(www\.youtube\.com|youtu\.be)\//)) {
+            if (shortTorrent) {
+                shortTorrent = shortTorrent[0];
+                mongo.orig("find", "storage", {magnet: encodeTorrent}, {limit: 1}, function(err, items){
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (items.length === 0) {
+                        var realPath = folderPath + '/real';
+                        var engine = torrentStream(url, {tmp: config_glb.nas_tmp, path: realPath, connections: 100, uploads: 5});
+                        var playList = [];
+                        var tag_arr = ['torrent', 'playlist'];
+                        var opt_arr = [];
+                        var mediaType = null, mediaTag = null;
+                        engine.on('ready', function() {
+                            engine.files.forEach(function(file) {
+                                //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
+                                playList.push(file.path);
+                                console.log(file.name);
+                                mediaType = mime.mediaType(file.name);
+                                if (mediaType) {
+                                    mediaTag = mime.mediaTag(mediaType['type']);
+                                    for (var i in mediaTag.def) {
+                                        if (tag_arr.indexOf(mediaTag.def[i]) === -1) {
+                                            tag_arr.push(mediaTag.def[i]);
+                                        }
+                                    }
+                                    for (var i in mediaTag.opt) {
+                                        if (tag_arr.indexOf(mediaTag.opt[i]) === -1 && opt_arr.indexOf(mediaTag.opt[i]) === -1) {
+                                            opt_arr.push(mediaTag.opt[i]);
+                                        }
+                                    }
+                                }
+                                //}
+                            });
+                            //insert
+                            if (playList.length <= 0) {
+                                engine.destroy();
+                                util.handleError({hoerror: 2, message: "empty content!!!"}, next, res);
+                            }
+                            var filename = 'Playlist torrent ';
+                            if (engine.torrent.name) {
+                                filename = 'Playlist ' + engine.torrent.name;
+                            }
+                            engine.destroy();
+                            streamClose(filename, tag_arr, opt_arr, encodeTorrent, playList);
+                        });
+                    } else {
+                        util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                    }
+                });
+            } else if (url.match(/^(https|http):\/\/(www\.youtube\.com|youtu\.be)\//)) {
                 var is_music = url.match(/^(.*):music$/);
                 if (is_music) {
                     is_media = 4;
@@ -434,7 +551,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 });
             }
         }
-        function streamClose(filename, tag_arr){
+        function streamClose(filename, tag_arr, opt_arr, magnet, playlist){
             var name = util.toValidName(filename);
             if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
                 name = mime.addPost(name, '1');
@@ -448,7 +565,11 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
             data['owner'] = oUser_id;
             data['utime'] = utime;
             var stats = fs.statSync(filePath);
-            data['size'] = stats["size"];
+            if (stats.isFile()) {
+                data['size'] = stats["size"];
+            } else {
+                data['size'] = 0;
+            }
             data['count'] = 0;
             data['recycle'] = 0;
             if (util.checkAdmin(2 ,req.user) && Number(req.params.type) === 1) {
@@ -458,8 +579,12 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
             }
             data['untag'] = 1;
             data['first'] = 1;
-            data['status'] = 0;//media type
-            mediaHandleTool.handleTag(filePath, data, name, '', 0, function(err, mediaType, mediaTag, DBdata) {
+            if (magnet) {
+                data['status'] = 9;//media type
+            } else {
+                data['status'] = 0;//media type
+            }
+            mediaHandleTool.handleTag(filePath, data, name, '', data['status'], function(err, mediaType, mediaTag, DBdata) {
                 if (err) {
                     sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
                     util.handleError(err, next, res);
@@ -494,6 +619,18 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         }
                     }
                 }
+                if (opt_arr) {
+                    var is_d = false;
+                    for (var i in opt_arr) {
+                        normal = tagTool.normalizeTag(opt_arr[i]);
+                        is_d = tagTool.isDefaultTag(normal);
+                        if (!is_d) {
+                            if (mediaTag.def.indexOf(normal) === -1 && mediaTag.opt.indexOf(normal) === -1) {
+                                mediaTag.opt.push(normal);
+                            }
+                        }
+                    }
+                }
                 var tags = tagTool.searchTags(req.session);
                 if (tags) {
                     var parentList = tags.getArray();
@@ -524,6 +661,12 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 }
                 DBdata['tags'] = mediaTag.def;
                 DBdata[oUser_id] = mediaTag.def;
+                if (magnet) {
+                    DBdata['magnet'] = magnet;
+                }
+                if (playlist) {
+                    DBdata['playList'] = playlist;
+                }
                 mongo.orig("insert", "storage", DBdata, function(err, item){
                     if(err) {
                         sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
@@ -726,6 +869,586 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
                     });
                 }
             });
+        });
+    });
+});
+
+app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('subtitle search');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid'),
+        name = util.isValidString(req.body.name, 'name');
+        var episode_match = false;
+        if(req.body.episode) {
+            episode_match = req.body.episode.match(/^(s(\d*))?(e)?(\d+)$/i);
+        }
+        var episode = 0;
+        var season = 0;
+        var episode_1 = null;
+        var episode_2 = null;
+        var episode_3 = null;
+        var episode_4 = null;
+        if (episode_match) {
+            if (!episode_match[1] && !episode_match[3]) {
+                episode = Number(episode_match[4]);
+                season = 1;
+            } else if (!episode_match[1]){
+                episode = Number(episode_match[4]);
+                season = 1;
+            } else if (!episode_match[3]){
+                episode = 1;
+                season = Number(episode_match[2] + episode_match[4]);
+            } else if (episode_match[2] === ''){
+                episode = Number(episode_match[4]);
+                season = 1;
+            } else {
+                episode = Number(episode_match[4]);
+                season = Number(episode_match[2]);
+            }
+            if (episode < 10) {
+                if (season < 10) {
+                    episode_1 = ' s0' + season + 'e0' + episode;
+                    episode_2 = ' s' + season + 'e0' + episode;
+                    episode_3 = ' s0' + season;
+                    episode_4 = ' s' + season;
+                } else {
+                    episode_1 = ' s' + season + 'e0' + episode;
+                    episode_2 = ' s' + season;
+                }
+            } else {
+                if (season < 10) {
+                    episode_1 = ' s0' + season + 'e' + episode;
+                    episode_2 = ' s' + season + 'e' + episode;
+                    episode_3 = ' s0' + season;
+                    episode_4 = ' s' + season;
+                } else {
+                    episode_1 = ' s' + season + 'e' + episode;
+                    episode_2 = ' s' + season;
+                }
+            }
+        }
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        };
+        if (name === false) {
+            util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
+        }
+        var fileIndex = 0;
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (items.length <= 0) {
+                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+            }
+            if (items[0].status !== 3 && items[0].status !== 9) {
+                util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+            }
+            if (req.params.index) {
+                fileIndex = Number(req.params.index);
+            }
+            if (items[0].status === 9 && !items[0]['playList'][fileIndex].match(/\.mp4$/i) && !items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
+                util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+            }
+            var search = {extensions: 'srt', sublanguageid: 'chi'};
+            if (name.match(/^tt\d+$/i)) {
+                search.imdbid = name;
+            } else {
+                search.query = name;
+            }
+            if (episode) {
+                search.episode = episode;
+                search.season = season;
+            }
+            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            if (items[0].status === 9) {
+                filePath = filePath + '/' + fileIndex;
+            }
+            var OpenSubtitles = new openSubtitle('hoder agent v0.1');
+            /*OpenSubtitles.search({
+                //extensions: ['srt', 'vtt'],
+                extensions: 'srt',
+                sublanguageid: 'chi',
+                //hash: '500bcd4c30be3195',
+                //filesize: '3437197194'
+                //imdbid: 'tt1638355'
+                //query: 'game of thrones s05e10'*/
+            OpenSubtitles.search(search).then(function (subtitles) {
+                if (subtitles.zh) {
+                    console.log(subtitles);
+                    SUB2VTT(subtitles.zh.url, filePath, false, function(err) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        res.json({apiOK: true});
+                    });
+                } else {
+                    if (episode_1) {
+                        subHd(name + episode_1, function(err, subtitles) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (subtitles) {
+                                unzipSubHd(subtitles.url, function(err) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    res.json({apiOK: true});
+                                });
+                            } else {
+                                subHd(name + episode_2, function(err, subtitles) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (subtitles) {
+                                        unzipSubHd(subtitles.url, function(err) {
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            res.json({apiOK: true});
+                                        });
+                                    } else {
+                                        if (episode_3) {
+                                            subHd(name + episode_3, function(err, subtitles) {
+                                                if (err) {
+                                                    util.handleError(err, next, res);
+                                                }
+                                                if (subtitles) {
+                                                    unzipSubHd(subtitles.url, function(err) {
+                                                        if (err) {
+                                                            util.handleError(err, next, res);
+                                                        }
+                                                        res.json({apiOK: true});
+                                                    });
+                                                } else {
+                                                    subHd(name + episode_4, function(err, subtitles) {
+                                                        if (err) {
+                                                            util.handleError(err, next, res);
+                                                        }
+                                                        if (subtitles) {
+                                                            unzipSubHd(subtitles.url, function(err) {
+                                                                if (err) {
+                                                                    util.handleError(err, next, res);
+                                                                }
+                                                                res.json({apiOK: true});
+                                                            });
+                                                        } else {
+                                                            if (season === 1) {
+                                                                subHd(name, function(err, subtitles) {
+                                                                    if (err) {
+                                                                        util.handleError(err, next, res);
+                                                                    }
+                                                                    if (subtitles) {
+                                                                        unzipSubHd(subtitles.url, function(err) {
+                                                                            if (err) {
+                                                                                util.handleError(err, next, res);
+                                                                            }
+                                                                            res.json({apiOK: true});
+                                                                        });
+                                                                    } else {
+                                                                        util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                                                                    }
+                                                                });
+                                                            } else {
+                                                                util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                                                            }
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        } else {
+                                            if (season === 1) {
+                                                subHd(name, function(err, subtitles) {
+                                                    if (err) {
+                                                        util.handleError(err, next, res);
+                                                    }
+                                                    if (subtitles) {
+                                                        unzipSubHd(subtitles.url, function(err) {
+                                                            if (err) {
+                                                                util.handleError(err, next, res);
+                                                            }
+                                                            res.json({apiOK: true});
+                                                        });
+                                                    } else {
+                                                        util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                                                    }
+                                                });
+                                            } else {
+                                                util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    } else {
+                        subHd(name, function(err, subtitles) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (subtitles) {
+                                unzipSubHd(subtitles.url, function(err) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    res.json({apiOK: true});
+                                });
+                            } else {
+                                util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                            }
+                        });
+                    }
+                }
+            });
+            function unzipSubHd(url, callback) {
+                var zip_ext = mime.isZip(url);
+                if (!zip_ext) {
+                    util.handleError({hoerror: 2, message: "is not zip!!!"}, next, callback);
+                }
+                var sub_location = filePath + '_sub';
+                var sub_temp_location = sub_location + '/0';
+                var sub_zip_location = sub_location + '/0.' + zip_ext;
+                if (!fs.existsSync(sub_location)) {
+                    mkdirp(sub_location, function(err) {
+                        if(err) {
+                            util.handleError(err, next, callback);
+                        }
+                        for (var i = 0; i < 10; i++) {
+                            sub_temp_location = sub_location + '/' + i;
+                            if (!fs.existsSync(sub_temp_location)) {
+                                break;
+                            }
+                        }
+                        if (i >= 10) {
+                            util.handleError({hoerror: 2, message: "too many sub!!!"}, next, callback);
+                        }
+                        sub_zip_location = sub_location + '/' + i + '.' + zip_ext;
+                        api.xuiteDownload(url, sub_zip_location, function(err) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            var cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + sub_zip_location + ' ' + sub_temp_location;
+                            if (zip_ext === 'rar' || zip_ext === 'cbr') {
+                                cmdline = 'unrar x ' + sub_zip_location + ' ' + sub_temp_location;
+                            } else if (zip_ext === '7z') {
+                                cmdline = '7za x ' + sub_zip_location + ' -o' + sub_temp_location;
+                            }
+                            mkdirp(sub_temp_location, function(err) {
+                                if(err) {
+                                    util.handleError(err, next, callback);
+                                }
+                                child_process.exec(cmdline, function (err, output) {
+                                    if (err) {
+                                        console.log(cmdline);
+                                        util.handleError(err, next, callback);
+                                    }
+                                    var choose = null;
+                                    var pri_choose = 9;
+                                    var pri_choose_temp = 8;
+                                    var pri_match = false;
+                                    var pri_choose_arr = ['big5', 'cht', '繁體', '繁体', 'gb', 'chs', '簡體', '简体'];
+                                    var curPath = null;
+                                    var episode_pattern = new RegExp('(第0*' + episode + '集|ep?0*' + episode + ')', 'i');
+                                    var episode_choose = null;
+                                    var episode_pri_choose = 9;
+                                    var episode_pri_choose_temp = 8;
+
+                                    recur_dir(sub_temp_location);
+                                    function recur_dir(dir) {
+                                        fs.readdirSync(dir).forEach(function(file,index){
+                                            curPath = dir + '/' + file;
+                                            if(fs.lstatSync(curPath).isDirectory()) {
+                                                recur_dir(curPath);
+                                            } else {
+                                                if (mime.isSub(file)) {
+                                                    if (episode && file.match(episode_pattern)) {
+                                                        pri_match = file.match(/(big5|cht|繁體|繁体|gb|chs|簡體|简体)/);
+                                                        if (pri_match) {
+                                                            episode_pri_choose_temp = pri_choose_arr.indexOf(pri_match[1]);
+                                                        }
+                                                        if (episode_pri_choose > episode_pri_choose_temp) {
+                                                            episode_pri_choose = episode_pri_choose_temp;
+                                                            episode_choose = curPath;
+                                                        }
+                                                    }
+                                                    pri_match = file.match(/(big5|cht|繁體|繁体|gb|chs|簡體|简体)/);
+                                                    if (pri_match) {
+                                                        pri_choose_temp = pri_choose_arr.indexOf(pri_match[1]);
+                                                    }
+                                                    if (pri_choose > pri_choose_temp) {
+                                                        pri_choose = pri_choose_temp;
+                                                        choose = curPath;
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    }
+                                    if (episode_choose) {
+                                        choose = episode_choose;
+                                    }
+                                    console.log('choose');
+                                    console.log(choose);
+                                    SUB2VTT(choose, filePath, true, function(err) {
+                                        if (err) {
+                                            util.handleError(err, next, callback);
+                                        }
+                                        util.deleteFolderRecursive(sub_temp_location);
+                                        fs.unlink(sub_zip_location, function(err) {
+                                            if (err) {
+                                                util.handleError(err, next, callback);
+                                            }
+                                            setTimeout(function(){
+                                                callback(null);
+                                            }, 0);
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                } else {
+                    for (var i = 0; i < 10; i++) {
+                        sub_temp_location = sub_location + '/' + i;
+                        if (!fs.existsSync(sub_temp_location)) {
+                            break;
+                        }
+                    }
+                    if (i >= 10) {
+                        util.handleError({hoerror: 2, message: "too many sub!!!"}, next, callback);
+                    }
+                    sub_zip_location = sub_location + '/' + i + '.' + zip_ext;
+                    api.xuiteDownload(url, sub_zip_location, function(err) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        var cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + sub_zip_location + ' ' + sub_temp_location;
+                        if (zip_ext === 'rar' || zip_ext === 'cbr') {
+                            cmdline = 'unrar x ' + sub_zip_location + ' ' + sub_temp_location;
+                        } else if (zip_ext === '7z') {
+                            cmdline = '7za x ' + sub_zip_location + ' -o' + sub_temp_location;
+                        }
+                        mkdirp(sub_temp_location, function(err) {
+                            if(err) {
+                                util.handleError(err, next, callback);
+                            }
+                            child_process.exec(cmdline, function (err, output) {
+                                if (err) {
+                                    console.log(cmdline);
+                                    util.handleError(err, next, callback);
+                                }
+                                var choose = null;
+                                var pri_choose = 9;
+                                var pri_choose_temp = 8;
+                                var pri_match = false;
+                                var pri_choose_arr = ['big5', 'cht', '繁體', '繁体', 'gb', 'chs', '簡體', '简体'];
+                                var curPath = null;
+                                var episode_pattern = new RegExp('(第0*' + episode + '集|ep?0*' + episode + ')', 'i');
+                                var episode_choose = null;
+                                var episode_pri_choose = 9;
+                                var episode_pri_choose_temp = 8;
+
+                                recur_dir(sub_temp_location);
+                                function recur_dir(dir) {
+                                    fs.readdirSync(dir).forEach(function(file,index){
+                                        curPath = dir + '/' + file;
+                                        if(fs.lstatSync(curPath).isDirectory()) {
+                                            recur_dir(curPath);
+                                        } else {
+                                            if (mime.isSub(file)) {
+                                                if (episode && file.match(episode_pattern)) {
+                                                    pri_match = file.match(/(big5|cht|繁體|繁体|gb|chs|簡體|简体)/);
+                                                    if (pri_match) {
+                                                        episode_pri_choose_temp = pri_choose_arr.indexOf(pri_match[1]);
+                                                    }
+                                                    if (episode_pri_choose > episode_pri_choose_temp) {
+                                                        episode_pri_choose = episode_pri_choose_temp;
+                                                        episode_choose = curPath;
+                                                    }
+                                                }
+                                                pri_match = file.match(/(big5|cht|繁體|繁体|gb|chs|簡體|简体)/);
+                                                if (pri_match) {
+                                                    pri_choose_temp = pri_choose_arr.indexOf(pri_match[1]);
+                                                }
+                                                if (pri_choose > pri_choose_temp) {
+                                                    pri_choose = pri_choose_temp;
+                                                    choose = curPath;
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                                if (episode_choose) {
+                                    choose = episode_choose;
+                                }
+                                console.log('choose');
+                                console.log(choose);
+                                SUB2VTT(choose, filePath, true, function(err) {
+                                    if (err) {
+                                        util.handleError(err, next, callback);
+                                    }
+                                    util.deleteFolderRecursive(sub_temp_location);
+                                    fs.unlink(sub_zip_location, function(err) {
+                                        if (err) {
+                                            util.handleError(err, next, callback);
+                                        }
+                                        setTimeout(function(){
+                                            callback(null);
+                                        }, 0);
+                                    });
+                                });
+                            });
+                        });
+                    });
+                }
+            }
+            function subHd(str, callback) {
+                console.log(str);
+                api.xuiteDownload('http://subhd.com/search/' + encodeURIComponent(str) , '', function(err, data) {
+                    if (err) {
+                        util.handleError(err, next, callback);
+                    }
+                    var big_item = data.match(/pull\-left lb\_l\">([\s\S]+?)<\/div>/);
+                    if (big_item) {
+                        var big_item = big_item[1].match(/\/d\/(\d+)/);
+                        if (big_item) {
+                            api.xuiteDownload('http://subhd.com/d/' + big_item[1], '', function(err, Ddata) {
+                                if (err) {
+                                    util.handleError(err, next, callback);
+                                }
+                                if (episode) {
+                                    var episode_match = new RegExp('第 ' + episode + ' 集[\\s\\S]+?dt_edition"><a href="/a/(\\d+)');
+                                    var sub_item = Ddata.match(episode_match);
+                                    if (sub_item) {
+                                        api.getSubHdUrl(sub_item[1], function(err, subtitles) {
+                                            if (err) {
+                                                util.handleError(err, next, callback);
+                                            }
+                                            setTimeout(function(){
+                                                callback(null, subtitles);
+                                            }, 0);
+                                        });
+                                    } else {
+                                        sub_item = Ddata.match(/合集[\s\S]+?dt_edition\"><a href=\"\/a\/(\d+)/);
+                                        if (sub_item) {
+                                            api.getSubHdUrl(sub_item[1], function(err, subtitles) {
+                                                if (err) {
+                                                    util.handleError(err, next, callback);
+                                                }
+                                                setTimeout(function(){
+                                                    callback(null, subtitles);
+                                                }, 0);
+                                            });
+                                        } else {
+                                            sub_item = Ddata.match(/dt_edition\"><a href=\"\/a\/(\d+)/);
+                                            if (sub_item) {
+                                                api.getSubHdUrl(sub_item[1], function(err, subtitles) {
+                                                    if (err) {
+                                                        util.handleError(err, next, callback);
+                                                    }
+                                                    setTimeout(function(){
+                                                        callback(null, subtitles);
+                                                    }, 0);
+                                                });
+                                            } else {
+                                                console.log(Ddata);
+                                                util.handleError({hoerror: 2, message: "sub data error!!!"}, next, callback);
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    var sub_item = Ddata.match(/dt_edition\"><a href=\"\/a\/(\d+)/);
+                                    if (sub_item) {
+                                        api.getSubHdUrl(sub_item[1], function(err, subtitles) {
+                                            if (err) {
+                                                util.handleError(err, next, callback);
+                                            }
+                                            setTimeout(function(){
+                                                callback(null, subtitles);
+                                            }, 0);
+                                        });
+                                    } else {
+                                        console.log(Ddata);
+                                        util.handleError({hoerror: 2, message: "sub data error!!!"}, next, callback);
+                                    }
+                                }
+                            }, null, false, false);
+                        } else {
+                            console.log('no big');
+                            var sub_item = data.match(/pull\-left lb\_r\">[\s\S]+?<a href=\"\/a\/(\d+)/);
+                            if (sub_item) {
+                                api.getSubHdUrl(sub_item[1], function(err, subtitles) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    setTimeout(function(){
+                                        callback(null, subtitles);
+                                    }, 0);
+                                });
+                            } else {
+                                console.log(data);
+                                util.handleError({hoerror: 2, message: "sub data error!!!"}, next, callback);
+                            }
+                        }
+                    } else {
+                        if (data.match(/暂时没有/)) {
+                            console.log('no subtitle');
+                            setTimeout(function(){
+                                callback(null, null);
+                            }, 0);
+                        } else {
+                            console.log(data);
+                            util.handleError({hoerror: 2, message: "sub data error!!!"}, next, callback);
+                        }
+                    }
+                }, null, false, false);
+            }
+            function SUB2VTT(choose_subtitle, subPath, is_file, callback) {
+                var ext = mime.isSub(choose_subtitle);
+                if (!ext) {
+                    util.handleError({hoerror: 2, message: "is not sub!!!"}, next, callback);
+                }
+                if (fs.existsSync(subPath + '.srt')) {
+                    fs.renameSync(subPath + '.srt', subPath + '.srt1');
+                }
+                if (fs.existsSync(subPath + '.ass')) {
+                    fs.renameSync(subPath + '.ass', subPath + '.ass1');
+                }
+                if (fs.existsSync(subPath + '.ssa')) {
+                    fs.renameSync(subPath + '.ssa', subPath + '.ssa1');
+                }
+                if (is_file) {
+                    fs.rename(choose_subtitle, subPath + '.' + ext, function(err) {
+                        if (err) {
+                            util.handleError(err, next, callback);
+                        }
+                        util.SRT2VTT(subPath, ext, function(err) {
+                            if (err) {
+                                util.handleError(err, next, callback);
+                            }
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                } else {
+                    api.xuiteDownload(choose_subtitle, subPath + '.' + ext, function(err) {
+                        if (err) {
+                            util.handleError(err, next, callback);
+                        }
+                        util.SRT2VTT(subPath, ext, function(err) {
+                            if (err) {
+                                util.handleError(err, next, callback);
+                            }
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    }, null, false);
+                }
+            }
         });
     });
 });
@@ -1099,6 +1822,416 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
     });
 });
 
+app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("torrent check");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        var fileIndex = Number(req.params.index);
+        var bufferSize = Number(req.params.size);
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items){
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (items.length === 0) {
+                util.handleError({hoerror: 2, message: 'torrent can not be fund!!!'}, next, res);
+            }
+            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            var bufferPath = filePath + '/' + fileIndex;
+            var comPath = bufferPath + '_complete';
+            var playPath = bufferPath + '_temp';
+            var errPath = bufferPath + '_error';
+            if (fs.existsSync(errPath)) {
+                util.handleError({hoerror: 2, message: 'torrent video error!!!'}, next, res);
+            }
+            var newBuffer = false;
+            if (fs.existsSync(comPath)) {
+                var total = fs.statSync(comPath).size;
+                if (total > bufferSize) {
+                    newBuffer = true;
+                }
+                res.json({newBuffer: newBuffer, complete: true, ret_size: total});
+            } else if (fs.existsSync(bufferPath)) {
+                var total = fs.statSync(bufferPath).size;
+                console.log(total);
+                if (total > bufferSize + 10 * 1024 * 1024) {
+                    newBuffer = true;
+                }
+                res.json({newBuffer: newBuffer, complete: false, ret_size: total});
+                checkTorrent();
+            } else {
+                if (items[0]['playList'][fileIndex].match(/\.mp4$/i) || items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
+                    if (util.checkAdmin(1, req.user)) {
+                        res.json({start: true});
+                        checkTorrent();
+                    } else {
+                        util.handleError({hoerror: 2, message: 'no permission to download!!!'}, next, res);
+                    }
+                } else {
+                    util.handleError({hoerror: 2, message: 'torrent file cannot preview!!!'}, next, res);
+                }
+            }
+            function checkTorrent() {
+                var torrent = decodeURIComponent(items[0]['magnet']);
+                var shortTorrent = torrent.match(/^[^&+]/)[0];
+                var realPath = filePath + '/real';
+                console.log(realPath);
+                var engine = null;
+                for (var i in torrent_pool) {
+                    if (torrent_pool[i].hash === shortTorrent) {
+                        if (torrent_pool[i].index.indexOf(fileIndex) === -1) {
+                            engine = torrent_pool[i].engine;
+                            torrent_pool[i].index.push(fileIndex);
+                        } else {
+                            return;
+                        }
+                        break;
+                    }
+                }
+                mongo.orig("update", "storage", {_id: id}, {$set: {utime: Math.round(new Date().getTime() / 1000)}}, function(err, item2){
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (engine){
+                        startTorrent();
+                    } else {
+                        engine = torrentStream(torrent, {tmp: config_glb.nas_tmp, path: realPath, connections: 100, uploads: 5});
+                        console.log('new engine');
+                        torrent_pool.push({hash: shortTorrent, index: [fileIndex], engine: engine});
+                        engine.on('ready', function() {
+                            console.log('torrent ready');
+                            startTorrent();
+                        });
+                    }
+                });
+                function torrentComplete(exitCode, exitPath) {
+                    console.log('torrentComplete');
+                    var comPath = bufferPath + '_complete';
+                    if (exitCode === 1) {
+                        fs.rename(bufferPath, comPath, function(err) {
+                            if (err) {
+                                util.handleError(err);
+                            }
+                            //sendWs({type: 'torrent', data: {id: items[0]._id, index: fileIndex}}, 0, 0);
+                            engine_del();
+                        });
+                    } else if (exitCode === 2) {
+                        console.log('complete copy');
+                        var splicePath = null;
+                        for (var i = 0; i < 10; i++) {
+                            splicePath = bufferPath + '_' + i;
+                            if (!fs.existsSync(splicePath)) {
+                                break;
+                            }
+                        }
+                        if (i >= 10) {
+                            engine_del();
+                        }
+                        var tProcess = avconv(['-i', exitPath, '-c', 'copy', '-f', 'mp4', splicePath]);
+                        tProcess.once('exit', function(exitCode, signal, metadata1) {
+                            fs.rename(splicePath, comPath, function() {
+                                if (err) {
+                                    util.handleError(err);
+                                }
+                                fs.unlink(bufferPath, function(err) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    fs.unlink(exitPath, function(err) {
+                                        if (err) {
+                                            util.handleError(err);
+                                        }
+                                        engine_del();
+                                    });
+                                });
+                            });
+                        });
+                    } else if (exitCode === 3) {
+                        if (!exitPath) {
+                            exitPath = bufferPath;
+                        }
+                        fs.rename(exitPath, bufferPath + '_error', function(err) {
+                            if (err) {
+                                util.handleError(err);
+                            }
+                            engine_del();
+                        });
+                    } else {
+                        engine_del();
+                    }
+                    function engine_del() {
+                        for (var i in torrent_pool) {
+                            if (torrent_pool[i].hash === shortTorrent) {
+                                var pindex = torrent_pool[i].index.indexOf(fileIndex);
+                                if (pindex !== -1) {
+                                    torrent_pool[i].index.splice(pindex, 1);
+                                }
+                                if (torrent_pool[i].index.length <= 0) {
+                                    torrent_pool[i].engine.destroy();
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                function startTorrent() {
+                    if (fileIndex < 0 || fileIndex >= engine.files.length) {
+                        console.log('unknown index');
+                        torrentComplete(10);
+                    } else {
+                        var file = engine.files[fileIndex];
+                        console.log(fileIndex);
+                        console.log(file.name);
+                        console.log(file.length);
+                        if (file.name.match(/\.mp4$/i)) {
+                            console.log('torrent real start');
+                            if (fs.existsSync(bufferPath)) {
+                                console.log(fs.statSync(bufferPath).size);
+                                if (fs.statSync(bufferPath).size >= file.length) {
+                                    torrentComplete(1);
+                                } else {
+                                    console.log(fs.statSync(bufferPath).size);
+                                    console.log(bufferPath);
+                                    fileStream = file.createReadStream({start: fs.statSync(bufferPath).size});
+                                    fileStream.pipe(fs.createWriteStream(bufferPath, {flags: 'a'}));
+                                    fileStream.on('end', function() {
+                                        torrentComplete(1);
+                                    });
+                                }
+                            } else {
+                                console.log(bufferPath);
+                                oth.computeHash(fileIndex, engine, function(err, hash_ret) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    } else {
+                                        console.log(hash_ret);
+                                        var OpenSubtitles = new openSubtitle('hoder agent v0.1');
+                                        OpenSubtitles.search({
+                                            extensions: 'srt',
+                                            sublanguageid: 'chi',
+                                            hash: hash_ret.movieHash,
+                                            filesize: hash_ret.fileSize
+                                        }).then(function (subtitles) {
+                                            console.log(subtitles);
+                                            if (subtitles.zh) {
+                                                if (fs.existsSync(bufferPath + '.srt')) {
+                                                    fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
+                                                }
+                                                api.xuiteDownload(subtitles.zh.url, bufferPath + '.srt', function(err) {
+                                                    if (err) {
+                                                        util.handleError(err);
+                                                    } else {
+                                                        util.SRT2VTT(bufferPath, 'srt', function(err) {
+                                                            if (err) {
+                                                                util.handleError(err);
+                                                            } else {
+                                                                console.log('sub end');
+                                                            }
+                                                        });
+                                                    }
+                                                }, null, false);
+                                            }
+                                        }).catch(function (err) {
+                                            util.handleError(err);
+                                        });
+                                    }
+                                });
+                                fileStream = file.createReadStream();
+                                fileStream.pipe(fs.createWriteStream(bufferPath));
+                                fileStream.on('end', function() {
+                                    torrentComplete(1);
+                                });
+                            }
+                        } else if (file.name.match(/\.mkv$/i)) {
+                            console.log('torrent real start');
+                            var tempPath = bufferPath + '_temp';
+                            var time = 0;
+                            if (fs.existsSync(tempPath)) {
+                                fs.unlink(tempPath, function (err) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    } else {
+                                        var aProcess = avconv(['-i', '-', '-strict', 'experimental', '-c:a', 'aac', '-c:v', 'copy', '-movflags', 'frag_keyframe+empty_moov', '-f', 'mp4', tempPath]);
+                                        file.createReadStream().pipe(aProcess);
+                                        aProcess.on('message', function(data) {
+                                            mkv2buffer(data);
+                                        });
+                                        aProcess.once('exit', function(exitCode, signal, metadata1) {
+                                            torrentComplete(2, tempPath);
+                                        });
+                                    }
+                                });
+                            } else {
+                                oth.computeHash(fileIndex, engine, function(err, hash_ret) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    } else {
+                                        console.log(hash_ret);
+                                        var OpenSubtitles = new openSubtitle('hoder agent v0.1');
+                                        OpenSubtitles.search({
+                                            extensions: 'srt',
+                                            sublanguageid: 'chi',
+                                            hash: hash_ret.movieHash,
+                                            filesize: hash_ret.fileSize
+                                        }).then(function (subtitles) {
+                                            console.log(subtitles);
+                                            if (subtitles.zh) {
+                                                if (fs.existsSync(bufferPath + '.srt')) {
+                                                    fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
+                                                }
+                                                api.xuiteDownload(subtitles.zh.url, bufferPath + '.srt', function(err) {
+                                                    if (err) {
+                                                        util.handleError(err);
+                                                    } else {
+                                                        util.SRT2VTT(bufferPath, 'srt', function(err) {
+                                                            if (err) {
+                                                                util.handleError(err);
+                                                            } else {
+                                                                console.log('sub end');
+                                                            }
+                                                        });
+                                                    }
+                                                }, null, false);
+                                            }
+                                        }).catch(function (err) {
+                                            util.handleError(err);
+                                        });
+                                    }
+                                });
+                                var aProcess = avconv(['-i', '-', '-strict', 'experimental', '-c:a', 'aac', '-c:v', 'copy', '-movflags', 'frag_keyframe+empty_moov', '-f', 'mp4', tempPath]);
+                                file.createReadStream().pipe(aProcess);
+                                aProcess.on('message', function(data) {
+                                    mkv2buffer(data);
+                                });
+                                aProcess.once('exit', function(exitCode, signal, metadata1) {
+                                    torrentComplete(2, tempPath);
+                                });
+                            }
+                            function mkv2buffer(data, end) {
+                                var parseTime = data.match(/ time=(\d+\.\d+) /);
+                                if (parseTime) {
+                                    var currentTime = Number(parseTime[1]);
+                                    console.log(currentTime);
+                                    if (currentTime > time + 300) {
+                                        time = currentTime;
+                                        console.log('start copy');
+                                        var splicePath = null;
+                                        for (var i = 0; i < 10; i++) {
+                                            splicePath = bufferPath + '_' + i;
+                                            if (!fs.existsSync(splicePath)) {
+                                                break;
+                                            }
+                                        }
+                                        if (i >= 10) {
+                                            return;
+                                        }
+                                        var tProcess = avconv(['-i', tempPath, '-c', 'copy', '-f', 'mp4', splicePath]);
+                                        tProcess.once('exit', function(exitCode, signal, metadata1) {
+                                            fs.rename(splicePath, bufferPath, function() {
+                                                if (err) {
+                                                    util.handleError(err);
+                                                    torrentComplete(3, tempPath);
+                                                }
+                                                //如果比compplete慢 砍掉自己
+                                                if (fs.existsSync(bufferPath + '_complete')) {
+                                                    fs.unlink(bufferPath, function(err) {
+                                                        if (err) {
+                                                            util.handleError(err);
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        });
+                                    }
+                                }
+                            }
+                        } else {
+                            console.log('not previewable');
+                            torrentComplete(10);
+                        }
+                    }
+                }
+            }
+        });
+    });
+});
+
+app.get('/torrent/:index(\\d+)/:uid/:fresh(\\d+)?', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("torrent");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid'), fileIndex = Number(req.params.index);
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items){
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (items.length === 0) {
+                util.handleError({hoerror: 2, message: 'torrent can not be fund!!!'}, next, res);
+            }
+            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            var bufferPath = filePath + '/' + fileIndex;
+            var comPath = bufferPath + '_complete';
+            var errPath = bufferPath + '_error';
+            if (fs.existsSync(comPath)) {
+                var total = fs.statSync(comPath).size;
+                console.log('complete');
+                if (req.headers['range']) {
+                    var range = req.headers.range;
+                    var parts = range.replace(/bytes(=|: )/, "").split("-");
+                    var partialstart = parts[0];
+                    var partialend = parts[1];
+
+                    var start = parseInt(partialstart, 10);
+                    var end = partialend ? parseInt(partialend, 10) : total-1;
+                    var chunksize = (end-start)+1;
+                    console.log(start);
+                    console.log(end);
+                    console.log(total);
+                    res.writeHead(206, { 'Content-Range': 'bytes ' + start + '-' + end + '/' + total, 'Accept-Ranges': 'bytes', 'Content-Length': chunksize, 'Content-Type': 'video/mp4' });
+                    fs.createReadStream(comPath, {start: start, end: end}).pipe(res);
+                } else {
+                    res.writeHead(200, { 'Content-Length': total, 'Content-Type': 'video/mp4' });
+                    fs.createReadStream(comPath).pipe(res);
+                }
+            } else {
+                if (fs.existsSync(errPath)) {
+                    util.handleError({hoerror: 2, message: 'video error!!!'}, next, res);
+                }
+                if (fs.existsSync(bufferPath)) {
+                    console.log('play');
+                    var total = fs.statSync(bufferPath).size;
+                    if (req.headers['range']) {
+                        var range = req.headers.range;
+                        var parts = range.replace(/bytes(=|: )/, "").split("-");
+                        var partialstart = parts[0];
+                        var partialend = parts[1];
+
+                        var start = parseInt(partialstart, 10);
+                        var end = partialend ? parseInt(partialend, 10) : total-1;
+                        var chunksize = (end-start)+1;
+                        res.writeHead(206, { 'Content-Range': 'bytes ' + start + '-' + end + '/' + total, 'Accept-Ranges': 'bytes', 'Content-Length': chunksize, 'Content-Type': 'video/mp4' });
+                        fs.createReadStream(bufferPath, {start: start, end: end}).pipe(res);
+                    } else {
+                        res.writeHead(200, { 'Content-Length': total, 'Content-Type': 'video/mp4' });
+                        fs.createReadStream(bufferPath).pipe(res);
+                    }
+                }
+            }
+        });
+    });
+});
+
 app.get('/video/:uid', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("video");
@@ -1162,7 +2295,7 @@ app.get('/video/:uid', function (req, res, next) {
     });
 });
 
-app.get('/subtitle/:uid', function(req, res, next){
+app.get('/subtitle/:uid/:index(\\d+)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle');
         console.log(new Date());
@@ -1176,7 +2309,13 @@ app.get('/subtitle/:uid', function(req, res, next){
             if (err) {
                 util.handleError(err, next, res);
             }
-            if (items.length > 0 && items[0].status === 3) {
+            if (items.length <= 0) {
+                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+            }
+            if (items[0].status !== 3 && items[0].status !== 9) {
+                util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+            }
+            if (items[0].status === 3) {
                 var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 fs.exists(filePath + '.vtt', function (exists) {
                     res.writeHead(200, { 'Content-Type': 'text/vtt' });
@@ -1186,8 +2325,20 @@ app.get('/subtitle/:uid', function(req, res, next){
                         var stream = fs.createReadStream(filePath + '.vtt').pipe(res);
                     }
                 });
-            } else {
-                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+            } else if (items[0].status === 9) {
+                var fileIndex = 0;
+                if (req.params.index) {
+                    fileIndex = Number(req.params.index);
+                }
+                var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+                fs.exists(filePath + '/' + fileIndex + '.vtt', function (exists) {
+                    res.writeHead(200, { 'Content-Type': 'text/vtt' });
+                    if (!exists) {
+                        var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
+                    } else {
+                        var stream = fs.createReadStream(filePath + '/' + fileIndex + '.vtt').pipe(res);
+                    }
+                });
             }
         });
     });
@@ -1225,6 +2376,16 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                         sendWs({type: 'file', data: items[0]._id}, 1, 1);
                         res.json({apiOK: true});
                     });
+                } else if (items[0].status === 9) {
+                    util.deleteFolderRecursive(filePath);
+                    mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
+                        if(err) {
+                            util.handleError(err, next, res);
+                        }
+                        console.log('perm delete file');
+                        sendWs({type: 'file', data: items[0]._id}, 1, 1);
+                        res.json({apiOK: true});
+                    });
                 } else {
                     var del_arr = [filePath];
                     if (fs.existsSync(filePath + '.jpg')) {
@@ -1238,6 +2399,18 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                     }
                     if (fs.existsSync(filePath + '.srt1')) {
                         del_arr.push(filePath + '.srt1');
+                    }
+                    if (fs.existsSync(filePath + '.ass')) {
+                        del_arr.push(filePath + '.ass');
+                    }
+                    if (fs.existsSync(filePath + '.ass1')) {
+                        del_arr.push(filePath + '.ass1');
+                    }
+                    if (fs.existsSync(filePath + '.ssa')) {
+                        del_arr.push(filePath + '.ssa');
+                    }
+                    if (fs.existsSync(filePath + '.ssa1')) {
+                        del_arr.push(filePath + '.ssa1');
                     }
                     if (fs.existsSync(filePath + '.vtt')) {
                         del_arr.push(filePath + '.vtt');
@@ -1299,6 +2472,59 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                         }
                         sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                     });
+                } else if (items[0].status === 9) {
+                    var total_file = items[0].playList.length;
+                    if (total_file > 0) {
+                        recur_playlist_backup(0);
+                    }
+                    function recur_playlist_backup(index) {
+                        var bufferPath = filePath + '/' + index;
+                        if (fs.existsSync(bufferPath + '_complete')) {
+                            googleApi.googleBackup(items[0]._id, items[0].playList[index], bufferPath, items[0].tags, recycle, function(err) {
+                                if(err) {
+                                    util.handleError(err);
+                                } else {
+                                    index++;
+                                    if (index < total_file) {
+                                        recur_playlist_backup(index);
+                                    } else {
+                                        recycle++;
+                                        mongo.orig("update", "storage", { _id: id }, {$set: {recycle: recycle}}, function(err, item3){
+                                            if(err) {
+                                                util.handleError(err);
+                                            } else {
+                                                sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                                if (recycle < 4) {
+                                                    setTimeout(function(){
+                                                        recur_backup();
+                                                    }, 0);
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            }, '_complete');
+                        } else {
+                            index++;
+                            if (index < total_file) {
+                                recur_playlist_backup(index);
+                            } else {
+                                recycle++;
+                                mongo.orig("update", "storage", { _id: id }, {$set: {recycle: recycle}}, function(err, item3){
+                                    if(err) {
+                                        util.handleError(err);
+                                    } else {
+                                        sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                        if (recycle < 4) {
+                                            setTimeout(function(){
+                                                recur_backup();
+                                            }, 0);
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
                 } else {
                     googleApi.googleBackup(items[0]._id, items[0].name, filePath, items[0].tags, recycle, function(err) {
                         if(err) {

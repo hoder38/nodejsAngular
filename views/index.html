@@ -100,6 +100,9 @@
                     <button type="button" ng-show="present.list.length" class="btn btn-info" ng-click="mediaToggle('present')">
                         Present<span class="badge">{{present.end && ' ' || '>'}}{{present.list.length}}</span>
                     </button>
+                    <button type="button" ng-show="torrent.list.length" class="btn btn-danger" ng-click="mediaToggle('torrent')">
+                        Playlist<span class="badge">{{torrent.end && ' ' || '>'}}{{torrent.list.length}}</span>
+                    </button>
                 </div>
                 <sectio id="left-bottom-section">
                     <section class="panel panel-info" id="uploader-section" ng-show="widget.uploader&&isLogin">
@@ -430,6 +433,49 @@
                                 </ul>
                             </nav>
                             <iframe class="doc-screen" ng-src="{{present.src | trusted}}" style="border: 0;"></iframe>
+                        </div>
+                    </section>
+                    <section class="panel panel-info" ng-show="mediaShow[0] === 'torrent'">
+                        <div class="panel-heading" ng-click="mediaToggle('torrent')">
+                            <h4 class="panel-title">
+                                {{(torrent.index+1)}} : {{torrent.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
+                            </h4>
+                        </div>
+                        <div class="panel-body media-trim">
+                            <nav>
+                                <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="torrentMove(-1)">
+                                            <span class="glyphicon glyphicon-chevron-left"></span>
+                                        </a>
+                                    </li>
+                                    <li ng-hide="torrent.complete">
+                                        <a href="#" ng-click="torrentCheck(false, false)">
+                                            <span class="glyphicon glyphicon-refresh"></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class='media-hide' ng-click="isFull = !isFull">
+                                            <span class="glyphicon {{isFull && 'glyphicon-minus-sign'||'glyphicon-plus-sign'}}"></span>
+                                        </a>
+                                    </li>
+                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                        <a href="#" ng-click="torrentMove(1)">
+                                            <span class="glyphicon glyphicon-chevron-right"></span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <select ng-model="torrent.option">
+                                            <option value="0">字幕</option>
+                                            <option value="1">search</option>
+                                            <option value="2">upload</option>
+                                        </select>
+                                    </li>
+                                </ul>
+                            </nav>
+                            <video ng-show="torrent.src" class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{torrent.src | trusted}}" controls autoplay ng-torrent ng-ended="torrentMove(1, true)" ng-play="testLogin()" ng-pause="mediaRecord('torrent')" crossorigin="use-credentials" ng-click="torrentToggle()" tabindex=1 id="torrent-tag">
+                                <track label="English" kind="captions" srclang="en" ng-src="{{torrent.sub | trusted}}" default="" />
+                            </video>
                         </div>
                     </section>
                 </section>

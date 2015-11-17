@@ -1,7 +1,7 @@
 var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 
-var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'no youtube', 'youtube video', 'youtube playlist'];
+var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'no youtube', 'youtube video', 'youtube playlist', 'playlist unactive'];
 
 var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'publisher', 'tw': '出版社'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
 var stock_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'country', 'tw': '國家'}, {'name': 'market type', 'tw': '市場種類'}, {'name': 'category', 'tw': '產業分類'}];
@@ -1366,6 +1366,14 @@ var getStorageQuerySql = function(user, tagList, exactly) {
                     console.log({count: {$lt: unHit}, utime: {$lt: time}});
                     return {nosql: {count: {$lt: unHit}, utime: {$lt: time}}};
                 }
+            } else if (index.index === 11) {
+                if (util.checkAdmin(1, user)) {
+                    var unDay = user.unDay? user.unDay: unactive_day;
+                    var unHit = user.unHit? user.unHit: unactive_hit;
+                    var time = Math.round(new Date().getTime() / 1000) - unDay * 86400;
+                    console.log({count: {$lt: unHit}, utime: {$lt: time}, tags: 'playlist'});
+                    return {nosql: {count: {$lt: unHit}, utime: {$lt: time}, tags: 'playlist'}};
+                }
             } else if (index.index === 3) {
                 if (util.checkAdmin(1, user)) {
                     var time = Math.round(new Date().getTime() / 1000) - handleTime;
@@ -1614,7 +1622,7 @@ function normalize(tag) {
 }
 function CN2ArabNum(cn) {
     var cnChars = '零一二三四五六七八九',
-    mulChars = '十十百千萬',
+    mulChars = '十百千萬',
     arab = 0, tmp = [], mul = 0, state = 0, aum = 0;
     if (!cn) {
         return 0;

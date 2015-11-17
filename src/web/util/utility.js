@@ -3,7 +3,8 @@ var crypto = require('crypto'),
     MobileDetect = require('mobile-detect'),
     fs = require("fs");
 var mongo = require("../models/mongo-tool.js"),
-    charsetDetector = require("node-icu-charset-detector");
+    charsetDetector = require("node-icu-charset-detector"),
+    ass2vtt = require('ass-to-vtt');
 var config_type = require('../../../ver.js');
 
 var pwCheck = {};
@@ -109,7 +110,7 @@ module.exports = {
                     }
                     break;
                 case 'url':
-                    if (str.match(re_weburl)) {
+                    if (str.match(re_weburl) || str.match(/^magnet:\?xt=urn:btih:[a-z0-9]{20,50}/i)) {
                         return encodeURIComponent(str);
                     }
                     break;
@@ -209,6 +210,15 @@ module.exports = {
         var uid_md5 = crypto.createHash('md5').update(uid_S).digest('hex');
         return path.join(config_glb.nas_prefix, owner_md5.substr(0, 2), owner_S, uid_md5.substr(0, 2), uid_S);
     },
+    //記得修改
+    /*getRandomLocation: function () {
+        var parent = Math.random().toString();
+        var parent_md5 = crypto.createHash('md5').update(parent).digest('hex');
+        var uid = new Date().getTime().toString();
+        var uid_md5 = crypto.createHash('md5').update(uid).digest('hex');
+        //return path.join(config_glb.nas_prefix, parent_md5.substr(0, 2), parent, uid_md5.substr(0, 2), uid);
+        return path.join(config_glb.nas_tmp, 'temp', uid);
+    },*/
     isMobile: function(agent) {
         var md = new MobileDetect(agent);
         return md.mobile();
@@ -263,17 +273,38 @@ module.exports = {
                 this_obj.handleError(err, callback, callback);
             }
             data = this_obj.bufferToString(data);
-            var result = "WEBVTT\n\n";
-            result = result + data.replace(/,/g, '.');
-            fs.writeFile(filePath + '.vtt', result, 'utf8', function (err) {
-                if (err) {
-                    console.log(filePath + '.vtt');
-                    this_obj.handleError(err, callback, callback);
-                }
-                setTimeout(function(){
-                    callback(null);
-                }, 0);
-            });
+            if (ext === 'srt') {
+                var result = "WEBVTT\n\n";
+                result = result + data.replace(/,/g, '.');
+                fs.writeFile(filePath + '.vtt', result, 'utf8', function (err) {
+                    if (err) {
+                        console.log(filePath + '.vtt');
+                        this_obj.handleError(err, callback, callback);
+                    }
+                    setTimeout(function(){
+                        callback(null);
+                    }, 0);
+                });
+            } else {
+                fs.writeFile(filePath + '.sub', data, 'utf8', function (err) {
+                    if (err) {
+                        console.log(filePath + '.sub');
+                        this_obj.handleError(err, callback, callback);
+                    }
+                    var subfs = fs.createReadStream(filePath + '.sub');
+                    subfs.pipe(ass2vtt()).pipe(fs.createWriteStream(filePath + '.vtt'));
+                    subfs.on('end', function() {
+                        fs.unlink(filePath + '.sub', function(err) {
+                            if (err) {
+                                this_obj.handleError(err, callback, callback);
+                            }
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                });
+            }
         });
     }
 };

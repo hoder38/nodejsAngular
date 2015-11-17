@@ -63,6 +63,8 @@ var express = require('express'),
     server = https.createServer(credentials, app),
     //port = 443,
     encode = "utf8",
+    tpb = require('thepiratebay'),
+    youtubedl = require('youtube-dl'),
     viewsPath = path.join(__dirname, "../../../views"),
     staticPath = path.join(__dirname, "../../../public"),
     sessionStore = require("../models/session-tool.js")(express_session);
@@ -859,7 +861,9 @@ app.put('/api/delTag/:tag', function(req, res, next){
                 }
                 index++;
                 if (index < req.body.uids.length) {
-                    recur_del();
+                    setTimeout(function() {
+                        recur_del();
+                    }, 500);
                 } else {
                     res.json({apiOK: true});
                 }
@@ -888,7 +892,9 @@ app.put('/api/stock/delTag/:tag', function(req, res, next){
                 index++;
                 sendWs({type: 'stock', data: result.id}, 0, 1);
                 if (index < req.body.uids.length) {
-                    recur_del();
+                    setTimeout(function() {
+                        recur_del();
+                    }, 500);
                 } else {
                     res.json({apiOK: true});
                 }
@@ -1791,6 +1797,48 @@ app.get('/api/media/record/:id/:time/:type(youtube)?', function(req, res, next){
     });
 });
 
+app.get('/api/torrent/query/preview/:id', function (req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("torrent query preview");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.id, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items){
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            console.log(items);
+            if (items.length === 0 || items[0].status !== 9) {
+                util.handleError({hoerror: 2, message: 'playlist can not be fund!!!'}, next, res);
+            }
+            mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {limit: 1}, function(err, items2){
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (items2.length === 0) {
+                    res.json({id: items[0]._id, list: items[0].playList});
+                } else {
+                    res.json({id: items[0]._id, list: items[0].playList, time: items2[0].recordTime});
+                }
+                tagTool.setLatest('', id, req.session, function(err) {
+                    if (err) {
+                        util.handleError(err);
+                    }
+                    mongo.orig("update", "storage", {_id: id}, {$inc: { count: 1}}, function(err, item2){
+                        if(err) {
+                            util.handleError(err);
+                        }
+                    });
+                });
+            });
+        });
+    });
+});
+
 app.get('/api/media/setTime/:id/:type/:mType(youtube)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('media setTime');
@@ -1816,7 +1864,10 @@ app.get('/api/media/setTime/:id/:type/:mType(youtube)?', function(req, res, next
         }
         if (type === 'url' || type === 'music') {
             res.json({apiOK: true});
-            tagTool.setLatest('', id, req.session, function(err) {
+            if (type === 'url') {
+                type = '';
+            }
+            tagTool.setLatest(type, id, req.session, function(err) {
                 if (err) {
                     util.handleError(err);
                 }
@@ -2206,7 +2257,9 @@ app.put('/api/password/delTag/:tag', function(req, res, next){
                 index++;
                 sendWs({type: 'password', data: result.id});
                 if (index < req.body.uids.length) {
-                    recur_del();
+                    setTimeout(function() {
+                        recur_del();
+                    }, 500);
                 } else {
                     res.json({apiOK: true});
                 }
@@ -2660,7 +2713,14 @@ client.on('end', function() {
     console.log('disconnected from server');
 });
 function sendWs(data, adultonly, auth) {
-    var sendData = JSON.stringify({send: 'web 1', data: data, adultonly: adultonly, auth: auth});
+    var ad = 0, au = 0;
+    if (adultonly) {
+        ad = 1;
+    }
+    if (auth) {
+        au = 1;
+    }
+    var sendData = JSON.stringify({send: 'web 1', data: data, adultonly: ad, auth: au});
     client.write(sendData);
 }
 
