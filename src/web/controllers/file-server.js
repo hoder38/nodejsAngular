@@ -77,6 +77,7 @@ var express = require('express'),
     app = express(),
     server = https.createServer(credentials, app),
     mkdirp = require('mkdirp'),
+    readline = require('readline'),
     sessionStore = require("../models/session-tool.js")(express_session);
 
 var torrentStream = require('torrent-stream');
@@ -868,6 +869,133 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
                         }
                     });
                 }
+            });
+        });
+    });
+});
+
+app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+)?', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('subtitle fix');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid'), fileIndex = 0;
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        };
+        if (!req.params.adjust.match(/^\-?\d+(\.\d+)?$/)) {
+            util.handleError({hoerror: 2, message: "adjust time is not vaild"}, next, res);
+        }
+        var adjust = Number(req.params.adjust);
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (items.length <= 0) {
+                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+            }
+            if (items[0].status !== 3 && items[0].status !== 9) {
+                util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+            }
+            if (req.params.index) {
+                fileIndex = Number(req.params.index);
+            }
+            if (items[0].status === 9 && !items[0]['playList'][fileIndex].match(/\.mp4$/i) && !items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
+                util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+            }
+            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            if (items[0].status === 9) {
+                filePath = filePath + '/' + fileIndex;
+            }
+            if (!fs.existsSync(filePath + '.vtt')) {
+                util.handleError({hoerror: 2, message: "do not have subtitle!!!"}, next, res);
+            }
+            var rl = readline.createInterface({
+                input: fs.createReadStream(filePath + '.vtt'),
+                terminal: false
+            });
+            var time_match = false;
+            var stime = 0;
+            var etime = 0;
+            adjust = adjust * 1000;
+            var atime = '';
+            var temp = 0;
+            var write_data = '';
+            rl.on('line', function (line) {
+                time_match = line.match(/^(\d\d):(\d\d):(\d\d)\.(\d\d\d) --> (\d\d):(\d\d):(\d\d)\.(\d\d\d)$/);
+                if (time_match) {
+                    //console.log('Line from file:', line);
+                    stime = Number(time_match[1]) * 3600000 + Number(time_match[2]) * 60000 + Number(time_match[3]) * 1000 + Number(time_match[4]);
+                    etime = Number(time_match[5]) * 3600000 + Number(time_match[6]) * 60000 + Number(time_match[7]) * 1000 + Number(time_match[8]);
+                    stime = stime + adjust;
+                    if (stime < 0) {
+                        stime = 0;
+                    }
+                    etime = etime + adjust;
+                    if (etime < 0) {
+                        etime = 0;
+                    }
+                    temp = Math.floor(stime/3600000);
+                    if (temp < 10) {
+                        temp = '0' + temp;
+                    }
+                    stime = stime % 3600000;
+                    atime = temp + ':';
+                    temp = Math.floor(stime/60000);
+                    if (temp < 10) {
+                        temp = '0' + temp;
+                    }
+                    stime = stime % 60000;
+                    atime = atime + temp + ':';
+                    temp = Math.floor(stime/1000);
+                    if (temp < 10) {
+                        temp = '0' + temp;
+                    }
+                    stime = stime % 1000;
+                    if (stime < 10) {
+                        stime = '00' + stime;
+                    } else if (stime < 100) {
+                        stime = '0' + stime;
+                    }
+                    atime = atime + temp + '.' + stime + ' --> ';
+                    temp = Math.floor(etime/3600000);
+                    if (temp < 10) {
+                        temp = '0' + temp;
+                    }
+                    etime = etime % 3600000;
+                    atime = atime + temp + ':';
+                    temp = Math.floor(etime/60000);
+                    if (temp < 10) {
+                        temp = '0' + temp;
+                    }
+                    etime = etime % 60000;
+                    atime = atime + temp + ':';
+                    temp = Math.floor(etime/1000);
+                    if (temp < 10) {
+                        temp = '0' + temp;
+                    }
+                    etime = etime % 1000;
+                    if (etime < 10) {
+                        etime = '00' + etime;
+                    } else if (etime < 100) {
+                        etime = '0' + etime;
+                    }
+                    atime = atime + temp + '.' + etime;
+                    //console.log(atime);
+                    write_data = write_data + atime + "\r\n";
+                } else {
+                    write_data = write_data + line + "\r\n";
+                }
+            }).on('close', function() {
+                //console.log(write_data);
+                fs.writeFile(filePath + '.vtt', write_data, 'utf8', function (err) {
+                    if (err) {
+                        console.log(filePath + '.vtt');
+                        util.handleError(err, next, res);
+                    }
+                    res.json({apiOK: true});
+                });
             });
         });
     });
@@ -2052,6 +2180,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                             console.log('torrent real start');
                             var tempPath = bufferPath + '_temp';
                             var time = 0;
+                            var mkvBuffering = false;
                             if (fs.existsSync(tempPath)) {
                                 fs.unlink(tempPath, function (err) {
                                     if (err) {
@@ -2114,40 +2243,44 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                                 });
                             }
                             function mkv2buffer(data, end) {
-                                var parseTime = data.match(/ time=(\d+\.\d+) /);
-                                if (parseTime) {
-                                    var currentTime = Number(parseTime[1]);
-                                    console.log(currentTime);
-                                    if (currentTime > time + 300) {
-                                        time = currentTime;
-                                        console.log('start copy');
-                                        var splicePath = null;
-                                        for (var i = 0; i < 10; i++) {
-                                            splicePath = bufferPath + '_' + i;
-                                            if (!fs.existsSync(splicePath)) {
-                                                break;
+                                if (!mkvBuffering) {
+                                    var parseTime = data.match(/ time=(\d+\.\d+) /);
+                                    if (parseTime) {
+                                        var currentTime = Number(parseTime[1]);
+                                        console.log(currentTime);
+                                        if (currentTime > time + 300) {
+                                            time = currentTime;
+                                            console.log('start copy');
+                                            var splicePath = null;
+                                            for (var i = 0; i < 10; i++) {
+                                                splicePath = bufferPath + '_' + i;
+                                                if (!fs.existsSync(splicePath)) {
+                                                    break;
+                                                }
                                             }
-                                        }
-                                        if (i >= 10) {
-                                            return;
-                                        }
-                                        var tProcess = avconv(['-i', tempPath, '-c', 'copy', '-f', 'mp4', splicePath]);
-                                        tProcess.once('exit', function(exitCode, signal, metadata1) {
-                                            fs.rename(splicePath, bufferPath, function() {
-                                                if (err) {
-                                                    util.handleError(err);
-                                                    torrentComplete(3, tempPath);
-                                                }
-                                                //如果比compplete慢 砍掉自己
-                                                if (fs.existsSync(bufferPath + '_complete')) {
-                                                    fs.unlink(bufferPath, function(err) {
-                                                        if (err) {
-                                                            util.handleError(err);
-                                                        }
-                                                    });
-                                                }
+                                            if (i >= 10) {
+                                                return;
+                                            }
+                                            mkvBuffering = true;
+                                            var tProcess = avconv(['-i', tempPath, '-c', 'copy', '-f', 'mp4', splicePath]);
+                                            tProcess.once('exit', function(exitCode, signal, metadata1) {
+                                                fs.rename(splicePath, bufferPath, function(err) {
+                                                    mkvBuffering = false;
+                                                    if (err) {
+                                                        util.handleError(err);
+                                                        torrentComplete(3, tempPath);
+                                                    }
+                                                    //如果比compplete慢 砍掉自己
+                                                    if (fs.existsSync(bufferPath + '_complete')) {
+                                                        fs.unlink(bufferPath, function(err) {
+                                                            if (err) {
+                                                                util.handleError(err);
+                                                            }
+                                                        });
+                                                    }
+                                                });
                                             });
-                                        });
+                                        }
                                     }
                                 }
                             }
@@ -2195,9 +2328,9 @@ app.get('/torrent/:index(\\d+)/:uid/:fresh(\\d+)?', function (req, res, next) {
                     var start = parseInt(partialstart, 10);
                     var end = partialend ? parseInt(partialend, 10) : total-1;
                     var chunksize = (end-start)+1;
-                    console.log(start);
-                    console.log(end);
-                    console.log(total);
+                    //console.log(start);
+                    //console.log(end);
+                    //console.log(total);
                     res.writeHead(206, { 'Content-Range': 'bytes ' + start + '-' + end + '/' + total, 'Accept-Ranges': 'bytes', 'Content-Length': chunksize, 'Content-Type': 'video/mp4' });
                     fs.createReadStream(comPath, {start: start, end: end}).pipe(res);
                 } else {
@@ -2946,7 +3079,7 @@ if (config_glb.updateStock) {
 function checkLogin(req, res, next, callback) {
     if(!req.isAuthenticated()){
         if (util.isMobile(req.headers['user-agent']) || req.headers['user-agent'].match(/Firefox/i)|| req.headers['user-agent'].match(/armv7l/i)) {
-            if (/^\/video\//.test(req.path) || /^\/subtitle\//.test(req.path)) {
+            if (/^\/video\//.test(req.path) || /^\/subtitle\//.test(req.path) || /^\/torrent\//.test(req.path)) {
                 console.log("mobile or firefox");
                 setTimeout(function(){
                     callback(req, res, next);

@@ -2412,6 +2412,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.inputUrl = '';
     $scope.disableUrlSave = false;
     $scope.isAdult = false;
+    $scope.curTorrentSub = '';
+    $scope.curTorrentSubTime = 0;
+    $scope.fixTorrentSub = false;
+    $scope.curVideoSub = '';
+    $scope.curVideoSubTime = 0;
+    $scope.fixVideoSub = false;
     //alert
     $scope.alerts = [];
     var alertTime;
@@ -2512,10 +2518,18 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
                 break;
                 case 37:
-                if (video.currentTime >= 15) {
-                    video.currentTime -= 15;
+                if ($scope.fixVideoSub) {
+                    if (video.currentTime >= 0.5) {
+                        video.currentTime -= 0.5;
+                    } else {
+                        video.currentTime = 0;
+                    }
                 } else {
-                    video.currentTime = 0;
+                    if (video.currentTime >= 15) {
+                        video.currentTime -= 15;
+                    } else {
+                        video.currentTime = 0;
+                    }
                 }
                 break;
                 case 38:
@@ -2526,7 +2540,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
                 break;
                 case 39:
-                video.currentTime += 15;
+                if ($scope.fixVideoSub) {
+                    video.currentTime += 0.5;
+                } else {
+                    video.currentTime += 15;
+                }
                 break;
                 case 40:
                 if (video.volume > 0.1) {
@@ -2542,6 +2560,24 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     video.textTracks[0].mode = "showing";
                 }
                 break;
+                case 70:
+                if ($scope.fixVideoSub) {
+                    $scope.mediaToggle('video');
+                    var adjust = Math.ceil((video.currentTime - $scope.curVideoSubTime) * 10)/10;
+                    openModal("確定校準此字幕到此時間軸？完畢後請刷新頁面，字幕才會更新").then(function () {
+                        $scope.fixVideoSub = false;
+                        $scope.curVideoSub = '';
+                        fixSubtitle(adjust, 'video');
+                    }, function () {
+                    });
+                } else {
+                    if (video && video.textTracks && video.textTracks[0].activeCues && video.textTracks[0].activeCues.length > 0) {
+                        $scope.curVideoSub = video.textTracks[0].activeCues[0].text;
+                        $scope.curVideoSubTime = video.textTracks[0].activeCues[0].startTime;
+                        $scope.fixVideoSub = true;
+                        video.pause();
+                    }
+                }
             }
         }
     };
@@ -2567,10 +2603,18 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
                 break;
                 case 37:
-                if (torrent.currentTime >= 15) {
-                    torrent.currentTime -= 15;
+                if ($scope.fixTorrentSub) {
+                    if (torrent.currentTime >= 0.5) {
+                        torrent.currentTime -= 0.5;
+                    } else {
+                        torrent.currentTime = 0;
+                    }
                 } else {
-                    torrent.currentTime = 0;
+                    if (torrent.currentTime >= 15) {
+                        torrent.currentTime -= 15;
+                    } else {
+                        torrent.currentTime = 0;
+                    }
                 }
                 break;
                 case 38:
@@ -2581,7 +2625,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
                 break;
                 case 39:
-                torrent.currentTime += 15;
+                if ($scope.fixTorrentSub) {
+                    torrent.currentTime += 0.5;
+                } else {
+                    torrent.currentTime += 15;
+                }
                 break;
                 case 40:
                 if (torrent.volume > 0.1) {
@@ -2597,9 +2645,54 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     torrent.textTracks[0].mode = "showing";
                 }
                 break;
+                case 70:
+                if ($scope.fixTorrentSub) {
+                    $scope.mediaToggle('torrent');
+                    var adjust = Math.ceil((torrent.currentTime - $scope.curTorrentSubTime) * 10)/10;
+                    openModal("確定校準此字幕到此時間軸？完畢後請刷新頁面，字幕才會更新").then(function () {
+                        $scope.fixTorrentSub = false;
+                        $scope.curTorrentSub = '';
+                        fixSubtitle(adjust, 'torrent');
+                    }, function () {
+                    });
+                } else {
+                    if (torrent && torrent.textTracks && torrent.textTracks[0].activeCues && torrent.textTracks[0].activeCues.length > 0) {
+                        $scope.curTorrentSub = torrent.textTracks[0].activeCues[0].text;
+                        $scope.curTorrentSubTime = torrent.textTracks[0].activeCues[0].startTime;
+                        $scope.fixTorrentSub = true;
+                        torrent.pause();
+                    }
+                }
+                break;
             }
         }
     };
+    function fixSubtitle(adjust, type) {
+        var append = '';
+        if (type === 'torrent') {
+            append = $scope.torrent.id + '/' + adjust + '/' + $scope.torrent.index;
+        } else {
+            append = $scope.video.id + '/' + adjust;
+        }
+        var subtitleApi = $resource($scope.main_url + '/api/subtitle/fix/' + append, {}, {
+            'fix': { method:'GET', withCredentials: true }
+        });
+        subtitleApi.fix({}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                addAlert('字幕校準成功');
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
+    }
     if (is_firefox) {
         $scope.$watch("video.sub", function(newVal, oldVal) {
             if (newVal) {

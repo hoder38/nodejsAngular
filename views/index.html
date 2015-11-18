@@ -276,6 +276,7 @@
                         <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
+                                    <li>{{curVideoSub}}</li>
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(-1, 'video')">
                                             <span class="glyphicon glyphicon-chevron-left"></span>
@@ -444,6 +445,7 @@
                         <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
+                                    <li>{{curTorrentSub}}</li>
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="torrentMove(-1)">
                                             <span class="glyphicon glyphicon-chevron-left"></span>
