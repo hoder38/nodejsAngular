@@ -48,6 +48,13 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.isRelative = false;
     $scope.tCD = false;
     $scope.relativeList = [];
+    $scope.filterStock = false;
+    $scope.filterTag = '';
+    $scope.filterTagFocus = false;
+    $scope.filterCondition = '';
+    $scope.filterConditionFocus = false;
+    $scope.filterLimit = '';
+    $scope.filterLimitFocus = false;
     //cookie initial
     $scope.fileSort = {name:'', mtime: '', count: '', sort: 'name/desc'};
     $scope.dirSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
@@ -583,6 +590,42 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         } else {
             addAlert('Please inputs new tag!!!');
         }
+    }
+
+    $scope.submitFilter = function() {
+        if (!isValidString(this.filterTag, 'name')) {
+            addAlert('Filter tag is not vaild!!!');
+            return false;
+        }
+        if (!this.filterCondition.match(/^[<>]\d+$/)) {
+            addAlert('Filter condition is not vaild!!!');
+            return false;
+        }
+        var filterLimit = 100;
+        if (this.filterLimit && !this.filterLimit.match(/^\d+$/)) {
+            addAlert('Filter limit is not vaild!!!');
+            return false;
+        }
+        if (this.filterLimit) {
+            filterLimit = Number(this.filterLimit);
+        }
+        this.filterStock = false;
+        var stockApi = $resource('/api/stock/filter/' + this.filterTag, {}, {
+            'filter': { method:'PUT' }
+        });
+        stockApi.filter({limit: filterLimit, per: this.filterCondition}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
     }
 
     $scope.addTag = function(tag) {

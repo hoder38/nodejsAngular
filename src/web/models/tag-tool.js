@@ -478,9 +478,12 @@ module.exports = function(collection) {
                 }, 0);
             }
         },
-        tagQuery: function(page, tagName, exactly, index, sortName, sortType, user, session, next, callback) {
+        tagQuery: function(page, tagName, exactly, index, sortName, sortType, user, session, next, callback, customLimit) {
             var this_obj = this;
-            var options = {"limit": queryLimit, "skip" : page, "sort": [[getSortName(sortName), sortType]]};
+            if (!customLimit) {
+                customLimit = queryLimit;
+            }
+            var options = {"limit": customLimit, "skip" : page, "sort": [[getSortName(sortName), sortType]]};
             if (!tagName) {
                 var tags = this.searchTags(session);
                 if (!tags) {

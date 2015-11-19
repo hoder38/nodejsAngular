@@ -3,6 +3,11 @@
     <div class="navbar-collapse">
         <div collapse="collapse.stock">
             <ul class="nav navbar-nav side-nav" id="inverse-nav">
+                <li>
+                    <a href="#" aria-expanded="true" ng-click="filterStock = true;filterTag = '';filterCondition = '';filterLimit='';filterTagFocus = true">
+                        Filter&nbsp;<i class="glyphicon glyphicon-play"></i>
+                    </a>
+                </li>
                 <li class="{{!$parent.isRight && 'active' || ''}}">
                     <a href="#" aria-expanded="true" ng-click="openChart()">
                         Chart&nbsp;<i class="glyphicon {{$parent.isRight && 'glyphicon-chevron-down' || 'glyphicon-chevron-up'}}"></i>
@@ -130,6 +135,23 @@
                 </button>
             </span>
             <input type="text" class="form-control" readonly ng-model="inputIndex" placeholder="Parse Index" focus-me="parseIndexFocus" />
+            <span class="input-group-btn">
+                <button class="btn btn-warning" type="submit">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </button>
+            </span>
+        </div>
+    </form>
+    <form ng-submit="submitFilter()" ng-show="filterStock" id="filter-stock">
+        <div class="input-group triple-input">
+            <span class="input-group-btn">
+                <button class="btn btn-warning" ng-click="filterStock = false" type="button">
+                    <i class="glyphicon glyphicon-remove"></i>
+                </button>
+            </span>
+            <input type="text" class="form-control" ng-model="filterTag" placeholder="Filter Tag" focus-me="filterTagFocus" ng-enter="filterConditionFocus = true" />
+            <input type="text" class="form-control" ng-model="filterCondition" placeholder="<10" focus-me="filterConditionFocus" ng-enter="filterLimitFocus = true" />
+            <input type="text" class="form-control" ng-model="filterLimit" placeholder="100" focus-me="filterLimitFocus" ng-enter="submitFilter()" />
             <span class="input-group-btn">
                 <button class="btn btn-warning" type="submit">
                     <span class="glyphicon glyphicon-ok"></span>

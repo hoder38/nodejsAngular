@@ -3192,8 +3192,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 }
                                 break;*/
                             case $scope.id:
-                                var msg = JSON.stringify(wsmsg.data);
-                                addAlert(msg);
+                                addAlert(wsmsg.data);
                                 break;
                             default:
                                 console.log(wsmsg);

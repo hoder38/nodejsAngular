@@ -67,7 +67,8 @@ var express = require('express'),
     youtubedl = require('youtube-dl'),
     viewsPath = path.join(__dirname, "../../../views"),
     staticPath = path.join(__dirname, "../../../public"),
-    sessionStore = require("../models/session-tool.js")(express_session);
+    sessionStore = require("../models/session-tool.js")(express_session),
+    stockFiltering = false;
 
 app.use(express.favicon());
 app.use(express.cookieParser());
@@ -1959,7 +1960,7 @@ app.get('/api/stock/getPredictPER/:uid', function(req, res,next) {
     });
 });
 
-app.get('/api/stock/getYield/:uid', function(req, res,next) {
+app.get('/api/stock/getYield/:uid', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('stock get yield');
         console.log(new Date());
@@ -1978,7 +1979,117 @@ app.get('/api/stock/getYield/:uid', function(req, res,next) {
     });
 });
 
-app.put('/api/getRelativeTag', function(req, res,next) {
+app.put('/api/stock/filter/:tag', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('stock filter');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var name = util.isValidString(req.params.tag, 'name');
+        if (name === false) {
+            util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
+        }
+        var limit = 100;
+        if (typeof req.body.limit !== 'number') {
+            util.handleError({hoerror: 2, message: "limit is not vaild"}, next, res);
+        }
+        if (req.body.limit > 0) {
+            limit = req.body.limit;
+        }
+        var condition = req.body.per.match(/^([<>])(\d+)$/);
+        if (!condition) {
+            util.handleError({hoerror: 2, message: "per is not vaild"}, next, res);
+        }
+        condition[2] = Number(condition[2]);
+        var sortName = 'name';
+        var sortType = 'desc';
+        if (req.cookies.stockSortName === 'count' || req.cookies.stockSortName === 'mtime') {
+            sortName = req.cookies.stockSortName;
+        }
+        if (req.cookies.stockSortType === 'asc') {
+            sortType = req.cookies.stockSortType;
+        }
+        if (stockFiltering) {
+            util.handleError({hoerror: 2, message: "there is another filter running"}, next, res);
+        }
+        stockFiltering = true;
+        stockTagTool.tagQuery(0, '', false, 0, sortName, sortType, req.user, req.session, next, function(err, result) {
+            if (err) {
+                stockFiltering = false;
+                util.handleError(err, next, res);
+            }
+            res.json({apiOK: true});
+            var filterNum = 0;
+            if (result.items.length > 0) {
+                recur_per(0);
+                function recur_per(index) {
+                    stockTool.getStockPER(result.items[index]._id, function(err, stockPer) {
+                        if (err) {
+                            stockFiltering = false;
+                            sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                            util.handleError(err);
+                        } else {
+                            if (condition[1] === '>' && stockPer > condition[2]) {
+                                console.log(stockPer);
+                                console.log(result.items[index].name);
+                                filterNum++;
+                                stockTagTool.addTag(result.items[index]._id, name, req.user, next, function(err, add_result) {
+                                    if (err) {
+                                        stockFiltering = false;
+                                        sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                        util.handleError(err);
+                                    } else {
+                                        sendWs({type: 'stock', data: add_result.id}, 0, 1);
+                                        index++;
+                                        if (index < result.items.length) {
+                                            recur_per(index);
+                                        } else {
+                                            stockFiltering = false;
+                                            sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                        }
+                                    }
+                                });
+                            } else if (condition[1] === '<' && stockPer < condition[2]) {
+                                console.log(stockPer);
+                                console.log(result.items[index].name);
+                                filterNum++;
+                                stockTagTool.addTag(result.items[index]._id, name, req.user, next, function(err, add_result) {
+                                    if (err) {
+                                        stockFiltering = false;
+                                        sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                        util.handleError(err);
+                                    } else {
+                                        sendWs({type: 'stock', data: add_result.id}, 0, 1);
+                                        index++;
+                                        if (index < result.items.length) {
+                                            recur_per(index);
+                                        } else {
+                                            stockFiltering = false;
+                                            sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                        }
+                                    }
+                                });
+                            } else {
+                                index++;
+                                if (index < result.items.length) {
+                                    recur_per(index);
+                                } else {
+                                    stockFiltering = false;
+                                    sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                }
+                            }
+                        }
+                    });
+                }
+            } else {
+                stockFiltering = false;
+                sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+            }
+        }, limit);
+    });
+});
+
+app.put('/api/getRelativeTag', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get relative tag');
         console.log(new Date());
