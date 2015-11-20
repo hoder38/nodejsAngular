@@ -1373,7 +1373,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             if (this.subName) {
                 if (isValidString(this.subName, 'name')) {
                     var append = '';
-                    '/upload/subtitle/' + $scope.toolList.item.id;
                     if (this.toolSearchSub) {
                         append = this.toolList.item.id;
                     } else {

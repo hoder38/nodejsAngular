@@ -1553,7 +1553,7 @@ module
 //# sourceMappingURL=angular-chart.min.js.map//壓縮 手動排序跟新增
 //cat script/angular.min.js script/angular-route.min.js script/angular-resource.min.js script/angular-cookies.min.js script/angular-sanitize.min.js script/angular-file-upload.js script/Chart.min.js script/angular-chart.min.js script/controllers.js script/stock-controllers.js script/password-controllers.js script/frontend.js script/ui-bootstrap-tpls-0.12.0.min.js script/vtt.js > script/release.js
 //cat css/angular-chart.css css/bootstrap.min.css css/bootstrap-theme.min.css font-awesome/css/font-awesome.min.css css/sb-admin.css > css/release.css
-var video, music, subtitles, videoStart=0, videoIndex=0, musicStart=0, confirm_str='', yplayer = null;;
+var video, music, videoStart=0, videoIndex=0, musicStart=0, confirm_str='', yplayer = null, torrent, torrentStart=0, torrentTimer=0, torrentPre = 0;
 var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSanitize', 'angularFileUpload', 'ui.bootstrap', 'chart.js'], function($routeProvider, $locationProvider) {
     $routeProvider.when('/', {
         templateUrl: '/views/homepage',
@@ -1657,6 +1657,29 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
                 video.currentTime = videoStart;
                 videoStart = 0;
             }
+        });
+    };
+}).directive('ngTorrent', function() {
+    return function (scope, element, attrs) {
+        torrent = element[0];
+        torrent.onplay = function() {
+            torrent.focus();
+        };
+        torrent.addEventListener('loadedmetadata', function () {
+            if (torrentStart) {
+                torrent.currentTime = torrentStart;
+                torrentPre = torrentStart;
+                torrentStart = 0;
+            }
+        });
+        torrent.addEventListener('playing', function () {
+            //自己的計時器
+            clearInterval(torrentTimer);
+            torrentTimer = setInterval(function() {
+                if (!torrent.paused && !torrent.seeking) {
+                    torrentPre = torrent.currentTime;
+                }
+            }, 1000);
         });
     };
 }).directive('ngEnded', function() {
@@ -2119,7 +2142,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
-    $scope.toolList = {download: false, edit: false, upload:false, del: false, dir: false, download2local: false, downloadMusic: false, fixYoutube: false, subscription: false, title: '', item: null};
+    $scope.toolList = {download: false, edit: false, upload:false, searchSub:false, del: false, dir: false, download2local: false, downloadMusic: false, fixYoutube: false, subscription: false, title: '', item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -2129,7 +2152,17 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyMatch = false;
     $scope.itemNameNew = false;
     $scope.itemNameNewFocus = false;
+    $scope.toolSearchSub = false;
+    $scope.torrentSearchSub = false;
+    $scope.searchSub = false;
+    $scope.searchSubing = false;
+    $scope.subNameFocus = false;
+    $scope.episodeFocus = false;
+    $scope.subName = '';
+    $scope.subEpisode = '';
     $scope.uploadSub = false;
+    $scope.toolSub = false;
+    $scope.torrentSub = false;
     $scope.feedbackBlur = false;
     $scope.bookmarkNew = false;
     $scope.bookmarkNewFocus = false;
@@ -2159,16 +2192,27 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
 
     miscUploader.onAfterAddingFile = function(fileItem) {
         //console.info('onAfterAddingFile', fileItem);
-        if ($scope.toolList.item) {
-            fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.toolList.item.id;
-            this.uploadAll();
+        if ($scope.toolSub) {
+            if ($scope.toolList.item) {
+                fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.toolList.item.id;
+                this.uploadAll();
+            } else {
+                addAlert('Select item first!!!');
+            }
         } else {
-            addAlert('Select item first!!!');
+            if ($scope.torrent.id) {
+                fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.torrent.id + '/' + + $scope.torrent.index;
+                this.uploadAll();
+            } else {
+                addAlert('Select item first!!!');
+            }
         }
     };
     miscUploader.onSuccessItem = function(fileItem, response, status, headers) {
         //console.info('onSuccessItem', fileItem, response, status, headers);
         $scope.uploadSub = false;
+        $scope.toolSub = false;
+        $scope.torrentSub = false;
         this.clearQueue();
     };
     miscUploader.onErrorItem = function(fileItem, response, status, headers) {
@@ -2200,6 +2244,18 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         var result = JSON.parse(d);
         if ($scope.bookmarkID && $scope.bookmarkID === result.id) {
             $scope.latest = result.latest;
+        }
+    });
+    $scope.$on('subtitle', function(e, d) {
+        if (d === 'upload') {
+            $scope.uploadSub = true;
+            $scope.torrentSub = true;
+        } else if (d === 'search') {
+            $scope.searchSub = true;
+            $scope.torrentSearchSub = true;
+            $scope.subNameFocus = true;
+            $scope.subName = '';
+            $scope.subEpisode = '';
         }
     });
     $scope.$on('file', function(e, d) {
@@ -2863,6 +2919,51 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         }
     }
 
+    $scope.submitSubtitle = function() {
+        var this_obj = this;
+        if (!this.searchSubing) {
+            if (this.subName) {
+                if (isValidString(this.subName, 'name')) {
+                    var append = '';
+                    if (this.toolSearchSub) {
+                        append = this.toolList.item.id;
+                    } else {
+                        append = this.torrent.id + '/' + this.torrent.index;
+                    }
+                    var Info = $resource(this.main_url + '/api/subtitle/search/' + append, {}, {
+                        'searchSub': { method:'POST', withCredentials: true }
+                    });
+                    this.searchSubing = true;
+                    var search = {name: this.subName};
+                    if (this.subEpisode && isValidString(this.subEpisode, 'name')) {
+                        search.episode = this.subEpisode;
+                    }
+                    Info.searchSub(search, function (result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        }
+                        addAlert('subtitle get');
+                        this_obj.searchSub = false;
+                        this_obj.searchSubing = false;
+                    }, function(errorResult) {
+                        this_obj.searchSubing = false;
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
+                } else {
+                    addAlert('New tag is not vaild!!!');
+                }
+            } else {
+                addAlert('Please inputs search name!!!');
+            }
+        }
+    }
+
     $scope.submitTag = function() {
         if (this.newTagName) {
             if (isValidString(this.newTagName, 'name')) {
@@ -3429,6 +3530,51 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         });
     }
 
+    $scope.showTorrent = function(item) {
+        var this_obj = this;
+        var torrentApi = $resource('/api/torrent/query/preview/' + item.id, {}, {
+            'query': { method:'GET'}
+        });
+        //torrentApi.query({torrent: 'magnet:?xt=urn:btih:fc2d08cb56916db71959755c46774a33b8c91261'}, function (result) {
+        //torrentApi.query({torrent: 'magnet:?xt=urn:btih:15d8402278b44bdd1286ac410c7c0bf76cb63653&dn=The.Walking.Dead.S06E04.PROPER.720p.HDTV.x264-KILLERS%5Bettv%5D&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Fopen.demonii.com%3A1337&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Fexodus.desync.com%3A6969'}, function (result) {
+        //torrentApi.query({torrent: 'magnet:?xt=urn:btih:76baf98e3797c103eb02f668075ad047f10df130&dn=The.Man.from.U.N.C.L.E.2015.1080p.WEB-DL.x264.AC3-JYK&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Fopen.demonii.com%3A1337&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Fexodus.desync.com%3A6969'}, function (result) {
+        torrentApi.query({}, function(result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            }
+            console.log(result);
+            if (result.list.length > 0) {
+                this_obj['torrent'].id = result.id;
+                this_obj['torrent'].list = result.list;
+                this_obj['torrent'].index = 0;
+                if (result.time) {
+                    var setTime = result.time.toString().match(/^(\d+)(&(\d+))?$/);
+                    if (setTime) {
+                        torrentStart = setTime[1];
+                        if (setTime[3]) {
+                            this_obj['torrent'].index = Number(setTime[3]);
+                        }
+                    }
+                }
+                this_obj['torrent'].complete = false;
+                this_obj['torrent'].name = this_obj['torrent'].list[this_obj['torrent'].index];
+                this_obj['torrent'].src = $scope.main_url + '/torrent/' + this_obj['torrent'].index + '/' + this_obj['torrent'].id;
+                this_obj['torrent'].sub = $scope.main_url + '/subtitle/' + this_obj['torrent'].id + '/' + this_obj['torrent'].index;
+                this_obj.mediaToggle('torrent', true);
+            } else {
+                addAlert('No preview file!!!');
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
+    }
+
     $scope.downloadFile = function (id) {
         if (!id) {
             id = this.toolList.item.id;
@@ -3476,6 +3622,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.del = false;
             this.$parent.toolList.recover = false;
             this.$parent.toolList.upload = false;
+            this.$parent.toolList.searchSub = false;
             this.$parent.toolList.delMedia = false;
             this.$parent.toolList.vlogMedia = false;
             this.$parent.toolList.download2local = false;
@@ -3484,7 +3631,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.subscription = false;
             confirm_str = item;
         } else {
-            if (item.status === 7 || item.status === 8 || item.thumb) {
+            if (item.status === 7 || item.status === 8 || item.status === 9 || item.thumb) {
                 this.$parent.toolList.download = false;
             } else {
                 this.$parent.toolList.download = true;
@@ -3504,8 +3651,10 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             }
             if (item.status === 3 && !item.thumb) {
                 this.$parent.toolList.upload = true;
+                this.$parent.toolList.searchSub = true;
             } else {
                 this.$parent.toolList.upload = false;
+                this.$parent.toolList.searchSub = false;
             }
             if (item.media) {
                 this.$parent.toolList.delMedia = true;
@@ -3810,9 +3959,16 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', shuffle: false};
     $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, mode: false};
     $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
+    $scope.torrent = {id: "", src: "", complete: "", sub: "", name: "null", list: [], index: 0, bookmarkID: '', option: 0};
     $scope.inputUrl = '';
     $scope.disableUrlSave = false;
     $scope.isAdult = false;
+    $scope.curTorrentSub = '';
+    $scope.curTorrentSubTime = 0;
+    $scope.fixTorrentSub = false;
+    $scope.curVideoSub = '';
+    $scope.curVideoSubTime = 0;
+    $scope.fixVideoSub = false;
     //alert
     $scope.alerts = [];
     var alertTime;
@@ -3837,6 +3993,17 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 video.play();
             } else {
                 video.pause();
+            }
+        }
+    }
+
+    $scope.torrentToggle = function() {
+        if (!is_firefox) {
+            torrent.focus();
+            if (torrent.paused) {
+                torrent.play();
+            } else {
+                torrent.pause();
             }
         }
     }
@@ -3902,10 +4069,18 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
                 break;
                 case 37:
-                if (video.currentTime >= 15) {
-                    video.currentTime -= 15;
+                if ($scope.fixVideoSub) {
+                    if (video.currentTime >= 0.5) {
+                        video.currentTime -= 0.5;
+                    } else {
+                        video.currentTime = 0;
+                    }
                 } else {
-                    video.currentTime = 0;
+                    if (video.currentTime >= 15) {
+                        video.currentTime -= 15;
+                    } else {
+                        video.currentTime = 0;
+                    }
                 }
                 break;
                 case 38:
@@ -3916,7 +4091,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
                 break;
                 case 39:
-                video.currentTime += 15;
+                if ($scope.fixVideoSub) {
+                    video.currentTime += 0.5;
+                } else {
+                    video.currentTime += 15;
+                }
                 break;
                 case 40:
                 if (video.volume > 0.1) {
@@ -3932,9 +4111,139 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     video.textTracks[0].mode = "showing";
                 }
                 break;
+                case 70:
+                if ($scope.fixVideoSub) {
+                    $scope.mediaToggle('video');
+                    var adjust = Math.ceil((video.currentTime - $scope.curVideoSubTime) * 10)/10;
+                    openModal("確定校準此字幕到此時間軸？完畢後請刷新頁面，字幕才會更新").then(function () {
+                        $scope.fixVideoSub = false;
+                        $scope.curVideoSub = '';
+                        fixSubtitle(adjust, 'video');
+                    }, function () {
+                    });
+                } else {
+                    if (video && video.textTracks && video.textTracks[0].activeCues && video.textTracks[0].activeCues.length > 0) {
+                        $scope.curVideoSub = video.textTracks[0].activeCues[0].text;
+                        $scope.curVideoSubTime = video.textTracks[0].activeCues[0].startTime;
+                        $scope.fixVideoSub = true;
+                        video.pause();
+                    }
+                }
             }
         }
     };
+    document.getElementById('torrent-tag').onkeydown = function(evt) {
+        evt = evt || window.event;
+        if (is_firefox) {
+            switch(evt.keyCode) {
+                case 67:
+                if (torrent.textTracks[0].mode === 'showing') {
+                    torrent.textTracks[0].mode = "hidden";
+                } else {
+                    torrent.textTracks[0].mode = "showing";
+                }
+                break;
+            }
+        } else {
+            switch(evt.keyCode) {
+                case 32:
+                if (torrent.paused) {
+                    torrent.play();
+                } else {
+                    torrent.pause();
+                }
+                break;
+                case 37:
+                if ($scope.fixTorrentSub) {
+                    if (torrent.currentTime >= 0.5) {
+                        torrent.currentTime -= 0.5;
+                    } else {
+                        torrent.currentTime = 0;
+                    }
+                } else {
+                    if (torrent.currentTime >= 15) {
+                        torrent.currentTime -= 15;
+                    } else {
+                        torrent.currentTime = 0;
+                    }
+                }
+                break;
+                case 38:
+                if (torrent.volume < 0.9) {
+                    torrent.volume+= 0.1;
+                } else {
+                    torrent.volume = 1;
+                }
+                break;
+                case 39:
+                if ($scope.fixTorrentSub) {
+                    torrent.currentTime += 0.5;
+                } else {
+                    torrent.currentTime += 15;
+                }
+                break;
+                case 40:
+                if (torrent.volume > 0.1) {
+                    torrent.volume-= 0.1;
+                } else {
+                    torrent.volume = 0;
+                }
+                break;
+                case 67:
+                if (torrent.textTracks[0].mode === 'showing') {
+                    torrent.textTracks[0].mode = "hidden";
+                } else {
+                    torrent.textTracks[0].mode = "showing";
+                }
+                break;
+                case 70:
+                if ($scope.fixTorrentSub) {
+                    $scope.mediaToggle('torrent');
+                    var adjust = Math.ceil((torrent.currentTime - $scope.curTorrentSubTime) * 10)/10;
+                    openModal("確定校準此字幕到此時間軸？完畢後請刷新頁面，字幕才會更新").then(function () {
+                        $scope.fixTorrentSub = false;
+                        $scope.curTorrentSub = '';
+                        fixSubtitle(adjust, 'torrent');
+                    }, function () {
+                    });
+                } else {
+                    if (torrent && torrent.textTracks && torrent.textTracks[0].activeCues && torrent.textTracks[0].activeCues.length > 0) {
+                        $scope.curTorrentSub = torrent.textTracks[0].activeCues[0].text;
+                        $scope.curTorrentSubTime = torrent.textTracks[0].activeCues[0].startTime;
+                        $scope.fixTorrentSub = true;
+                        torrent.pause();
+                    }
+                }
+                break;
+            }
+        }
+    };
+    function fixSubtitle(adjust, type) {
+        var append = '';
+        if (type === 'torrent') {
+            append = $scope.torrent.id + '/' + adjust + '/' + $scope.torrent.index;
+        } else {
+            append = $scope.video.id + '/' + adjust;
+        }
+        var subtitleApi = $resource($scope.main_url + '/api/subtitle/fix/' + append, {}, {
+            'fix': { method:'GET', withCredentials: true }
+        });
+        subtitleApi.fix({}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                addAlert('字幕校準成功');
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
+    }
     if (is_firefox) {
         $scope.$watch("video.sub", function(newVal, oldVal) {
             if (newVal) {
@@ -3955,6 +4264,35 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             var parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
                             parser.oncue = function(cue) {
                                 video.textTracks[0].addCue(cue);
+                            };
+                            parser.parse(xhr.responseText);
+                            parser.flush();
+                        }
+                    }
+                }
+                xhr.open("get", newVal, true);
+                xhr.send();
+            }
+        }, true);
+        $scope.$watch("torrent.sub", function(newVal, oldVal) {
+            if (newVal) {
+                if (!torrent.textTracks.length){
+                    torrent.addTextTrack("subtitles", "English", "en-US");
+                    torrent.textTracks[0].mode = "showing";
+                }
+                // Create XMLHttpRequest object
+                var xhr;
+                if (window.XMLHttpRequest) {
+                    xhr = new XMLHttpRequest();
+                } else if (window.ActiveXObject) { // IE8
+                    xhr = new ActiveXObject("Microsoft.XMLHTTP");
+                }
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            var parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
+                            parser.oncue = function(cue) {
+                                torrent.textTracks[0].addCue(cue);
                             };
                             parser.parse(xhr.responseText);
                             parser.flush();
@@ -4041,6 +4379,14 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             }
             var vXmlhttp = new XMLHttpRequest();
             vXmlhttp.open("GET", "/api/media/record/" + vId + '/' + vTime + append, false);//the false is for making the call synchronous
+            vXmlhttp.setRequestHeader("Content-type", "application/json");
+            vXmlhttp.send('');
+        }
+        var tId = $scope.torrent.id;
+        if (tId && torrent && torrent.duration) {
+            var tTime = parseInt(torrent.currentTime) + '&' + $scope.torrent.index;
+            var vXmlhttp = new XMLHttpRequest();
+            vXmlhttp.open("GET", "/api/media/record/" + tId + '/' + tTime, false);//the false is for making the call synchronous
             vXmlhttp.setRequestHeader("Content-type", "application/json");
             vXmlhttp.send('');
         }
@@ -4391,6 +4737,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             case 'password':
                                 $scope.$broadcast('password', JSON.stringify(wsmsg.data));
                                 break;
+                            /*case 'torrent':
+                                if (wsmsg.data.id === $scope.torrent.id && wsmsg.data.index === $scope.torrent.index) {
+                                    $scope.torrentCheck();
+                                }
+                                break;*/
                             case $scope.id:
                                 var msg = JSON.stringify(wsmsg.data);
                                 addAlert(msg);
@@ -4589,6 +4940,82 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         });
     }
 
+    $scope.torrentCheck = function() {
+        if (!this['torrent'].id || this['torrent'].complete) {
+            return;
+        }
+        var id = this['torrent'].id;
+        var this_obj = this;
+        var index = this['torrent'].index;
+        var size = 0;
+        if (this['torrent'].size) {
+            size = parseInt(this['torrent'].size);
+        }
+        var torrentApi = $resource($scope.main_url + '/api/torrent/check/' + id + '/' + index + '/' + size, {}, {
+            'check': { method:'GET', withCredentials: true }
+        });
+        torrentApi.check({}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            }
+            console.log(result);
+            if (result.start) {
+                addAlert('video start buffering');
+            } else {
+                this_obj['torrent'].size = result.ret_size;
+                if (result.newBuffer) {
+                    torrentStart = torrent.currentTime;
+                    var urlmatch = this_obj['torrent'].src.match(/(.*)\/(\d+)$/);
+                    if (urlmatch) {
+                        var fresh = Number(urlmatch[2]) + 1;
+                        this_obj['torrent'].src = urlmatch[1] + '/' + fresh;
+                    } else {
+                        this_obj['torrent'].src = this_obj['torrent'].src + '/0';
+                    }
+                }
+                this_obj['torrent'].complete = result.complete;
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
+    }
+
+    $scope.torrentMove = function(number, end) {
+        if (end && torrentPre !== torrent.duration) {
+            torrent.currentTime = torrentPre;
+            torrent.pause();
+        } else {
+            if (this.torrent.id) {
+                this.mediaRecord('torrent', 0, end);
+            }
+            var count = this.torrent.list.length;
+            if (count === 1) {
+                if (!end || this.torrent.complete) {
+                    torrent.currentTime = 0;
+                    torrent.pause();
+                }
+            } else {
+                if (+this.torrent.index + number >= count) {
+                    this.torrent.index = +this.torrent.index + number - count;
+                } else if (+this.torrent.index + number < 0) {
+                    this.torrent.index = +this.torrent.index + number + count;
+                } else {
+                    this.torrent.index = +this.torrent.index + number;
+                }
+                this.torrent.complete = false;
+                this.torrent.name = this.torrent.list[this.torrent.index];
+                this.torrent.src = $scope.main_url + '/torrent/' + this.torrent.index + '/' + this.torrent.id;
+                this.torrent.sub = $scope.main_url + '/subtitle/' + this.torrent.id + '/' + this.torrent.index;
+            }
+        }
+    }
+
     $scope.mediaRecord = function(type, record, end) {
         var id = this[type].id;
         var time = 0;
@@ -4618,6 +5045,13 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 //if (!end) {
                 //    time = parseInt(music.currentTime);
                 //}
+            } else if (type === 'torrent') {
+                if (!torrent || !torrent.duration) {
+                    return;
+                }
+                if (!end || !this.torrent.complete) {
+                    time = parseInt(torrent.currentTime) + '&' + this.torrent.index;
+                }
             } else if (this[type].iframeOffset) {
                 if (record !== 1) {
                     time = record;
@@ -4749,6 +5183,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     }
 
     $scope.mediaMove = function(number, type, ended) {
+        console.log(video.currentTime);
         var preType = '', status = 0, isLoad = false, docRecord = 0;
         switch (type) {
             case 'image':
@@ -5286,6 +5721,25 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             $scope.video.download = 0;
         }
     }, true);
+    $scope.$watch("this.torrent.option", function(newVal, oldVal) {
+        newVal = parseInt(newVal);
+        if (newVal) {
+            if (newVal === 1) {
+                $scope.mediaToggle('torrent');
+                openModal("請在 Storage 下搜尋，並且只保留上一個版本的字幕，完成後請刷新頁面，才會更新字幕").then(function () {
+                    $scope.$broadcast('subtitle', 'search');
+                }, function () {
+                });
+            } else if (newVal === 2) {
+                $scope.mediaToggle('torrent');
+                openModal("請在 Storage 下上傳，並且只保留上一個版本的字幕，完成後請刷新頁面，才會更新字幕").then(function () {
+                    $scope.$broadcast('subtitle', 'upload');
+                }, function () {
+                });
+            }
+            $scope.torrent.option = 0;
+        }
+    }, true);
     $scope.numberDoc = function() {
         if (this.doc.iframeOffset) {
             for (var i in this.doc.iframeOffset) {
@@ -5355,7 +5809,15 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         } else if (event.data === YT.PlayerState.PAUSED) {
             $scope.mediaRecord("video");
         } else if (event.data === YT.PlayerState.ENDED) {
-            $scope.mediaMove(1, 'video', true);
+            var index = yplayer.getPlaylistIndex();
+            console.log(index);
+            if (index === -1) {
+                $scope.mediaMove(1, 'video', true);
+            } else {
+                if (index >= yplayer.getPlaylist().length -1 && yplayer.getCurrentTime() > 1) {
+                    $scope.mediaMove(1, 'video', true);
+                }
+            }
         }
     }
     /*function stopVideo() {
@@ -5401,6 +5863,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             case 'music':
             case 'doc':
             case 'present':
+            case 'torrent':
                 break;
             default:
                 addAlert('unknown type');
@@ -5418,6 +5881,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     }
                 } else if (type === 'doc' && this.doc.iframeOffset) {
                     this.mediaRecord(type, this.doc.showId);
+                } else if (type === 'torrent') {
+                    torrent.pause();
                 }
             }
         } else {
@@ -5492,7 +5957,7 @@ function addCommas(nStr) {
 }
 function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, $scope, $location) {
     //left
-    $scope.$parent.currentPage = 2;
+    $scope.$parent.currentPage = 3;
     $scope.$parent.collapse.nav = true;
     //right
     $scope.$parent.isRight = true;
@@ -7391,7 +7856,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     }
 }function PasswordCntl($route, $routeParams, $location, $resource, $window, $cookies, $filter, $scope) {
     //left
-    $scope.$parent.currentPage = 3;
+    $scope.$parent.currentPage = 2;
     $scope.$parent.collapse.nav = true;
     //right
     $scope.$parent.isRight = true;
@@ -8926,7 +9391,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
 
     if (type === 'url')
     {
-        if (str.search(re_weburl) != -1)
+        if (str.search(re_weburl) != -1 || str.search(/^magnet:\?xt=urn:btih:[a-z0-9]{20,50}/i) != -1)
         {
             return true;
         }
