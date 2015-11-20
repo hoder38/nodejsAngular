@@ -110,7 +110,7 @@ module.exports = {
                     }
                     break;
                 case 'url':
-                    if (str.match(re_weburl) || str.match(/^magnet:\?xt=urn:btih:[a-z0-9]{20,50}/i)) {
+                    if (str.match(re_weburl) || str.match(/^magnet:(\?xt=urn:btih:[a-z0-9]{20,50}|stop)/i)) {
                         return encodeURIComponent(str);
                     }
                     break;

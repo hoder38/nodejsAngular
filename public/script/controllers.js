@@ -3226,19 +3226,23 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    if (this_obj.feedback.run) {
-                        if (this_obj.feedback.uid === result.id) {
-                            showFeedback(result);
-                        } else {
-                            if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
-                                this_obj.feedback.queue.push(result);
-                            } else {
-                                this_obj.feedback.queue.splice(index, 1, result);
-                            }
-                        }
+                    if (result.stop) {
+                        addAlert('torrent was stoped');
                     } else {
-                        this_obj.feedback.run = true;
-                        showFeedback(result);
+                        if (this_obj.feedback.run) {
+                            if (this_obj.feedback.uid === result.id) {
+                                showFeedback(result);
+                            } else {
+                                if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                    this_obj.feedback.queue.push(result);
+                                } else {
+                                    this_obj.feedback.queue.splice(index, 1, result);
+                                }
+                            }
+                        } else {
+                            this_obj.feedback.run = true;
+                            showFeedback(result);
+                        }
                     }
                 }
             }, function(errorResult) {

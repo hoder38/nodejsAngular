@@ -111,7 +111,7 @@ function isValidString(str, type)
 
     if (type === 'url')
     {
-        if (str.search(re_weburl) != -1 || str.search(/^magnet:\?xt=urn:btih:[a-z0-9]{20,50}/i) != -1)
+        if (str.search(re_weburl) != -1 || str.search(/^magnet:(\?xt=urn:btih:[a-z0-9]{20,50}|stop)/i) != -1)
         {
             return true;
         }
