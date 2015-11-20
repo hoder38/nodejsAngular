@@ -557,6 +557,10 @@ audio.media-screen {
     margin-top: -34px;
 }
 
+#filter-stock {
+    margin-top: -34px;
+}
+
 #add-tag {
     margin-top: -34px;
 }
@@ -607,6 +611,15 @@ audio.media-screen {
 }
 
 .double-input .form-control:focus {
+    border-right-width: 1px;
+}
+
+.triple-input .form-control {
+    width: 33%;
+    border-right-width: 0px;
+}
+
+.triple-input .form-control:focus {
     border-right-width: 1px;
 }
 

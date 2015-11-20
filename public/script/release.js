@@ -4743,8 +4743,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 }
                                 break;*/
                             case $scope.id:
-                                var msg = JSON.stringify(wsmsg.data);
-                                addAlert(msg);
+                                addAlert(wsmsg.data);
                                 break;
                             default:
                                 console.log(wsmsg);
@@ -5994,6 +5993,13 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.isRelative = false;
     $scope.tCD = false;
     $scope.relativeList = [];
+    $scope.filterStock = false;
+    $scope.filterTag = '';
+    $scope.filterTagFocus = false;
+    $scope.filterCondition = '';
+    $scope.filterConditionFocus = false;
+    $scope.filterLimit = '';
+    $scope.filterLimitFocus = false;
     //cookie initial
     $scope.fileSort = {name:'', mtime: '', count: '', sort: 'name/desc'};
     $scope.dirSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
@@ -6529,6 +6535,62 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         } else {
             addAlert('Please inputs new tag!!!');
         }
+    }
+
+    $scope.submitFilter = function() {
+        if (!isValidString(this.filterTag, 'name')) {
+            addAlert('Filter tag is not vaild!!!');
+            return false;
+        }
+        var condition = this.filterCondition.match(/^(per|yield)([<>]\d+)\s*((per|yield)([<>]\d+))?$/);
+        if (!condition) {
+            addAlert('Filter condition is not vaild!!!');
+            return false;
+        }
+        var per = '';
+        var yield = '';
+        if (condition[1] === 'per') {
+            per = condition[2];
+        } else if (condition[1] === 'yield') {
+            yield = condition[2];
+        }
+        if (condition[4] === 'per') {
+            per = condition[5];
+        } else if (condition[4] === 'yield') {
+            yield = condition[5];
+        }
+        var filterLimit = 100;
+        if (this.filterLimit && !this.filterLimit.match(/^\d+$/)) {
+            addAlert('Filter limit is not vaild!!!');
+            return false;
+        }
+        if (this.filterLimit) {
+            filterLimit = Number(this.filterLimit);
+        }
+        this.filterStock = false;
+        var stockApi = $resource('/api/stock/filter/' + this.filterTag, {}, {
+            'filter': { method:'PUT' }
+        });
+        var filter = {limit: filterLimit};
+        if (per) {
+            filter['per'] = per;
+        }
+        if (yield) {
+            filter['yield'] = yield;
+        }
+        stockApi.filter(filter, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
     }
 
     $scope.addTag = function(tag) {
