@@ -387,6 +387,12 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                 console.log('engine stop');
                                 console.log(torrent_pool[i].hash);
                                 torrent_pool[i].engine.destroy();
+                                for (var j in torrent_pool) {
+                                    if (torrent_pool[j].hash === torrent_pool[i].hash) {
+                                        torrent_pool.splice(j, 1);
+                                        break;
+                                    }
+                                }
                             }
                         }
                         res.json({stop: true});
@@ -2082,6 +2088,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                             }
                             if (torrent_pool[i].index.length <= 0) {
                                 torrent_pool[i].engine.destroy();
+                                torrent_pool.splice(i, 1);
                             }
                             break;
                         }
