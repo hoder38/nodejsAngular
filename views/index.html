@@ -436,7 +436,7 @@
                             <iframe class="doc-screen" ng-src="{{present.src | trusted}}" style="border: 0;"></iframe>
                         </div>
                     </section>
-                    <section class="panel panel-info" ng-show="mediaShow[0] === 'torrent'">
+                    <section class="panel panel-danger" ng-show="mediaShow[0] === 'torrent'">
                         <div class="panel-heading" ng-click="mediaToggle('torrent')">
                             <h4 class="panel-title">
                                 {{(torrent.index+1)}} : {{torrent.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
