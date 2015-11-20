@@ -2163,72 +2163,66 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                                         torrentComplete(10);
                                     } else {
                                         console.log(hash_ret);
-                                        var fileCodec = file.createReadStream({start: 0, end: 1048576});
-                                        fileCodec.on('end', function() {
-                                            var is_preview = false;
-                                            var cProcess = avconv(['-i', realPath + '/' + file.path]);
-                                            cProcess.once('exit', function(exitCode, signal, metadata2) {
-                                                if (metadata2 && metadata2.input && metadata2.input.stream) {
-                                                    for (var i in metadata2.input.stream[0]) {
-                                                        console.log(metadata2.input.stream[0][i].type);
-                                                        console.log(metadata2.input.stream[0][i].codec);
-                                                        if (metadata2.input.stream[0][i].type === 'video' && metadata2.input.stream[0][i].codec === 'h264') {
-                                                            is_preview = true;
-                                                            break;
-                                                        }
+                                        //預設可撥
+                                        var is_preview = true;
+                                        var cProcess = avconv(['-i', realPath + '/' + file.path]);
+                                        cProcess.once('exit', function(exitCode, signal, metadata2) {
+                                            if (metadata2 && metadata2.input && metadata2.input.stream) {
+                                                for (var i in metadata2.input.stream[0]) {
+                                                    console.log(metadata2.input.stream[0][i].type);
+                                                    console.log(metadata2.input.stream[0][i].codec);
+                                                    if (metadata2.input.stream[0][i].type === 'video' && metadata2.input.stream[0][i].codec !== 'h264') {
+                                                        is_preview = false;
+                                                        break;
                                                     }
-                                                    if (!is_preview) {
-                                                        sendWs({type: req.user.username, data: 'buffer fail: video codec is not h264'}, 0);
-                                                        util.handleError({hoerror: 2, message: 'video codec is not h264'});
-                                                        torrentComplete(10);
-                                                    } else {
-                                                        var OpenSubtitles = new openSubtitle('hoder agent v0.1');
-                                                        OpenSubtitles.search({
-                                                            extensions: 'srt',
-                                                            sublanguageid: 'chi',
-                                                            hash: hash_ret.movieHash,
-                                                            filesize: hash_ret.fileSize
-                                                        }).then(function (subtitles) {
-                                                            console.log(subtitles);
-                                                            if (subtitles.zh) {
-                                                                if (fs.existsSync(bufferPath + '.srt')) {
-                                                                    fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
-                                                                }
-                                                                if (fs.existsSync(bufferPath + '.ass')) {
-                                                                    fs.renameSync(bufferPath + '.ass', bufferPath + '.ass1');
-                                                                }
-                                                                if (fs.existsSync(bufferPath + '.ssa')) {
-                                                                    fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
-                                                                }
-                                                                api.xuiteDownload(subtitles.zh.url, bufferPath + '.srt', function(err) {
+                                                }
+                                            }
+                                            if (!is_preview) {
+                                                sendWs({type: req.user.username, data: 'buffer fail: video codec is not h264'}, 0);
+                                                util.handleError({hoerror: 2, message: 'video codec is not h264'});
+                                                torrentComplete(10);
+                                            } else {
+                                                var OpenSubtitles = new openSubtitle('hoder agent v0.1');
+                                                OpenSubtitles.search({
+                                                    extensions: 'srt',
+                                                    sublanguageid: 'chi',
+                                                    hash: hash_ret.movieHash,
+                                                    filesize: hash_ret.fileSize
+                                                }).then(function (subtitles) {
+                                                    console.log(subtitles);
+                                                    if (subtitles.zh) {
+                                                        if (fs.existsSync(bufferPath + '.srt')) {
+                                                            fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
+                                                        }
+                                                        if (fs.existsSync(bufferPath + '.ass')) {
+                                                            fs.renameSync(bufferPath + '.ass', bufferPath + '.ass1');
+                                                        }
+                                                        if (fs.existsSync(bufferPath + '.ssa')) {
+                                                            fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
+                                                        }
+                                                        api.xuiteDownload(subtitles.zh.url, bufferPath + '.srt', function(err) {
+                                                        if (err) {
+                                                                util.handleError(err);
+                                                            } else {
+                                                                util.SRT2VTT(bufferPath, 'srt', function(err) {
                                                                     if (err) {
                                                                         util.handleError(err);
                                                                     } else {
-                                                                        util.SRT2VTT(bufferPath, 'srt', function(err) {
-                                                                            if (err) {
-                                                                                util.handleError(err);
-                                                                            } else {
-                                                                                console.log('sub end');
-                                                                            }
-                                                                        });
+                                                                        console.log('sub end');
                                                                     }
-                                                                }, null, false);
+                                                                });
                                                             }
-                                                        }).catch(function (err) {
-                                                            util.handleError(err);
-                                                        });
-                                                        var fileStream = file.createReadStream();
-                                                        fileStream.pipe(fs.createWriteStream(bufferPath));
-                                                        fileStream.on('end', function() {
-                                                            torrentComplete(1);
-                                                        });
+                                                        }, null, false);
                                                     }
-                                                } else {
-                                                    sendWs({type: req.user.username, data: 'buffer fail: not video'}, 0);
-                                                    util.handleError({hoerror: 2, message: 'not video'});
-                                                    torrentComplete(10);
-                                                }
-                                            });
+                                                }).catch(function (err) {
+                                                    util.handleError(err);
+                                                });
+                                                var fileStream = file.createReadStream();
+                                                fileStream.pipe(fs.createWriteStream(bufferPath));
+                                                fileStream.on('end', function() {
+                                                    torrentComplete(1);
+                                                });
+                                            }
                                         });
                                     }
                                 });
@@ -2263,75 +2257,69 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                                         torrentComplete(10);
                                     } else {
                                         console.log(hash_ret);
-                                        var fileCodec = file.createReadStream({start: 0, end: 1048576});
-                                        fileCodec.on('end', function() {
-                                            var is_preview = false;
-                                            var cProcess = avconv(['-i', realPath + '/' + file.path]);
-                                            cProcess.once('exit', function(exitCode, signal, metadata2) {
-                                                if (metadata2 && metadata2.input && metadata2.input.stream) {
-                                                    for (var i in metadata2.input.stream[0]) {
-                                                        console.log(metadata2.input.stream[0][i].type);
-                                                        console.log(metadata2.input.stream[0][i].codec);
-                                                        if (metadata2.input.stream[0][i].type === 'video' && metadata2.input.stream[0][i].codec === 'h264') {
-                                                            is_preview = true;
-                                                            break;
-                                                        }
+                                        //預設可撥
+                                        var is_preview = true;
+                                        var cProcess = avconv(['-i', realPath + '/' + file.path]);
+                                        cProcess.once('exit', function(exitCode, signal, metadata2) {
+                                            if (metadata2 && metadata2.input && metadata2.input.stream) {
+                                                for (var i in metadata2.input.stream[0]) {
+                                                    console.log(metadata2.input.stream[0][i].type);
+                                                    console.log(metadata2.input.stream[0][i].codec);
+                                                    if (metadata2.input.stream[0][i].type === 'video' && metadata2.input.stream[0][i].codec !== 'h264') {
+                                                        is_preview = false;
+                                                        break;
                                                     }
-                                                    if (!is_preview) {
-                                                        sendWs({type: req.user.username, data: 'buffer fail: video codec is not h264'}, 0);
-                                                        util.handleError({hoerror: 2, message: 'video codec is not h264'});
-                                                        torrentComplete(10);
-                                                    } else {
-                                                        var OpenSubtitles = new openSubtitle('hoder agent v0.1');
-                                                        OpenSubtitles.search({
-                                                            extensions: 'srt',
-                                                            sublanguageid: 'chi',
-                                                            hash: hash_ret.movieHash,
-                                                            filesize: hash_ret.fileSize
-                                                        }).then(function (subtitles) {
-                                                            console.log(subtitles);
-                                                            if (subtitles.zh) {
-                                                                if (fs.existsSync(bufferPath + '.srt')) {
-                                                                    fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
-                                                                }
-                                                                if (fs.existsSync(bufferPath + '.ass')) {
-                                                                    fs.renameSync(bufferPath + '.ass', bufferPath + '.ass1');
-                                                                }
-                                                                if (fs.existsSync(bufferPath + '.ssa')) {
-                                                                    fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
-                                                                }
-                                                                api.xuiteDownload(subtitles.zh.url, bufferPath + '.srt', function(err) {
+                                                }
+                                            }
+                                            if (!is_preview) {
+                                                sendWs({type: req.user.username, data: 'buffer fail: video codec is not h264'}, 0);
+                                                util.handleError({hoerror: 2, message: 'video codec is not h264'});
+                                                torrentComplete(10);
+                                            } else {
+                                                var OpenSubtitles = new openSubtitle('hoder agent v0.1');
+                                                OpenSubtitles.search({
+                                                    extensions: 'srt',
+                                                    sublanguageid: 'chi',
+                                                    hash: hash_ret.movieHash,
+                                                    filesize: hash_ret.fileSize
+                                                }).then(function (subtitles) {
+                                                    console.log(subtitles);
+                                                    if (subtitles.zh) {
+                                                        if (fs.existsSync(bufferPath + '.srt')) {
+                                                            fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
+                                                        }
+                                                        if (fs.existsSync(bufferPath + '.ass')) {
+                                                            fs.renameSync(bufferPath + '.ass', bufferPath + '.ass1');
+                                                        }
+                                                        if (fs.existsSync(bufferPath + '.ssa')) {
+                                                            fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
+                                                        }
+                                                        api.xuiteDownload(subtitles.zh.url, bufferPath + '.srt', function(err) {
+                                                            if (err) {
+                                                                util.handleError(err);
+                                                            } else {
+                                                                util.SRT2VTT(bufferPath, 'srt', function(err) {
                                                                     if (err) {
                                                                         util.handleError(err);
                                                                     } else {
-                                                                        util.SRT2VTT(bufferPath, 'srt', function(err) {
-                                                                            if (err) {
-                                                                                util.handleError(err);
-                                                                            } else {
-                                                                                console.log('sub end');
-                                                                            }
-                                                                        });
+                                                                        console.log('sub end');
                                                                     }
-                                                                }, null, false);
+                                                                });
                                                             }
-                                                        }).catch(function (err) {
-                                                            util.handleError(err);
-                                                        });
-                                                        var aProcess = avconv(['-i', '-', '-strict', 'experimental', '-c:a', 'aac', '-c:v', 'copy', '-movflags', 'frag_keyframe+empty_moov', '-f', 'mp4', tempPath]);
-                                                        file.createReadStream().pipe(aProcess);
-                                                        aProcess.on('message', function(data) {
-                                                            mkv2buffer(data);
-                                                        });
-                                                        aProcess.once('exit', function(exitCode, signal, metadata1) {
-                                                            torrentComplete(2, tempPath);
-                                                        });
+                                                        }, null, false);
                                                     }
-                                                } else {
-                                                    sendWs({type: req.user.username, data: 'buffer fail: not video'}, 0);
-                                                    util.handleError({hoerror: 2, message: 'not video'});
-                                                    torrentComplete(10);
-                                                }
-                                            });
+                                                }).catch(function (err) {
+                                                    util.handleError(err);
+                                                });
+                                                var aProcess = avconv(['-i', '-', '-strict', 'experimental', '-c:a', 'aac', '-c:v', 'copy', '-movflags', 'frag_keyframe+empty_moov', '-f', 'mp4', tempPath]);
+                                                file.createReadStream().pipe(aProcess);
+                                                aProcess.on('message', function(data) {
+                                                    mkv2buffer(data);
+                                                });
+                                                aProcess.once('exit', function(exitCode, signal, metadata1) {
+                                                    torrentComplete(2, tempPath);
+                                                });
+                                            }
                                         });
                                     }
                                 });
