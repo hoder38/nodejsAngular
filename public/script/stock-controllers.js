@@ -597,9 +597,22 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             addAlert('Filter tag is not vaild!!!');
             return false;
         }
-        if (!this.filterCondition.match(/^[<>]\d+$/)) {
+        var condition = this.filterCondition.match(/^(per|yield)([<>]\d+)\s*((per|yield)([<>]\d+))?$/);
+        if (!condition) {
             addAlert('Filter condition is not vaild!!!');
             return false;
+        }
+        var per = '';
+        var yield = '';
+        if (condition[1] === 'per') {
+            per = condition[2];
+        } else if (condition[1] === 'yield') {
+            yield = condition[2];
+        }
+        if (condition[4] === 'per') {
+            per = condition[5];
+        } else if (condition[4] === 'yield') {
+            yield = condition[5];
         }
         var filterLimit = 100;
         if (this.filterLimit && !this.filterLimit.match(/^\d+$/)) {
@@ -613,7 +626,14 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         var stockApi = $resource('/api/stock/filter/' + this.filterTag, {}, {
             'filter': { method:'PUT' }
         });
-        stockApi.filter({limit: filterLimit, per: this.filterCondition}, function (result) {
+        var filter = {limit: filterLimit};
+        if (per) {
+            filter['per'] = per;
+        }
+        if (yield) {
+            filter['yield'] = yield;
+        }
+        stockApi.filter(filter, function (result) {
             if (result.loginOK) {
                 $window.location.href = $location.path();
             }

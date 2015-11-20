@@ -1994,11 +1994,22 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
         if (req.body.limit > 0) {
             limit = req.body.limit;
         }
-        var condition = req.body.per.match(/^([<>])(\d+)$/);
-        if (!condition) {
-            util.handleError({hoerror: 2, message: "per is not vaild"}, next, res);
+        var per = false;
+        if (req.body.per) {
+            per = req.body.per.match(/^([<>])(\d+)$/);
+            if (!per) {
+                util.handleError({hoerror: 2, message: "per is not vaild"}, next, res);
+            }
+            per[2] = Number(per[2]);
         }
-        condition[2] = Number(condition[2]);
+        var yield = false;
+        if (req.body.yield) {
+            yield = req.body.yield.match(/^([<>])(\d+)$/);
+            if (!yield) {
+                util.handleError({hoerror: 2, message: "yield is not vaild"}, next, res);
+            }
+            yield[2] = Number(yield[2]);
+        }
         var sortName = 'name';
         var sortType = 'desc';
         if (req.cookies.stockSortName === 'count' || req.cookies.stockSortName === 'mtime') {
@@ -2021,53 +2032,130 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
             if (result.items.length > 0) {
                 recur_per(0);
                 function recur_per(index) {
-                    stockTool.getStockPER(result.items[index]._id, function(err, stockPer) {
-                        if (err) {
-                            stockFiltering = false;
-                            sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
-                            util.handleError(err);
-                        } else {
-                            if (condition[1] === '>' && stockPer > condition[2]) {
-                                console.log(stockPer);
-                                console.log(result.items[index].name);
-                                filterNum++;
-                                stockTagTool.addTag(result.items[index]._id, name, req.user, next, function(err, add_result) {
-                                    if (err) {
-                                        stockFiltering = false;
-                                        sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
-                                        util.handleError(err);
-                                    } else {
-                                        sendWs({type: 'stock', data: add_result.id}, 0, 1);
-                                        index++;
-                                        if (index < result.items.length) {
-                                            recur_per(index);
-                                        } else {
-                                            stockFiltering = false;
-                                            sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
-                                        }
-                                    }
-                                });
-                            } else if (condition[1] === '<' && stockPer < condition[2]) {
-                                console.log(stockPer);
-                                console.log(result.items[index].name);
-                                filterNum++;
-                                stockTagTool.addTag(result.items[index]._id, name, req.user, next, function(err, add_result) {
-                                    if (err) {
-                                        stockFiltering = false;
-                                        sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
-                                        util.handleError(err);
-                                    } else {
-                                        sendWs({type: 'stock', data: add_result.id}, 0, 1);
-                                        index++;
-                                        if (index < result.items.length) {
-                                            recur_per(index);
-                                        } else {
-                                            stockFiltering = false;
-                                            sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
-                                        }
-                                    }
-                                });
+                    if (per) {
+                        stockTool.getStockPER(result.items[index]._id, function(err, stockPer) {
+                            if (err) {
+                                stockFiltering = false;
+                                sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                util.handleError(err);
                             } else {
+                                if (per && (per[1] === '>' && stockPer > per[2]) || per[1] === '<' && stockPer < per[2]) {
+                                    console.log(stockPer);
+                                    console.log(result.items[index].name);
+                                    if (yield) {
+                                        stockTool.getStockYield(result.items[index]._id, function(err, stockYield) {
+                                            if (err) {
+                                                stockFiltering = false;
+                                                sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                                util.handleError(err);
+                                            } else {
+                                                if (yield && (yield[1] === '>' && stockYield > yield[2]) || (yield[1] === '<' && stockYield < yield[2])) {
+                                                    console.log(stockYield);
+                                                    filterNum++;
+                                                    stockTagTool.addTag(result.items[index]._id, name, req.user, next, function(err, add_result) {
+                                                        if (err) {
+                                                            stockFiltering = false;
+                                                            sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                                            util.handleError(err);
+                                                        } else {
+                                                            sendWs({type: 'stock', data: add_result.id}, 0, 1);
+                                                            index++;
+                                                            if (index < result.items.length) {
+                                                                recur_per(index);
+                                                            } else {
+                                                                stockFiltering = false;
+                                                                sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                                            }
+                                                        }
+                                                    });
+                                                } else {
+                                                    index++;
+                                                    if (index < result.items.length) {
+                                                        recur_per(index);
+                                                    } else {
+                                                        stockFiltering = false;
+                                                        sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    } else {
+                                        filterNum++;
+                                        stockTagTool.addTag(result.items[index]._id, name, req.user, next, function(err, add_result) {
+                                            if (err) {
+                                                stockFiltering = false;
+                                                sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                                util.handleError(err);
+                                            } else {
+                                                sendWs({type: 'stock', data: add_result.id}, 0, 1);
+                                                index++;
+                                                if (index < result.items.length) {
+                                                    recur_per(index);
+                                                } else {
+                                                    stockFiltering = false;
+                                                    sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                                }
+                                            }
+                                        });
+                                    }
+                                } else {
+                                    index++;
+                                    if (index < result.items.length) {
+                                        recur_per(index);
+                                    } else {
+                                        stockFiltering = false;
+                                        sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                    }
+                                }
+                            }
+                        });
+                    } else if (yield) {
+                        stockTool.getStockYield(result.items[index]._id, function(err, stockYield) {
+                            if (err) {
+                                stockFiltering = false;
+                                sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                util.handleError(err);
+                            } else {
+                                if (yield && (yield[1] === '>' && stockYield > yield[2]) || (yield[1] === '<' && stockYield < yield[2])) {
+                                    console.log(stockYield);
+                                    console.log(result.items[index].name);
+                                    filterNum++;
+                                    stockTagTool.addTag(result.items[index]._id, name, req.user, next, function(err, add_result) {
+                                        if (err) {
+                                            stockFiltering = false;
+                                            sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                            util.handleError(err);
+                                        } else {
+                                            sendWs({type: 'stock', data: add_result.id}, 0, 1);
+                                            index++;
+                                            if (index < result.items.length) {
+                                                recur_per(index);
+                                            } else {
+                                                stockFiltering = false;
+                                                sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    index++;
+                                    if (index < result.items.length) {
+                                        recur_per(index);
+                                    } else {
+                                        stockFiltering = false;
+                                        sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        filterNum++;
+                        stockTagTool.addTag(result.items[index]._id, name, req.user, next, function(err, add_result) {
+                            if (err) {
+                                stockFiltering = false;
+                                sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                util.handleError(err);
+                            } else {
+                                sendWs({type: 'stock', data: add_result.id}, 0, 1);
                                 index++;
                                 if (index < result.items.length) {
                                     recur_per(index);
@@ -2076,8 +2164,8 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                                     sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
                                 }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             } else {
                 stockFiltering = false;
@@ -2810,7 +2898,6 @@ process.on('uncaughtException', function(err) {
         console.log(err.stack);
     }
 });
-
 var client = net.connect(config_glb.com_port, config_glb.file_ip,
     function() { //'connect' listener
     console.log('connected to server!');
