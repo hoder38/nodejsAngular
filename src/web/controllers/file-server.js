@@ -1098,66 +1098,127 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
             if (items[0].status === 9 && !items[0]['playList'][fileIndex].match(/\.mp4$/i) && !items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
                 util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
             }
-            var search = {extensions: 'srt', sublanguageid: 'chi'};
-            if (name.match(/^tt\d+$/i)) {
-                search.imdbid = name;
-            } else {
-                search.query = name;
-            }
-            if (episode) {
-                search.episode = episode;
-                search.season = season;
-            }
+            var search = {extensions: 'srt'};
             var filePath = util.getFileLocation(items[0].owner, items[0]._id);
             if (items[0].status === 9) {
                 filePath = filePath + '/' + fileIndex;
             }
-            var OpenSubtitles = new openSubtitle('hoder agent v0.1');
-            /*OpenSubtitles.search({
-                //extensions: ['srt', 'vtt'],
-                extensions: 'srt',
-                sublanguageid: 'chi',
-                //hash: '500bcd4c30be3195',
-                //filesize: '3437197194'
-                //imdbid: 'tt1638355'
-                //query: 'game of thrones s05e10'*/
-            OpenSubtitles.search(search).then(function (subtitles) {
-                if (subtitles.zh) {
+            if (name.match(/^tt\d+$/i)) {
+                search.imdbid = name;
+                if (episode) {
+                    search.episode = episode;
+                    search.season = season;
+                }
+                var OpenSubtitles = new openSubtitle('hoder agent v0.1');
+                /*OpenSubtitles.search({
+                    //extensions: ['srt', 'vtt'],
+                    extensions: 'srt',
+                    sublanguageid: 'chi',
+                    //hash: '500bcd4c30be3195',
+                    //filesize: '3437197194'
+                    //imdbid: 'tt1638355'
+                    //query: 'game of thrones s05e10'*/
+                OpenSubtitles.search(search).then(function (subtitles) {
+                    var sub_url = null;
                     console.log(subtitles);
-                    SUB2VTT(subtitles.zh.url, filePath, false, function(err) {
-                        if (err) {
-                            util.handleError(err, next, res);
-                        }
-                        res.json({apiOK: true});
-                    });
-                } else {
-                    if (episode_1) {
-                        subHd(name + episode_1, function(err, subtitles) {
+                    if (subtitles.ze) {
+                        sub_url = subtitles.ze.url;
+                    } else if (subtitles.zt) {
+                        sub_url = subtitles.zt.url;
+                    } else if (subtitles.zh) {
+                        sub_url = subtitles.zh.url;
+                    }
+                    if (sub_url) {
+                        SUB2VTT(sub_url, filePath, false, function(err) {
                             if (err) {
                                 util.handleError(err, next, res);
                             }
-                            if (subtitles) {
-                                unzipSubHd(subtitles.url, function(err) {
-                                    if (err) {
-                                        util.handleError(err, next, res);
-                                    }
-                                    res.json({apiOK: true});
-                                });
-                            } else {
-                                subHd(name + episode_2, function(err, subtitles) {
-                                    if (err) {
-                                        util.handleError(err, next, res);
-                                    }
-                                    if (subtitles) {
-                                        unzipSubHd(subtitles.url, function(err) {
+                            res.json({apiOK: true});
+                        });
+                    } else {
+                        util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                    }
+                }).catch(function(err) {
+                    console.log(err);
+                    res.send("open subtitle error!!!", 400);
+                });
+            } else {
+                if (episode_1) {
+                    subHd(name + episode_1, function(err, subtitles) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (subtitles) {
+                            unzipSubHd(subtitles.url, function(err) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                res.json({apiOK: true});
+                            });
+                        } else {
+                            subHd(name + episode_2, function(err, subtitles) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                if (subtitles) {
+                                    unzipSubHd(subtitles.url, function(err) {
+                                        if (err) {
+                                            util.handleError(err, next, res);
+                                        }
+                                        res.json({apiOK: true});
+                                    });
+                                } else {
+                                    if (episode_3) {
+                                        subHd(name + episode_3, function(err, subtitles) {
                                             if (err) {
                                                 util.handleError(err, next, res);
                                             }
-                                            res.json({apiOK: true});
+                                            if (subtitles) {
+                                                unzipSubHd(subtitles.url, function(err) {
+                                                    if (err) {
+                                                        util.handleError(err, next, res);
+                                                    }
+                                                    res.json({apiOK: true});
+                                                });
+                                            } else {
+                                                subHd(name + episode_4, function(err, subtitles) {
+                                                    if (err) {
+                                                        util.handleError(err, next, res);
+                                                    }
+                                                    if (subtitles) {
+                                                        unzipSubHd(subtitles.url, function(err) {
+                                                        if (err) {
+                                                                util.handleError(err, next, res);
+                                                            }
+                                                            res.json({apiOK: true});
+                                                        });
+                                                    } else {
+                                                        if (season === 1) {
+                                                            subHd(name, function(err, subtitles) {
+                                                                if (err) {
+                                                                    util.handleError(err, next, res);
+                                                                }
+                                                                if (subtitles) {
+                                                                    unzipSubHd(subtitles.url, function(err) {
+                                                                        if (err) {
+                                                                            util.handleError(err, next, res);
+                                                                        }
+                                                                        res.json({apiOK: true});
+                                                                    });
+                                                                } else {
+                                                                    util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                                                                }
+                                                            });
+                                                        } else {
+                                                            util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                                                        }
+                                                    }
+                                                });
+                                            }
                                         });
                                     } else {
-                                        if (episode_3) {
-                                            subHd(name + episode_3, function(err, subtitles) {
+                                        if (season === 1) {
+                                            subHd(name, function(err, subtitles) {
                                                 if (err) {
                                                     util.handleError(err, next, res);
                                                 }
@@ -1169,85 +1230,35 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                                                         res.json({apiOK: true});
                                                     });
                                                 } else {
-                                                    subHd(name + episode_4, function(err, subtitles) {
-                                                        if (err) {
-                                                            util.handleError(err, next, res);
-                                                        }
-                                                        if (subtitles) {
-                                                            unzipSubHd(subtitles.url, function(err) {
-                                                                if (err) {
-                                                                    util.handleError(err, next, res);
-                                                                }
-                                                                res.json({apiOK: true});
-                                                            });
-                                                        } else {
-                                                            if (season === 1) {
-                                                                subHd(name, function(err, subtitles) {
-                                                                    if (err) {
-                                                                        util.handleError(err, next, res);
-                                                                    }
-                                                                    if (subtitles) {
-                                                                        unzipSubHd(subtitles.url, function(err) {
-                                                                            if (err) {
-                                                                                util.handleError(err, next, res);
-                                                                            }
-                                                                            res.json({apiOK: true});
-                                                                        });
-                                                                    } else {
-                                                                        util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
-                                                                    }
-                                                                });
-                                                            } else {
-                                                                util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
-                                                            }
-                                                        }
-                                                    });
+                                                    util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
                                                 }
                                             });
                                         } else {
-                                            if (season === 1) {
-                                                subHd(name, function(err, subtitles) {
-                                                    if (err) {
-                                                        util.handleError(err, next, res);
-                                                    }
-                                                    if (subtitles) {
-                                                        unzipSubHd(subtitles.url, function(err) {
-                                                            if (err) {
-                                                                util.handleError(err, next, res);
-                                                            }
-                                                            res.json({apiOK: true});
-                                                        });
-                                                    } else {
-                                                        util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
-                                                    }
-                                                });
-                                            } else {
-                                                util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
-                                            }
+                                            util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
                                         }
                                     }
-                                });
-                            }
-                        });
-                    } else {
-                        subHd(name, function(err, subtitles) {
-                            if (err) {
-                                util.handleError(err, next, res);
-                            }
-                            if (subtitles) {
-                                unzipSubHd(subtitles.url, function(err) {
-                                    if (err) {
-                                        util.handleError(err, next, res);
-                                    }
-                                    res.json({apiOK: true});
-                                });
-                            } else {
-                                util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
-                            }
-                        });
-                    }
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    subHd(name, function(err, subtitles) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (subtitles) {
+                            unzipSubHd(subtitles.url, function(err) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                res.json({apiOK: true});
+                            });
+                        } else {
+                            util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                        }
+                    });
                 }
-            });
+            }
             function unzipSubHd(url, callback) {
                 var zip_ext = mime.isZip(url);
                 if (!zip_ext) {
@@ -2185,12 +2196,20 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                                                 var OpenSubtitles = new openSubtitle('hoder agent v0.1');
                                                 OpenSubtitles.search({
                                                     extensions: 'srt',
-                                                    sublanguageid: 'chi',
+                                                    //sublanguageid: 'chi',
                                                     hash: hash_ret.movieHash,
                                                     filesize: hash_ret.fileSize
                                                 }).then(function (subtitles) {
+                                                    var sub_url = null;
                                                     console.log(subtitles);
-                                                    if (subtitles.zh) {
+                                                    if (subtitles.ze) {
+                                                        sub_url = subtitles.ze.url;
+                                                    } else if (subtitles.zt) {
+                                                        sub_url = subtitles.zt.url;
+                                                    } else if (subtitles.zh) {
+                                                        sub_url = subtitles.zh.url;
+                                                    }
+                                                    if (sub_url) {
                                                         if (fs.existsSync(bufferPath + '.srt')) {
                                                             fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
                                                         }
@@ -2200,7 +2219,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                                                         if (fs.existsSync(bufferPath + '.ssa')) {
                                                             fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
                                                         }
-                                                        api.xuiteDownload(subtitles.zh.url, bufferPath + '.srt', function(err) {
+                                                        api.xuiteDownload(sub_url, bufferPath + '.srt', function(err) {
                                                         if (err) {
                                                                 util.handleError(err);
                                                             } else {
@@ -2283,8 +2302,16 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                                                     hash: hash_ret.movieHash,
                                                     filesize: hash_ret.fileSize
                                                 }).then(function (subtitles) {
+                                                    var sub_url = null;
                                                     console.log(subtitles);
-                                                    if (subtitles.zh) {
+                                                    if (subtitles.ze) {
+                                                        sub_url = subtitles.ze.url;
+                                                    } else if (subtitles.zt) {
+                                                        sub_url = subtitles.zt.url;
+                                                    } else if (subtitles.zh) {
+                                                        sub_url = subtitles.zh.url;
+                                                    }
+                                                    if (sub_url) {
                                                         if (fs.existsSync(bufferPath + '.srt')) {
                                                             fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
                                                         }
@@ -2294,7 +2321,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                                                         if (fs.existsSync(bufferPath + '.ssa')) {
                                                             fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
                                                         }
-                                                        api.xuiteDownload(subtitles.zh.url, bufferPath + '.srt', function(err) {
+                                                        api.xuiteDownload(sub_url, bufferPath + '.srt', function(err) {
                                                             if (err) {
                                                                 util.handleError(err);
                                                             } else {

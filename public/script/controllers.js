@@ -2007,6 +2007,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 this_obj['torrent'].complete = false;
                 this_obj['torrent'].name = this_obj['torrent'].list[this_obj['torrent'].index];
                 this_obj['torrent'].src = $scope.main_url + '/torrent/' + this_obj['torrent'].index + '/' + this_obj['torrent'].id;
+                removeCue('torrent');
                 this_obj['torrent'].sub = $scope.main_url + '/subtitle/' + this_obj['torrent'].id + '/' + this_obj['torrent'].index;
                 this_obj.mediaToggle('torrent', true);
             } else {
@@ -2753,8 +2754,13 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }, true);
     }
 
-    removeCue = function() {
-        var track = video.textTracks[0];
+    removeCue = function(type) {
+        var track = null;
+        if (type === 'torrent') {
+            track = torrent.textTracks[0];
+        } else {
+            track = video.textTracks[0];
+        }
         if (track) {
             var cues = track.cues;
             if (cues && cues.length > 0) {
@@ -3462,6 +3468,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 this.torrent.complete = false;
                 this.torrent.name = this.torrent.list[this.torrent.index];
                 this.torrent.src = $scope.main_url + '/torrent/' + this.torrent.index + '/' + this.torrent.id;
+                removeCue('torrent');
                 this.torrent.sub = $scope.main_url + '/subtitle/' + this.torrent.id + '/' + this.torrent.index;
             }
         }
