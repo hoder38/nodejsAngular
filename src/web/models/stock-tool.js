@@ -1668,7 +1668,6 @@ module.exports = {
                                 var profitStatus = this_obj.getProfitStatus(salesStatus, cashStatus, asset);
                                 var safetyStatus = this_obj.getSafetyStatus(salesStatus, cashStatus, asset);
                                 var managementStatus = this_obj.getManagementStatus(salesStatus, asset);
-                                console.log(cashStatus);
                                 var earliestYear = 0;
                                 var earliestQuarter = 0;
                                 for (var i in cashStatus) {

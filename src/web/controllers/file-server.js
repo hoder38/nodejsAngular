@@ -3288,82 +3288,98 @@ function getFeedback(item, callback, user) {
 function loopUpdateStock(error, countdown) {
     console.log('loopUpdateStock');
     console.log(new Date());
-    /*if (error) {
-        util.handleError(error);
-    }
-    if (!countdown) {
-        countdown = 120000;
-    }
-    console.log(countdown);
-    setTimeout(function() {*/
     stock_time = new Date().getTime();
     var day = new Date().getDate();
     var stocklist = [];
-    if (stock_batch_list.length === 0) {
-        if (day === config_type.updateStockDate[0]) {
-            console.log('update stock');
-            stockTool.getStockList('twse', function(err, tw_stocklist){
-                if(err) {
-                    util.handleError(err);
-                    stock_time = 1;
-                    console.log('loopUpdateStock end');
-                    //loopUpdateStock(null, stock_interval);
-                } else {
-                    stock_batch_list = tw_stocklist;
-                }
-            });
-        } else if (config_type.updateStockDate.indexOf(day) !== -1) {
-            console.log('update important stock');
-            mongo.orig("find", "stock", {important: 1}, function(err, items){
-                if(err) {
-                    util.handleError(err);
-                    //loopUpdateStock(null, stock_interval);
-                    stock_time = 1;
-                    console.log('loopUpdateStock end');
-                } else {
-                    for (var i in items) {
-                        stock_batch_list.push(items[i].index);
-                    }
-                }
-            });
-        }
-    } else {
+    if (stock_batch_list.length > 0) {
         console.log('stock_batch_list remain');
         console.log(stock_batch_list.length);
     }
-    stocklist = stock_batch_list;
-    if (stocklist.length < 1) {
-        console.log('empty stock list');
-        stock_time = 1;
-        console.log('loopUpdateStock end');
-        //loopUpdateStock(null, stock_interval);
-    } else {
-        updateStock('twse', stocklist, 0, function(err) {
-            if (err) {
+    if (day === config_type.updateStockDate[0]) {
+        console.log('update stock');
+        stockTool.getStockList('twse', function(err, tw_stocklist){
+            if(err) {
                 util.handleError(err);
+                stock_time = 1;
+                console.log('loopUpdateStock end');
+            } else {
+                for (var i in tw_stocklist) {
+                    if (stock_batch_list.indexOf(tw_stocklist[i]) === -1) {
+                        stock_batch_list.push(tw_stocklist[i]);
+                    }
+                }
+                if (stock_batch_list.length > 0) {
+                    updateStock('twse', function(err) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                        stock_time = 1;
+                        console.log('loopUpdateStock end');
+                    });
+                } else {
+                    console.log('empty stock list');
+                    stock_time = 1;
+                    console.log('loopUpdateStock end');
+                }
             }
+        });
+    } else if (config_type.updateStockDate.indexOf(day) !== -1) {
+        console.log('update important stock');
+        mongo.orig("find", "stock", {important: 1}, function(err, items){
+            if(err) {
+                util.handleError(err);
+                stock_time = 1;
+                console.log('loopUpdateStock end');
+            } else {
+                for (var i in items) {
+                    if (stock_batch_list.indexOf(items[i].index) === -1) {
+                        stock_batch_list.push(items[i].index);
+                    }
+                }
+                if (stock_batch_list.length > 0) {
+                    updateStock('twse', function(err) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                        stock_time = 1;
+                        console.log('loopUpdateStock end');
+                    });
+                } else {
+                    console.log('empty stock list');
+                    stock_time = 1;
+                    console.log('loopUpdateStock end');
+                }
+            }
+        });
+    } else {
+        if (stock_batch_list.length > 0) {
+            updateStock('twse', function(err) {
+                if (err) {
+                    util.handleError(err);
+                }
+                stock_time = 1;
+                console.log('loopUpdateStock end');
+            });
+        } else {
+            console.log('empty stock list');
             stock_time = 1;
             console.log('loopUpdateStock end');
-        });
+        }
     }
-    //}, countdown);
 }
 
-function updateStock(type, stocklist, index, callback) {
+function updateStock(type, callback) {
     stock_time = new Date().getTime();
     console.log('updateStock');
     console.log(new Date());
-    console.log(stocklist[index]);
-    if (stock_batch_list.indexOf(stocklist[index]) !== -1) {
-        stock_batch_list.splice(stock_batch_list.indexOf(stocklist[index]), 1);
-    }
-    stockTool.getSingleStock(type, stocklist[index], function(err) {
+    console.log(stock_batch_list[0]);
+    stockTool.getSingleStock(type, stock_batch_list[0], function(err) {
         if (err) {
             util.handleError(err, callback, callback);
         }
-        index++;
-        if (index < stocklist.length) {
-            updateStock(type, stocklist, index, callback);
+        stock_batch_list.splice(0, 1);
+        if (stock_batch_list.length > 0) {
+            updateStock(type, callback);
         } else {
             setTimeout(function(){
                 callback(null);
