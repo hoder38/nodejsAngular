@@ -1984,6 +1984,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             'query': { method:'GET'}
         });
         //torrentApi.query({torrent: 'magnet:?xt=urn:btih:fc2d08cb56916db71959755c46774a33b8c91261'}, function (result) {
+        //magnet:?xt=urn:btih:NYUTBHOPLRSEHADVYBS3UWSYDD2ATJFE
         //torrentApi.query({torrent: 'magnet:?xt=urn:btih:15d8402278b44bdd1286ac410c7c0bf76cb63653&dn=The.Walking.Dead.S06E04.PROPER.720p.HDTV.x264-KILLERS%5Bettv%5D&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Fopen.demonii.com%3A1337&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Fexodus.desync.com%3A6969'}, function (result) {
         //torrentApi.query({torrent: 'magnet:?xt=urn:btih:76baf98e3797c103eb02f668075ad047f10df130&dn=The.Man.from.U.N.C.L.E.2015.1080p.WEB-DL.x264.AC3-JYK&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Fopen.demonii.com%3A1337&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Fexodus.desync.com%3A6969'}, function (result) {
         torrentApi.query({}, function(result) {

@@ -2010,17 +2010,17 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                     newBuffer = true;
                 }
                 res.json({newBuffer: newBuffer, complete: false, ret_size: total});
-                if (util.checkAdmin(1, req.user)) {
+                //if (util.checkAdmin(1, req.user)) {
                     queueTorrent('add', req.user, decodeURIComponent(items[0]['magnet']), fileIndex, items[0]._id, items[0].owner);
-                }
+                //}
             } else {
                 if (items[0]['playList'][fileIndex].match(/\.mp4$/i) || items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
-                    if (util.checkAdmin(1, req.user)) {
+                    //if (util.checkAdmin(1, req.user)) {
                         res.json({start: true});
                         queueTorrent('add', req.user, decodeURIComponent(items[0]['magnet']), fileIndex, items[0]._id, items[0].owner);
-                    } else {
+                    /*} else {
                         util.handleError({hoerror: 2, message: 'no permission to download!!!'}, next, res);
-                    }
+                    }*/
                 } else {
                     util.handleError({hoerror: 2, message: 'torrent file cannot preview!!!'}, next, res);
                 }
@@ -2064,6 +2064,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
             }
         }
         if (engine){
+            console.log('torrent go');
             if (engine.files && engine.files.length > 0) {
                 startTorrent(fileIndex, bufferPath, comPath);
             } else {
@@ -2073,15 +2074,24 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                 });
             }
         } else {
-            if (torrent_pool.length < config_glb.torrent_limit) {
+            var runNum = 0;
+            for (var i in torrent_pool) {
+                if (torrent_pool[i].status === 1) {
+                    runNum++;
+                }
+            }
+            if (runNum < config_glb.torrent_limit) {
                 engine = torrentStream(torrent, {tmp: config_glb.nas_tmp, path: realPath, connections: 100, uploads: 5});
                 console.log('new engine');
                 if (!is_queue) {
+                    console.log('torrent no');
                     torrent_pool.push({hash: shortTorrent, index: [fileIndex], engine: engine, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, torrent: torrent, status: 1});
                 } else {
+                    console.log('torrent yes');
                     for (var i in torrent_pool) {
                         if (torrent_pool[i].hash === shortTorrent) {
                             torrent_pool[i].status = 1;
+                            torrent_pool[i].engine = engine;
                             break;
                         }
                     }
@@ -2091,7 +2101,9 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                     startTorrent(fileIndex, bufferPath, comPath);
                 });
             } else {
+                console.log('torrent wait');
                 if (!is_queue) {
+                    console.log('torrent no');
                     torrent_pool.push({hash: shortTorrent, index: [fileIndex], engine: engine, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, torrent: torrent, status: 2});
                 }
             }
@@ -2101,6 +2113,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
         console.log('torrent pop');
         var pri = 0;
         var time = 0;
+        console.log(torrent_pool);
         for (var i in torrent_pool) {
             if (torrent_pool[i].status === 2) {
                 if (util.checkAdmin(1, torrent_pool[i].user)) {
@@ -2125,14 +2138,17 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                 }
             }
         }
+        console.log(pri);
+        console.log(time);
         for (var i in torrent_pool) {
             if (torrent_pool[i].hash === shortTorrent) {
-                var filePath = util.getFileLocation(torrent_pool[i].owner, torrent_pool[i].id);
+                var filePath = util.getFileLocation(torrent_pool[i].fileOwner, torrent_pool[i].fileId);
                 realPath = filePath + '/real';
                 engine = torrent_pool[i].engine;
                 user = torrent_pool[i].user;
-                id = torrent_pool[i].id;
+                id = torrent_pool[i].fileId;
                 torrent = torrent_pool[i].torrent;
+                console.log(torrent_pool[i].index);
                 for (var j in torrent_pool[i].index) {
                     fileIndex = torrent_pool[i].index[j];
                     bufferPath = filePath + '/' + fileIndex;
@@ -2147,12 +2163,19 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                             });
                         }
                     } else {
-                        if (torrent_pool.length < config_glb.torrent_limit) {
+                        var runNum = 0;
+                        for (var k in torrent_pool) {
+                            if (torrent_pool[k].status === 1) {
+                                runNum++;
+                            }
+                        }
+                        if (runNum < config_glb.torrent_limit) {
                             engine = torrentStream(torrent, {tmp: config_glb.nas_tmp, path: realPath, connections: 100, uploads: 5});
                             console.log('new engine');
                             for (var i in torrent_pool) {
                                 if (torrent_pool[i].hash === shortTorrent) {
                                     torrent_pool[i].status = 1;
+                                    torrent_pool[i].engine = engine;
                                     break;
                                 }
                             }
@@ -2173,7 +2196,9 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
             if (user._id.equals(torrent_pool[i].user._id)) {
                 console.log('engine stop');
                 console.log(torrent_pool[i].hash);
-                torrent_pool[i].engine.destroy();
+                if (torrent_pool[i].engine) {
+                    torrent_pool[i].engine.destroy();
+                }
                 for (var j in torrent_pool) {
                     if (torrent_pool[j].hash === torrent_pool[i].hash) {
                         torrent_pool.splice(j, 1);
@@ -2515,7 +2540,9 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                             torrent_pool[i].index.splice(pindex, 1);
                         }
                         if (torrent_pool[i].index.length <= 0) {
-                            torrent_pool[i].engine.destroy();
+                            if (torrent_pool[i].engine) {
+                                torrent_pool[i].engine.destroy();
+                            }
                             torrent_pool.splice(i, 1);
                             queueTorrent('pop');
                         }
