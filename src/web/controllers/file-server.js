@@ -2052,9 +2052,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                 }
                 if (torrent_pool[i].index.indexOf(fileIndex) === -1) {
                     torrent_pool[i].index.push(fileIndex);
-                    if (torrent_pool[i].status !== 1) {
-                        return;
-                    } else {
+                    if (torrent_pool[i].engine) {
                         engine = torrent_pool[i].engine;
                     }
                 } else {
@@ -2076,35 +2074,93 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
         } else {
             var runNum = 0;
             for (var i in torrent_pool) {
-                if (torrent_pool[i].status === 1) {
+                if (torrent_pool[i].engine) {
                     runNum++;
                 }
             }
+            var is_run = false;
             if (runNum < config_glb.torrent_limit) {
+                is_run = true;
+            } else if (util.checkAdmin(1, user)) {
+                runNum = 0;
+                for (var i in torrent_pool) {
+                    if (torrent_pool[i].engine && util.checkAdmin(1, torrent_pool[i].user)) {
+                        runNum++;
+                    }
+                }
+                if (runNum < config_glb.torrent_limit) {
+                    is_run = true;
+                }
+            }
+            if (is_run) {
                 engine = torrentStream(torrent, {tmp: config_glb.nas_tmp, path: realPath, connections: 100, uploads: 5});
                 console.log('new engine');
                 if (!is_queue) {
-                    console.log('torrent no');
-                    torrent_pool.push({hash: shortTorrent, index: [fileIndex], engine: engine, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, torrent: torrent, status: 1});
+                    console.log('torrent new');
+                    torrent_pool.push({hash: shortTorrent, index: [fileIndex], engine: engine, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, torrent: torrent});
+                    engine.on('ready', function() {
+                        console.log('torrent ready');
+                        startTorrent(fileIndex, bufferPath, comPath);
+                    });
                 } else {
-                    console.log('torrent yes');
+                    console.log('torrent old');
                     for (var i in torrent_pool) {
                         if (torrent_pool[i].hash === shortTorrent) {
-                            torrent_pool[i].status = 1;
                             torrent_pool[i].engine = engine;
+                            for (var j in torrent_pool[i].index) {
+                                fileIndex = torrent_pool[i].index[j];
+                                console.log(fileIndex);
+                                bufferPath = filePath + '/' + fileIndex;
+                                comPath = bufferPath + '_complete';
+                                if (engine){
+                                    if (engine.files && engine.files.length > 0) {
+                                        startTorrent(fileIndex, bufferPath, comPath);
+                                    } else {
+                                        engine.on('ready', function() {
+                                            console.log('torrent ready');
+                                            startTorrent(fileIndex, bufferPath, comPath);
+                                        });
+                                    }
+                                }
+                            }
                             break;
                         }
                     }
                 }
-                engine.on('ready', function() {
-                    console.log('torrent ready');
-                    startTorrent(fileIndex, bufferPath, comPath);
-                });
+                runNum = 0;
+                for (var i in torrent_pool) {
+                    if (torrent_pool[i].engine) {
+                        runNum++;
+                    }
+                }
+                if (runNum > config_glb.torrent_limit) {
+                    var time = 0;
+                    var out_shortTorrent = null;
+                    for (var i in torrent_pool) {
+                        if (torrent_pool[i].engine && !util.checkAdmin(1, torrent_pool[i].user)) {
+                            if (time < torrent_pool[i].time) {
+                                time = torrent_pool[i].time;
+                                out_shortTorrent = torrent_pool[i].hash;
+                            }
+                        }
+                    }
+                    console.log('torrent kick');
+                    console.log(time);
+                    console.log(out_shortTorrent);
+                    for (var i in torrent_pool) {
+                        if (out_shortTorrent === torrent_pool[i].hash) {
+                            if (torrent_pool[i].engine) {
+                                torrent_pool[i].engine.destroy();
+                                torrent_pool[i].engine = null;
+                            }
+                        }
+                    }
+                }
             } else {
                 console.log('torrent wait');
                 if (!is_queue) {
-                    console.log('torrent no');
-                    torrent_pool.push({hash: shortTorrent, index: [fileIndex], engine: engine, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, torrent: torrent, status: 2});
+                    console.log('torrent new');
+                    torrent_pool.push({hash: shortTorrent, index: [fileIndex], engine: null, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, torrent: torrent});
                 }
             }
         }
@@ -2113,9 +2169,8 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
         console.log('torrent pop');
         var pri = 0;
         var time = 0;
-        console.log(torrent_pool);
         for (var i in torrent_pool) {
-            if (torrent_pool[i].status === 2) {
+            if (!torrent_pool[i].engine) {
                 if (util.checkAdmin(1, torrent_pool[i].user)) {
                     if (!pri) {
                         pri = 1;
@@ -2140,54 +2195,46 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
         }
         console.log(pri);
         console.log(time);
+        console.log(shortTorrent);
+        var runNum = 0;
         for (var i in torrent_pool) {
-            if (torrent_pool[i].hash === shortTorrent) {
-                var filePath = util.getFileLocation(torrent_pool[i].fileOwner, torrent_pool[i].fileId);
-                realPath = filePath + '/real';
-                engine = torrent_pool[i].engine;
-                user = torrent_pool[i].user;
-                id = torrent_pool[i].fileId;
-                torrent = torrent_pool[i].torrent;
-                console.log(torrent_pool[i].index);
-                for (var j in torrent_pool[i].index) {
-                    fileIndex = torrent_pool[i].index[j];
-                    bufferPath = filePath + '/' + fileIndex;
-                    comPath = bufferPath + '_complete';
-                    if (engine){
-                        if (engine.files && engine.files.length > 0) {
-                            startTorrent(fileIndex, bufferPath, comPath);
-                        } else {
-                            engine.on('ready', function() {
-                                console.log('torrent ready');
+            if (torrent_pool[i].engine) {
+                runNum++;
+            }
+        }
+        if (runNum < config_glb.torrent_limit) {
+            for (var i in torrent_pool) {
+                if (torrent_pool[i].hash === shortTorrent) {
+                    torrent = torrent_pool[i].torrent;
+                    var filePath = util.getFileLocation(torrent_pool[i].fileOwner, torrent_pool[i].fileId);
+                    realPath = filePath + '/real';
+                    engine = torrentStream(torrent, {tmp: config_glb.nas_tmp, path: realPath, connections: 100, uploads: 5});
+                    console.log('new engine');
+                    torrent_pool[i].engine = engine;
+                    user = torrent_pool[i].user;
+                    id = torrent_pool[i].fileId;
+                    for (var j in torrent_pool[i].index) {
+                        console.log(fileIndex);
+                        fileIndex = torrent_pool[i].index[j];
+                        bufferPath = filePath + '/' + fileIndex;
+                        comPath = bufferPath + '_complete';
+                        if (engine){
+                            if (engine.files && engine.files.length > 0) {
                                 startTorrent(fileIndex, bufferPath, comPath);
-                            });
-                        }
-                    } else {
-                        var runNum = 0;
-                        for (var k in torrent_pool) {
-                            if (torrent_pool[k].status === 1) {
-                                runNum++;
+                            } else {
+                                engine.on('ready', function() {
+                                    console.log('torrent ready');
+                                    startTorrent(fileIndex, bufferPath, comPath);
+                                });
                             }
-                        }
-                        if (runNum < config_glb.torrent_limit) {
-                            engine = torrentStream(torrent, {tmp: config_glb.nas_tmp, path: realPath, connections: 100, uploads: 5});
-                            console.log('new engine');
-                            for (var i in torrent_pool) {
-                                if (torrent_pool[i].hash === shortTorrent) {
-                                    torrent_pool[i].status = 1;
-                                    torrent_pool[i].engine = engine;
-                                    break;
-                                }
-                            }
-                            engine.on('ready', function() {
-                                console.log('torrent ready');
-                                startTorrent(fileIndex, bufferPath, comPath);
-                            });
                         }
                     }
+                    break;
                 }
-                break;
             }
+            return true;
+        } else {
+            return false;
         }
         break;
         case 'stop':
@@ -2202,11 +2249,14 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                 for (var j in torrent_pool) {
                     if (torrent_pool[j].hash === torrent_pool[i].hash) {
                         torrent_pool.splice(j, 1);
-                        queueTorrent('pop');
                         break;
                     }
                 }
             }
+        }
+        var is_solt = true;
+        while(is_solt) {
+            is_solt = queueTorrent('pop');
         }
         break;
         default:

@@ -692,7 +692,7 @@ audio.media-screen {
 }
 
 .item-user {
-    width: 10%;
+    width: 20%;
     min-width: 68px;
 }
 
@@ -729,7 +729,7 @@ audio.media-screen {
 }
 
 .item-management {
-    width: 15%;
+    width: 10%;
     min-width: 60px;
 }
 
