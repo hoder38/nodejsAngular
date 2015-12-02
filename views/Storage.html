@@ -240,6 +240,9 @@
             <li ng-show="toolList.searchSub">
                 <a confirmed-click="searchSub = true;toolSearchSub = true;subNameFocus = true;subName = '';subEpisode = ''" ng-confirm-click="只保留上一個版本的字幕，完成後請刷新頁面，才會更新字幕" href="#">search subtitle</a>
             </li>
+            <li ng-show="toolList.origin">
+                <a ng-click="originSubtitle()" href="#">origin subtitle</a>
+            </li>
             <li ng-show="toolList.recover">
                 <a confirmed-click="fileRecover()" ng-confirm-click="Would you sure to recover this file?" href="#">recover</a>
             </li>
@@ -255,12 +258,12 @@
             <li ng-show="toolList.dir" ng-repeat="item in dirList">
                 <a confirmed-click="add2Parent(item)" ng-confirm-click="Would you sure to add" ng-sub-msg="to {{item.show}}?" href="#">{{item.show}}</a>
             </li>
-            <li ng-show="toolList.download2local">
+            <!--li ng-show="toolList.download2local">
                 <a confirmed-click="download2local()" ng-confirm-click="確定要下載影片到網站上?" href="#">下載到local</a>
             </li>
             <li ng-show="toolList.downloadMusic">
                 <a confirmed-click="download2local(true)" ng-confirm-click="確定要把影片轉檔成音樂並下載到網站上?" href="#">下載音樂</a>
-            </li>
+            </li-->
             <li ng-show="toolList.fixYoutube">
                 <a ng-click="fixYoutube()" href="#">固定Youtube</a>
             </li>
@@ -300,7 +303,7 @@
                             {{item.name}}
                         </a>
                     </td>
-                    <td class="item-name" ng-if="item.status === 4 && !item.media" ng-click="showTorrent()">
+                    <td class="item-name" ng-if="item.status === 4 && !item.media" ng-click="showMedia(item, 'music')">
                         <a href="#" class="item-point"><i class="glyphicon glyphicon-headphones item-icon"></i>{{item.name}}</a>
                     </td>
                     <td class="item-name" ng-if="item.status === 5 && !item.media" ng-click="showMedia(item, 'doc')">
@@ -412,7 +415,7 @@
                             {{item.name}}
                         </a>
                     </td>
-                    <td class="item-name" ng-if="item.status === 4 && !item.media" ng-click="showTorrent()">
+                    <td class="item-name" ng-if="item.status === 4 && !item.media" ng-click="showMedia(item, 'music')">
                         <a href="#" class="item-point"><i class="glyphicon glyphicon-headphones item-icon"></i>{{item.name}}</a>
                     </td>
                     <td class="item-name" ng-if="item.status === 5 && !item.media" ng-click="showMedia(item, 'doc')">

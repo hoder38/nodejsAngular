@@ -1,7 +1,7 @@
 var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 
-var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'no youtube', 'youtube video', 'youtube playlist', 'playlist unactive'];
+var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'youtube video', 'youtube playlist', 'youtube music', 'youtube music playlist', 'playlist unactive'];
 
 var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'year', 'tw': '年份'}, {'name': 'publisher', 'tw': '出版社'}, {'name': 'country', 'tw': '國家'}, {'name': 'language', 'tw': '語言'}];
 var stock_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'country', 'tw': '國家'}, {'name': 'market type', 'tw': '市場種類'}, {'name': 'category', 'tw': '產業分類'}];
@@ -193,13 +193,13 @@ module.exports = function(collection) {
                 setSingleArray: function(value) {
                     var normal = normalize(value);
                     var defau = isDefaultTag(normal);
-                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10 || defau.index === 20 || defau.index === 21) {
+                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10 || defau.index === 11 || defau.index === 20 || defau.index === 21) {
                         return true;
                     } else {
                         for (var i = 0; i < search[name].index; i++) {
                             normal = search[name].tags[i];
                             defau = isDefaultTag(normal);
-                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10 && defau.index !== 20 && defau.index !== 21) {
+                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10 && defau.index !== 11 && defau.index !== 20 && defau.index !== 21) {
                                 search[name].tags = search[name].tags.slice(0, i);
                                 search[name].exactly = search[name].exactly.slice(0, i);
                                 search[name].index = search[name].tags.length;
@@ -1264,12 +1264,18 @@ module.exports = function(collection) {
                 index = isDefaultTag(normalize(search_arr[i]));
                 if (!index || index.index === 0 || index.index === 6){
                     query_arr.push(denormalize(search_arr[i]));
-                } else if (index.index === 9) {
-                    query.type = 1;
+                //ymp
+                } else if (index.index === 11) {
+                    query.type = 20 + query.type%10;
+                //ym
                 } else if (index.index === 10) {
-                    query.type = 2;
+                    query.type = Math.floor(query.type/10)*10 + 2;
+                //yp
+                } else if (index.index === 9) {
+                    query.type = 10 + query.type%10;
+                //yv
                 } else if (index.index === 8) {
-                    return false;
+                    query.type = Math.floor(query.type/10)*10 + 1;
                 } else if (index.index === 20) {
                     index = isDefaultTag(search_arr[i]);
                     if (index[1] === 'id') {
@@ -1283,12 +1289,15 @@ module.exports = function(collection) {
                     }
                 }
             }
+            if (!query.type) {
+                return false;
+            }
             if (!query.channelId) {
                 if (query_arr.length > 0) {
                     query.keyword = query_arr.join(' ');
-                } else {
+                /*} else {
                     //#YouTube熱門影片台灣
-                    query.channelId = 'UCBcIWZhWqUwknlxikVHQoyA';
+                    query.channelId = 'UCBcIWZhWqUwknlxikVHQoyA';*/
                 }
             }
             query.maxResults = queryLimit;
@@ -1369,7 +1378,7 @@ var getStorageQuerySql = function(user, tagList, exactly) {
                     console.log({count: {$lt: unHit}, utime: {$lt: time}});
                     return {nosql: {count: {$lt: unHit}, utime: {$lt: time}}};
                 }
-            } else if (index.index === 11) {
+            } else if (index.index === 12) {
                 if (util.checkAdmin(1, user)) {
                     var unDay = user.unDay? user.unDay: unactive_day;
                     var unHit = user.unHit? user.unHit: unactive_hit;
@@ -1383,7 +1392,7 @@ var getStorageQuerySql = function(user, tagList, exactly) {
                     console.log({recycle: {$ne: 0}, utime: {$lt: time}});
                     return {nosql: {recycle: {$ne: 0}, utime: {$lt: time}}};
                 }
-            } else if (index.index === 4 || index.index === 6 || index.index === 8 || index.index === 9 || index.index === 10) {
+            } else if (index.index === 4 || index.index === 6 || index.index === 8 || index.index === 9 || index.index === 10 || index.index === 11) {
             } else if (index.index === 5) {
                 delete nosql['first'];
                 is_first = false;

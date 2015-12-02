@@ -39,13 +39,15 @@ var api_pool = [];
 var api_ing = 0;
 
 var oath_waiting = 60000;
+
+//index 10 CAoQAA
 function youtubeAPI(method, data, callback) {
     var youtube = googleapis.youtube({ version: 'v3', auth: oauth2Client });
     var param = {};
     switch(method) {
         case 'y search':
         console.log(data);
-        if ((!data['keyword'] && !data['channelId']) || !data['order'] || !data['maxResults']) {
+        if (!data['order'] || !data['maxResults'] || !data['type']) {
             util.handleError({hoerror: 2, message: 'search parameter lost!!!'}, callback, callback);
         }
         if (data['id_arr'] && data['id_arr'].length > 0) {
@@ -55,11 +57,19 @@ function youtubeAPI(method, data, callback) {
                 data['maxResults'] -= data['id_arr'].length;
             }
         }
-        var type = 'video,playlist';
-        if (data['type'] === 1) {
+        var type = '';
+        switch (data['type']) {
+            case 1:
+            case 2:
             type = 'video';
-        } else if (data['type'] === 2) {
+            break;
+            case 10:
+            case 20:
             type = 'playlist';
+            break;
+            default:
+            type = 'video,playlist';
+            break;
         }
         param = {
             part: 'id',
@@ -134,6 +144,31 @@ function youtubeAPI(method, data, callback) {
             }
             setTimeout(function(){
                 callback(null, metadata);
+            }, 0);
+        });
+        break;
+        case 'y playItem':
+        if (!data['id']) {
+            util.handleError({hoerror: 2, message: 'search parameter lost!!!'}, callback, callback);
+        }
+        param = {
+            part: 'snippet',
+            playlistId: data['id'],
+            maxResults: 20
+        };
+        if (data['pageToken']) {
+            param.pageToken = data['pageToken'];
+        }
+        youtube.playlistItems.list(param, function(err, metadata) {
+            if (err && err.code !== 'ECONNRESET') {
+                util.handleError(err, callback, callback, null);
+            }
+            var id_arr = [];
+            for (var i in metadata.items) {
+                id_arr.push({id: 'you_' + metadata.items[i].snippet.resourceId.videoId, index: metadata.items[i].snippet.position+1});
+            }
+            setTimeout(function(){
+                callback(null, id_arr, metadata.pageInfo.totalResults, metadata.nextPageToken, metadata.prevPageToken);
             }, 0);
         });
         break;

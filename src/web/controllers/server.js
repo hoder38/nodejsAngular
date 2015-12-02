@@ -540,7 +540,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                                         }
                                     }
                                     detaildata.items = detaildata.items.concat(detaildata1.items);
-                                    var itemList = getYoutubeItem(detaildata.items);
+                                    var itemList = getYoutubeItem(detaildata.items, query.type);
                                     if (metadata.nextPageToken) {
                                         res.json({itemList: itemList, pageToken: metadata.nextPageToken});
                                     } else {
@@ -548,7 +548,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                                     }
                                 });
                             } else {
-                                var itemList = getYoutubeItem(detaildata.items);
+                                var itemList = getYoutubeItem(detaildata.items, query.type);
                                 if (metadata.nextPageToken) {
                                     res.json({itemList: itemList, pageToken: metadata.nextPageToken});
                                 } else {
@@ -561,7 +561,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                             if (err) {
                                 util.handleError(err, next, res);
                             }
-                            var itemList = getYoutubeItem(detaildata.items);
+                            var itemList = getYoutubeItem(detaildata.items, query.type);
                             if (metadata.nextPageToken) {
                                 res.json({itemList: itemList, pageToken: metadata.nextPageToken});
                             } else {
@@ -1722,7 +1722,7 @@ app.post('/api/media/saveParent', function(req, res, next) {
     });
 });
 
-app.get('/api/media/record/:id/:time/:type(youtube)?', function(req, res, next){
+app.get('/api/media/record/:id/:time/:pId?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('media doc record');
         console.log(new Date());
@@ -1731,13 +1731,12 @@ app.get('/api/media/record/:id/:time/:type(youtube)?', function(req, res, next){
         if (!req.params.time.match(/^\d+(&\d+)?$/)) {
             util.handleError({hoerror: 2, message: "timestamp is not vaild"}, next, res);
         }
-        var id = false;
-        if (req.params.type === 'youtube') {
+        var id = req.params.id.match(/^you_/);
+        if (id) {
             id = util.isValidString(req.params.id, 'name');
             if (id === false) {
                 util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
             }
-            id = 'y_' + id;
         } else {
             id = util.isValidString(req.params.id, 'uid');
             if (id === false) {
@@ -1749,7 +1748,24 @@ app.get('/api/media/record/:id/:time/:type(youtube)?', function(req, res, next){
                 if(err) {
                     util.handleError(err, next, res);
                 }
-                res.json({apiOK: true});
+                if (req.params.pId) {
+                    var pId = req.params.pId.match(/^ypl_/);
+                    if (!pId) {
+                        util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+                    }
+                    pId = util.isValidString(req.params.pId, 'name');
+                    if (pId === false) {
+                        util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+                    }
+                    mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: pId, $isolated: 1}, function(err,user1){
+                        if(err) {
+                            util.handleError(err, next, res);
+                        }
+                        res.json({apiOK: true});
+                    });
+                } else {
+                    res.json({apiOK: true});
+                }
             });
         } else {
             var utime = Math.round(new Date().getTime() / 1000);
@@ -1838,19 +1854,24 @@ app.get('/api/torrent/query/preview/:id', function (req, res,next) {
     });
 });
 
-app.get('/api/media/setTime/:id/:type/:mType(youtube)?', function(req, res, next){
+app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('media setTime');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = false;
-        if (req.params.mType === 'youtube') {
+        var id = req.params.id.match(/^(you|ypl)_(.*)$/);
+        var playlist = false;
+        var playlistId = null;
+        if (id) {
+            if (id[1] === 'ypl') {
+                playlist = true;
+                var playlistId = id[2];
+            }
             id = util.isValidString(req.params.id, 'name');
             if (id === false) {
                 util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
             }
-            id = 'y_' + id;
         } else {
             id = util.isValidString(req.params.id, 'uid');
             if (id === false) {
@@ -1861,30 +1882,11 @@ app.get('/api/media/setTime/:id/:type/:mType(youtube)?', function(req, res, next
         if (type === false) {
             util.handleError({hoerror: 2, message: "type is not vaild"}, next, res);
         }
-        if (type === 'url' || type === 'music') {
-            res.json({apiOK: true});
+        function getRecord() {
             if (type === 'url') {
-                type = '';
-            }
-            tagTool.setLatest(type, id, req.session, function(err) {
-                if (err) {
-                    util.handleError(err);
-                }
-                mongo.orig("update", "storage", {_id: id}, {$inc: { count: 1}}, function(err, item2){
-                    if(err) {
-                        util.handleError(err);
-                    }
-                });
-            });
-        } else {
-            mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: id}, {limit: 1}, function(err, items){
-                if (err) {
-                    util.handleError(err, next, res);
-                }
-                if (items.length === 0) {
-                    res.json({apiOK: true});
-                } else {
-                    res.json({time: items[0].recordTime});
+                res.json({apiOK: true});
+                if (type === 'url') {
+                    type = '';
                 }
                 tagTool.setLatest(type, id, req.session, function(err) {
                     if (err) {
@@ -1896,7 +1898,163 @@ app.get('/api/media/setTime/:id/:type/:mType(youtube)?', function(req, res, next
                         }
                     });
                 });
+            } else {
+                mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: id}, {limit: 1}, function(err, items){
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (items.length === 0) {
+                        if (playlist) {
+                            googleApi.googleApi('y playItem', {id: playlistId}, function(err, vId_arr, total, nPageToken, pPageToken) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                if (total <= 0) {
+                                    util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
+                                }
+                                mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: vId_arr[0].id}, {limit: 1}, function(err, items1){
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (items1.length === 0 || type === 'music') {
+                                        res.json({playlist: {obj_arr: vId_arr, obj: vId_arr[0], pageN: nPageToken, pageP: pPageToken, pageToken: null, total: total}});
+                                    } else {
+                                        res.json({time: items1[0].recordTime, playlist: {obj_arr: vId_arr, obj: vId_arr[0], pageN: nPageToken, pageP: pPageToken, pageToken: null, total: total}});
+                                    }
+                                });
+                            });
+                        } else {
+                            res.json({apiOK: true});
+                        }
+                    } else {
+                        if (playlist) {
+                            var query = {id: playlistId};
+                            if (items[0].pageToken) {
+                                query['pageToken'] = items[0].pageToken;
+                            }
+                            googleApi.googleApi('y playItem', query, function(err, vId_arr, total, nPageToken, pPageToken) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                if (total <= 0) {
+                                    util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
+                                }
+                                var videoObj = vId_arr[0];
+                                if (req.params.back) {
+                                    videoObj = vId_arr[vId_arr.length-1];
+                                }
+                                var is_new = true;
+                                for (var i in vId_arr) {
+                                    if (vId_arr[i].id === items[0].recordTime) {
+                                        videoObj = vId_arr[i];
+                                        is_new = false;
+                                        break;
+                                    }
+                                }
+                                if (is_new) {
+                                    mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: {recordTime: videoObj.id}}, function(err, item){
+                                        if (err) {
+                                            util.handleError(err, next, res);
+                                        }
+                                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: videoObj.id}, {limit: 1}, function(err, items1){
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            if (items1.length === 0 || type === 'music') {
+                                                res.json({playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
+                                            } else {
+                                                res.json({time: items1[0].recordTime, playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
+                                            }
+                                        });
+                                    });
+                                } else {
+                                    mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: videoObj.id}, {limit: 1}, function(err, items1){
+                                        if (err) {
+                                            util.handleError(err, next, res);
+                                        }
+                                        if (items1.length === 0 || type === 'music') {
+                                            res.json({playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
+                                        } else {
+                                            res.json({time: items1[0].recordTime, playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
+                                        }
+                                    });
+                                }
+                            });
+                        } else {
+                            if (type === 'music') {
+                                res.json({apiOK: true});
+                            } else {
+                                res.json({time: items[0].recordTime});
+                            }
+                        }
+                    }
+                    tagTool.setLatest(type, id, req.session, function(err) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                        mongo.orig("update", "storage", {_id: id}, {$inc: { count: 1}}, function(err, item2){
+                            if(err) {
+                                util.handleError(err);
+                            }
+                        });
+                    });
+                });
+            }
+        }
+        if (playlist && req.params.obj) {
+            var obj = req.params.obj.match(/^you_/);
+            if (!obj) {
+                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+            }
+            obj = util.isValidString(req.params.obj, 'name');
+            if (obj === false) {
+                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+            }
+            var utime = Math.round(new Date().getTime() / 1000);
+            var data = {};
+            data['recordTime'] = req.params.obj;
+            var pageToken = false;
+            if (req.params.pageToken) {
+                pageToken = util.isValidString(req.params.pageToken, 'name');
+                if (pageToken !== false) {
+                    data['pageToken'] = pageToken;
+                }
+            }
+            data['mtime'] = utime;
+            mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: data}, function(err, item){
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (item === 0) {
+                    mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (items.length === 0) {
+                            data['userId'] = req.user._id;
+                            data['fileId'] = id;
+                            mongo.orig("insert", "storageRecord", data, function(err, item1){
+                                if(err) {
+                                    util.handleError(err, next, res);
+                                }
+                                getRecord();
+                            });
+                        } else {
+                            data['fileId'] = id;
+                            mongo.orig("update", "storageRecord", {_id: items[0]._id}, {$set: data}, function(err, item1){
+                                if(err) {
+                                    util.handleError(err, next, res);
+                                }
+                                getRecord();
+                            });
+                        }
+                    });
+                } else {
+                    getRecord();
+                }
             });
+        } else {
+            getRecord();
         }
     });
 });
@@ -2692,6 +2850,25 @@ app.get('/api/getUser', function(req, res, next){
     });
 });
 
+app.get('/subtitle/:uid/:index(\\d+)?', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('subtitle');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var url = 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_port + '/subtitle/' + req.params.uid;
+        if (req.params.index) {
+            url = url + '/' + req.params.index;
+        }
+        body = '302. Redirecting to ' + url;
+        res.header('Content-Type', 'text/plain');
+        // Respond
+        res.statusCode = 302;
+        res.header('Location', url);
+        res.end(body);
+    });
+});
+
 //passport
 passport.use(new LocalStrategy(function(username, password, done){
     //記得檢查input!!!
@@ -2944,7 +3121,7 @@ function checkLogin(req, res, next, callback) {
     }
 }
 
-function getYoutubeItem(items) {
+function getYoutubeItem(items, type) {
     var itemList = [];
     var yd = null;
     var data = null;
@@ -2956,15 +3133,32 @@ function getYoutubeItem(items) {
                 items[i].snippet.tags = ['first item'];
             }
             yd = new Date(items[i].snippet.publishedAt.match(/^\d\d\d\d-\d\d-\d\d/)[0]);
-            data = {name: items[i].snippet.title, id: items[i].id, tags: items[i].snippet.tags, recycle: 0, isOwn: false, status: 3, utime: yd.getTime()/1000, thumb: items[i].snippet.thumbnails.default.url, cid: items[i].snippet.channelId, ctitle: items[i].snippet.channelTitle};
+            data = {name: items[i].snippet.title, id: 'you_' + items[i].id, tags: items[i].snippet.tags, recycle: 0, isOwn: false, utime: yd.getTime()/1000, thumb: items[i].snippet.thumbnails.default.url, cid: items[i].snippet.channelId, ctitle: items[i].snippet.channelTitle};
             if (items[i].statistics) {
                 data['count'] = items[i].statistics.viewCount;
             } else {
                 data['count'] = 301;
             }
             if (items[i].kind === 'youtube#playlist') {
+                data['id'] = 'ypl_' + items[i].id;
                 data['name'] = data['name'] + ' [playlist]';
-                data['playlist'] = true;
+                switch(Math.floor(type/10)) {
+                    case 2:
+                    data['status'] = 4;
+                    break;
+                    default:
+                    data['status'] = 3;
+                    break;
+                }
+            } else {
+                switch(type%10) {
+                    case 2:
+                    data['status'] = 4;
+                    break;
+                    default:
+                    data['status'] = 3;
+                    break;
+                }
             }
             itemList.push(data);
         }

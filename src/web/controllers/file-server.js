@@ -75,6 +75,7 @@ var express = require('express'),
     openSubtitle = require('opensubtitles-api'),
     oth = require('os-torrent-hash'),
     app = express(),
+    youtubedl = require('youtube-dl'),
     server = https.createServer(credentials, app),
     mkdirp = require('mkdirp'),
     readline = require('readline'),
@@ -117,30 +118,28 @@ app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
         if (!ext) {
             util.handleError({hoerror: 2, message: "not valid subtitle!!!"}, next, res);
         }
-        var id = util.isValidString(req.params.uid, 'uid');
-        if (id === false) {
-            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
-        }
-        mongo.orig("find", "storage", { _id: id }, {limit: 1}, function(err, items){
-            if(err) {
-                util.handleError(err, next, callback);
+        var filePath = null;
+        var id = req.params.uid.match(/^you_/);
+        if (id) {
+            id = util.isValidString(req.params.uid, 'name');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
             }
-            if (items.length === 0 ) {
-                util.handleError({hoerror: 2, message: 'file not exist!!!'}, next, callback);
-            }
-            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
-            if (items[0].status === 9 && req.params.index) {
-                fileIndex = Number(req.params.index);
-                filePath = filePath + '/' + fileIndex;
-            }
+            filePath = util.getFileLocation('youtube', id);
             var folderPath = path.dirname(filePath);
             if (!fs.existsSync(folderPath)) {
                 mkdirp(folderPath, function(err) {
                     if(err) {
                         util.handleError(err, next, res);
                     }
-                    if (fs.existsSync(filePath + '.' + ext)) {
-                        fs.renameSync(filePath + '.' + ext, filePath + '.' + ext + '1');
+                    if (fs.existsSync(filePath + '.srt')) {
+                        fs.renameSync(filePath + '.srt', filePath + '.srt1');
+                    }
+                    if (fs.existsSync(filePath + '.ass')) {
+                        fs.renameSync(filePath + '.ass', filePath + '.ass1');
+                    }
+                    if (fs.existsSync(filePath + '.ssa')) {
+                        fs.renameSync(filePath + '.ssa', filePath + '.ssa1');
                     }
                     var stream = fs.createReadStream(req.files.file.path);
                     stream.on('error', function(err){
@@ -151,8 +150,14 @@ app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
                     stream.pipe(fs.createWriteStream(filePath + '.' + ext));
                 });
             } else {
-                if (fs.existsSync(filePath + '.' + ext)) {
-                    fs.renameSync(filePath + '.' + ext, filePath + '.' + ext + '1');
+                if (fs.existsSync(filePath + '.srt')) {
+                    fs.renameSync(filePath + '.srt', filePath + '.srt1');
+                }
+                if (fs.existsSync(filePath + '.ass')) {
+                    fs.renameSync(filePath + '.ass', filePath + '.ass1');
+                }
+                if (fs.existsSync(filePath + '.ssa')) {
+                    fs.renameSync(filePath + '.ssa', filePath + '.ssa1');
                 }
                 var stream = fs.createReadStream(req.files.file.path);
                 stream.on('error', function(err){
@@ -162,20 +167,79 @@ app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
                 stream.on('close', SRT2VTT);
                 stream.pipe(fs.createWriteStream(filePath + '.' + ext));
             }
-            function SRT2VTT() {
-                fs.unlink(req.files.file.path, function(err) {
+        } else {
+            var id = util.isValidString(req.params.uid, 'uid');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+            }
+            mongo.orig("find", "storage", { _id: id }, {limit: 1}, function(err, items){
+                if(err) {
+                    util.handleError(err, next, callback);
+                }
+                if (items.length === 0 ) {
+                    util.handleError({hoerror: 2, message: 'file not exist!!!'}, next, callback);
+                }
+                filePath = util.getFileLocation(items[0].owner, items[0]._id);
+                if (items[0].status === 9 && req.params.index) {
+                    fileIndex = Number(req.params.index);
+                    filePath = filePath + '/' + fileIndex;
+                }
+                var folderPath = path.dirname(filePath);
+                if (!fs.existsSync(folderPath)) {
+                    mkdirp(folderPath, function(err) {
+                        if(err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (fs.existsSync(filePath + '.srt')) {
+                            fs.renameSync(filePath + '.srt', filePath + '.srt1');
+                        }
+                        if (fs.existsSync(filePath + '.ass')) {
+                            fs.renameSync(filePath + '.ass', filePath + '.ass1');
+                        }
+                        if (fs.existsSync(filePath + '.ssa')) {
+                            fs.renameSync(filePath + '.ssa', filePath + '.ssa1');
+                        }
+                        var stream = fs.createReadStream(req.files.file.path);
+                        stream.on('error', function(err){
+                            console.log('save file error!!!');
+                            util.handleError(err, next, res);
+                        });
+                        stream.on('close', SRT2VTT);
+                        stream.pipe(fs.createWriteStream(filePath + '.' + ext));
+                    });
+                } else {
+                    if (fs.existsSync(filePath + '.srt')) {
+                        fs.renameSync(filePath + '.srt', filePath + '.srt1');
+                    }
+                    if (fs.existsSync(filePath + '.ass')) {
+                        fs.renameSync(filePath + '.ass', filePath + '.ass1');
+                    }
+                    if (fs.existsSync(filePath + '.ssa')) {
+                        fs.renameSync(filePath + '.ssa', filePath + '.ssa1');
+                    }
+                    var stream = fs.createReadStream(req.files.file.path);
+                    stream.on('error', function(err){
+                        console.log('save file error!!!');
+                        util.handleError(err, next, res);
+                    });
+                    stream.on('close', SRT2VTT);
+                    stream.pipe(fs.createWriteStream(filePath + '.' + ext));
+                }
+            });
+        }
+        function SRT2VTT() {
+            fs.unlink(req.files.file.path, function(err) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                util.SRT2VTT(filePath, ext, function(err) {
                     if (err) {
                         util.handleError(err, next, res);
                     }
-                    util.SRT2VTT(filePath, ext, function(err) {
-                        if (err) {
-                            util.handleError(err, next, res);
-                        }
-                        res.json({apiOK: true});
-                    });
+                    res.json({apiOK: true});
                 });
-            }
-        });
+            });
+        }
     });
 });
 
@@ -885,34 +949,13 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+)?', function(req, res, next)
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = util.isValidString(req.params.uid, 'uid'), fileIndex = 0;
-        if (id === false) {
-            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
-        };
+        var fileIndex = 0;
         if (!req.params.adjust.match(/^\-?\d+(\.\d+)?$/)) {
             util.handleError({hoerror: 2, message: "adjust time is not vaild"}, next, res);
         }
+        var filePath = null;
         var adjust = Number(req.params.adjust);
-        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            if (items.length <= 0) {
-                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
-            }
-            if (items[0].status !== 3 && items[0].status !== 9) {
-                util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
-            }
-            if (req.params.index) {
-                fileIndex = Number(req.params.index);
-            }
-            if (items[0].status === 9 && !items[0]['playList'][fileIndex].match(/\.mp4$/i) && !items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
-                util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
-            }
-            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
-            if (items[0].status === 9) {
-                filePath = filePath + '/' + fileIndex;
-            }
+        function fixSub() {
             if (!fs.existsSync(filePath + '.vtt')) {
                 util.handleError({hoerror: 2, message: "do not have subtitle!!!"}, next, res);
             }
@@ -1002,7 +1045,266 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+)?', function(req, res, next)
                     res.json({apiOK: true});
                 });
             });
+        }
+        var id = req.params.uid.match(/^you_/);
+        if (id) {
+            id = util.isValidString(req.params.uid, 'name');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+            }
+            filePath = util.getFileLocation('youtube', id);
+            fixSub();
+        } else {
+            id = util.isValidString(req.params.uid, 'uid');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+            }
+            mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (items.length <= 0) {
+                    util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+                }
+                if (items[0].status !== 3 && items[0].status !== 9) {
+                    util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+                }
+                if (req.params.index) {
+                    fileIndex = Number(req.params.index);
+                }
+                if (items[0].status === 9 && !items[0]['playList'][fileIndex].match(/\.mp4$/i) && !items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
+                    util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+                }
+                filePath = util.getFileLocation(items[0].owner, items[0]._id);
+                if (items[0].status === 9) {
+                    filePath = filePath + '/' + fileIndex;
+                }
+                fixSub();
+            });
+        }
+    });
+});
+
+//youtube url
+app.get('/api/external/getSingle/:uid', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('external getSingle');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = req.params.uid.match(/^you_(.*)/);
+        if (!id) {
+            util.handleError({hoerror: 2, message: "file is not youtube video!!!"}, next, res);
+        }
+        var url = 'http://www.youtube.com/watch?v=' + id[1];
+        youtubedl.getInfo(url, [], function(err, info) {
+            if (err) {
+                err.hoerror = 2;
+                util.handleError(err, next, res);
+            }
+            res.json(info);
         });
+    });
+});
+
+app.get('/api/external/getSubtitle/:uid', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('external getSingle');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = req.params.uid.match(/^you_(.*)/);
+        if (!id) {
+            util.handleError({hoerror: 2, message: "file is not youtube video!!!"}, next, res);
+        }
+        var url = 'http://www.youtube.com/watch?v=' + id[1];
+        id = util.isValidString(req.params.uid, 'name');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+        }
+        var filePath = util.getFileLocation('youtube', id);
+        var sub_location = filePath + '_sub/youtube';
+        var options = {
+            auto: false,
+            all: false,
+            lang: 'zh-TW,zh-Hant,zh-CN,zh-Hans,zh-HK,zh-SG,en',
+        };
+        if (fs.existsSync(sub_location)) {
+            options.cwd = sub_location;
+            youtubedl.getSubs(url, options, function(err, info) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                var choose = null, pri = 0, sub_match = null;
+                fs.readdirSync(sub_location).forEach(function(file,index){
+                    sub_match = file.match(/\.([a-zA-Z\-]+)\.[a-zA-Z]{3}$/);
+                    if (sub_match) {
+                        switch (sub_match[1]) {
+                            case 'zh-TW':
+                            if (pri < 7) {
+                                pri = 7;
+                                choose = file;
+                            }
+                            break;
+                            case 'zh-Hant':
+                            if (pri < 6) {
+                                pri = 6;
+                                choose = file;
+                            }
+                            break;
+                            case 'zh-CN':
+                            if (pri < 5) {
+                                pri = 5;
+                                choose = file;
+                            }
+                            break;
+                            case 'zh-Hans':
+                            if (pri < 4) {
+                                pri = 4;
+                                choose = file;
+                            }
+                            break;
+                            case 'zh-HK':
+                            if (pri < 3) {
+                                pri = 3;
+                                choose = file;
+                            }
+                            break;
+                            case 'zh-SG':
+                            if (pri < 2) {
+                                pri = 2;
+                                choose = file;
+                            }
+                            break;
+                            case 'en':
+                            if (pri < 1) {
+                                pri = 1;
+                                choose = file;
+                            }
+                            break;
+                        }
+                    }
+                });
+                if (!choose) {
+                    util.handleError({hoerror: 2, message: "sub donot have chinese and english!!!"}, next, res);
+                }
+                var ext = mime.isSub(choose);
+                if (!ext) {
+                    util.handleError({hoerror: 2, message: "sub ext not support!!!"}, next, res);
+                }
+                if (fs.existsSync(filePath + '.srt')) {
+                    fs.renameSync(filePath + '.srt', filePath + '.srt1');
+                }
+                if (fs.existsSync(filePath + '.ass')) {
+                    fs.renameSync(filePath + '.ass', filePath + '.ass1');
+                }
+                if (fs.existsSync(filePath + '.ssa')) {
+                    fs.renameSync(filePath + '.ssa', filePath + '.ssa1');
+                }
+                fs.rename(sub_location + '/' + choose, filePath + '.' + ext, function(err) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    util.SRT2VTT(filePath, ext, function(err) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        util.deleteFolderRecursive(sub_location);
+                        res.json({apiOK: true});
+                    });
+                });
+            });
+        } else {
+            mkdirp(sub_location, function(err) {
+                if(err) {
+                    util.handleError(err, next, res);
+                }
+                options.cwd = sub_location;
+                youtubedl.getSubs(url, options, function(err, info) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    var choose = null, pri = 0, sub_match = null;
+                    fs.readdirSync(sub_location).forEach(function(file,index){
+                        sub_match = file.match(/\.([a-zA-Z\-]+)\.[a-zA-Z]{3}$/);
+                        if (sub_match) {
+                            switch (sub_match[1]) {
+                                case 'zh-TW':
+                                if (pri < 7) {
+                                    pri = 7;
+                                    choose = file;
+                                }
+                                break;
+                                case 'zh-Hant':
+                                if (pri < 6) {
+                                    pri = 6;
+                                    choose = file;
+                                }
+                                break;
+                                case 'zh-CN':
+                                if (pri < 5) {
+                                    pri = 5;
+                                    choose = file;
+                                }
+                                break;
+                                case 'zh-Hans':
+                                if (pri < 4) {
+                                    pri = 4;
+                                    choose = file;
+                                }
+                                break;
+                                case 'zh-HK':
+                                if (pri < 3) {
+                                    pri = 3;
+                                    choose = file;
+                                }
+                                break;
+                                case 'zh-SG':
+                                if (pri < 2) {
+                                    pri = 2;
+                                    choose = file;
+                                }
+                                break;
+                                case 'en':
+                                if (pri < 1) {
+                                    pri = 1;
+                                    choose = file;
+                                }
+                                break;
+                            }
+                        }
+                    });
+                    if (!choose) {
+                        util.handleError({hoerror: 2, message: "sub donot have chinese and english!!!"}, next, res);
+                    }
+                    var ext = mime.isSub(choose);
+                    if (!ext) {
+                        util.handleError({hoerror: 2, message: "sub ext not support!!!"}, next, res);
+                    }
+                    if (fs.existsSync(filePath + '.srt')) {
+                        fs.renameSync(filePath + '.srt', filePath + '.srt1');
+                    }
+                    if (fs.existsSync(filePath + '.ass')) {
+                        fs.renameSync(filePath + '.ass', filePath + '.ass1');
+                    }
+                    if (fs.existsSync(filePath + '.ssa')) {
+                        fs.renameSync(filePath + '.ssa', filePath + '.ssa1');
+                    }
+                    fs.rename(sub_location + '/' + choose, filePath + '.' + ext, function(err) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        util.SRT2VTT(filePath, ext, function(err) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            util.deleteFolderRecursive(sub_location);
+                            res.json({apiOK: true});
+                        });
+                    });
+                });
+            });
+        }
     });
 });
 
@@ -1012,8 +1314,10 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = util.isValidString(req.params.uid, 'uid'),
-        name = util.isValidString(req.body.name, 'name');
+        var name = util.isValidString(req.body.name, 'name');
+        if (name === false) {
+            util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
+        }
         var episode_match = false;
         if(req.body.episode) {
             episode_match = req.body.episode.match(/^(s(\d*))?(e)?(\d+)$/i);
@@ -1063,34 +1367,46 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                 }
             }
         }
-        if (id === false) {
-            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
-        };
-        if (name === false) {
-            util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
+        var filePath = null;
+        var id = req.params.uid.match(/^you_/);
+        if (id) {
+            id = util.isValidString(req.params.uid, 'name');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+            }
+            filePath = util.getFileLocation('youtube', id);
+            searchSub();
+        } else {
+            id = util.isValidString(req.params.uid, 'uid');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+            }
+            var fileIndex = 0;
+            mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (items.length <= 0) {
+                    util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+                }
+                if (items[0].status !== 3 && items[0].status !== 9) {
+                    util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+                }
+                if (req.params.index) {
+                    fileIndex = Number(req.params.index);
+                }
+                if (items[0].status === 9 && !items[0]['playList'][fileIndex].match(/\.mp4$/i) && !items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
+                    util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+                }
+                filePath = util.getFileLocation(items[0].owner, items[0]._id);
+                if (items[0].status === 9) {
+                    filePath = filePath + '/' + fileIndex;
+                }
+                searchSub();
+            });
         }
-        var fileIndex = 0;
-        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            if (items.length <= 0) {
-                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
-            }
-            if (items[0].status !== 3 && items[0].status !== 9) {
-                util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
-            }
-            if (req.params.index) {
-                fileIndex = Number(req.params.index);
-            }
-            if (items[0].status === 9 && !items[0]['playList'][fileIndex].match(/\.mp4$/i) && !items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
-                util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
-            }
+        function searchSub() {
             var search = {extensions: 'srt'};
-            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
-            if (items[0].status === 9) {
-                filePath = filePath + '/' + fileIndex;
-            }
             if (name.match(/^tt\d+$/i)) {
                 search.imdbid = name;
                 if (episode) {
@@ -1247,113 +1563,20 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                     });
                 }
             }
-            function unzipSubHd(url, callback) {
-                var zip_ext = mime.isZip(url);
-                if (!zip_ext) {
-                    util.handleError({hoerror: 2, message: "is not zip!!!"}, next, callback);
-                }
-                var sub_location = filePath + '_sub';
-                var sub_temp_location = sub_location + '/0';
-                var sub_zip_location = sub_location + '/0.' + zip_ext;
-                if (!fs.existsSync(sub_location)) {
-                    mkdirp(sub_location, function(err) {
-                        if(err) {
-                            util.handleError(err, next, callback);
-                        }
-                        for (var i = 0; i < 10; i++) {
-                            sub_temp_location = sub_location + '/' + i;
-                            if (!fs.existsSync(sub_temp_location)) {
-                                break;
-                            }
-                        }
-                        if (i >= 10) {
-                            util.handleError({hoerror: 2, message: "too many sub!!!"}, next, callback);
-                        }
-                        sub_zip_location = sub_location + '/' + i + '.' + zip_ext;
-                        api.xuiteDownload(url, sub_zip_location, function(err) {
-                            if (err) {
-                                util.handleError(err, next, res);
-                            }
-                            var cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + sub_zip_location + ' ' + sub_temp_location;
-                            if (zip_ext === 'rar' || zip_ext === 'cbr') {
-                                cmdline = 'unrar x ' + sub_zip_location + ' ' + sub_temp_location;
-                            } else if (zip_ext === '7z') {
-                                cmdline = '7za x ' + sub_zip_location + ' -o' + sub_temp_location;
-                            }
-                            mkdirp(sub_temp_location, function(err) {
-                                if(err) {
-                                    util.handleError(err, next, callback);
-                                }
-                                child_process.exec(cmdline, function (err, output) {
-                                    if (err) {
-                                        console.log(cmdline);
-                                        util.handleError(err, next, callback);
-                                    }
-                                    var choose = null;
-                                    var pri_choose = 9;
-                                    var pri_choose_temp = 8;
-                                    var pri_match = false;
-                                    var pri_choose_arr = ['big5', 'cht', '繁體', '繁体', 'gb', 'chs', '簡體', '简体'];
-                                    var curPath = null;
-                                    var episode_pattern = new RegExp('(第0*' + episode + '集|ep?0*' + episode + ')', 'i');
-                                    var episode_choose = null;
-                                    var episode_pri_choose = 9;
-                                    var episode_pri_choose_temp = 8;
-
-                                    recur_dir(sub_temp_location);
-                                    function recur_dir(dir) {
-                                        fs.readdirSync(dir).forEach(function(file,index){
-                                            curPath = dir + '/' + file;
-                                            if(fs.lstatSync(curPath).isDirectory()) {
-                                                recur_dir(curPath);
-                                            } else {
-                                                if (mime.isSub(file)) {
-                                                    if (episode && file.match(episode_pattern)) {
-                                                        pri_match = file.match(/(big5|cht|繁體|繁体|gb|chs|簡體|简体)/);
-                                                        if (pri_match) {
-                                                            episode_pri_choose_temp = pri_choose_arr.indexOf(pri_match[1]);
-                                                        }
-                                                        if (episode_pri_choose > episode_pri_choose_temp) {
-                                                            episode_pri_choose = episode_pri_choose_temp;
-                                                            episode_choose = curPath;
-                                                        }
-                                                    }
-                                                    pri_match = file.match(/(big5|cht|繁體|繁体|gb|chs|簡體|简体)/);
-                                                    if (pri_match) {
-                                                        pri_choose_temp = pri_choose_arr.indexOf(pri_match[1]);
-                                                    }
-                                                    if (pri_choose > pri_choose_temp) {
-                                                        pri_choose = pri_choose_temp;
-                                                        choose = curPath;
-                                                    }
-                                                }
-                                            }
-                                        });
-                                    }
-                                    if (episode_choose) {
-                                        choose = episode_choose;
-                                    }
-                                    console.log('choose');
-                                    console.log(choose);
-                                    SUB2VTT(choose, filePath, true, function(err) {
-                                        if (err) {
-                                            util.handleError(err, next, callback);
-                                        }
-                                        util.deleteFolderRecursive(sub_temp_location);
-                                        fs.unlink(sub_zip_location, function(err) {
-                                            if (err) {
-                                                util.handleError(err, next, callback);
-                                            }
-                                            setTimeout(function(){
-                                                callback(null);
-                                            }, 0);
-                                        });
-                                    });
-                                });
-                            });
-                        });
-                    });
-                } else {
+        }
+        function unzipSubHd(url, callback) {
+            var zip_ext = mime.isZip(url);
+            if (!zip_ext) {
+                util.handleError({hoerror: 2, message: "is not zip!!!"}, next, callback);
+            }
+            var sub_location = filePath + '_sub';
+            var sub_temp_location = sub_location + '/0';
+            var sub_zip_location = sub_location + '/0.' + zip_ext;
+            if (!fs.existsSync(sub_location)) {
+                mkdirp(sub_location, function(err) {
+                    if(err) {
+                        util.handleError(err, next, callback);
+                    }
                     for (var i = 0; i < 10; i++) {
                         sub_temp_location = sub_location + '/' + i;
                         if (!fs.existsSync(sub_temp_location)) {
@@ -1446,25 +1669,130 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                             });
                         });
                     });
-                }
-            }
-            function subHd(str, callback) {
-                console.log(str);
-                api.xuiteDownload('http://subhd.com/search/' + encodeURIComponent(str) , '', function(err, data) {
-                    if (err) {
-                        util.handleError(err, next, callback);
+                });
+            } else {
+                for (var i = 0; i < 10; i++) {
+                    sub_temp_location = sub_location + '/' + i;
+                    if (!fs.existsSync(sub_temp_location)) {
+                        break;
                     }
-                    var big_item = data.match(/pull\-left lb\_l\">([\s\S]+?)<\/div>/);
-                    if (big_item) {
-                        var big_item = big_item[1].match(/\/d\/(\d+)/);
-                        if (big_item) {
-                            api.xuiteDownload('http://subhd.com/d/' + big_item[1], '', function(err, Ddata) {
+                }
+                if (i >= 10) {
+                    util.handleError({hoerror: 2, message: "too many sub!!!"}, next, callback);
+                }
+                sub_zip_location = sub_location + '/' + i + '.' + zip_ext;
+                api.xuiteDownload(url, sub_zip_location, function(err) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    var cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + sub_zip_location + ' ' + sub_temp_location;
+                    if (zip_ext === 'rar' || zip_ext === 'cbr') {
+                        cmdline = 'unrar x ' + sub_zip_location + ' ' + sub_temp_location;
+                    } else if (zip_ext === '7z') {
+                        cmdline = '7za x ' + sub_zip_location + ' -o' + sub_temp_location;
+                    }
+                    mkdirp(sub_temp_location, function(err) {
+                        if(err) {
+                            util.handleError(err, next, callback);
+                        }
+                        child_process.exec(cmdline, function (err, output) {
+                            if (err) {
+                                console.log(cmdline);
+                                util.handleError(err, next, callback);
+                            }
+                            var choose = null;
+                            var pri_choose = 9;
+                            var pri_choose_temp = 8;
+                            var pri_match = false;
+                            var pri_choose_arr = ['big5', 'cht', '繁體', '繁体', 'gb', 'chs', '簡體', '简体'];
+                            var curPath = null;
+                            var episode_pattern = new RegExp('(第0*' + episode + '集|ep?0*' + episode + ')', 'i');
+                            var episode_choose = null;
+                            var episode_pri_choose = 9;
+                            var episode_pri_choose_temp = 8;
+
+                            recur_dir(sub_temp_location);
+                            function recur_dir(dir) {
+                                fs.readdirSync(dir).forEach(function(file,index){
+                                    curPath = dir + '/' + file;
+                                    if(fs.lstatSync(curPath).isDirectory()) {
+                                        recur_dir(curPath);
+                                    } else {
+                                        if (mime.isSub(file)) {
+                                            if (episode && file.match(episode_pattern)) {
+                                                pri_match = file.match(/(big5|cht|繁體|繁体|gb|chs|簡體|简体)/);
+                                                if (pri_match) {
+                                                    episode_pri_choose_temp = pri_choose_arr.indexOf(pri_match[1]);
+                                                }
+                                                if (episode_pri_choose > episode_pri_choose_temp) {
+                                                    episode_pri_choose = episode_pri_choose_temp;
+                                                    episode_choose = curPath;
+                                                }
+                                            }
+                                            pri_match = file.match(/(big5|cht|繁體|繁体|gb|chs|簡體|简体)/);
+                                            if (pri_match) {
+                                                pri_choose_temp = pri_choose_arr.indexOf(pri_match[1]);
+                                            }
+                                            if (pri_choose > pri_choose_temp) {
+                                                pri_choose = pri_choose_temp;
+                                                choose = curPath;
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                            if (episode_choose) {
+                                choose = episode_choose;
+                            }
+                            console.log('choose');
+                            console.log(choose);
+                            SUB2VTT(choose, filePath, true, function(err) {
                                 if (err) {
                                     util.handleError(err, next, callback);
                                 }
-                                if (episode) {
-                                    var episode_match = new RegExp('第 ' + episode + ' 集[\\s\\S]+?dt_edition"><a href="/a/(\\d+)');
-                                    var sub_item = Ddata.match(episode_match);
+                                util.deleteFolderRecursive(sub_temp_location);
+                                fs.unlink(sub_zip_location, function(err) {
+                                    if (err) {
+                                        util.handleError(err, next, callback);
+                                    }
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                });
+                            });
+                        });
+                    });
+                });
+            }
+        }
+        function subHd(str, callback) {
+            console.log(str);
+            api.xuiteDownload('http://subhd.com/search/' + encodeURIComponent(str) , '', function(err, data) {
+                if (err) {
+                    util.handleError(err, next, callback);
+                }
+                var big_item = data.match(/pull\-left lb\_l\">([\s\S]+?)<\/div>/);
+                if (big_item) {
+                    var big_item = big_item[1].match(/\/d\/(\d+)/);
+                    if (big_item) {
+                        api.xuiteDownload('http://subhd.com/d/' + big_item[1], '', function(err, Ddata) {
+                            if (err) {
+                                util.handleError(err, next, callback);
+                            }
+                            if (episode) {
+                                var episode_match = new RegExp('第 ' + episode + ' 集[\\s\\S]+?dt_edition"><a href="/a/(\\d+)');
+                                var sub_item = Ddata.match(episode_match);
+                                if (sub_item) {
+                                    api.getSubHdUrl(sub_item[1], function(err, subtitles) {
+                                        if (err) {
+                                            util.handleError(err, next, callback);
+                                        }
+                                        setTimeout(function(){
+                                            callback(null, subtitles);
+                                        }, 0);
+                                    });
+                                } else {
+                                    sub_item = Ddata.match(/合集[\s\S]+?dt_edition\"><a href=\"\/a\/(\d+)/);
                                     if (sub_item) {
                                         api.getSubHdUrl(sub_item[1], function(err, subtitles) {
                                             if (err) {
@@ -1475,7 +1803,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                                             }, 0);
                                         });
                                     } else {
-                                        sub_item = Ddata.match(/合集[\s\S]+?dt_edition\"><a href=\"\/a\/(\d+)/);
+                                        sub_item = Ddata.match(/dt_edition\"><a href=\"\/a\/(\d+)/);
                                         if (sub_item) {
                                             api.getSubHdUrl(sub_item[1], function(err, subtitles) {
                                                 if (err) {
@@ -1486,114 +1814,102 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                                                 }, 0);
                                             });
                                         } else {
-                                            sub_item = Ddata.match(/dt_edition\"><a href=\"\/a\/(\d+)/);
-                                            if (sub_item) {
-                                                api.getSubHdUrl(sub_item[1], function(err, subtitles) {
-                                                    if (err) {
-                                                        util.handleError(err, next, callback);
-                                                    }
-                                                    setTimeout(function(){
-                                                        callback(null, subtitles);
-                                                    }, 0);
-                                                });
-                                            } else {
-                                                console.log(Ddata);
-                                                util.handleError({hoerror: 2, message: "sub data error!!!"}, next, callback);
-                                            }
+                                            console.log(Ddata);
+                                            util.handleError({hoerror: 2, message: "sub data error!!!"}, next, callback);
                                         }
                                     }
-                                } else {
-                                    var sub_item = Ddata.match(/dt_edition\"><a href=\"\/a\/(\d+)/);
-                                    if (sub_item) {
-                                        api.getSubHdUrl(sub_item[1], function(err, subtitles) {
-                                            if (err) {
-                                                util.handleError(err, next, callback);
-                                            }
-                                            setTimeout(function(){
-                                                callback(null, subtitles);
-                                            }, 0);
-                                        });
-                                    } else {
-                                        console.log(Ddata);
-                                        util.handleError({hoerror: 2, message: "sub data error!!!"}, next, callback);
-                                    }
                                 }
-                            }, null, false, false);
-                        } else {
-                            console.log('no big');
-                            var sub_item = data.match(/pull\-left lb\_r\">[\s\S]+?<a href=\"\/a\/(\d+)/);
-                            if (sub_item) {
-                                api.getSubHdUrl(sub_item[1], function(err, subtitles) {
-                                    if (err) {
-                                        util.handleError(err, next, res);
-                                    }
-                                    setTimeout(function(){
-                                        callback(null, subtitles);
-                                    }, 0);
-                                });
                             } else {
-                                console.log(data);
-                                util.handleError({hoerror: 2, message: "sub data error!!!"}, next, callback);
+                                var sub_item = Ddata.match(/dt_edition\"><a href=\"\/a\/(\d+)/);
+                                if (sub_item) {
+                                    api.getSubHdUrl(sub_item[1], function(err, subtitles) {
+                                        if (err) {
+                                            util.handleError(err, next, callback);
+                                        }
+                                        setTimeout(function(){
+                                            callback(null, subtitles);
+                                        }, 0);
+                                    });
+                                } else {
+                                    console.log(Ddata);
+                                    util.handleError({hoerror: 2, message: "sub data error!!!"}, next, callback);
+                                }
                             }
-                        }
+                        }, null, false, false);
                     } else {
-                        if (data.match(/暂时没有/)) {
-                            console.log('no subtitle');
-                            setTimeout(function(){
-                                callback(null, null);
-                            }, 0);
+                        console.log('no big');
+                        var sub_item = data.match(/pull\-left lb\_r\">[\s\S]+?<a href=\"\/a\/(\d+)/);
+                        if (sub_item) {
+                            api.getSubHdUrl(sub_item[1], function(err, subtitles) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                setTimeout(function(){
+                                    callback(null, subtitles);
+                                }, 0);
+                            });
                         } else {
                             console.log(data);
                             util.handleError({hoerror: 2, message: "sub data error!!!"}, next, callback);
                         }
                     }
-                }, null, false, false);
-            }
-            function SUB2VTT(choose_subtitle, subPath, is_file, callback) {
-                var ext = mime.isSub(choose_subtitle);
-                if (!ext) {
-                    util.handleError({hoerror: 2, message: "is not sub!!!"}, next, callback);
-                }
-                if (fs.existsSync(subPath + '.srt')) {
-                    fs.renameSync(subPath + '.srt', subPath + '.srt1');
-                }
-                if (fs.existsSync(subPath + '.ass')) {
-                    fs.renameSync(subPath + '.ass', subPath + '.ass1');
-                }
-                if (fs.existsSync(subPath + '.ssa')) {
-                    fs.renameSync(subPath + '.ssa', subPath + '.ssa1');
-                }
-                if (is_file) {
-                    fs.rename(choose_subtitle, subPath + '.' + ext, function(err) {
-                        if (err) {
-                            util.handleError(err, next, callback);
-                        }
-                        util.SRT2VTT(subPath, ext, function(err) {
-                            if (err) {
-                                util.handleError(err, next, callback);
-                            }
-                            setTimeout(function(){
-                                callback(null);
-                            }, 0);
-                        });
-                    });
                 } else {
-                    api.xuiteDownload(choose_subtitle, subPath + '.' + ext, function(err) {
+                    if (data.match(/暂时没有/)) {
+                        console.log('no subtitle');
+                        setTimeout(function(){
+                            callback(null, null);
+                        }, 0);
+                    } else {
+                        console.log(data);
+                        util.handleError({hoerror: 2, message: "sub data error!!!"}, next, callback);
+                    }
+                }
+            }, null, false, false);
+        }
+        function SUB2VTT(choose_subtitle, subPath, is_file, callback) {
+            var ext = mime.isSub(choose_subtitle);
+            if (!ext) {
+                util.handleError({hoerror: 2, message: "is not sub!!!"}, next, callback);
+            }
+            if (fs.existsSync(subPath + '.srt')) {
+                fs.renameSync(subPath + '.srt', subPath + '.srt1');
+            }
+            if (fs.existsSync(subPath + '.ass')) {
+                fs.renameSync(subPath + '.ass', subPath + '.ass1');
+            }
+            if (fs.existsSync(subPath + '.ssa')) {
+                fs.renameSync(subPath + '.ssa', subPath + '.ssa1');
+            }
+            if (is_file) {
+                fs.rename(choose_subtitle, subPath + '.' + ext, function(err) {
+                    if (err) {
+                        util.handleError(err, next, callback);
+                    }
+                    util.SRT2VTT(subPath, ext, function(err) {
                         if (err) {
                             util.handleError(err, next, callback);
                         }
-                        util.SRT2VTT(subPath, ext, function(err) {
-                            if (err) {
-                                util.handleError(err, next, callback);
-                            }
-                            setTimeout(function(){
-                                callback(null);
-                            }, 0);
-                        });
-                    }, null, false);
-                }
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    });
+                });
+            } else {
+                api.xuiteDownload(choose_subtitle, subPath + '.' + ext, function(err) {
+                    if (err) {
+                        util.handleError(err, next, callback);
+                    }
+                    util.SRT2VTT(subPath, ext, function(err) {
+                        if (err) {
+                            util.handleError(err, next, callback);
+                        }
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    });
+                }, null, false);
             }
-        });
+        }
     });
 });
 
@@ -2743,46 +3059,63 @@ app.get('/subtitle/:uid/:index(\\d+)?', function(req, res, next){
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = util.isValidString(req.params.uid, 'uid');
-        if (id === false) {
-            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
-        }
-        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
-            if (err) {
-                util.handleError(err, next, res);
+        var id = req.params.uid.match(/^you_/);
+        if (id) {
+            id = util.isValidString(req.params.uid, 'name');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
             }
-            if (items.length <= 0) {
-                util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
-            }
-            if (items[0].status !== 3 && items[0].status !== 9) {
-                util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
-            }
-            if (items[0].status === 3) {
-                var filePath = util.getFileLocation(items[0].owner, items[0]._id);
-                fs.exists(filePath + '.vtt', function (exists) {
-                    res.writeHead(200, { 'Content-Type': 'text/vtt' });
-                    if (!exists) {
-                        var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
-                    } else {
-                        var stream = fs.createReadStream(filePath + '.vtt').pipe(res);
-                    }
-                });
-            } else if (items[0].status === 9) {
-                var fileIndex = 0;
-                if (req.params.index) {
-                    fileIndex = Number(req.params.index);
+            var filePath = util.getFileLocation('youtube', id);
+            fs.exists(filePath + '.vtt', function (exists) {
+                res.writeHead(200, { 'Content-Type': 'text/vtt' });
+                if (!exists) {
+                    var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
+                } else {
+                    var stream = fs.createReadStream(filePath + '.vtt').pipe(res);
                 }
-                var filePath = util.getFileLocation(items[0].owner, items[0]._id);
-                fs.exists(filePath + '/' + fileIndex + '.vtt', function (exists) {
-                    res.writeHead(200, { 'Content-Type': 'text/vtt' });
-                    if (!exists) {
-                        var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
-                    } else {
-                        var stream = fs.createReadStream(filePath + '/' + fileIndex + '.vtt').pipe(res);
-                    }
-                });
+            });
+        } else {
+            id = util.isValidString(req.params.uid, 'uid');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
             }
-        });
+            mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (items.length <= 0) {
+                    util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+                }
+                if (items[0].status !== 3 && items[0].status !== 9) {
+                    util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+                }
+                if (items[0].status === 3) {
+                    var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+                    fs.exists(filePath + '.vtt', function (exists) {
+                        res.writeHead(200, { 'Content-Type': 'text/vtt' });
+                        if (!exists) {
+                            var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
+                        } else {
+                            var stream = fs.createReadStream(filePath + '.vtt').pipe(res);
+                        }
+                    });
+                } else if (items[0].status === 9) {
+                    var fileIndex = 0;
+                    if (req.params.index) {
+                        fileIndex = Number(req.params.index);
+                    }
+                    var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+                    fs.exists(filePath + '/' + fileIndex + '.vtt', function (exists) {
+                        res.writeHead(200, { 'Content-Type': 'text/vtt' });
+                        if (!exists) {
+                            var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
+                        } else {
+                            var stream = fs.createReadStream(filePath + '/' + fileIndex + '.vtt').pipe(res);
+                        }
+                    });
+                }
+            });
+        }
     });
 });
 

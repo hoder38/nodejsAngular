@@ -790,6 +790,14 @@ audio.media-screen {
     width: 45px;
 }
 
+#videoID {
+    width: 45px;
+}
+
+#musicID {
+    width: 45px;
+}
+
 .user-break {
     word-break: break-all;
     word-wrap: break-word;

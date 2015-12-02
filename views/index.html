@@ -277,6 +277,19 @@
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
                                     <li>{{curVideoSub}}</li>
+                                    <span ng-show="video.playlist">
+                                        <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                            <a href="#" ng-click="videoMove('video', 'previous')">
+                                                <span class="glyphicon glyphicon-chevron-up"></span>
+                                            </a>
+                                        </li>
+                                        <input id="videoID" type="text" readonly ng-model="video.playlist.obj.index" />/{{video.playlist.total}}
+                                        <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                            <a href="#" ng-click="videoMove('video')">
+                                                <span class="glyphicon glyphicon-chevron-down"></span>
+                                            </a>
+                                        </li>
+                                    </span>
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(-1, 'video')">
                                             <span class="glyphicon glyphicon-chevron-left"></span>
@@ -292,16 +305,17 @@
                                             <span class="glyphicon glyphicon-chevron-right"></span>
                                         </a>
                                     </li>
-                                    <li ng-hide="video.src">
-                                        <select ng-model="video.download">
-                                            <option value="0">下載</option>
-                                            <option value="1">local</option>
-                                            <option value="2">music</option>
+                                    <li>
+                                        <select ng-model="video.option">
+                                            <option value="0">字幕</option>
+                                            <option value="1">search</option>
+                                            <option value="2">upload</option>
+                                            <option ng-show="video.list[video.index].thumb" value="3">origin</option>
                                         </select>
                                     </li>
                                 </ul>
                             </nav>
-                            <video ng-show="video.src" class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{video.src | trusted}}" controls autoplay ng-video ng-ended="mediaMove(1, 'video', true)" ng-play="testLogin()" ng-pause="mediaRecord('video')" crossorigin="use-credentials" ng-click="videoToggle()" tabindex=1 id="video-tag">
+                            <video class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{video.src | trusted}}" controls autoplay ng-video ng-ended="nextVideo('video')" ng-play="testLogin()" ng-pause="mediaRecord('video')" ng-click="videoToggle()" tabindex=1 id="video-tag">
                                 <track label="English" kind="captions" srclang="en" ng-src="{{video.sub | trusted}}" default="" />
                             </video>
                             <div class="{{isFull && 'full-youtube-screen'||'media-screen'}}" ng-hide="video.src">
@@ -318,6 +332,19 @@
                         <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
+                                    <span ng-show="music.playlist">
+                                        <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                            <a href="#" ng-click="videoMove('music', 'previous')">
+                                                <span class="glyphicon glyphicon-chevron-up"></span>
+                                            </a>
+                                        </li>
+                                        <input id="musicID" type="text" readonly ng-model="music.playlist.obj.index" />/{{music.playlist.total}}
+                                        <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                            <a href="#" ng-click="videoMove('music')">
+                                                <span class="glyphicon glyphicon-chevron-down"></span>
+                                            </a>
+                                        </li>
+                                    </span>
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(-1, 'music')">
                                             <span class="glyphicon glyphicon-chevron-left"></span>
@@ -340,7 +367,7 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <audio class="media-screen" ng-src="{{music.src | trusted}}" controls autoplay ng-music ng-ended="musicShuffle()" ng-play="testLogin()" ng-pause="mediaRecord('music')" id="music-tag">
+                            <audio class="media-screen" ng-src="{{music.src | trusted}}" controls autoplay ng-music ng-ended="nextVideo('music')" ng-play="testLogin()" ng-pause="mediaRecord('music')" id="music-tag">
                             </audio>
                         </div>
                     </section>
@@ -475,7 +502,7 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <video ng-show="torrent.src" class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{torrent.src | trusted}}" controls autoplay ng-torrent ng-ended="torrentMove(1, true)" ng-play="testLogin()" ng-pause="mediaRecord('torrent')" crossorigin="use-credentials" ng-click="torrentToggle()" tabindex=1 id="torrent-tag">
+                            <video ng-show="torrent.src" class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{torrent.src | trusted}}" controls autoplay ng-torrent ng-ended="torrentMove(1, true)" ng-play="testLogin()" ng-pause="mediaRecord('torrent')" ng-click="torrentToggle()" tabindex=1 id="torrent-tag">
                                 <track label="English" kind="captions" srclang="en" ng-src="{{torrent.sub | trusted}}" default="" />
                             </video>
                         </div>
