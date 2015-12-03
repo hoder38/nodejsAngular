@@ -590,7 +590,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
-    $scope.toolList = {download: false, edit: false, upload:false, searchSub:false, del: false, dir: false, fixYoutube: false, subscription: false, origin: false, title: '', item: null};
+    $scope.toolList = {download: false, edit: false, upload:false, searchSub:false, del: false, dir: false, fixYoutube: false, subscription: false, origin: false, download2local: false, title: '', item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -2108,6 +2108,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.fixYoutube = false;
             this.$parent.toolList.subscription = false;
             this.$parent.toolList.origin = false;
+            this.$parent.toolList.download2local = false;
             confirm_str = item;
         } else {
             if (item.status === 7 || item.status === 8 || item.status === 9 || item.thumb) {
@@ -2149,6 +2150,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     this.$parent.toolList.origin = false;
                 }
                 this.$parent.toolList.fixYoutube = true;
+                this.$parent.toolList.download2local = true;
                 if (item.cid) {
                     this.$parent.toolList.subscription = true;
                     this.$parent.toolList.title = item.ctitle;
@@ -2157,6 +2159,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 this.$parent.toolList.origin = false;
                 this.$parent.toolList.fixYoutube = false;
                 this.$parent.toolList.subscription = false;
+                this.$parent.toolList.download2local = false;
             }
         }
         this.toggleDropdown($event, 'item');
@@ -2431,7 +2434,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.mediaShow = [];
     $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
     $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', option: 0, playlist: null};
-    $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', shuffle: false};
+    $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', shuffle: false, option: 0, playlist: null};
     $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, mode: false};
     $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
     $scope.torrent = {id: "", src: "", complete: "", sub: "", name: "null", list: [], index: 0, bookmarkID: '', option: 0};
@@ -3284,18 +3287,17 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
     }
 
-    /*$scope.download2local = function(music, playlist, url) {
-        if (!url) {
-            if (playlist) {
-                url =  'https://www.youtube.com/watch?list=' + this.toolList.item.id;
-            } else {
-                url =  'https://www.youtube.com/watch?v=' + this.toolList.item.id;
+    $scope.download2local = function(music, id) {
+        if (!id) {
+            url =  'https://www.youtube.com/watch?v=' + this.toolList.item.id.substr(4);
+            if (this.toolList.item.status === 4) {
+                url = url + ':music';
             }
-        } else if (playlist) {
-            url = url.replace(/&v=([^&]+)/, '');
-        }
-        if (music) {
-            url = url + ':music';
+        } else {
+            url =  'https://www.youtube.com/watch?v=' + id.substr(4);
+            if (music) {
+                url = url + ':music';
+            }
         }
         var this_obj = this;
         this.inputUrl = '';
@@ -3339,7 +3341,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         } else {
             addAlert("invalid url!!!");
         }
-    }*/
+    }
 
     $scope.urlSave = function() {
         var url = this.inputUrl;
@@ -4365,23 +4367,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.$watch("this.doc.mode", function(newVal, oldVal) {
         $scope.setDoc();
     }, true);
-    /*$scope.$watch("this.video.download", function(newVal, oldVal) {
-        newVal = parseInt(newVal);
-        if (newVal) {
-            if (newVal === 1) {
-                openModal("確定要下載影片到網站上?").then(function () {
-                    $scope.download2local(false, false, yplayer.getVideoUrl());
-                }, function () {
-                });
-            } else if (newVal === 2) {
-                openModal("確定要把影片轉檔成音樂並下載到網站上?").then(function () {
-                    $scope.download2local(true, false, yplayer.getVideoUrl());
-                }, function () {
-                });
-            }
-            $scope.video.download = 0;
-        }
-    }, true);*/
     $scope.$watch("this.torrent.option", function(newVal, oldVal) {
         newVal = parseInt(newVal);
         if (newVal) {
@@ -4401,6 +4386,19 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             $scope.torrent.option = 0;
         }
     }, true);
+    $scope.$watch("this.music.option", function(newVal, oldVal) {
+        newVal = parseInt(newVal);
+        if (newVal) {
+            if (newVal === 1) {
+                $scope.mediaToggle('music');
+                openModal("確定要下載音樂到網站上?").then(function () {
+                    $scope.download2local(true, $scope.music.id);
+                }, function () {
+                });
+            }
+            $scope.music.option = 0;
+        }
+    }, true);
     $scope.$watch("this.video.option", function(newVal, oldVal) {
         newVal = parseInt(newVal);
         if (newVal) {
@@ -4418,8 +4416,14 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 });
             } else if (newVal === 3) {
                 $scope.originSubtitle('video');
+            } else if (newVal === 4) {
+                $scope.mediaToggle('video');
+                openModal("確定要下載影片到網站上?").then(function () {
+                    $scope.download2local(false, $scope.video.id);
+                }, function () {
+                });
             }
-            $scope.torrent.option = 0;
+            $scope.vided.option = 0;
         }
     }, true);
     $scope.numberDoc = function() {

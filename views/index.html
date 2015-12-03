@@ -307,10 +307,11 @@
                                     </li>
                                     <li>
                                         <select ng-model="video.option">
-                                            <option value="0">字幕</option>
-                                            <option value="1">search</option>
-                                            <option value="2">upload</option>
-                                            <option ng-show="video.list[video.index].thumb" value="3">origin</option>
+                                            <option value="0">option</option>
+                                            <option value="1">search subtitle</option>
+                                            <option value="2">upload subtitle</option>
+                                            <option ng-show="video.list[video.index].thumb" value="3">origin subtitle</option>
+                                            <option ng-show="video.list[video.index].thumb" value="4">下載到local</option>
                                         </select>
                                     </li>
                                 </ul>
@@ -359,6 +360,12 @@
                                         <a href="#" ng-click="mediaMove(1, 'music')">
                                             <span class="glyphicon glyphicon-chevron-right"></span>
                                         </a>
+                                    </li>
+                                    <li ng-show="music.list[music.index].thumb">
+                                        <select ng-model="music.option">
+                                            <option value="0">option</option>
+                                            <option value="1">下載到local</option>
+                                        </select>
                                     </li>
                                 </ul>
                                 <ul class="pager nav-trim {{isFull && 'pull-right'||'pull-left'}}">
