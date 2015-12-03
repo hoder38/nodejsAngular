@@ -276,8 +276,18 @@
                         <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
+                                    <li>
+                                        <a href="#" ng-click="videoSwitch = !videoSwitch" tooltip="選項"  tooltip-trigger="mouseenter">
+                                            <span class="glyphicon glyphicon-info-sign"></span>
+                                        </a>
+                                    </li>
                                     <li>{{curVideoSub}}</li>
-                                    <span ng-show="video.playlist">
+                                    <li ng-show="videoSwitch">
+                                        <a href="#" ng-click="changeMode('video')">
+                                            <span ng-show="video.mode === 1" class="glyphicon glyphicon-arrow-left"></span>{{(video.mode === 0 || video.mode === 1) && 'All' || ''}}{{(video.mode === 2 || video.mode === 3) && '1' || ''}}<span ng-show="video.mode === 3" class="glyphicon glyphicon-repeat"></span>
+                                        </a>
+                                    </li>
+                                    <span ng-show="video.playlist&&!videoSwitch">
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="videoMove('video', 'previous')">
                                                 <span class="glyphicon glyphicon-chevron-up"></span>
@@ -290,22 +300,22 @@
                                             </a>
                                         </li>
                                     </span>
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                    <li ng-hide="videoSwitch" class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(-1, 'video')">
                                             <span class="glyphicon glyphicon-chevron-left"></span>
                                         </a>
                                     </li>
-                                    <li>
+                                    <li ng-hide="videoSwitch">
                                         <a href="#" class='media-hide' ng-click="isFull = !isFull">
                                             <span class="glyphicon {{isFull && 'glyphicon-minus-sign'||'glyphicon-plus-sign'}}"></span>
                                         </a>
                                     </li>
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                    <li ng-hide="videoSwitch" class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(1, 'video')">
                                             <span class="glyphicon glyphicon-chevron-right"></span>
                                         </a>
                                     </li>
-                                    <li>
+                                    <li ng-show="videoSwitch">
                                         <select ng-model="video.option">
                                             <option value="0">option</option>
                                             <option value="1">search subtitle</option>
@@ -333,7 +343,17 @@
                         <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
-                                    <span ng-show="music.playlist">
+                                    <li>
+                                        <a href="#" ng-click="musicSwitch = !musicSwitch" tooltip="選項"  tooltip-trigger="mouseenter">
+                                            <span class="glyphicon glyphicon-info-sign"></span>
+                                        </a>
+                                    </li>
+                                    <li ng-show="musicSwitch">
+                                        <a href="#" ng-click="changeMode('music')">
+                                            <span ng-show="music.mode === 1" class="glyphicon glyphicon-arrow-left"></span>{{(music.mode === 0 || music.mode === 1) && 'All' || ''}}{{(music.mode === 2 || music.mode === 3) && '1' || ''}}<span ng-show="music.mode === 3" class="glyphicon glyphicon-repeat"></span><span ng-show="music.mode === 4" class="glyphicon glyphicon-random"></span>
+                                        </a>
+                                    </li>
+                                    <span ng-show="music.playlist&&!musicSwitch">
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="videoMove('music', 'previous')">
                                                 <span class="glyphicon glyphicon-chevron-up"></span>
@@ -346,31 +366,26 @@
                                             </a>
                                         </li>
                                     </span>
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                    <li ng-hide="musicSwitch" class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(-1, 'music')">
                                             <span class="glyphicon glyphicon-chevron-left"></span>
                                         </a>
                                     </li>
-                                    <li>
+                                    <li ng-hide="musicSwitch">
                                         <a href="#" class='media-hide' ng-click="isFull = !isFull">
                                             <span class="glyphicon {{isFull && 'glyphicon-minus-sign'||'glyphicon-plus-sign'}}"></span>
                                         </a>
                                     </li>
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                    <li ng-hide="musicSwitch" class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="mediaMove(1, 'music')">
                                             <span class="glyphicon glyphicon-chevron-right"></span>
                                         </a>
                                     </li>
-                                    <li ng-show="music.list[music.index].thumb">
+                                    <li ng-show="music.list[music.index].thumb&&musicSwitch">
                                         <select ng-model="music.option">
                                             <option value="0">option</option>
                                             <option value="1">下載到local</option>
                                         </select>
-                                    </li>
-                                </ul>
-                                <ul class="pager nav-trim {{isFull && 'pull-right'||'pull-left'}}">
-                                    <li tooltip="Shuffle play"  tooltip-trigger="mouseenter">
-                                        <input type="checkbox" ng-model="music.shuffle"/>
                                     </li>
                                 </ul>
                             </nav>
@@ -480,27 +495,32 @@
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
                                     <li>{{curTorrentSub}}</li>
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                    <li>
+                                        <a href="#" ng-click="torrentSwitch = !torrentSwitch" tooltip="選項" tooltip-trigger="mouseenter">
+                                            <span class="glyphicon glyphicon-info-sign"></span>
+                                        </a>
+                                    </li>
+                                    <li ng-hide="torrentSwitch" class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="torrentMove(-1)">
                                             <span class="glyphicon glyphicon-chevron-left"></span>
                                         </a>
                                     </li>
-                                    <li ng-hide="torrent.complete">
+                                    <li ng-hide="torrent.complete||torrentSwitch">
                                         <a href="#" ng-click="torrentCheck(false, false)">
                                             <span class="glyphicon glyphicon-refresh"></span>
                                         </a>
                                     </li>
-                                    <li>
+                                    <li ng-hide="torrentSwitch">
                                         <a href="#" class='media-hide' ng-click="isFull = !isFull">
                                             <span class="glyphicon {{isFull && 'glyphicon-minus-sign'||'glyphicon-plus-sign'}}"></span>
                                         </a>
                                     </li>
-                                    <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
+                                    <li ng-hide="torrentSwitch" class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="torrentMove(1)">
                                             <span class="glyphicon glyphicon-chevron-right"></span>
                                         </a>
                                     </li>
-                                    <li>
+                                    <li ng-show="torrentSwitch">
                                         <select ng-model="torrent.option">
                                             <option value="0">字幕</option>
                                             <option value="1">search</option>
