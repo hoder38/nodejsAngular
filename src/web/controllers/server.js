@@ -2857,7 +2857,7 @@ app.get('/subtitle/:uid/:index(\\d+)?', function(req, res, next){
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var url = 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_port + '/subtitle/' + req.params.uid;
+        var url = 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port + '/subtitle/' + req.params.uid;
         if (req.params.index) {
             url = url + '/' + req.params.index;
         }
