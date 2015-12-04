@@ -2484,7 +2484,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             var bookmarkapi = $resource('/api/bookmark/subscipt', {}, {
                 'subscipt': { method:'POST' }
             });
-            bookmarkapi.subscipt({name: this.toolList.title, path: ['ych_' + this.toolList.item.cid, 'no local'], exactly: [false, false]}, function(result) {
+            bookmarkapi.subscipt({name: this.toolList.title, path: ['ych_' + this.toolList.item.cid, 'no local', 'youtube playlist', 'youtube video'], exactly: [false, false]}, function(result) {
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {

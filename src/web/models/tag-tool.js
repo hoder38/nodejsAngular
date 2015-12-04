@@ -21,7 +21,7 @@ var search_limit = 100;
 var union_number = 2;
 var inter_number = 3;
 
-var youtube_id_pattern = /^y(id|ch|pl)_([a-zA-z\d\-\_]+)/;
+var youtube_id_pattern = /^y(ou|ch|pl)_([a-zA-z\d\-\_]+)/;
 
 var config_type = require('../../../ver.js');
 
@@ -1278,7 +1278,7 @@ module.exports = function(collection) {
                     query.type = Math.floor(query.type/10)*10 + 1;
                 } else if (index.index === 20) {
                     index = isDefaultTag(search_arr[i]);
-                    if (index[1] === 'id') {
+                    if (index[1] === 'ou') {
                         id_arr.push(index[2]);
                     } else if (index[1] === 'pl') {
                         pl_arr.push(index[2]);
