@@ -27,8 +27,7 @@ var mediaHandleTool = require("../models/mediaHandle-tool.js")(sendWs);
 
 var externalTool = require('../models/external-tool.js');
 
-//var external_interval = 172800000;
-var external_interval = 120000;
+var external_interval = 172800000;
 
 var external_time = 0;
 
