@@ -1627,7 +1627,7 @@ function normalize(tag) {
         }
     }
     result = result.toLowerCase(result);
-    result = result.replace(/[零一二三四五六七八九十十百千萬0123456789]+/g, function (a) {
+    result = result.replace(/[零一二三四五六七八九十百千萬0123456789]+/g, function (a) {
         return CN2ArabNum(a);
     });
     return result;
@@ -1667,7 +1667,7 @@ function CN2ArabNum(cn) {
                 state = mul;
                 mul = 0;
             }
-            mul = Math.floor(((mulChars.indexOf(cn[cn.length-1])) /2) +1);
+            mul = Math.floor(((mulChars.indexOf(cn[cn.length-1])))+1);
             if (mul <= state) {
                 aum = aum + state;
                 state = 0;

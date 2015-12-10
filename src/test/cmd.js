@@ -8,6 +8,7 @@ var mime = require('../web/util/mime.js');
 var mongo = require("../web/models/mongo-tool.js");
 var googleApi = require("../web/models/api-tool-google.js");
 var mediaHandleTool = require("../web/models/mediaHandle-tool.js")(function() {});
+var externalTool = require('../web/models/external-tool.js');
 
 var readline = require('readline');
 
@@ -16,6 +17,20 @@ var rl = readline.createInterface({
     output: process.stdout,
     terminal: false
 });
+
+function cmdUpdateExternal(updateType, clear) {
+    console.log('cmdUpdateExternal');
+    console.log(new Date());
+    console.log('update external');
+    externalTool.getList(updateType, function(err) {
+        if (err) {
+            err.hoerror = 2;
+            util.handleError(err);
+        } else {
+            console.log('ok');
+        }
+    }, clear);
+}
 
 function cmdUpdateStock(updateType, singleIndex) {
     updateType = (typeof updateType !== 'undefined' && !isNaN(Number(updateType))) ? Number(updateType) : 1;
@@ -288,9 +303,14 @@ rl.on('line', function(line){
         console.log('drive');
         cmdUpdateDrive(cmd[1], cmd[2]);
         break;
+        case 'external':
+        console.log('external');
+        cmdUpdateExternal(cmd[1], cmd[2]);
+        break;
         default:
         console.log('help:');
         console.log('stock updateType [single index]');
         console.log('drive batchNumber [single username]');
+        console.log('external type [clear]');
     }
 });

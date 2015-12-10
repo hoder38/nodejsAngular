@@ -28,6 +28,8 @@ var pwTool = require("../models/password-tool.js");
 
 var googleApi = require("../models/api-tool-google.js");
 
+var externalTool = require('../models/external-tool.js');
+
 var util = require("../util/utility.js");
 
 var https = require('https'),
@@ -1729,14 +1731,15 @@ app.get('/api/media/record/:id/:time/:pId?', function(req, res, next){
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
+        res.json({apiOK: true});
         if (!req.params.time.match(/^\d+(&\d+)?$/)) {
             util.handleError({hoerror: 2, message: "timestamp is not vaild"}, next, res);
         }
-        var id = req.params.id.match(/^you_/);
+        var id = req.params.id.match(/^(you|dym)_/);
         if (id) {
             id = util.isValidString(req.params.id, 'name');
             if (id === false) {
-                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
         } else {
             id = util.isValidString(req.params.id, 'uid');
@@ -1751,12 +1754,16 @@ app.get('/api/media/record/:id/:time/:pId?', function(req, res, next){
                 }
                 if (req.params.pId) {
                     var pId = req.params.pId.match(/^ypl_/);
-                    if (!pId) {
-                        util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
-                    }
-                    pId = util.isValidString(req.params.pId, 'name');
-                    if (pId === false) {
-                        util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+                    if (pId) {
+                        pId = util.isValidString(req.params.pId, 'name');
+                        if (pId === false) {
+                            util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
+                        }
+                    } else {
+                        pId = util.isValidString(req.params.pId, 'uid');
+                        if (id === false) {
+                            util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
+                        }
                     }
                     mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: pId, $isolated: 1}, function(err,user1){
                         if(err) {
@@ -1862,11 +1869,12 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
         console.log(req.url);
         console.log(req.body);
         var id = req.params.id.match(/^(you|ypl)_(.*)$/);
-        var playlist = false;
+        var playlist = 0;
         var playlistId = null;
+        var obj = req.params.obj;
         if (id) {
             if (id[1] === 'ypl') {
-                playlist = true;
+                playlist = 1;
                 var playlistId = id[2];
             }
             id = util.isValidString(req.params.id, 'name');
@@ -1877,6 +1885,12 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
             id = util.isValidString(req.params.id, 'uid');
             if (id === false) {
                 util.handleError({hoerror: 2, message: "file is not vaild"}, next, res);
+            }
+            if (obj && obj.match(/^(external|\d+(\.\d+)?)$/)) {
+                playlist = 2;
+                if (obj === 'external') {
+                    obj = null;
+                }
             }
         }
         var type = util.isValidString(req.params.type, 'name');
@@ -1906,57 +1920,99 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                     }
                     if (items.length === 0) {
                         if (playlist) {
-                            googleApi.googleApi('y playItem', {id: playlistId}, function(err, vId_arr, total, nPageToken, pPageToken) {
-                                if (err) {
-                                    util.handleError(err, next, res);
-                                }
-                                if (total <= 0) {
-                                    util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
-                                }
-                                mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: vId_arr[0].id}, {limit: 1}, function(err, items1){
+                            if (playlist === 1) {
+                                googleApi.googleApi('y playItem', {id: playlistId}, function(err, vId_arr, total, nPageToken, pPageToken) {
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
-                                    if (items1.length === 0 || type === 'music') {
-                                        res.json({playlist: {obj_arr: vId_arr, obj: vId_arr[0], pageN: nPageToken, pageP: pPageToken, pageToken: null, total: total}});
-                                    } else {
-                                        res.json({time: items1[0].recordTime, playlist: {obj_arr: vId_arr, obj: vId_arr[0], pageN: nPageToken, pageP: pPageToken, pageToken: null, total: total}});
+                                    if (total <= 0) {
+                                        util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
                                     }
+                                    mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: vId_arr[0].id}, {limit: 1}, function(err, items1){
+                                        if (err) {
+                                            util.handleError(err, next, res);
+                                        }
+                                        if (items1.length === 0 || type === 'music') {
+                                            res.json({playlist: {obj_arr: vId_arr, obj: vId_arr[0], pageN: nPageToken, pageP: pPageToken, pageToken: null, total: total}});
+                                        } else {
+                                            res.json({time: items1[0].recordTime, playlist: {obj_arr: vId_arr, obj: vId_arr[0], pageN: nPageToken, pageP: pPageToken, pageToken: null, total: total}});
+                                        }
+                                    });
                                 });
-                            });
+                            } else if (playlist === 2) {
+                                mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items1){
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (items1.length === 0) {
+                                        util.handleError({hoerror: 2, message: "cannot find external"}, next, res);
+                                    }
+                                    externalTool.getSingleId(items1[0].owner, decodeURIComponent(items1[0].url), 1, function(err, obj, is_end, total) {
+                                        if (err) {
+                                            util.handleError(err, next, res);
+                                        }
+                                        if (total <= 0) {
+                                            util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
+                                        }
+                                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            if (items1.length === 0 || type === 'music') {
+                                                res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                            } else {
+                                                res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
+                                            }
+                                        });
+                                    });
+                                });
+                            }
                         } else {
                             res.json({apiOK: true});
                         }
                     } else {
                         if (playlist) {
-                            var query = {id: playlistId};
-                            if (items[0].pageToken) {
-                                query['pageToken'] = items[0].pageToken;
-                            }
-                            googleApi.googleApi('y playItem', query, function(err, vId_arr, total, nPageToken, pPageToken) {
-                                if (err) {
-                                    util.handleError(err, next, res);
+                            if (playlist === 1) {
+                                var query = {id: playlistId};
+                                if (items[0].pageToken) {
+                                    query['pageToken'] = items[0].pageToken;
                                 }
-                                if (total <= 0) {
-                                    util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
-                                }
-                                var videoObj = vId_arr[0];
-                                if (req.params.back) {
-                                    videoObj = vId_arr[vId_arr.length-1];
-                                }
-                                var is_new = true;
-                                for (var i in vId_arr) {
-                                    if (vId_arr[i].id === items[0].recordTime) {
-                                        videoObj = vId_arr[i];
-                                        is_new = false;
-                                        break;
+                                googleApi.googleApi('y playItem', query, function(err, vId_arr, total, nPageToken, pPageToken) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
                                     }
-                                }
-                                if (is_new) {
-                                    mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: {recordTime: videoObj.id}}, function(err, item){
-                                        if (err) {
-                                            util.handleError(err, next, res);
+                                    if (total <= 0) {
+                                        util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
+                                    }
+                                    var videoObj = vId_arr[0];
+                                    if (req.params.back) {
+                                        videoObj = vId_arr[vId_arr.length-1];
+                                    }
+                                    var is_new = true;
+                                    for (var i in vId_arr) {
+                                        if (vId_arr[i].id === items[0].recordTime) {
+                                            videoObj = vId_arr[i];
+                                            is_new = false;
+                                            break;
                                         }
+                                    }
+                                    if (is_new) {
+                                        mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: {recordTime: videoObj.id}}, function(err, item){
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: videoObj.id}, {limit: 1}, function(err, items1){
+                                                if (err) {
+                                                    util.handleError(err, next, res);
+                                                }
+                                                if (items1.length === 0 || type === 'music') {
+                                                    res.json({playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
+                                                } else {
+                                                    res.json({time: items1[0].recordTime, playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
+                                                }
+                                            });
+                                        });
+                                    } else {
                                         mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: videoObj.id}, {limit: 1}, function(err, items1){
                                             if (err) {
                                                 util.handleError(err, next, res);
@@ -1967,20 +2023,36 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                                 res.json({time: items1[0].recordTime, playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
                                             }
                                         });
-                                    });
-                                } else {
-                                    mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: videoObj.id}, {limit: 1}, function(err, items1){
+                                    }
+                                });
+                            } else if (playlist === 2) {
+                                mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items1){
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (items1.length === 0) {
+                                        util.handleError({hoerror: 2, message: "cannot find external"}, next, res);
+                                    }
+                                    externalTool.getSingleId(items1[0].owner, decodeURIComponent(items1[0].url), items[0].recordTime, function(err, obj, is_end, total) {
                                         if (err) {
                                             util.handleError(err, next, res);
                                         }
-                                        if (items1.length === 0 || type === 'music') {
-                                            res.json({playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
-                                        } else {
-                                            res.json({time: items1[0].recordTime, playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
+                                        if (total <= 0) {
+                                            util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
                                         }
+                                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            if (items1.length === 0 || type === 'music') {
+                                                res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                            } else {
+                                                res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
+                                            }
+                                        });
                                     });
-                                }
-                            });
+                                });
+                            }
                         } else {
                             if (type === 'music') {
                                 res.json({apiOK: true});
@@ -2002,18 +2074,18 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                 });
             }
         }
-        if (playlist && req.params.obj) {
-            var obj = req.params.obj.match(/^you_/);
-            if (!obj) {
-                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+        if (playlist && obj) {
+            var obj_match = obj.match(/^(you_|\d+(\.\d+)?$)/);
+            if (!obj_match) {
+                util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
-            obj = util.isValidString(req.params.obj, 'name');
+            obj = util.isValidString(obj, 'name');
             if (obj === false) {
-                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
             var utime = Math.round(new Date().getTime() / 1000);
             var data = {};
-            data['recordTime'] = req.params.obj;
+            data['recordTime'] = obj;
             var pageToken = false;
             if (req.params.pageToken) {
                 pageToken = util.isValidString(req.params.pageToken, 'name');
@@ -3185,6 +3257,9 @@ function getStorageItem(user, items, mediaHandle) {
                 if (items[i].url) {
                     data.url = items[i].url;
                 }
+                if (items[i].thumb) {
+                    data.thumb = items[i].thumb;
+                }
                 itemList.push(data);
             }
         } else {
@@ -3201,6 +3276,9 @@ function getStorageItem(user, items, mediaHandle) {
                 }
                 if (items[i].url) {
                     data.url = items[i].url;
+                }
+                if (items[i].thumb) {
+                    data.thumb = items[i].thumb;
                 }
                 if (user._id.equals(items[i].owner)) {
                     data.isOwn = true;
@@ -3224,6 +3302,9 @@ function getStorageItem(user, items, mediaHandle) {
                 if (items[i].url) {
                     data.url = items[i].url;
                 }
+                if (items[i].thumb) {
+                    data.thumb = items[i].thumb;
+                }
                 itemList.push(data);
             }
         } else {
@@ -3240,6 +3321,9 @@ function getStorageItem(user, items, mediaHandle) {
                 }
                 if (items[i].url) {
                     data.url = items[i].url;
+                }
+                if (items[i].thumb) {
+                    data.thumb = items[i].thumb;
                 }
                 if (user._id.equals(items[i].owner)) {
                     data.isOwn = true;

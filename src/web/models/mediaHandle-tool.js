@@ -1270,11 +1270,12 @@ module.exports = function(sendWs) {
                                             mediaType['time'] = DBdata['time'] = meta.input.duration;
                                             DBdata['status'] = 1;
                                             if (mediaType['time'] < 20 * 60 * 1000) {
-                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 2));
                                             } else if (mediaType['time'] < 40 * 60 * 1000) {
                                                 mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
                                             } else if (mediaType['time'] < 60 * 60 * 1000) {
-                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(6, 1));
+                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(5, 2));
+                                            } else {
+                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
                                             }
                                             DBdata['mediaType'] = mediaType;
                                         } else {
@@ -1319,11 +1320,12 @@ module.exports = function(sendWs) {
                                         mediaType['time'] = DBdata['time'];
                                         DBdata['status'] = 1;
                                         if (mediaType['time'] < 20 * 60 * 1000) {
-                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 2));
                                         } else if (mediaType['time'] < 40 * 60 * 1000) {
                                             mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
                                         } else if (mediaType['time'] < 60 * 60 * 1000) {
-                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(6, 1));
+                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(5, 2));
+                                        } else {
+                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
                                         }
                                         DBdata['mediaType'] = mediaType;
                                     } else {
@@ -1369,12 +1371,13 @@ module.exports = function(sendWs) {
                                         }
                                         if (meta.input.streams) {
                                             if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
-                                                if (meta.input.duration < 20 * 60 * 1000) {
-                                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 2));
-                                                } else if (meta.input.duration < 40 * 60 * 1000) {
+                                                if (mediaType['time'] < 20 * 60 * 1000) {
+                                                } else if (mediaType['time'] < 40 * 60 * 1000) {
                                                     mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
-                                                } else if (meta.input.duration < 60 * 60 * 1000) {
-                                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(6, 1));
+                                                } else if (mediaType['time'] < 60 * 60 * 1000) {
+                                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(5, 2));
+                                                } else {
+                                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
                                                 }
                                                 DBdata['time'] = meta.input.duration;
                                             }
@@ -1394,12 +1397,13 @@ module.exports = function(sendWs) {
                                     }
                                     if (DBdata['time']) {
                                         if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
-                                            if (DBdata['time'] < 20 * 60 * 1000) {
-                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(7, 2));
-                                            } else if (DBdata['time'] < 40 * 60 * 1000) {
+                                            if (mediaType['time'] < 20 * 60 * 1000) {
+                                            } else if (mediaType['time'] < 40 * 60 * 1000) {
                                                 mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
-                                            } else if (DBdata['time'] < 60 * 60 * 1000) {
-                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(6, 1));
+                                            } else if (mediaType['time'] < 60 * 60 * 1000) {
+                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(5, 2));
+                                            } else {
+                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
                                             }
                                         }
                                     }

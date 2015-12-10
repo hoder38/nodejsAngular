@@ -25,6 +25,13 @@ var mime = require('../util/mime.js');
 
 var mediaHandleTool = require("../models/mediaHandle-tool.js")(sendWs);
 
+var externalTool = require('../models/external-tool.js');
+
+//var external_interval = 172800000;
+var external_interval = 120000;
+
+var external_time = 0;
+
 var drive_interval = 3600000;
 
 var drive_size = 500 * 1024 * 1024;
@@ -287,7 +294,6 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                 }
                 var utime = Math.round(new Date().getTime() / 1000);
                 var oUser_id = req.user._id;
-                var ownerTag = [];
                 var data = {};
                 data['_id'] = oOID;
                 data['name'] = name;
@@ -628,7 +634,6 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
             }
             var utime = Math.round(new Date().getTime() / 1000);
             var oUser_id = req.user._id;
-            var ownerTag = [];
             var data = {};
             data['_id'] = oOID;
             data['name'] = name;
@@ -825,7 +830,6 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
         var oOID = mongo.objectID();
         var utime = Math.round(new Date().getTime() / 1000);
         var oUser_id = req.user._id;
-        var ownerTag = [];
         var data = {};
         data['_id'] = oOID;
         data['name'] = url_name;
@@ -1092,11 +1096,17 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.uid.match(/^you_(.*)/);
+        var id = req.params.uid.match(/^(you|dym)_(.*)/);
         if (!id) {
             util.handleError({hoerror: 2, message: "file is not youtube video!!!"}, next, res);
         }
-        var url = 'http://www.youtube.com/watch?v=' + id[1];
+        var url = null;
+        if (id[1] === 'dym') {
+            url = 'http://www.dailymotion.com/embed/video/' + id[2];
+        } else {
+            url = 'http://www.youtube.com/watch?v=' + id[2];
+        }
+        //url = 'http://videomega.tv/view.php?ref=050056077090107048104109122089089122109104048107090077056050';
         youtubedl.getInfo(url, [], function(err, info) {
             if (err) {
                 err.hoerror = 2;
@@ -1113,16 +1123,23 @@ app.get('/api/external/getSubtitle/:uid', function(req, res, next) {
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.uid.match(/^you_(.*)/);
+        var id = req.params.uid.match(/^(you|dym)_(.*)/);
         if (!id) {
             util.handleError({hoerror: 2, message: "file is not youtube video!!!"}, next, res);
         }
-        var url = 'http://www.youtube.com/watch?v=' + id[1];
-        id = util.isValidString(req.params.uid, 'name');
-        if (id === false) {
-            util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+        var url = null;
+        var filePath = null;
+        var id_valid = util.isValidString(req.params.uid, 'name');
+        if (id_valid === false) {
+            util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
         }
-        var filePath = util.getFileLocation('youtube', id);
+        if (id[1] === 'dym') {
+            url = 'http://www.dailymotion.com/embed/video/' + id[2];
+            filePath = util.getFileLocation('dailymotion', id_valid);
+        } else {
+            url = 'http://www.youtube.com/watch?v=' + id[2];
+            filePath = util.getFileLocation('youtube', id_valid);
+        }
         googleApi.googleDownloadSubtitle(url, filePath, function(err) {
             if (err) {
                 util.handleError(err, next, res);
@@ -2883,13 +2900,18 @@ app.get('/subtitle/:uid/:index(\\d+)?', function(req, res, next){
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.uid.match(/^you_/);
+        var id = req.params.uid.match(/^(you|dym)_/);
         if (id) {
-            id = util.isValidString(req.params.uid, 'name');
-            if (id === false) {
-                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+            var id_valid = util.isValidString(req.params.uid, 'name');
+            if (id_valid === false) {
+                util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
-            var filePath = util.getFileLocation('youtube', id);
+            var filePath = null;
+            if (id[1] === 'dym') {
+                filePath = util.getFileLocation('dailymotion', id_valid);
+            } else {
+                filePath = util.getFileLocation('youtube', id_valid);
+            }
             fs.exists(filePath + '.vtt', function (exists) {
                 res.writeHead(200, { 'Content-Type': 'text/vtt' });
                 if (!exists) {
@@ -3528,6 +3550,20 @@ if (config_glb.autoUpload) {
     }, 60000);
 }
 
+if (config_glb.updateExternal) {
+    setTimeout(function() {
+        loopUpdateExternal();
+        setInterval(function(){
+            console.log('loop Update External');
+            console.log(external_time);
+            var now_time = new Date().getTime();
+            if (external_time === 1 || (now_time - external_time) > external_interval) {
+                loopUpdateExternal();
+            }
+        }, external_interval);
+    }, 120000);
+}
+
 if (config_glb.updateStock) {
     setTimeout(function() {
         loopUpdateStock();
@@ -3539,7 +3575,7 @@ if (config_glb.updateStock) {
                 loopUpdateStock();
             }
         }, stock_interval);
-    }, 120000);
+    }, 180000);
 }
 
 function checkLogin(req, res, next, callback) {
@@ -3641,12 +3677,27 @@ function getFeedback(item, callback, user) {
     });
 }
 
+function loopUpdateExternal(error, countdown) {
+    console.log('loopUpdateExternal');
+    console.log(new Date());
+    external_time = new Date().getTime();
+    externalTool.getList('lovetv', function(err) {
+        if (err) {
+            util.handleError(err);
+            external_time = 1;
+            console.log('loopUpdateExternal end');
+        } else {
+            external_time = 1;
+            console.log('loopDrive end');
+        }
+    });
+}
+
 function loopUpdateStock(error, countdown) {
     console.log('loopUpdateStock');
     console.log(new Date());
     stock_time = new Date().getTime();
     var day = new Date().getDate();
-    var stocklist = [];
     if (stock_batch_list.length > 0) {
         console.log('stock_batch_list remain');
         console.log(stock_batch_list.length);

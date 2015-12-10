@@ -166,7 +166,7 @@ function youtubeAPI(method, data, callback) {
             }
             var id_arr = [];
             for (var i in metadata.items) {
-                id_arr.push({id: 'you_' + metadata.items[i].snippet.resourceId.videoId, index: metadata.items[i].snippet.position+1});
+                id_arr.push({id: 'you_' + metadata.items[i].snippet.resourceId.videoId, index: metadata.items[i].snippet.position+1, showId: metadata.items[i].snippet.position+1});
             }
             setTimeout(function(){
                 callback(null, id_arr, metadata.pageInfo.totalResults, metadata.nextPageToken, metadata.prevPageToken);

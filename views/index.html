@@ -270,7 +270,7 @@
                     <section class="panel panel-success" ng-show="mediaShow[0] === 'video'">
                         <div class="panel-heading" ng-click="mediaToggle('video')">
                             <h4 class="panel-title">
-                                {{(video.index) >= 0 && (video.index+1) || video.index}} : {{video.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
+                                {{(video.index) >= 0 && (video.index+1) || video.index}} : {{video.name}}{{video.playlist.end && '(已完結)' || ''}}{{video.itemName}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="panel-body media-trim">
@@ -293,9 +293,9 @@
                                                 <span class="glyphicon glyphicon-chevron-up"></span>
                                             </a>
                                         </li>
-                                        <input id="videoID" type="text" readonly ng-model="video.playlist.obj.index" />/{{video.playlist.total}}
+                                        <input id="videoID" type="text" ng-model="video.playlist.obj.showId" ng-enter="videoMove('video', video.playlist.obj.showId)" />/{{video.playlist.total}}
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
-                                            <a href="#" ng-click="videoMove('video')">
+                                            <a href="#" ng-click="videoMove('video', 'next')">
                                                 <span class="glyphicon glyphicon-chevron-down"></span>
                                             </a>
                                         </li>
@@ -337,7 +337,7 @@
                     <section class="panel panel-primary" ng-show="mediaShow[0] === 'music'">
                         <div class="panel-heading" ng-click="mediaToggle('music')">
                             <h4 class="panel-title">
-                                {{(music.index) >= 0 && (music.index+1) || music.index}} : {{music.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
+                                {{(music.index) >= 0 && (music.index+1) || music.index}} : {{music.name}}{{music.itemName}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="panel-body media-trim">
@@ -361,7 +361,7 @@
                                         </li>
                                         <input id="musicID" type="text" readonly ng-model="music.playlist.obj.index" />/{{music.playlist.total}}
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
-                                            <a href="#" ng-click="videoMove('music')">
+                                            <a href="#" ng-click="videoMove('music', 'next')">
                                                 <span class="glyphicon glyphicon-chevron-down"></span>
                                             </a>
                                         </li>

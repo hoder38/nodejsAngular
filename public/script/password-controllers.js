@@ -1390,6 +1390,9 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
 
     if (document.getElementById('up-password')) {
         document.getElementById('up-password').addEventListener('copy', function(e){
+            $scope.$apply(function() {
+               $scope.showPassword = false;
+            });
             e.clipboardData.setData('text/plain', $scope.upPassword);
             e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
         });
@@ -1397,6 +1400,9 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
 
     if (document.getElementById('user-password')) {
         document.getElementById('user-password').addEventListener('copy', function(e){
+            $scope.$apply(function() {
+               $scope.openPassword = false;
+            });
             e.clipboardData.setData('text/plain', $scope.userPassword);
             e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
         });
@@ -1404,6 +1410,9 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
 
     if (document.getElementById('user-pre-password')) {
         document.getElementById('user-pre-password').addEventListener('copy', function(e){
+            $scope.$apply(function() {
+               $scope.openPrePassword = false;
+            });
             e.clipboardData.setData('text/plain', $scope.userPrePassword);
             e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
         });
@@ -1411,6 +1420,9 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
 
     if (document.getElementById('s-user-password')) {
         document.getElementById('s-user-password').addEventListener('copy', function(e){
+            $scope.$apply(function() {
+               $scope.openPassword = false;
+            });
             e.clipboardData.setData('text/plain', $scope.userPassword);
             e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
         });
@@ -1418,6 +1430,9 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
 
     if (document.getElementById('s-user-pre-password')) {
         document.getElementById('s-user-pre-password').addEventListener('copy', function(e){
+            $scope.$apply(function() {
+               $scope.openPrePassword = false;
+            });
             e.clipboardData.setData('text/plain', $scope.userPrePassword);
             e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
         });
