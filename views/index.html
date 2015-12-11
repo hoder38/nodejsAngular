@@ -276,12 +276,18 @@
                         <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
+                                    <li>{{curVideoSub}}</li>
                                     <li>
                                         <a href="#" ng-click="videoSwitch = !videoSwitch" tooltip="選項"  tooltip-trigger="mouseenter">
                                             <span class="glyphicon glyphicon-info-sign"></span>
                                         </a>
                                     </li>
-                                    <li>{{curVideoSub}}</li>
+                                    <li ng-show="videoSwitch">
+                                        <a href="#" ng-click="toggleSub()">Sub</a>
+                                    </li>
+                                    <li ng-show="videoSwitch">
+                                        <a href="#" ng-click="fixSub()">Fix</a>
+                                    </li>
                                     <li ng-show="videoSwitch">
                                         <a href="#" ng-click="changeMode('video')">
                                             <span ng-show="video.mode === 1" class="glyphicon glyphicon-arrow-left"></span>{{(video.mode === 0 || video.mode === 1) && 'All' || ''}}{{(video.mode === 2 || video.mode === 3) && '1' || ''}}<span ng-show="video.mode === 3" class="glyphicon glyphicon-repeat"></span>
@@ -324,14 +330,20 @@
                                             <option ng-show="video.list[video.index].thumb" value="4">下載到local</option>
                                         </select>
                                     </li>
+                                    <li ng-show="videoSwitch&&video.list[video.index].thumb">
+                                        <select ng-model="video.hd">
+                                            <option value="0">Very High</option>
+                                            <option value="1">High</option>
+                                            <option value="2">Medium</option>
+                                            <option value="3">Low</option>
+                                            <option value="4">Very Low</option>
+                                        </select>
+                                    </li>
                                 </ul>
                             </nav>
                             <video class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{video.src | trusted}}" controls autoplay ng-video ng-ended="nextVideo('video')" ng-play="testLogin()" ng-pause="mediaRecord('video')" ng-click="videoToggle()" tabindex=1 id="video-tag">
                                 <track label="English" kind="captions" srclang="en" ng-src="{{video.sub | trusted}}" default="" />
                             </video>
-                            <div class="{{isFull && 'full-youtube-screen'||'media-screen'}}" ng-hide="video.src">
-                                <div id="youtube-player"></div>
-                            </div>
                         </div>
                     </section>
                     <section class="panel panel-primary" ng-show="mediaShow[0] === 'music'">
@@ -495,6 +507,12 @@
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
                                     <li>{{curTorrentSub}}</li>
+                                    <li ng-show="torrentSwitch">
+                                        <a href="#" ng-click="toggleSub('torrent')">Sub</a>
+                                    </li>
+                                    <li ng-show="torrentSwitch">
+                                        <a href="#" ng-click="fixSub('torrent')">Fix</a>
+                                    </li>
                                     <li>
                                         <a href="#" ng-click="torrentSwitch = !torrentSwitch" tooltip="選項" tooltip-trigger="mouseenter">
                                             <span class="glyphicon glyphicon-info-sign"></span>

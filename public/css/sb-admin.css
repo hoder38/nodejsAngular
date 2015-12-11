@@ -378,11 +378,6 @@ ul.alert-dropdown {
     height: auto;
 }
 
-.full-youtube-screen {
-    width: 640px;
-    height: 390px;
-}
-
 #non-blue {
     -webkit-user-select: none;
     -khtml-user-select: none;

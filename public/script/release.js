@@ -3512,7 +3512,18 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                                         if (this_obj.$parent[type].playlist) {
                                             this_obj.$parent[type].itemName = ':' + result.title;
                                         }
-                                        this_obj.$parent[type].src = result.url;
+                                        if (type === 'music') {
+                                            this_obj.$parent[type].src = result.audio;
+                                        } else {
+                                            this_obj.$parent[type].hd_list = result.video;
+                                            var hd = 0;
+                                            if (this_obj.$parent[type].hd < this_obj.$parent[type].hd_list.length) {
+                                                hd = this_obj.$parent[type].hd;
+                                            } else {
+                                                hd = this_obj.$parent[type].hd_list.length - 1;
+                                            }
+                                            this_obj.$parent[type].src = this_obj.$parent[type].hd_list[hd];
+                                        }
                                     }
                                 }
                             }, function(errorResult) {
@@ -3998,7 +4009,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.adultonly = false;
     $scope.mediaShow = [];
     $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
-    $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', option: 0, playlist: null, mode: 0, itemName: ""};
+    $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', option: 0, playlist: null, mode: 0, itemName: "", hd: 0, hd_list: []};
     $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', option: 0, playlist: null, mode: 0, itemName: ""};
     $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, mode: false};
     $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
@@ -4093,16 +4104,67 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         };
     }
 
+    $scope.fixSub = function(type) {
+        if (type === 'torrent') {
+            if (this.fixTorrentSub) {
+                this.mediaToggle('torrent');
+                var adjust = Math.ceil((torrent.currentTime - this.curTorrentSubTime) * 10)/10;
+                openModal("確定校準此字幕到此時間軸？完畢後請刷新頁面，字幕才會更新").then(function () {
+                    $scope.fixTorrentSub = false;
+                    $scope.curTorrentSub = '';
+                    fixSubtitle(adjust, 'torrent');
+                }, function () {
+                });
+            } else {
+                if (torrent && torrent.textTracks && torrent.textTracks[0].activeCues && torrent.textTracks[0].activeCues.length > 0) {
+                    this.curTorrentSub = torrent.textTracks[0].activeCues[0].text;
+                    this.curTorrentSubTime = torrent.textTracks[0].activeCues[0].startTime;
+                    this.fixTorrentSub = true;
+                    torrent.pause();
+                }
+            }
+        } else {
+            if (this.fixVideoSub) {
+                this.mediaToggle('video');
+                var adjust = Math.ceil((video.currentTime - this.curVideoSubTime) * 10)/10;
+                openModal("確定校準此字幕到此時間軸？完畢後請刷新頁面，字幕才會更新").then(function () {
+                    $scope.fixVideoSub = false;
+                    $scope.curVideoSub = '';
+                    fixSubtitle(adjust, 'video');
+                }, function () {
+                });
+            } else {
+                if (video && video.textTracks && video.textTracks[0].activeCues && video.textTracks[0].activeCues.length > 0) {
+                    this.curVideoSub = video.textTracks[0].activeCues[0].text;
+                    this.curVideoSubTime = video.textTracks[0].activeCues[0].startTime;
+                    this.fixVideoSub = true;
+                    video.pause();
+                }
+            }
+        }
+    }
+
+    $scope.toggleSub = function(type) {
+        var obj = video;
+        if (type === 'torrent') {
+            obj = torrent;
+        }
+        if (obj.textTracks[0].mode === 'showing') {
+            obj.textTracks[0].mode = "hidden";
+        } else {
+            obj.textTracks[0].mode = "showing";
+        }
+    }
+
     document.getElementById('video-tag').onkeydown = function(evt) {
         evt = evt || window.event;
         if (is_firefox) {
             switch(evt.keyCode) {
                 case 67:
-                if (video.textTracks[0].mode === 'showing') {
-                    video.textTracks[0].mode = "hidden";
-                } else {
-                    video.textTracks[0].mode = "showing";
-                }
+                $scope.toggleSub();
+                break;
+                case 70:
+                $scope.fixSub();
                 break;
             }
         } else {
@@ -4151,30 +4213,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
                 break;
                 case 67:
-                if (video.textTracks[0].mode === 'showing') {
-                    video.textTracks[0].mode = "hidden";
-                } else {
-                    video.textTracks[0].mode = "showing";
-                }
+                $scope.toggleSub();
                 break;
                 case 70:
-                if ($scope.fixVideoSub) {
-                    $scope.mediaToggle('video');
-                    var adjust = Math.ceil((video.currentTime - $scope.curVideoSubTime) * 10)/10;
-                    openModal("確定校準此字幕到此時間軸？完畢後請刷新頁面，字幕才會更新").then(function () {
-                        $scope.fixVideoSub = false;
-                        $scope.curVideoSub = '';
-                        fixSubtitle(adjust, 'video');
-                    }, function () {
-                    });
-                } else {
-                    if (video && video.textTracks && video.textTracks[0].activeCues && video.textTracks[0].activeCues.length > 0) {
-                        $scope.curVideoSub = video.textTracks[0].activeCues[0].text;
-                        $scope.curVideoSubTime = video.textTracks[0].activeCues[0].startTime;
-                        $scope.fixVideoSub = true;
-                        video.pause();
-                    }
-                }
+                $scope.fixSub();
+                break;
             }
         }
     };
@@ -4183,11 +4226,10 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         if (is_firefox) {
             switch(evt.keyCode) {
                 case 67:
-                if (torrent.textTracks[0].mode === 'showing') {
-                    torrent.textTracks[0].mode = "hidden";
-                } else {
-                    torrent.textTracks[0].mode = "showing";
-                }
+                $scope.toggleSub('torrent');
+                break;
+                case 70:
+                $scope.fixSub('torrent');
                 break;
             }
         } else {
@@ -4236,30 +4278,10 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
                 break;
                 case 67:
-                if (torrent.textTracks[0].mode === 'showing') {
-                    torrent.textTracks[0].mode = "hidden";
-                } else {
-                    torrent.textTracks[0].mode = "showing";
-                }
+                $scope.toggleSub('torrent');
                 break;
                 case 70:
-                if ($scope.fixTorrentSub) {
-                    $scope.mediaToggle('torrent');
-                    var adjust = Math.ceil((torrent.currentTime - $scope.curTorrentSubTime) * 10)/10;
-                    openModal("確定校準此字幕到此時間軸？完畢後請刷新頁面，字幕才會更新").then(function () {
-                        $scope.fixTorrentSub = false;
-                        $scope.curTorrentSub = '';
-                        fixSubtitle(adjust, 'torrent');
-                    }, function () {
-                    });
-                } else {
-                    if (torrent && torrent.textTracks && torrent.textTracks[0].activeCues && torrent.textTracks[0].activeCues.length > 0) {
-                        $scope.curTorrentSub = torrent.textTracks[0].activeCues[0].text;
-                        $scope.curTorrentSubTime = torrent.textTracks[0].activeCues[0].startTime;
-                        $scope.fixTorrentSub = true;
-                        torrent.pause();
-                    }
-                }
+                $scope.fixSub('torrent');
                 break;
             }
         }
@@ -6146,6 +6168,18 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 });
             }
             $scope.video.option = 0;
+        }
+    }, true);
+    $scope.$watch("this.video.hd", function(newVal, oldVal) {
+        var hd = 0;
+        if ($scope.video.hd < $scope.video.hd_list.length) {
+            hd = $scope.video.hd;
+        } else {
+            hd = $scope.video.hd_list.length - 1;
+        }
+        if (hd >= 0) {
+            videoStart = video.currentTime;
+            $scope.video.src = $scope.video.hd_list[hd];
         }
     }, true);
     $scope.numberDoc = function() {

@@ -1111,7 +1111,30 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                 err.hoerror = 2;
                 util.handleError(err, next, res);
             }
-            res.json(info);
+            var ret_obj = {title: info.title, video: []};
+            var audio_size = 0;
+            if (id[1] === 'you') {
+                for (var i in info.formats) {
+                    if (info.formats[i].format_note === 'DASH audio') {
+                        if (!audio_size) {
+                            audio_size = info.formats[i].filesize;
+                            ret_obj['audio'] = info.formats[i].url;
+                        } else if (audio_size > info.formats[i].filesize) {
+                            audio_size = info.formats[i].filesize;
+                            ret_obj['audio'] = info.formats[i].url;
+                        }
+                    } else if (info.formats[i].format_note !== 'DASH video' && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
+                        ret_obj['video'].splice(0, 0, info.formats[i].url);
+                    }
+                }
+            } else if (id[1] === 'dym') {
+                for (var i in info.formats) {
+                    if (info.formats[i].format_id.match(/^\d+$/) && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
+                        ret_obj['video'].splice(0, 0, info.formats[i].url);
+                    }
+                }
+            }
+            res.json(ret_obj);
         });
     });
 });
