@@ -572,6 +572,14 @@ audio.media-screen {
     margin-top: -34px;
 }
 
+#parse-point {
+    margin-top: -34px;
+}
+
+#parse-point2 {
+    margin-top: -34px;
+}
+
 @media(min-width:768px) {
     .navbar-collapse>.collapse {
         display: block;

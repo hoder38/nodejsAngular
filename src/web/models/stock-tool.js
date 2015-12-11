@@ -2044,9 +2044,64 @@ module.exports = {
                 });
             } else {
                 setTimeout(function(){
-                    callback(null, yearEPS);
+                    callback(null, -Math.floor(-yearEPS*1000)/1000);
                 }, 0);
             }
+        });
+    },
+    getStockPoint: function(id, price, callback) {
+        mongo.orig("find", "stock", {_id: id}, {limit: 1}, function(err, items){
+            if(err) {
+                util.handleError(err, callback, callback);
+            }
+            if (items.length === 0) {
+                util.handleError({hoerror: 2, message: "can not find stock!!!"}, callback, callback);
+            }
+            getStockPrice(items[0].type, items[0].index, function(err, ori_price) {
+                if(err) {
+                    util.handleError(err, callback, callback);
+                }
+                sales = items[0].sales;
+                var date = new Date();
+                var year = date.getFullYear();
+                while (!sales[year] && year > 2000) {
+                    year--;
+                }
+                var yearEPS = 0
+                for (var i = 3; i >=0; i--) {
+                    if (sales[year][i]) {
+                        if (i === 3) {
+                            yearEPS = sales[year][i].eps;
+                            break;
+                        } else {
+                            if (sales[year-1] && sales[year-1][3] && sales[year-1][i]) {
+                                yearEPS = sales[year][i].eps + sales[year-1][3].eps - sales[year-1][i].eps;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!price) {
+                    price = ori_price;
+                }
+                var epsRange = '';
+                if (yearEPS > 0) {
+                    var range = Math.floor(price / yearEPS / 5);
+                    if (range > 1) {
+                        epsRange = Math.floor(50 * yearEPS * (range - 1)) /10 + ', ' + Math.floor(50 * yearEPS * range) /10 + ', ' + Math.floor(50 * yearEPS * (range + 1)) /10 + ', ' + Math.floor(50 * yearEPS * (range + 2)) /10;
+                    } else if (range > 0) {
+                        epsRange = Math.floor(50 * yearEPS * range) /10 + ', ' + Math.floor(50 * yearEPS * (range + 1)) /10 + ', ' + Math.floor(50 * yearEPS * (range + 2)) /10;
+                    } else {
+                        epsRange = Math.floor(50 * yearEPS * (range + 1)) /10 + ', ' + Math.floor(50 * yearEPS * (range + 2)) /10;
+                    }
+                } else {
+                    epsRange = -Math.floor(-yearEPS*1000)/1000;
+                    epsRange = epsRange.toString();
+                }
+                setTimeout(function(){
+                    callback(null, [Math.floor(price*7.5)/10 + ', ' + Math.floor(price*8)/10 + ', ' +Math.floor(price*9.5)/10, Math.floor(price*10.5)/10 + ', ' + Math.floor(price*12)/10 + ', ' +Math.floor(price*12.5)/10, epsRange]);
+                }, 0);
+            });
         });
     },
     getStockYield: function(id, callback) {

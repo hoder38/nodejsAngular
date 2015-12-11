@@ -6342,7 +6342,14 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.multiSearch = false;
     $scope.parseIndex = false;
     $scope.parseIndexFocus = false;
-    $scope.toolList = {per: false, yield: false,dir: false, item: null};
+    $scope.parsePoint = false;
+    $scope.parsePointFocus = false;
+    $scope.inputPoint = '';
+    $scope.parsePoint2 = false;
+    $scope.parsePoint2Focus = false;
+    $scope.outputPoint = [];
+    $scope.selectPoint = 0;
+    $scope.toolList = {per: false, yield: false, point: false, dir: false, item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -6818,12 +6825,14 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             this.$parent.toolList.per = false;
             this.$parent.toolList.pre = false;
             this.$parent.toolList.yield = false;
+            this.$parent.toolList.point = false;
             confirm_str = item;
         } else {
             this.$parent.toolList.dir = false;
             this.$parent.toolList.per = true;
             this.$parent.toolList.pre = true;
             this.$parent.toolList.yield = true;
+            this.$parent.toolList.point = true;
         }
         this.toggleDropdown($event, 'item');
         this.$parent.toolList.item = item;
@@ -8221,6 +8230,46 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             });
         } else {
             addAlert('select a stock!!!');
+        }
+    }
+    $scope.stockPoint = function() {
+        var this_obj = this;
+        if (this.toolList.item) {
+            var append = '';
+            if (this.inputPoint) {
+                append = '/' + this.inputPoint;
+            }
+            var stockApi = $resource('/api/stock/getPoint/' + this.toolList.item.id + append, {}, {
+                'getPoint': { method:'get' }
+            });
+            stockApi.getPoint({}, function (result) {
+                if (result.loginOK) {
+                    $window.location.href = $location.path();
+                } else {
+                    this_obj.outputPoint = result.point;
+                    this_obj.selectPoint = 0;
+                    this_obj.parsePoint = false;
+                    this_obj.parsePoint2 = true;
+                    this_obj.parsePoint2Focus = true;
+                }
+            }, function(errorResult) {
+                if (errorResult.status === 400) {
+                    addAlert(errorResult.data);
+                } else if (errorResult.status === 403) {
+                    addAlert('unknown API!!!');
+                } else if (errorResult.status === 401) {
+                    $window.location.href = $location.path();
+                }
+            });
+        } else {
+            addAlert('select a stock!!!');
+        }
+    }
+    $scope.toggleStockPoint = function() {
+        if (this.selectPoint < 2) {
+            this.selectPoint++;
+        } else {
+            this.selectPoint = 0;
         }
     }
     $scope.stockPre = function() {

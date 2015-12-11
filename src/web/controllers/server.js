@@ -2208,6 +2208,32 @@ app.get('/api/stock/getYield/:uid', function(req, res, next) {
     });
 });
 
+app.get('/api/stock/getPoint/:uid/:price?', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('stock get point');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        var price = 0;
+        if (req.params.price) {
+            if (!req.params.price.match(/\d+(\.\d+)?/)) {
+                util.handleError({hoerror: 2, message: "price is not vaild"}, next, res);
+            }
+            price = Number(req.params.price);
+        }
+        stockTool.getStockPoint(id, price, function(err, point) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json({point: point});
+        });
+    });
+});
+
 app.put('/api/stock/filter/:tag', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('stock filter');

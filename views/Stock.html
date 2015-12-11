@@ -127,6 +127,36 @@
             </span>
         </div>
     </form>
+    <form ng-submit="stockPoint()" id="parse-point" ng-show="parsePoint">
+        <div class="input-group">
+            <span class="input-group-btn">
+                <button class="btn btn-info" ng-click="parsePoint = false" type="button">
+                    <i class="glyphicon glyphicon-remove"></i>
+                </button>
+            </span>
+            <input type="text" class="form-control" ng-model="inputPoint" placeholder="Input Price" focus-me="parsePointFocus" />
+            <span class="input-group-btn">
+                <button class="btn btn-info" type="submit">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </button>
+            </span>
+        </div>
+    </form>
+    <form ng-submit="toggleStockPoint()" id="parse-point2" ng-show="parsePoint2">
+        <div class="input-group">
+            <span class="input-group-btn">
+                <button class="btn btn-info" ng-click="parsePoint2 = false" type="button">
+                    <i class="glyphicon glyphicon-remove"></i>
+                </button>
+            </span>
+            <input type="text" class="form-control" readonly ng-model="outputPoint[selectPoint]" placeholder="Stock Point" focus-me="parsePoint2Focus" />
+            <span class="input-group-btn">
+                <button class="btn btn-info">
+                    <span class="glyphicon glyphicon-chevron-right"></span>
+                </button>
+            </span>
+        </div>
+    </form>
     <form ng-submit="parseIndex = false" id="parse-index" ng-show="parseIndex">
         <div class="input-group">
             <span class="input-group-btn">
@@ -145,7 +175,7 @@
     <form ng-submit="submitFilter()" ng-show="filterStock" id="filter-stock">
         <div class="input-group triple-input">
             <span class="input-group-btn">
-                <button class="btn btn-warning" ng-click="filterStock = false" type="button">
+                <button class="btn btn-danger" ng-click="filterStock = false" type="button">
                     <i class="glyphicon glyphicon-remove"></i>
                 </button>
             </span>
@@ -153,7 +183,7 @@
             <input type="text" class="form-control" ng-model="filterCondition" placeholder="per<10 yield<20" focus-me="filterConditionFocus" ng-enter="filterLimitFocus = true" />
             <input type="text" class="form-control" ng-model="filterLimit" placeholder="100" focus-me="filterLimitFocus" ng-enter="submitFilter()" />
             <span class="input-group-btn">
-                <button class="btn btn-warning" type="submit">
+                <button class="btn btn-danger" type="submit">
                     <span class="glyphicon glyphicon-ok"></span>
                 </button>
             </span>
@@ -238,6 +268,9 @@
             </li>
             <li ng-show="toolList.yield">
                 <a ng-click="stockYield()" href="#">YIELD</a>
+            </li>
+            <li ng-show="toolList.point">
+                <a ng-click="tagNew = false; bookmarkNew = false; parseIndex = false; parsePoint = true; inputPoint = ''; parsePointFocus = true" href="#">POINT</a>
             </li>
             <li ng-show="toolList.dir" ng-repeat="item in stockDirList">
                 <a confirmed-click="add2Parent(item)" ng-confirm-click="Would you sure to add" ng-sub-msg="to {{item.show}}?" href="#">{{item.show}}</a>
