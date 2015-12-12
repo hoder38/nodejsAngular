@@ -3777,9 +3777,20 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 $window.location.href = $location.path();
                             } else {
                                 if (videoId === this_obj[type].playlist.obj.id) {
-                                    this_obj[type].src = result.url;
                                     if (this_obj[type].playlist) {
                                         this_obj[type].itemName = ':' + result.title;
+                                    }
+                                    if (type === 'music') {
+                                        this_obj[type].src = result.audio;
+                                    } else {
+                                        this_obj[type].hd_list = result.video;
+                                        var hd = 0;
+                                        if (this_obj[type].hd < this_obj[type].hd_list.length) {
+                                            hd = this_obj[type].hd;
+                                        } else {
+                                            hd = this_obj[type].hd_list.length - 1;
+                                        }
+                                        this_obj[type].src = this_obj[type].hd_list[hd];
                                     }
                                 }
                             }
@@ -4098,9 +4109,20 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                 $window.location.href = $location.path();
                                             } else {
                                                 if (videoId === this_obj[type].id || (this_obj[type].playlist && videoId === this_obj[type].playlist.obj.id)) {
-                                                    this_obj[type].src = result.url;
                                                     if (this_obj[type].playlist) {
                                                         this_obj[type].itemName = ':' + result.title;
+                                                    }
+                                                    if (type === 'music') {
+                                                        this_obj[type].src = result.audio;
+                                                    } else {
+                                                        this_obj[type].hd_list = result.video;
+                                                        var hd = 0;
+                                                        if (this_obj[type].hd < this_obj[type].hd_list.length) {
+                                                            hd = this_obj[type].hd;
+                                                        } else {
+                                                            hd = this_obj[type].hd_list.length - 1;
+                                                        }
+                                                        this_obj[type].src = this_obj[type].hd_list[hd];
                                                     }
                                                 }
                                             }
@@ -4298,9 +4320,20 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                 $window.location.href = $location.path();
                                             } else {
                                                 if (videoId === this_obj[type].id || (this_obj[type].playlist && videoId === this_obj[type].playlist.obj.id)) {
-                                                    this_obj[type].src = result.url;
                                                     if (this_obj[type].playlist) {
                                                         this_obj[type].itemName = ':' + result.title;
+                                                    }
+                                                    if (type === 'music') {
+                                                        this_obj[type].src = result.audio;
+                                                    } else {
+                                                        this_obj[type].hd_list = result.video;
+                                                        var hd = 0;
+                                                        if (this_obj[type].hd < this_obj[type].hd_list.length) {
+                                                            hd = this_obj[type].hd;
+                                                        } else {
+                                                            hd = this_obj[type].hd_list.length - 1;
+                                                        }
+                                                        this_obj[type].src = this_obj[type].hd_list[hd];
                                                     }
                                                 }
                                             }
@@ -4452,9 +4485,20 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 $window.location.href = $location.path();
                             } else {
                                 if (videoId === this_obj[type].id || (this_obj[type].playlist && videoId === this_obj[type].playlist.obj.id)) {
-                                    this_obj[type].src = result.url;
                                     if (this_obj[type].playlist) {
                                         this_obj[type].itemName = ':' + result.title;
+                                    }
+                                    if (type === 'music') {
+                                        this_obj[type].src = result.audio;
+                                    } else {
+                                        this_obj[type].hd_list = result.video;
+                                        var hd = 0;
+                                        if (this_obj[type].hd < this_obj[type].hd_list.length) {
+                                            hd = this_obj[type].hd;
+                                        } else {
+                                            hd = this_obj[type].hd_list.length - 1;
+                                        }
+                                        this_obj[type].src = this_obj[type].hd_list[hd];
                                     }
                                 }
                             }

@@ -5329,9 +5329,20 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 $window.location.href = $location.path();
                             } else {
                                 if (videoId === this_obj[type].playlist.obj.id) {
-                                    this_obj[type].src = result.url;
                                     if (this_obj[type].playlist) {
                                         this_obj[type].itemName = ':' + result.title;
+                                    }
+                                    if (type === 'music') {
+                                        this_obj[type].src = result.audio;
+                                    } else {
+                                        this_obj[type].hd_list = result.video;
+                                        var hd = 0;
+                                        if (this_obj[type].hd < this_obj[type].hd_list.length) {
+                                            hd = this_obj[type].hd;
+                                        } else {
+                                            hd = this_obj[type].hd_list.length - 1;
+                                        }
+                                        this_obj[type].src = this_obj[type].hd_list[hd];
                                     }
                                 }
                             }
@@ -5650,9 +5661,20 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                 $window.location.href = $location.path();
                                             } else {
                                                 if (videoId === this_obj[type].id || (this_obj[type].playlist && videoId === this_obj[type].playlist.obj.id)) {
-                                                    this_obj[type].src = result.url;
                                                     if (this_obj[type].playlist) {
                                                         this_obj[type].itemName = ':' + result.title;
+                                                    }
+                                                    if (type === 'music') {
+                                                        this_obj[type].src = result.audio;
+                                                    } else {
+                                                        this_obj[type].hd_list = result.video;
+                                                        var hd = 0;
+                                                        if (this_obj[type].hd < this_obj[type].hd_list.length) {
+                                                            hd = this_obj[type].hd;
+                                                        } else {
+                                                            hd = this_obj[type].hd_list.length - 1;
+                                                        }
+                                                        this_obj[type].src = this_obj[type].hd_list[hd];
                                                     }
                                                 }
                                             }
@@ -5850,9 +5872,20 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                 $window.location.href = $location.path();
                                             } else {
                                                 if (videoId === this_obj[type].id || (this_obj[type].playlist && videoId === this_obj[type].playlist.obj.id)) {
-                                                    this_obj[type].src = result.url;
                                                     if (this_obj[type].playlist) {
                                                         this_obj[type].itemName = ':' + result.title;
+                                                    }
+                                                    if (type === 'music') {
+                                                        this_obj[type].src = result.audio;
+                                                    } else {
+                                                        this_obj[type].hd_list = result.video;
+                                                        var hd = 0;
+                                                        if (this_obj[type].hd < this_obj[type].hd_list.length) {
+                                                            hd = this_obj[type].hd;
+                                                        } else {
+                                                            hd = this_obj[type].hd_list.length - 1;
+                                                        }
+                                                        this_obj[type].src = this_obj[type].hd_list[hd];
                                                     }
                                                 }
                                             }
@@ -6004,9 +6037,20 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 $window.location.href = $location.path();
                             } else {
                                 if (videoId === this_obj[type].id || (this_obj[type].playlist && videoId === this_obj[type].playlist.obj.id)) {
-                                    this_obj[type].src = result.url;
                                     if (this_obj[type].playlist) {
                                         this_obj[type].itemName = ':' + result.title;
+                                    }
+                                    if (type === 'music') {
+                                        this_obj[type].src = result.audio;
+                                    } else {
+                                        this_obj[type].hd_list = result.video;
+                                        var hd = 0;
+                                        if (this_obj[type].hd < this_obj[type].hd_list.length) {
+                                            hd = this_obj[type].hd;
+                                        } else {
+                                            hd = this_obj[type].hd_list.length - 1;
+                                        }
+                                        this_obj[type].src = this_obj[type].hd_list[hd];
                                     }
                                 }
                             }
@@ -6848,6 +6892,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         if (this.selectList.length) {
             this.newTagName = '';
             this.parseIndex = false;
+            this.parsePoint = false;
+            this.parsePoint2 = false;
             this.bookmarkNew = false;
             this.tagNew = true;
             this.tagNewFocus = true;
@@ -8216,6 +8262,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                     this_obj.inputIndex = result.per;
                     this_obj.tagNew = false;
                     this_obj.bookmarkNew = false;
+                    this_obj.parsePoint = false;
+                    this_obj.parsePoint2 = false;
                     this_obj.parseIndex = true;
                     this_obj.parseIndexFocus = true;
                 }
@@ -8285,6 +8333,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                     this_obj.inputIndex = result.per;
                     this_obj.tagNew = false;
                     this_obj.bookmarkNew = false;
+                    this_obj.parsePoint = false;
+                    this_obj.parsePoint2 = false;
                     this_obj.parseIndex = true;
                     this_obj.parseIndexFocus = true;
                 }
@@ -8314,6 +8364,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                     this_obj.inputIndex = result.yield;
                     this_obj.tagNew = false;
                     this_obj.bookmarkNew = false;
+                    this_obj.parsePoint = false;
+                    this_obj.parsePoint2 = false;
                     this_obj.parseIndex = true;
                     this_obj.parseIndexFocus = true;
                 }
