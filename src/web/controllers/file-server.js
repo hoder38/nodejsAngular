@@ -665,6 +665,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 }
                 if (is_media) {
                     DBdata['status'] = is_media;
+                    delete DBdata['mediaType'];
                 }
                 var normal = tagTool.normalizeTag(name);
                 if (mediaTag.def.indexOf(normal) === -1) {
