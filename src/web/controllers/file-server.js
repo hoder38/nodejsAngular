@@ -1105,7 +1105,6 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
         } else {
             url = 'http://www.youtube.com/watch?v=' + id[2];
         }
-        //url = 'http://videomega.tv/view.php?ref=050056077090107048104109122089089122109104048107090077056050';
         youtubedl.getInfo(url, [], function(err, info) {
             if (err) {
                 err.hoerror = 2;

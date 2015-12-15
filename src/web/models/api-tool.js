@@ -73,7 +73,8 @@ function sendAPI(data, method, callback) {
         port: 443,
         method: 'GET',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded',
+            "Referer": "http://google.com/"
         }
     };
 
@@ -670,6 +671,48 @@ module.exports = {
                 }
             });
         }, time);
+    },
+    sendVideomega: function(url, callback) {
+        this.xuiteDownload(url, '', function(err, raw_data) {
+            if (err) {
+                util.handleError(err, callback, callback);
+            }
+            var link_match = raw_data.match(/(eval[^<]+)/)[1];
+            if (!link_match) {
+                util.handleError({hoerror: 2, message: "videomega url cannot find"}, callback, callback);
+            }
+            link_match = link_match.replace(/\$\("\d"\).\d/, "");
+            var downloadLink =  eval(link_match);
+            console.log(downloadLink);
+            var access_match = raw_data.match(/id: "(\d+)", referal: "([^"]+)"/);
+            if (!link_match) {
+                util.handleError({hoerror: 2, message: "videomega id cannot find"}, callback, callback);
+            }
+            var id = access_match[1];
+            var referal = access_match[2];
+            var valid_url = 'http://videomega.tv/upd_views.php';
+            var urlParse = urlMod.parse(valid_url);
+
+            // An object of options to indicate where to post to
+            var options = {
+                host: urlParse.hostname,
+                port: 80,
+                path: urlParse.path,
+                method: 'POST',
+                encoding : 'utf8'
+            };
+            var fields = {};
+            fields['id'] = id;
+            fields['referal'] = referal;
+            postData(fields, null, options, {}, function(err) {
+                if (err) {
+                    util.handleError(err, callback, callback);
+                }
+                setTimeout(function(){
+                    callback(null, downloadLink);
+                }, 0);
+            });
+        }, 60000, false, false);
     },
     getTwseXml: function(stockCode, year, quarter, filePath, callback) {
         var url = 'http://mops.twse.com.tw/server-java/FileDownLoad';
