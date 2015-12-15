@@ -908,7 +908,7 @@ var exports = module.exports = {
                             }
                             downloadSubtitle(url, filePath, function(err) {
                                 if (err) {
-                                    util.handleError(err, callback, callback);
+                                    util.handleError(err);
                                 }
                                 setTimeout(function(){
                                     callback(null, media_name + '.mp4', tag_arr);
