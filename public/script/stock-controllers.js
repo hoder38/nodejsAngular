@@ -458,7 +458,6 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             for (var i = 1; i < $scope.selectList.length; i++) {
                 $scope.tagList = intersect($scope.tagList, $scope.selectList[i].tags, $scope.exceptList);
             }
-            getRelativeTag(tempList);
         } else {
             $scope.tagList = [];
             $scope.exceptList = [];
@@ -468,45 +467,33 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         }
     }, true);
 
-    getRelativeTag = function(oldList) {
-        if (!$scope.tCD) {
-            $scope.tCD = true;
-            setTimeout(function() {
-                $scope.tCD = false;
-                if ($scope.isRelative) {
-                    var tags = [];
-                    for (var i in $scope.tagList) {
-                        if (oldList.indexOf($scope.tagList[i]) === -1) {
-                            tags.push($scope.tagList[i]);
-                        }
-                    }
-                    if (tags.length > 0) {
-                        var Info = $resource('/api/stock/getRelativeTag', {}, {
-                            'relativeTag': { method:'PUT' }
-                        });
-                        Info.relativeTag({tags: tags}, function (result) {
-                            if (result.loginOK) {
-                                $window.location.href = $location.path();
-                            } else {
-                                for (var j in result.relative) {
-                                    if ($scope.relativeList.indexOf(result.relative[j]) === -1 && $scope.tagList.indexOf(result.relative[j]) === -1 && $scope.exceptList.indexOf(result.relative[j]) === -1 && $scope.isRelative) {
-                                        $scope.relativeList.push(result.relative[j]);
-                                    }
-                                }
-                            }
-                        }, function(errorResult) {
-                            if (errorResult.status === 400) {
-                                addAlert(errorResult.data);
-                            } else if (errorResult.status === 403) {
-                                addAlert('unknown API!!!');
-                            } else if (errorResult.status === 401) {
-                                $window.location.href = $location.path();
-                            }
-                        });
+    getOptionTag = function() {
+        var append = '';
+        if ($scope.tagList.length > 0) {
+            append = '/' + $scope.tagList[0];
+        }
+        var Info = $resource('/api/stock/getOptionTag' + append, {}, {
+            'optionTag': { method:'GET' }
+        });
+        Info.optionTag({}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                for (var i in result.relative) {
+                    if ($scope.relativeList.indexOf(result.relative[i]) === -1 && $scope.tagList.indexOf(result.relative[i]) === -1 && $scope.exceptList.indexOf(result.relative[i]) === -1 && $scope.isRelative) {
+                        $scope.relativeList.push(result.relative[i]);
                     }
                 }
-            }, 1000);
-        }
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
     }
 
     $scope.selectItem = function($event, item) {
@@ -543,12 +530,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             this.bookmarkNew = false;
             this.tagNew = true;
             this.tagNewFocus = true;
-            var oldList = [];
-            if (this.isRelative) {
-                oldList = this.tagList;
-            }
             this.isRelative = true;
-            getRelativeTag(oldList);
+            getOptionTag();
         }
         return false;
     }

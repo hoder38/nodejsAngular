@@ -8,8 +8,9 @@ var mime = require('../util/mime.js');
 
 var mongo = require("../models/mongo-tool.js");
 
-var genre_list = ['action', 'adventure', 'animation', 'biography', 'comedy', 'crime', 'documentary', 'drama', 'family', 'fantasy', 'film-noir', 'history', 'horror', 'music', 'musical', 'mystery', 'romance', 'sci-fi', 'sport', 'thriller', 'war', 'western'];
-var genre_list_ch = ['動作', '冒險', '動畫', '傳記', '喜劇', '犯罪', '記錄', '劇情', '家庭', '奇幻', '黑色電影', '歷史', '恐怖', '音樂', '音樂劇', '神祕', '浪漫', '科幻', '運動', '驚悚', '戰爭', '西部'];
+var genre_list = mime.getOptionTag('eng');
+
+var genre_list_ch = mime.getOptionTag('cht');
 
 module.exports = {
     getList: function(type, callback, is_clear) {
@@ -171,7 +172,8 @@ module.exports = {
                                     util.handleError(err, callback, callback);
                                 }
                                 //console.log(item);
-                                //console.log('save end');
+                                console.log('lovetv save');
+                                console.log(name);
                                 index++;
                                 if (index < list_arr.length) {
                                     recur_save(type, index, list_arr);
@@ -360,6 +362,8 @@ module.exports = {
                                             util.handleError(err, callback, callback);
                                         }
                                         //console.log(item);
+                                        console.log('eztv save');
+                                        console.log(name);
                                         index++;
                                         if (index < list_arr.length) {
                                             recur_save(type, index, list_arr);

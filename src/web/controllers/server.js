@@ -32,6 +32,8 @@ var externalTool = require('../models/external-tool.js');
 
 var util = require("../util/utility.js");
 
+var mime = require('../util/mime.js');
+
 var https = require('https'),
     //privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
     //certificate = fs.readFileSync(config_type.certificate, 'utf8'),
@@ -2440,62 +2442,76 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
     });
 });
 
-app.put('/api/getRelativeTag', function(req, res, next) {
+app.get('/api/getOptionTag/:tag?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
-        console.log('get relative tag');
+        console.log('get option tag');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var index = 0;
-        var pre_arr = ['first item'];
-        if (req.body.tags.length > 0) {
-            recur_relative();
-        } else {
-            res.json({relative: []});
-        }
-        function recur_relative() {
-            tagTool.getRelativeTag(req.body.tags[index], req.user, pre_arr, next, function(err, relative) {
+        var optionList = ['first item'];
+        if (req.params.tag) {
+            tagTool.getRelativeTag(req.params.tag, req.user, optionList, next, function(err, relative) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
-                index++;
-                pre_arr = relative;
-                if (index < req.body.tags.length) {
-                    recur_relative();
-                } else {
-                    res.json({relative: pre_arr});
+                if (util.checkAdmin(2 ,req.user)) {
+                    optionList.push('18+');
                 }
+                var reli = 5;
+                if (relative.length < reli) {
+                    reli = relative.length;
+                }
+                for (var i = 0; i < reli; i++) {
+                    if (optionList.indexOf(relative[i]) === -1) {
+                        optionList.push(relative[i]);
+                    }
+                }
+                var mo = mime.getOptionTag();
+                for (var i in mo) {
+                    if (optionList.indexOf(mo[i]) === -1) {
+                        optionList.push(mo[i]);
+                    }
+                }
+                res.json({relative: optionList});
             });
+        } else {
+            if (util.checkAdmin(2 ,req.user)) {
+                optionList.push('18+');
+            }
+            var mo = mime.getOptionTag();
+            for (var i in mo) {
+                optionList.push(mo[i]);
+            }
+            res.json({relative: optionList});
         }
     });
 });
 
-app.put('/api/stock/getRelativeTag', function(req, res,next) {
+app.get('/api/stock/getOptionTag/:tag?', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
-        console.log('get stock relative tag');
+        console.log('get stock option tag');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var index = 0;
-        var pre_arr = ['important'];
-        if (req.body.tags.length > 0) {
-            recur_relative();
-        } else {
-            res.json({relative: []});
-        }
-        function recur_relative() {
-            stockTagTool.getRelativeTag(req.body.tags[index], req.user, pre_arr, next, function(err, relative) {
+        var optionList = ['important'];
+        if (req.params.tag) {
+            stockTagTool.getRelativeTag(req.params.tag, req.user, optionList, next, function(err, relative) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
-                index++;
-                pre_arr = relative;
-                if (index < req.body.tags.length) {
-                    recur_relative();
-                } else {
-                    res.json({relative: pre_arr});
+                var reli = 5;
+                if (relative.length < reli) {
+                    reli = relative.length;
                 }
+                for (var i = 0; i < reli; i++) {
+                    if (optionList.indexOf(relative[i]) === -1) {
+                        optionList.push(relative[i]);
+                    }
+                }
+                res.json({relative: optionList});
             });
+        } else {
+            res.json({relative: optionList});
         }
     });
 });
@@ -2640,32 +2656,31 @@ app.get('/api/password/reset', function(req, res, next){
     });
 });
 
-app.put('/api/password/getRelativeTag', function(req, res,next) {
+app.get('/api/password/getOptionTag/:tag?', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
-        console.log('get password relative tag');
+        console.log('get password option tag');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var index = 0;
-        var pre_arr = [];
-        if (req.body.tags.length > 0) {
-            recur_relative();
-        } else {
-            res.json({relative: []});
-        }
-        function recur_relative() {
-            pwTagTool.getRelativeTag(req.body.tags[index], req.user, pre_arr, next, function(err, relative) {
+        var optionList = [];
+        if (req.params.tag) {
+            pwTagTool.getRelativeTag(req.params.tag, req.user, optionList, next, function(err, relative) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
-                index++;
-                pre_arr = relative;
-                if (index < req.body.tags.length) {
-                    recur_relative();
-                } else {
-                    res.json({relative: pre_arr});
+                var reli = 5;
+                if (relative.length < reli) {
+                    reli = relative.length;
                 }
+                for (var i = 0; i < reli; i++) {
+                    if (optionList.indexOf(relative[i]) === -1) {
+                        optionList.push(relative[i]);
+                    }
+                }
+                res.json({relative: optionList});
             });
+        } else {
+            res.json({relative: optionList});
         }
     });
 });

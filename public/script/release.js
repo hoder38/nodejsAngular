@@ -2877,7 +2877,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             for (var i = 1; i < $scope.selectList.length; i++) {
                 $scope.tagList = intersect($scope.tagList, $scope.selectList[i].tags, $scope.exceptList);
             }
-            getRelativeTag(tempList);
         } else {
             $scope.tagList = [];
             $scope.exceptList = [];
@@ -2887,45 +2886,33 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         }
     }, true);
 
-    getRelativeTag = function(oldList) {
-        if (!$scope.tCD) {
-            $scope.tCD = true;
-            setTimeout(function() {
-                $scope.tCD = false;
-                if ($scope.isRelative) {
-                    var tags = [];
-                    for (var i in $scope.tagList) {
-                        if (oldList.indexOf($scope.tagList[i]) === -1) {
-                            tags.push($scope.tagList[i]);
-                        }
-                    }
-                    if (tags.length > 0) {
-                        var Info = $resource('/api/getRelativeTag', {}, {
-                            'relativeTag': { method:'PUT' }
-                        });
-                        Info.relativeTag({tags: tags}, function (result) {
-                            if (result.loginOK) {
-                                $window.location.href = $location.path();
-                            } else {
-                                for (var i in result.relative) {
-                                    if ($scope.relativeList.indexOf(result.relative[i]) === -1 && $scope.tagList.indexOf(result.relative[i]) === -1 && $scope.exceptList.indexOf(result.relative[i]) === -1 && $scope.isRelative) {
-                                        $scope.relativeList.push(result.relative[i]);
-                                    }
-                                }
-                            }
-                        }, function(errorResult) {
-                            if (errorResult.status === 400) {
-                                addAlert(errorResult.data);
-                            } else if (errorResult.status === 403) {
-                                addAlert('unknown API!!!');
-                            } else if (errorResult.status === 401) {
-                                $window.location.href = $location.path();
-                            }
-                        });
+    getOptionTag = function() {
+        var append = '';
+        if ($scope.tagList.length > 0) {
+            append = '/' + $scope.tagList[0];
+        }
+        var Info = $resource('/api/getOptionTag' + append, {}, {
+            'optionTag': { method:'GET' }
+        });
+        Info.optionTag({}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                for (var i in result.relative) {
+                    if ($scope.relativeList.indexOf(result.relative[i]) === -1 && $scope.tagList.indexOf(result.relative[i]) === -1 && $scope.exceptList.indexOf(result.relative[i]) === -1 && $scope.isRelative) {
+                        $scope.relativeList.push(result.relative[i]);
                     }
                 }
-            }, 1000);
-        }
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
     }
 
     $scope.submitSubtitle = function() {
@@ -3811,12 +3798,8 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.newTagName = '';
             this.tagNew = true;
             this.tagNewFocus = true;
-            var oldList = [];
-            if (this.isRelative) {
-                oldList = this.tagList;
-            }
             this.isRelative = true;
-            getRelativeTag(oldList);
+            getOptionTag();
         }
         return false;
     }
@@ -4667,33 +4650,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 var index = arrayObjectIndexOf(this.feedback.list, this.feedbackInput, 'tag');
                 if (index === -1) {
                     this.feedback.list.splice(0, 0, {tag: this.feedbackInput, select: true});
-                    var Info = $resource('/api/getRelativeTag', {}, {
-                        'relativeTag': { method:'PUT' }
-                    });
-                    Info.relativeTag({tags: [this.feedbackInput]}, function (result) {
-                        if (result.loginOK) {
-                            $window.location.href = $location.path();
-                        } else {
-                            for (var i in result.relative) {
-                                index = arrayObjectIndexOf(this_obj.feedback.list, result.relative[i], 'tag');
-                                if (index === -1) {
-                                    this_obj.feedback.list.push({tag: result.relative[i], select: false});
-                                }
-                            }
-                            this_obj.feedbackInput = '';
-                            this_obj.feedbackBlur = true;
-                        }
-                    }, function(errorResult) {
-                        if (errorResult.status === 400) {
-                            addAlert(errorResult.data);
-                        } else if (errorResult.status === 403) {
-                            addAlert('unknown API!!!');
-                        } else if (errorResult.status === 401) {
-                            $window.location.href = $location.path();
-                        }
-                        this_obj.feedbackInput = '';
-                        this_obj.feedbackBlur = true;
-                    });
+                    this.feedbackInput = '';
+                    this.feedbackBlur = true;
                 } else {
                     this.feedback.list[index].select = true;
                     this.feedbackInput = '';
@@ -4783,33 +4741,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
             }
         }
-        clearTimeout($scope.feedback.relative);
-        $scope.feedback.relative = setTimeout(function() {
-            if (historyRelative.length > 0) {
-                var Info = $resource('/api/getRelativeTag', {}, {
-                    'relativeTag': { method:'PUT' }
-                });
-                Info.relativeTag({tags: historyRelative}, function (result) {
-                    if (result.loginOK) {
-                        $window.location.href = $location.path();
-                    } else {
-                        for (var i in result.relative) {
-                            if (arrayObjectIndexOf($scope.feedback.list, result.relative[i], 'tag') === -1) {
-                                $scope.feedback.list.push({tag: result.relative[i], select: false});
-                            }
-                        }
-                    }
-                }, function(errorResult) {
-                    if (errorResult.status === 400) {
-                        addAlert(errorResult.data);
-                    } else if (errorResult.status === 403) {
-                        addAlert('unknown API!!!');
-                    } else if (errorResult.status === 401) {
-                        $window.location.href = $location.path();
-                    }
-                });
-            }
-        }, 1000);
         $scope.feedbackDisabled = false;
     };
 
@@ -7070,7 +7001,6 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             for (var i = 1; i < $scope.selectList.length; i++) {
                 $scope.tagList = intersect($scope.tagList, $scope.selectList[i].tags, $scope.exceptList);
             }
-            getRelativeTag(tempList);
         } else {
             $scope.tagList = [];
             $scope.exceptList = [];
@@ -7080,45 +7010,33 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         }
     }, true);
 
-    getRelativeTag = function(oldList) {
-        if (!$scope.tCD) {
-            $scope.tCD = true;
-            setTimeout(function() {
-                $scope.tCD = false;
-                if ($scope.isRelative) {
-                    var tags = [];
-                    for (var i in $scope.tagList) {
-                        if (oldList.indexOf($scope.tagList[i]) === -1) {
-                            tags.push($scope.tagList[i]);
-                        }
-                    }
-                    if (tags.length > 0) {
-                        var Info = $resource('/api/stock/getRelativeTag', {}, {
-                            'relativeTag': { method:'PUT' }
-                        });
-                        Info.relativeTag({tags: tags}, function (result) {
-                            if (result.loginOK) {
-                                $window.location.href = $location.path();
-                            } else {
-                                for (var j in result.relative) {
-                                    if ($scope.relativeList.indexOf(result.relative[j]) === -1 && $scope.tagList.indexOf(result.relative[j]) === -1 && $scope.exceptList.indexOf(result.relative[j]) === -1 && $scope.isRelative) {
-                                        $scope.relativeList.push(result.relative[j]);
-                                    }
-                                }
-                            }
-                        }, function(errorResult) {
-                            if (errorResult.status === 400) {
-                                addAlert(errorResult.data);
-                            } else if (errorResult.status === 403) {
-                                addAlert('unknown API!!!');
-                            } else if (errorResult.status === 401) {
-                                $window.location.href = $location.path();
-                            }
-                        });
+    getOptionTag = function() {
+        var append = '';
+        if ($scope.tagList.length > 0) {
+            append = '/' + $scope.tagList[0];
+        }
+        var Info = $resource('/api/stock/getOptionTag' + append, {}, {
+            'optionTag': { method:'GET' }
+        });
+        Info.optionTag({}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                for (var i in result.relative) {
+                    if ($scope.relativeList.indexOf(result.relative[i]) === -1 && $scope.tagList.indexOf(result.relative[i]) === -1 && $scope.exceptList.indexOf(result.relative[i]) === -1 && $scope.isRelative) {
+                        $scope.relativeList.push(result.relative[i]);
                     }
                 }
-            }, 1000);
-        }
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
     }
 
     $scope.selectItem = function($event, item) {
@@ -7155,12 +7073,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             this.bookmarkNew = false;
             this.tagNew = true;
             this.tagNewFocus = true;
-            var oldList = [];
-            if (this.isRelative) {
-                oldList = this.tagList;
-            }
             this.isRelative = true;
-            getRelativeTag(oldList);
+            getOptionTag();
         }
         return false;
     }
@@ -9043,7 +8957,6 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             for (var i = 1; i < $scope.selectList.length; i++) {
                 $scope.tagList = intersect($scope.tagList, $scope.selectList[i].tags, $scope.exceptList);
             }
-            getRelativeTag(tempList);
         } else {
             $scope.tagList = [];
             $scope.exceptList = [];
@@ -9053,45 +8966,33 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         }
     }, true);
 
-    getRelativeTag = function(oldList) {
-        if (!$scope.tCD) {
-            $scope.tCD = true;
-            setTimeout(function() {
-                $scope.tCD = false;
-                if ($scope.isRelative) {
-                    var tags = [];
-                    for (var i in $scope.tagList) {
-                        if (oldList.indexOf($scope.tagList[i]) === -1) {
-                            tags.push($scope.tagList[i]);
-                        }
-                    }
-                    if (tags.length > 0) {
-                        var Info = $resource('/api/password/getRelativeTag', {}, {
-                            'relativeTag': { method:'PUT' }
-                        });
-                        Info.relativeTag({tags: tags}, function (result) {
-                            if (result.loginOK) {
-                                $window.location.href = $location.path();
-                            } else {
-                                for (var i in result.relative) {
-                                    if ($scope.relativeList.indexOf(result.relative[i]) === -1 && $scope.tagList.indexOf(result.relative[i]) === -1 && $scope.exceptList.indexOf(result.relative[i]) === -1 && $scope.isRelative) {
-                                        $scope.relativeList.push(result.relative[i]);
-                                    }
-                                }
-                            }
-                        }, function(errorResult) {
-                            if (errorResult.status === 400) {
-                                addAlert(errorResult.data);
-                            } else if (errorResult.status === 403) {
-                                addAlert('unknown API!!!');
-                            } else if (errorResult.status === 401) {
-                                $window.location.href = $location.path();
-                            }
-                        });
+    getOptionTag = function() {
+        var append = '';
+        if ($scope.tagList.length > 0) {
+            append = '/' + $scope.tagList[0];
+        }
+        var Info = $resource('/api/password/getOptionTag' + append, {}, {
+            'optionTag': { method:'GET' }
+        });
+        Info.optionTag({}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                for (var i in result.relative) {
+                    if ($scope.relativeList.indexOf(result.relative[i]) === -1 && $scope.tagList.indexOf(result.relative[i]) === -1 && $scope.exceptList.indexOf(result.relative[i]) === -1 && $scope.isRelative) {
+                        $scope.relativeList.push(result.relative[i]);
                     }
                 }
-            }, 1000);
-        }
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
     }
 
     $scope.selectItem = function($event, item) {
@@ -9137,12 +9038,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             this.showUsername = false;
             this.tagNew = true;
             this.tagNewFocus = true;
-            var oldList = [];
-            if (this.isRelative) {
-                oldList = this.tagList;
-            }
             this.isRelative = true;
-            getRelativeTag(oldList);
+            getOptionTag();
         }
         return false;
     }

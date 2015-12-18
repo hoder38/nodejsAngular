@@ -3683,71 +3683,38 @@ function getFeedback(item, callback, user) {
             util.handleError(err, callback, callback);
         }
         var temp_tag = [];
+        if (item.first === 1) {
+            item.tags.push('first item');
+        } else {
+            temp_tag.push('first item');
+        }
+        if (item.adultonly === 1) {
+            item.tags.push('18+');
+        } else {
+            if (util.checkAdmin(2, user)) {
+                temp_tag.push('18+');
+            }
+        }
         for (var i in mediaTag.opt) {
             if (item.tags.indexOf(mediaTag.opt[i]) === -1) {
                 temp_tag.push(mediaTag.opt[i]);
             }
         }
-        var relative_arr = [];
-        item.tags.forEach(function (e) {
-            relative_arr.push(e);
-        });
-        temp_tag.forEach(function (e) {
-            relative_arr.push(e);
-        });
-        var index = 0;
-        recur_relative();
-        function recur_relative() {
-            tagTool.getRelativeTag(relative_arr[index], user, temp_tag, callback, function(err, relative) {
-                if (err) {
-                    util.handleError(err, callback, callback);
+        if (!util.checkAdmin(1, user)) {
+            var index_tag = -1;
+            for (var i in item[user._id.toString()]) {
+                index_tag = item.tags.indexOf(item[user._id.toString()][i]);
+                if (index_tag !== -1) {
+                    item.tags.splice(index_tag, 1);
                 }
-                index++;
-                temp_tag = relative;
-                if (index < relative_arr.length) {
-                    recur_relative();
-                } else {
-                    var temp_arr = [];
-                    var normal = '';
-                    for (var j in temp_tag) {
-                        normal = tagTool.normalizeTag(temp_tag[j]);
-                        if (!tagTool.isDefaultTag(normal)) {
-                            if (item.tags.indexOf(normal) === -1) {
-                                temp_arr.push(normal);
-                            }
-                        }
-                    }
-                    temp_tag = temp_arr;
-                    if (item.first === 1) {
-                        item.tags.push('first item');
-                    } else {
-                        temp_tag.push('first item');
-                    }
-                    if (item.adultonly === 1) {
-                        item.tags.push('18+');
-                    } else {
-                        if (util.checkAdmin(2, user)) {
-                            temp_tag.push('18+');
-                        }
-                    }
-                    if (!util.checkAdmin(1, user)) {
-                        var index_tag = 0;
-                        for (var i in item[user._id.toString()]) {
-                            index_tag = item.tags.indexOf(item[user._id.toString()][i]);
-                            if (index_tag !== -1) {
-                                item.tags.splice(index_tag, 1);
-                            }
-                        }
-                        setTimeout(function(){
-                            callback(null, {id: item._id, name: item.name, select: item[user._id.toString()], option: temp_tag, other: item.tags});
-                        }, 0);
-                    } else {
-                        setTimeout(function(){
-                            callback(null, {id: item._id, name: item.name, select: item.tags, option: temp_tag, other: []});
-                        }, 0);
-                    }
-                }
-            });
+            }
+            setTimeout(function(){
+                callback(null, {id: item._id, name: item.name, select: item[user._id.toString()], option: temp_tag, other: item.tags});
+            }, 0);
+        } else {
+            setTimeout(function(){
+                callback(null, {id: item._id, name: item.name, select: item.tags, option: temp_tag, other: []});
+            }, 0);
         }
     });
 }

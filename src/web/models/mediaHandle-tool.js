@@ -1271,9 +1271,9 @@ module.exports = function(sendWs) {
                                             DBdata['status'] = 1;
                                             if (mediaType['time'] < 20 * 60 * 1000) {
                                             } else if (mediaType['time'] < 40 * 60 * 1000) {
-                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
+                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 2));
                                             } else if (mediaType['time'] < 60 * 60 * 1000) {
-                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(5, 2));
+                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(4, 2));
                                             } else {
                                                 mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
                                             }
@@ -1321,9 +1321,9 @@ module.exports = function(sendWs) {
                                         DBdata['status'] = 1;
                                         if (mediaType['time'] < 20 * 60 * 1000) {
                                         } else if (mediaType['time'] < 40 * 60 * 1000) {
-                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
+                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 2));
                                         } else if (mediaType['time'] < 60 * 60 * 1000) {
-                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(5, 2));
+                                            mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(4, 2));
                                         } else {
                                             mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
                                         }
@@ -1373,9 +1373,9 @@ module.exports = function(sendWs) {
                                             if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
                                                 if (mediaType['time'] < 20 * 60 * 1000) {
                                                 } else if (mediaType['time'] < 40 * 60 * 1000) {
-                                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
+                                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 2));
                                                 } else if (mediaType['time'] < 60 * 60 * 1000) {
-                                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(5, 2));
+                                                    mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(4, 2));
                                                 } else {
                                                     mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
                                                 }
@@ -1399,9 +1399,9 @@ module.exports = function(sendWs) {
                                         if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
                                             if (mediaType['time'] < 20 * 60 * 1000) {
                                             } else if (mediaType['time'] < 40 * 60 * 1000) {
-                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 3));
+                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 2));
                                             } else if (mediaType['time'] < 60 * 60 * 1000) {
-                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(5, 2));
+                                                mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(4, 2));
                                             } else {
                                                 mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
                                             }
