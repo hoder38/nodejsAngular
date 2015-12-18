@@ -294,13 +294,26 @@ module.exports = {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
         };
+        var requestUse = http;
+        if (url.match(/^https/)) {
+            requestUse = https;
+            options = {
+                host: urlParse.hostname,
+                port: 443,
+                path: urlParse.path,
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            };
+        }
         var this_obj = this;
         var time = 1000;
         var retry = max_retry;
         recur_download(time);
         function recur_download(time) {
             setTimeout(function(){
-                var req = http.request(options, function(res) {
+                var req = requestUse.request(options, function(res) {
                     res.body = '';
                     var length = 0;
                     if (res.statusCode === 200) {

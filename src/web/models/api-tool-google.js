@@ -887,6 +887,12 @@ var exports = module.exports = {
                             if (!filename) {
                                 filename = path.basename(pathname);
                             }
+                            if (tag_arr.indexOf('audio')) {
+                                tag_arr.push('audio');
+                            }
+                            if (tag_arr.indexOf('音頻')) {
+                                tag_arr.push('音頻');
+                            }
                             setTimeout(function(){
                                 callback(null, media_name + '.mp3', tag_arr);
                             }, 0);
@@ -910,6 +916,12 @@ var exports = module.exports = {
                                 if (err) {
                                     util.handleError(err);
                                 }
+                                if (tag_arr.indexOf('video')) {
+                                    tag_arr.push('video');
+                                }
+                                if (tag_arr.indexOf('影片')) {
+                                    tag_arr.push('影片');
+                                }
                                 setTimeout(function(){
                                     callback(null, media_name + '.mp4', tag_arr);
                                 }, 0);
@@ -918,6 +930,43 @@ var exports = module.exports = {
                     }
                 });
             }
+        });
+    },
+    googleDownloadExternal: function(url, filePath, callback) {
+        var this_obj = this;
+        var external_id = url.match(/\/embed\/video\/([^&]+)/);
+        if (!external_id) {
+            util.handleError({hoerror: 2, message: 'can not find external id!!!'}, callback, callback);
+        }
+        console.log(url);
+        console.log(filePath);
+        var tag_arr = ['影片', 'video'];
+        youtubedl.getInfo(url, [], function(err, info) {
+            if (err) {
+                err.hoerror = 2;
+                util.handleError(err, callback, callback);
+            }
+            youtubedl.exec(url, ['-o', filePath, '-f', 'mp4', '--write-thumbnail'], {}, function(err, output) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                if (fs.existsSync(filePath + '.jpg')) {
+                    fs.rename(filePath + '.jpg', filePath + '_s.jpg', function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    downloadSubtitle(url, filePath, function(err) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                        setTimeout(function(){
+                            callback(null, info.title + '.mp4', tag_arr);
+                        }, 0);
+                        });
+                    });
+                }
+            });
         });
     },
     googleDownloadMedia: function(threshold, alternate, key, filePath, hd, callback, is_ok) {

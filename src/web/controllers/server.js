@@ -1954,16 +1954,20 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                         if (total <= 0) {
                                             util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
                                         }
-                                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
-                                            if (err) {
-                                                util.handleError(err, next, res);
-                                            }
-                                            if (items1.length === 0 || type === 'music') {
-                                                res.json({playlist: {obj: obj, end: is_end, total: total}});
-                                            } else {
-                                                res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
-                                            }
-                                        });
+                                        if (obj.id) {
+                                            mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
+                                                if (err) {
+                                                    util.handleError(err, next, res);
+                                                }
+                                                if (items1.length === 0 || type === 'music') {
+                                                    res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                                } else {
+                                                    res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
+                                                }
+                                            });
+                                        } else {
+                                            res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                        }
                                     });
                                 });
                             }
@@ -2040,16 +2044,20 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                         if (total <= 0) {
                                             util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
                                         }
-                                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
-                                            if (err) {
-                                                util.handleError(err, next, res);
-                                            }
-                                            if (items1.length === 0 || type === 'music') {
-                                                res.json({playlist: {obj: obj, end: is_end, total: total}});
-                                            } else {
-                                                res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
-                                            }
-                                        });
+                                        if (obj.id) {
+                                            mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
+                                                if (err) {
+                                                    util.handleError(err, next, res);
+                                                }
+                                                if (items1.length === 0 || type === 'music') {
+                                                    res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                                } else {
+                                                    res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
+                                                }
+                                            });
+                                        } else {
+                                            res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                        }
                                     });
                                 });
                             }

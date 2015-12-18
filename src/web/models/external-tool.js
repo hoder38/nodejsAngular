@@ -1,8 +1,15 @@
 var util = require("../util/utility.js");
+
 var api = require("../models/api-tool.js");
+
 var tagTool = require("../models/tag-tool.js")("storage");
+
 var mime = require('../util/mime.js');
+
 var mongo = require("../models/mongo-tool.js");
+
+var genre_list = ['action', 'adventure', 'animation', 'biography', 'comedy', 'crime', 'documentary', 'drama', 'family', 'fantasy', 'film-noir', 'history', 'horror', 'music', 'musical', 'mystery', 'romance', 'sci-fi', 'sport', 'thriller', 'war', 'western'];
+var genre_list_ch = ['動作', '冒險', '動畫', '傳記', '喜劇', '犯罪', '記錄', '劇情', '家庭', '奇幻', '黑色電影', '歷史', '恐怖', '音樂', '音樂劇', '神祕', '浪漫', '科幻', '運動', '驚悚', '戰爭', '西部'];
 
 module.exports = {
     getList: function(type, callback, is_clear) {
@@ -64,7 +71,7 @@ module.exports = {
                                     list_match = raw_list[i].match(/^<h3[^>]*><a href="([^">]+)"[^>]*>([^<]+)<\/a>\(([^\)]+)\)$/);
                                 }
                                 if (list_match) {
-                                    if (!list_match[1].match(/^http:\/\//)) {
+                                    if (!list_match[1].match(/^(http|https):\/\//)) {
                                         if (dramaIndex === 0) {
                                             list_match[1] = 'http://tw.lovetvshow.info' + list_match[1];
                                         } else if (dramaIndex === 1) {
@@ -105,7 +112,7 @@ module.exports = {
                         name = mime.addPost(name, '1');
                     }
                     mongo.orig("count", "storage", {owner: type, name: name}, {limit: 1}, function(err, count){
-                        if (err === false) {
+                        if (err) {
                             util.handleError(err, callback, callback);
                         }
                         if (count === 0) {
@@ -116,13 +123,13 @@ module.exports = {
                             var oOID = mongo.objectID();
                             var tags = [];
                             if (dramaIndex === 0){
-                                tags = ['tv show', '電視劇', '台灣', '臺灣'];
+                                tags = ['tv show', '電視劇', '影片', 'video', '台灣', '臺灣'];
                             } else if (dramaIndex === 1) {
-                                tags = ['tv show', '電視劇', '大陸', '中國'];
+                                tags = ['tv show', '電視劇', '影片', 'video', '大陸', '中國'];
                             } else if (dramaIndex === 2) {
-                                tags = ['tv show', '電視劇', '韓國'];
+                                tags = ['tv show', '電視劇', '影片', 'video', '韓國'];
                             } else if (dramaIndex === 3) {
-                                tags = ['tv show', '電視劇', '日本'];
+                                tags = ['tv show', '電視劇', '影片', 'video', '日本'];
                             }
                             var utime = Math.round(new Date().getTime() / 1000);
                             var normal = tagTool.normalizeTag(type);
@@ -198,6 +205,186 @@ module.exports = {
                 }
             }
             break;
+            case 'eztv':
+            if (is_clear) {
+                mongo.orig("remove", "storage", {owner: type, $isolated: 1}, function(err, item2){
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log('perm external file');
+                    console.log(item2);
+                    showlist();
+                });
+            } else {
+                showlist();
+            }
+            function showlist() {
+                api.xuiteDownload('https://eztv.ag/showlist/', '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    var raw_list = raw_data.match(/<td class="forum_thread_post"><a href="[^"]+" class="thread_link">[^<]+/g);
+                    var list = [];
+                    var list_match = false;
+                    for (var i in raw_list) {
+                        list_match = raw_list[i].match(/^<td class="forum_thread_post"><a href="([^"]+)" class="thread_link">([^<]+)$/);
+                        if (list_match) {
+                            if (!list_match[1].match(/^(https|http):\/\//)) {
+                                list_match[1] = 'https://eztv.ag' + list_match[1];
+                            }
+                            list.push({name: list_match[2], url: list_match[1]});
+                        }
+                    }
+                    console.log(list.length);
+                    if (list.length < 1) {
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    } else {
+                        recur_save(type, 0, list.splice(520, 5));
+                    }
+                    function recur_save(type, index, list_arr) {
+                        var external_item = list_arr[index];
+                        var name = util.toValidName(external_item.name);
+                        if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
+                            name = mime.addPost(name, '1');
+                        }
+                        mongo.orig("count", "storage", {owner: type, name: name}, {limit: 1}, function(err, count){
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            if (count === 0) {
+                                var url = util.isValidString(external_item.url, 'url');
+                                if (url === false) {
+                                    util.handleError({hoerror: 2, message: "url is not vaild"}, callback, callback);
+                                }
+                                api.xuiteDownload(external_item.url, '', function(err, raw_data1) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    var genre = raw_data1.match(/(<br\/>|<br \/>)Genre:([^<]*)(<br\/>|<br \/>)/);
+                                    if (genre) {
+                                        genre = genre[2].match(/([a-zA-Z\-]+)/g);
+                                    }
+                                    var year = raw_data1.match(/\((\d\d\d\d)\) \- TV Show/);
+                                    if (year) {
+                                        year = year[1];
+                                    }
+                                    var imdb = raw_data1.match(/http:\/\/www\.imdb\.com\/title\/(tt\d+)\//);
+                                    if (imdb) {
+                                        imdb = imdb[1];
+                                    }
+                                    var show_name = external_item.url.match(/https:\/\/[^\/]+\/shows\/\d+\/([^\/]+)\//);
+                                    if (show_name) {
+                                        show_name = show_name[1].replace(/\-/g, ' ');
+                                    }
+                                    var oOID = mongo.objectID();
+                                    var tags = [];
+                                    tags = ['tv show', '電視劇', '歐美', '西洋', '影片', 'video'];
+                                    var utime = Math.round(new Date().getTime() / 1000);
+                                    var normal = tagTool.normalizeTag(type);
+                                    if (!tagTool.isDefaultTag(normal)) {
+                                        if (tags.indexOf(normal) === -1) {
+                                            tags.push(normal);
+                                        }
+                                    }
+                                    normal = tagTool.normalizeTag(name);
+                                    if (!tagTool.isDefaultTag(normal)) {
+                                        if (tags.indexOf(normal) === -1) {
+                                            tags.push(normal);
+                                        }
+                                    }
+                                    if (year) {
+                                        normal = tagTool.normalizeTag(year);
+                                        if (!tagTool.isDefaultTag(normal)) {
+                                            if (tags.indexOf(normal) === -1) {
+                                                tags.push(normal);
+                                            }
+                                        }
+                                    }
+                                    if (imdb) {
+                                        normal = tagTool.normalizeTag(imdb);
+                                        if (!tagTool.isDefaultTag(normal)) {
+                                            if (tags.indexOf(normal) === -1) {
+                                                tags.push(normal);
+                                            }
+                                        }
+                                    }
+                                    if (show_name) {
+                                        normal = tagTool.normalizeTag(show_name);
+                                        if (!tagTool.isDefaultTag(normal)) {
+                                            if (tags.indexOf(normal) === -1) {
+                                                tags.push(normal);
+                                            }
+                                        }
+                                    }
+                                    if (genre && genre.length > 0) {
+                                        for (var j in genre) {
+                                            normal = tagTool.normalizeTag(genre[j]);
+                                            if (!tagTool.isDefaultTag(normal)) {
+                                                if (tags.indexOf(normal) === -1) {
+                                                    tags.push(normal);
+                                                }
+                                            }
+                                            var gindex = genre_list.indexOf(normal);
+                                            if (gindex !== -1) {
+                                                normal = tagTool.normalizeTag(genre_list_ch[gindex]);
+                                                if (!tagTool.isDefaultTag(normal)) {
+                                                    if (tags.indexOf(normal) === -1) {
+                                                        tags.push(normal);
+                                                    }
+                                                }
+                                            }
+
+                                        }
+                                    }
+                                    var data = {};
+                                    data['_id'] = oOID;
+                                    data['name'] = name;
+                                    data['owner'] = type;
+                                    data['utime'] = utime;
+                                    data['url'] = url;
+                                    data['size'] = 0;
+                                    data['count'] = 0;
+                                    data['first'] = 1;
+                                    data['recycle'] = 0;
+                                    data['adultonly'] = 0;
+                                    data['untag'] = 0;
+                                    data['status'] = 3;//media type
+                                    data['tags'] = tags;
+                                    data['thumb'] = 'eztv-logo-small.png';
+                                    data[type] = tags;
+                                    mongo.orig("insert", "storage", data, function(err, item){
+                                        if(err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        //console.log(item);
+                                        index++;
+                                        if (index < list_arr.length) {
+                                            recur_save(type, index, list_arr);
+                                        } else {
+                                            setTimeout(function(){
+                                                callback(null);
+                                            }, 0);
+                                        }
+                                    });
+                                }, 60000, false, false);
+                            } else {
+                                index++;
+                                if (index < list_arr.length) {
+                                    recur_save(type, index, list_arr);
+                                } else {
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                }
+                            }
+                        });
+                    }
+                }, 60000, false, false);
+            }
+            break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
             break;
@@ -214,7 +401,7 @@ module.exports = {
         index = Math.floor(+index);
         switch (type) {
             case 'lovetv':
-            var prefix = url.match(/^(http:\/\/[^\/]+)\//);
+            var prefix = url.match(/^((http|https):\/\/[^\/]+)\//);
             if (!prefix) {
                 util.handleError({hoerror: 2, message: 'invaild url'}, callback, callback);
             }
@@ -241,7 +428,7 @@ module.exports = {
                         break;
                     }
                 }
-                if (!choose_url.match(/^http:\/\//)) {
+                if (!choose_url.match(/^(http|https):\/\//)) {
                     choose_url = prefix + choose_url;
                 }
                 api.xuiteDownload(choose_url, '', function(err, raw_single) {
@@ -304,6 +491,232 @@ module.exports = {
                         callback(null, ret_obj, is_end, raw_list.length);
                     }, 0);
                 }, 60000, false, false);
+            }, 60000, false, false);
+            break;
+            case 'eztv':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var status = raw_data.match(/Status: <b>([^<]+)<\/b>/);
+                var is_end = false;
+                if (!status) {
+                    util.handleError({hoerror: 2, message: 'unknown status!!!'}, callback, callback);
+                }
+                if (status[1] === 'Ended') {
+                    is_end = true;
+                }
+                var show_name = url.match(/https:\/\/[^\/]+\/shows\/\d+\/([^\/]+)\//);
+                if (!show_name) {
+                    util.handleError({hoerror: 2, message: 'unknown name!!!'}, callback, callback);
+                }
+                var show_name_s = show_name[1].replace(/\-/g, ' ');
+                console.log(show_name_s);
+                /*var imdb = raw_data.match(/http:\/\/www\.imdb\.com\/title\/(tt\d+)\//);
+                if (imdb) {
+                    imdb = imdb[1];
+                    console.log(imdb);
+                }*/
+                var test_list = raw_data.match(/\d+(\.\d+)? [MG]B<\/td>/g);
+                var raw_list = raw_data.match(/<a href="magnet:\?xt=urn:btih:[^"]+" (target="_blank" rel="nofollow" )?class="magnet" title=".+?( Torrent:)? Magnet Link"[\s\S]+?\d+(\.\d+)? [MG]B<\/td>/g);
+                var list = [];
+                var list_match = false;
+                var episode_match = false;
+                var size_match = false;
+                var season = -1;
+                var size = 0;
+                if (raw_list) {
+                    console.log(raw_list.length);
+                    if (test_list.length < 100) {
+                        for (var i in raw_list) {
+                            list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)" (target="_blank" rel="nofollow" )?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
+                            if (list_match) {
+                                var episode_match = list_match[3].match(/ S?(\d+)[XE](\d+) /i);
+                                if (episode_match) {
+                                    if (episode_match[1].length === 1) {
+                                        season = '00' + episode_match[1];
+                                    } else if (episode_match[1].length === 2) {
+                                        season = '0' + episode_match[1];
+                                    } else {
+                                        season = episode_match[1];
+                                    }
+                                    if (episode_match[2].length === 1) {
+                                        season = season + '00' + episode_match[2];
+                                    } else if (episode_match[2].length === 2) {
+                                        season = season + '0' + episode_match[2];
+                                    } else {
+                                        season = season + episode_match[2];
+                                    }
+                                    if (list_match[7] === 'G') {
+                                        size = Number(list_match[5])*1000;
+                                    } else {
+                                        size = Number(list_match[5]);
+                                    }
+                                    var sIndex = -1;
+                                    for (var j = 0, len = list.length; j < len; j++) {
+                                        if (list[j]['season'] === season) {
+                                            sIndex = j;
+                                            break;
+                                        }
+                                    }
+                                    if (sIndex === -1) {
+                                        for (var j = 0, len = list.length; j < len; j++) {
+                                            if (list[j]['season'] > season) {
+                                                list.splice(j, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                break;
+                                            }
+                                        }
+                                        if (j === len) {
+                                            list.splice(len, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                        }
+                                    } else {
+                                        if (list[j].size <= 2000 && size <= 2000) {
+                                            if (list[j].size < size) {
+                                                list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                            }
+                                        } else if (list[j].size > 2000 && size > 2000) {
+                                            if (list[j].size > size) {
+                                                list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                            }
+                                        } else if (size <= 2000) {
+                                            list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (!list[index-1]) {
+                            util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
+                        }
+                        var ret_obj = {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false};
+                        var encodeTorrent = util.isValidString(list[index-1].magnet, 'url');
+                        if (encodeTorrent === false) {
+                            util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
+                        }
+                        mongo.orig("find", "storage", {magnet: encodeTorrent}, {limit: 1}, function(err, items){
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            if (items.length > 0) {
+                                ret_obj['id'] = items[0]._id;
+                            } else {
+                                ret_obj['magnet'] = list[index-1].magnet;
+                                //ret_obj['season'] = list[index-1].season;
+                                //ret_obj['imdb'] = imdb;
+                                //ret_obj['search'] = show_name_s;
+                            }
+                            //ret_obj['id'] = mongo.objectID("5642fce866cdfab139e6a3f8");
+                            setTimeout(function(){
+                                callback(null, ret_obj, is_end, list.length);
+                            }, 0);
+                        });
+                    } else {
+                        console.log('too much');
+                        api.xuiteDownload('https://eztv.ag/search/' + show_name[1], '', function(err, more_data) {
+                            if (err) {
+                                err.hoerror = 2;
+                                util.handleError(err, callback, callback);
+                            }
+                            var pattern = new RegExp('<a href="magnet:\\?xt=urn:btih:[^"]+" (target="_blank" rel="nofollow" )?class="magnet" title="' + show_name_s + '.+?( Torrent:)? Magnet Link"[\\s\\S]+?\\d+(\\.\\d+)? [MG]B<\\/td>', 'ig');
+                            console.log(pattern);
+                            var raw_list_m = more_data.match(pattern);
+                            if (raw_list_m) {
+                                console.log(raw_list_m.length);
+                            } else {
+                                console.log('more empty');
+                                raw_list_m = [];
+                            }
+                            if (raw_list_m.length > raw_list.length) {
+                                raw_list = raw_list_m;
+                            }
+                            for (var i in raw_list) {
+                                list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)" (target="_blank" rel="nofollow" )?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
+                                if (list_match) {
+                                    var episode_match = list_match[3].match(/ S?(\d+)[XE](\d+) /i);
+                                    if (episode_match) {
+                                        if (episode_match[1].length === 1) {
+                                            season = '00' + episode_match[1];
+                                        } else if (episode_match[1].length === 2) {
+                                            season = '0' + episode_match[1];
+                                        } else {
+                                            season = episode_match[1];
+                                        }
+                                        if (episode_match[2].length === 1) {
+                                            season = season + '00' + episode_match[2];
+                                        } else if (episode_match[2].length === 2) {
+                                            season = season + '0' + episode_match[2];
+                                        } else {
+                                            season = season + episode_match[2];
+                                        }
+                                        if (list_match[7] === 'G') {
+                                            size = Number(list_match[5])*1000;
+                                        } else {
+                                            size = Number(list_match[5]);
+                                        }
+                                        var sIndex = -1;
+                                        for (var j = 0, len = list.length; j < len; j++) {
+                                            if (list[j]['season'] === season) {
+                                                sIndex = j;
+                                                break;
+                                            }
+                                        }
+                                        if (sIndex === -1) {
+                                            for (var j = 0, len = list.length; j < len; j++) {
+                                                if (list[j]['season'] > season) {
+                                                    list.splice(j, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                    break;
+                                                }
+                                            }
+                                            if (j === len) {
+                                                list.splice(len, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                            }
+                                        } else {
+                                            if (list[j].size <= 2000 && size <= 2000) {
+                                                if (list[j].size < size) {
+                                                    list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                }
+                                            } else if (list[j].size > 2000 && size > 2000) {
+                                                if (list[j].size > size) {
+                                                    list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                }
+                                            } else if (size <= 2000) {
+                                                list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            if (!list[index-1]) {
+                                util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
+                            }
+                            var ret_obj = {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false};
+                            var encodeTorrent = util.isValidString(list[index-1].magnet, 'url');
+                            if (encodeTorrent === false) {
+                                util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
+                            }
+                            mongo.orig("find", "storage", {magnet: encodeTorrent}, {limit: 1}, function(err, items){
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                if (items.length > 0) {
+                                    ret_obj['id'] = items[0]._id;
+                                } else {
+                                    ret_obj['magnet'] = list[index-1].magnet;
+                                    //ret_obj['season'] = list[index-1].season;
+                                    //ret_obj['imdb'] = imdb;
+                                    //ret_obj['search'] = show_name_s;
+                                }
+                                //ret_obj['id'] = mongo.objectID("5642fce866cdfab139e6a3f8");
+                                setTimeout(function(){
+                                    callback(null, ret_obj, is_end, list.length);
+                                }, 0);
+                            });
+                        }, 60000, false, false);
+                    }
+                } else {
+                    util.handleError({hoerror: 2, message: 'empty list'}, callback, callback);
+                }
             }, 60000, false, false);
             break;
             default:

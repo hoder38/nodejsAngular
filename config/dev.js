@@ -32,5 +32,5 @@ module.exports = {
     updateStock: false,
     updateExternal: false,
     api_limit: 5,
-    torrent_limit: 2
+    torrent_limit: 5
 };

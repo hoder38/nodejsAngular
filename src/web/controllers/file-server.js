@@ -125,13 +125,17 @@ app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
             util.handleError({hoerror: 2, message: "not valid subtitle!!!"}, next, res);
         }
         var filePath = null;
-        var id = req.params.uid.match(/^you_/);
+        var id = req.params.uid.match(/^(you|dym)_/);
         if (id) {
+            var ex_type = 'youtube';
+            if (id[1] === 'dym') {
+                ex_type = 'dailymotion';
+            }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
-                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
-            filePath = util.getFileLocation('youtube', id);
+            filePath = util.getFileLocation(ex_type, id);
             var folderPath = path.dirname(filePath);
             if (!fs.existsSync(folderPath)) {
                 mkdirp(folderPath, function(err) {
@@ -184,6 +188,9 @@ app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
                 }
                 if (items.length === 0 ) {
                     util.handleError({hoerror: 2, message: 'file not exist!!!'}, next, callback);
+                }
+                if ((items[0].status !== 3 && items[0].status !== 9) || items[0].owner === 'lovetv') {
+                    util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
                 }
                 filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 if (items[0].status === 9 && req.params.index) {
@@ -432,6 +439,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
         if (url === false) {
             util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
         }
+        var hide = req.body.hide;
         var oOID = mongo.objectID();
         var filePath = util.getFileLocation(req.user._id, oOID);
         var folderPath = path.dirname(filePath);
@@ -526,6 +534,16 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             streamClose(filename, tag_arr);
                         });
                     }
+                } else if (url.match(/^(https|http):\/\/www\.dailymotion\.com\//)) {
+                    console.log('dailymotion');
+                    is_media = 3;
+                    googleApi.googleDownloadExternal(url, filePath, function(err, filename, tag_arr) {
+                        if (err) {
+                            sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, item[0].adultonly);
+                            util.handleError(err, next, res);
+                        }
+                        streamClose(filename, tag_arr);
+                    });
                 } else {
                     api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                         if (err) {
@@ -613,6 +631,16 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         streamClose(filename, tag_arr);
                     });
                 }
+            } else if (url.match(/^(https|http):\/\/www\.dailymotion\.com\//)) {
+                    console.log('dailymotion');
+                    is_media = 3;
+                    googleApi.googleDownloadExternal(url, filePath, function(err, filename, tag_arr) {
+                        if (err) {
+                            sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, item[0].adultonly);
+                            util.handleError(err, next, res);
+                        }
+                        streamClose(filename, tag_arr);
+                    });
             } else {
                 api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                     if (err) {
@@ -651,8 +679,13 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
             } else {
                 data['adultonly'] = 0;
             }
-            data['untag'] = 1;
-            data['first'] = 1;
+            if (hide) {
+                data['untag'] = 0;
+                data['first'] = 0;
+            } else {
+                data['untag'] = 1;
+                data['first'] = 1;
+            }
             if (magnet) {
                 data['status'] = 9;//media type
             } else {
@@ -1231,13 +1264,17 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
             }
         }
         var filePath = null;
-        var id = req.params.uid.match(/^you_/);
+        var id = req.params.uid.match(/^(you|dym)_/);
         if (id) {
+            var ex_type = 'youtube';
+            if (id[1] === 'dym') {
+                ex_type = 'dailymotion';
+            }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
-                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
-            filePath = util.getFileLocation('youtube', id);
+            filePath = util.getFileLocation(ex_type, id);
             searchSub();
         } else {
             id = util.isValidString(req.params.uid, 'uid');
@@ -1252,7 +1289,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                 if (items.length <= 0) {
                     util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
                 }
-                if (items[0].status !== 3 && items[0].status !== 9) {
+                if ((items[0].status !== 3 && items[0].status !== 9) || items[0].owner === 'lovetv') {
                     util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
                 }
                 if (req.params.index) {
@@ -1296,12 +1333,27 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                         sub_url = subtitles.zh.url;
                     }
                     if (sub_url) {
-                        SUB2VTT(sub_url, filePath, false, function(err) {
-                            if (err) {
-                                util.handleError(err, next, res);
-                            }
-                            res.json({apiOK: true});
-                        });
+                        var folderPath = path.dirname(filePath);
+                        if (!fs.existsSync(folderPath)) {
+                            mkdirp(folderPath, function(err) {
+                                if(err) {
+                                    util.handleError(err, next, res);
+                                }
+                                SUB2VTT(sub_url, filePath, false, function(err) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    res.json({apiOK: true});
+                                });
+                            });
+                        } else {
+                            SUB2VTT(sub_url, filePath, false, function(err) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                res.json({apiOK: true});
+                            });
+                        }
                     } else {
                         util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
                     }
@@ -2201,6 +2253,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                         util.handleError({hoerror: 2, message: 'no permission to download!!!'}, next, res);
                     }*/
                 } else {
+                    console.log(items[0]['playList'][fileIndex]);
                     util.handleError({hoerror: 2, message: 'torrent file cannot preview!!!'}, next, res);
                 }
             }
@@ -3703,14 +3756,26 @@ function loopUpdateExternal(error, countdown) {
     console.log('loopUpdateExternal');
     console.log(new Date());
     external_time = new Date().getTime();
+    console.log('lovetv');
     externalTool.getList('lovetv', function(err) {
         if (err) {
             util.handleError(err);
             external_time = 1;
             console.log('loopUpdateExternal end');
         } else {
-            external_time = 1;
-            console.log('loopDrive end');
+            console.log('eztv');
+            console.log(new Date());
+            externalTool.getList('eztv', function(err) {
+                if (err) {
+                    util.handleError(err);
+                    external_time = 1;
+                    console.log('loopUpdateExternal end');
+                } else {
+                    external_time = 1;
+                    console.log('loopDrive end');
+                    console.log(new Date());
+                }
+            });
         }
     });
 }
