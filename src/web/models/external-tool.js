@@ -242,7 +242,7 @@ module.exports = {
                             callback(null);
                         }, 0);
                     } else {
-                        recur_save(type, 0, list.splice(520, 5));
+                        recur_save(type, 0, list);
                     }
                     function recur_save(type, index, list_arr) {
                         var external_item = list_arr[index];
