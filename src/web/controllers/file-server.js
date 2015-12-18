@@ -3739,7 +3739,7 @@ function loopUpdateExternal(error, countdown) {
                     console.log('loopUpdateExternal end');
                 } else {
                     external_time = 1;
-                    console.log('loopDrive end');
+                    console.log('loopUpdateExternal end');
                     console.log(new Date());
                 }
             });
