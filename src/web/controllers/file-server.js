@@ -2428,6 +2428,9 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
         console.log(pri);
         console.log(time);
         console.log(shortTorrent);
+        if (!shortTorrent) {
+            return false;
+        }
         var runNum = 0;
         for (var i in torrent_pool) {
             if (torrent_pool[i].engine) {
@@ -2446,8 +2449,8 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                     user = torrent_pool[i].user;
                     id = torrent_pool[i].fileId;
                     for (var j in torrent_pool[i].index) {
-                        console.log(fileIndex);
                         fileIndex = torrent_pool[i].index[j];
+                        console.log(fileIndex);
                         bufferPath = filePath + '/' + fileIndex;
                         comPath = bufferPath + '_complete';
                         if (engine){
@@ -2784,7 +2787,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                 }
                 var tProcess = avconv(['-i', exitPath, '-c', 'copy', '-f', 'mp4', splicePath]);
                 tProcess.once('exit', function(exitCode, signal, metadata1) {
-                    fs.rename(splicePath, comPath, function() {
+                    fs.rename(splicePath, comPath, function(err) {
                         if (err) {
                             util.handleError(err);
                         }
