@@ -468,7 +468,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             }
                             if (items.length === 0) {
                                 var realPath = folderPath + '/real';
-                                var engine = torrentStream(url, {tmp: config_glb.nas_tmp, path: realPath, connections: 100, uploads: 5});
+                                var engine = torrentStream(url, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
                                 var playList = [];
                                 var tag_arr = ['torrent', 'playlist'];
                                 var opt_arr = [];
@@ -566,7 +566,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     }
                     if (items.length === 0) {
                         var realPath = folderPath + '/real';
-                        var engine = torrentStream(url, {tmp: config_glb.nas_tmp, path: realPath, connections: 100, uploads: 5});
+                        var engine = torrentStream(url, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
                         var playList = [];
                         var tag_arr = ['torrent', 'playlist'];
                         var opt_arr = [];
