@@ -2147,6 +2147,7 @@ module.exports = {
         var this_obj = this;
         var sales_per = [];
         var sales_num = [];
+        var sales_pre = [];
         var url = '';
         var date = new Date();
         var year = date.getFullYear() - 1911;
@@ -2178,7 +2179,6 @@ module.exports = {
                         if (data.length > 500) {
                             var raw = data.match(/-?[0-9,\.]+<\/TD>/gi);
                             if (!raw || raw.length < 4) {
-                                console.log(data);
                                 util.handleError({hoerror: 2, message: "can not find month sales!!!"}, callback, callback);
                             }
                             sales_num.push(Number(raw[0].match(/[0-9,]+/)[0].replace(/,/g, '')));
@@ -2187,8 +2187,10 @@ module.exports = {
                             }
                             if (raw.length > 10) {
                                 sales_per.push(Number(raw[6].match(/-?[0-9\.]+/)[0]));
+                                sales_pre.push(Number(raw[2].match(/[0-9,]+/)[0].replace(/,/g, '')));
                             } else {
                                 sales_per.push(Number(raw[3].match(/-?[0-9\.]+/)[0]));
+                                sales_pre.push(Number(raw[1].match(/[0-9,]+/)[0].replace(/,/g, '')));
                             }
                         } else if (data.length > 200) {
                             util.handleError({hoerror: 2, message: "稍後再查詢!!"}, callback, callback);
@@ -2282,10 +2284,13 @@ module.exports = {
                             var managementStatus = this_obj.getManagementStatus(salesStatus, asset);
                             var ret_str = '';
                             var true_sales = 0;
+                            var previous_sales = 0;
                             for (var i = sales_num.length-1; i >= 0; i--) {
                                 true_sales += sales_num[i];
+                                previous_sales += sales_pre[i];
                             }
-                            ret_str = Math.ceil(((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3)/true_sales-1)*1000)/10 + '%';
+
+                            ret_str = Math.ceil(((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3)/true_sales-1)*1000)/10 + '% ' + Math.ceil(true_sales/previous_sales*1000 - 1000)/10 + '%';
                             if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) > 0) {
                                 var predict_profit = managementStatus.a + managementStatus.b * predict_sales_0 * 1000;
                                 predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_1 * 1000;

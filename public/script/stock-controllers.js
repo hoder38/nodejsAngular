@@ -39,7 +39,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.parsePoint2Focus = false;
     $scope.outputPoint = [];
     $scope.selectPoint = 0;
-    $scope.toolList = {per: false, yield: false, point: false, dir: false, item: null};
+    $scope.toolList = {per: false, yield: false, pre: false, point: false, dir: false, item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
