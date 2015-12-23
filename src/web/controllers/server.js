@@ -1733,7 +1733,6 @@ app.get('/api/media/record/:id/:time/:pId?', function(req, res, next){
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        res.json({apiOK: true});
         if (!req.params.time.match(/^\d+(&\d+)?$/)) {
             util.handleError({hoerror: 2, message: "timestamp is not vaild"}, next, res);
         }
