@@ -3917,9 +3917,19 @@ function loopUpdateExternal(error, countdown) {
                     external_time = 1;
                     console.log('loopUpdateExternal end');
                 } else {
-                    external_time = 1;
-                    console.log('loopUpdateExternal end');
+                    console.log('kubo');
                     console.log(new Date());
+                    externalTool.getList('kubo', function(err) {
+                        if (err) {
+                            util.handleError(err);
+                            external_time = 1;
+                            console.log('loopUpdateExternal end');
+                        } else {
+                            external_time = 1;
+                            console.log('loopUpdateExternal end');
+                            console.log(new Date());
+                        }
+                    });
                 }
             });
         }

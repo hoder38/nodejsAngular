@@ -1020,6 +1020,9 @@ module.exports = {
                         }
                         var raw_multi_list = eval(eval_data[1]);
                         var flv_list = raw_multi_list.match(/"bj58".*?\}/);
+                        if (!flv_list) {
+                            util.handleError({hoerror: 2, message: 'not drive'}, callback, callback);
+                        }
                         var raw_list = flv_list[0].match(/\[[^\[\]]+\]/g);
                         var list = [];
                         var list_match = false;
