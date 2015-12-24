@@ -3556,7 +3556,11 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                                     } else {
                                         if (videoId === this_obj.$parent[type].id || (this_obj.$parent[type].playlist && videoId === this_obj.$parent[type].playlist.obj.id)) {
                                             if (this_obj.$parent[type].playlist) {
-                                                this_obj.$parent[type].itemName = ':' + result.title;
+                                                if (this_obj.$parent[type].playlist.obj.title) {
+                                                    this_obj.$parent[type].itemName = ':' + this_obj.$parent[type].playlist.obj.title;
+                                                } else {
+                                                    this_obj.$parent[type].itemName = ':' + result.title;
+                                                }
                                             }
                                             if (type === 'music') {
                                                 this_obj.$parent[type].src = result.audio;

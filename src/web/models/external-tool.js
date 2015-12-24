@@ -215,12 +215,12 @@ module.exports = {
                     }
                     console.log('perm external file');
                     console.log(item2);
-                    showlist();
+                    eztvlist();
                 });
             } else {
-                showlist();
+                eztvlist();
             }
-            function showlist() {
+            function eztvlist() {
                 api.xuiteDownload('https://eztv.ag/showlist/', '', function(err, raw_data) {
                     if (err) {
                         err.hoerror = 2;
@@ -389,6 +389,217 @@ module.exports = {
                 }, 60000, false, false);
             }
             break;
+            case 'kubo':
+            var kubo_url = ['http://www.123kubo.com/vod-search-id-3-cid--area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid--area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid--area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid--area--tag--year--wd--actor--order-vod_addtime%20desc-p-'];
+            if (is_clear) {
+                mongo.orig("remove", "storage", {owner: type, $isolated: 1}, function(err, item2){
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log('perm external file');
+                    console.log(item2);
+                    recur_kubolist(0, 1);
+                });
+            } else {
+                recur_kubolist(0, 1);
+            }
+            function recur_kubolist(kuboIndex, page) {
+                api.xuiteDownload(kubo_url[kuboIndex] + page + '.html', '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    //console.log(raw_data);
+                    var raw_list = raw_data.match(/(.*)data\-original(.*)/g);
+                    var list = [];
+                    var list_match = false;
+                    for (var i in raw_list) {
+                        list_match = raw_list[i].match(/href="([^"]+)".*data\-original="([^"]+)".*alt="([^"]+)"/);
+                        if (list_match) {
+                            if (!list_match[1].match(/^(https|http):\/\//)) {
+                                list_match[1] = 'http://www.123kubo.com' + list_match[1];
+                            }
+                            list.push({name: list_match[3], url: list_match[1], thumb: list_match[2]});
+                        }
+                    }
+                    //console.log(list);
+                    //console.log(list.length);
+                    if (list.length < 1) {
+                        page++;
+                        if (page < 201) {
+                            recur_kubolist(kuboIndex, page);
+                        } else {
+                            page = 1;
+                            kuboIndex++;
+                            if (kuboIndex < kubo_url.length) {
+                                recur_kubolist(kuboIndex, page);
+                            } else {
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            }
+                        }
+                    } else {
+                        recur_save(type, 0, list);
+                    }
+                    function recur_save(type, index, list_arr) {
+                        var external_item = list_arr[index];
+                        var name = util.toValidName(external_item.name);
+                        if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
+                            name = mime.addPost(name, '1');
+                        }
+                        mongo.orig("count", "storage", {owner: type, name: name}, {limit: 1}, function(err, count){
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            if (count === 0) {
+                                var url = util.isValidString(external_item.url, 'url');
+                                if (url === false) {
+                                    util.handleError({hoerror: 2, message: "url is not vaild"}, callback, callback);
+                                }
+                                api.xuiteDownload(external_item.url, '', function(err, raw_data1) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    var info = raw_data1.match(/.*<p>分類：<a.*/);
+                                    var info_tag = [];
+                                    if (info) {
+                                        var info_list = info[0].match(/>[^<：\s]+</g);
+                                        if (info_list) {
+                                            var info_match = false;
+                                            var nick_list = false;
+                                            var nick_match = false;
+                                            info_list.splice(info_list.length-1, 1);
+                                            for (var i in info_list) {
+                                                info_match = info_list[i].match(/^>([^<]+)<$/);
+                                                if (info_match) {
+                                                    nick_list = info_match[1].match(/(^別名:|\/)[^\/]+/g);
+                                                    if (nick_list) {
+                                                        for (var j in nick_list) {
+                                                            nick_match = nick_list[j].match(/(^別名:|\/)([^\/]+)/);
+                                                            if (nick_match) {
+                                                                info_tag.push(nick_match[2]);
+                                                            }
+                                                        }
+                                                    } else {
+                                                        info_tag.push(info_match[1]);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    var oOID = mongo.objectID();
+                                    var tags = [];
+                                    tags = ['酷播123', '123kubo', '酷播', '影片', 'video'];
+                                    if (kuboIndex === 0) {
+                                        tags.push('動畫');
+                                    } else if (kuboIndex === 1) {
+                                        tags.push('movie');
+                                        tags.push('電影');
+                                    } else {
+                                        tags.push('tv show');
+                                        tags.push('電視劇');
+                                    }
+                                    var utime = Math.round(new Date().getTime() / 1000);
+                                    var normal = tagTool.normalizeTag(type);
+                                    if (!tagTool.isDefaultTag(normal)) {
+                                        if (tags.indexOf(normal) === -1) {
+                                            tags.push(normal);
+                                        }
+                                    }
+                                    normal = tagTool.normalizeTag(name);
+                                    if (!tagTool.isDefaultTag(normal)) {
+                                        if (tags.indexOf(normal) === -1) {
+                                            tags.push(normal);
+                                        }
+                                    }
+                                    for (var i in info_tag) {
+                                        normal = tagTool.normalizeTag(info_tag[i]);
+                                        if (!tagTool.isDefaultTag(normal)) {
+                                            if (tags.indexOf(normal) === -1) {
+                                                tags.push(normal);
+                                            }
+                                        }
+                                        var gindex = genre_list_ch.indexOf(normal);
+                                        if (gindex !== -1) {
+                                            normal = tagTool.normalizeTag(genre_list[gindex]);
+                                            if (!tagTool.isDefaultTag(normal)) {
+                                                if (tags.indexOf(normal) === -1) {
+                                                    tags.push(normal);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    var data = {};
+                                    data['_id'] = oOID;
+                                    data['name'] = name;
+                                    data['owner'] = type;
+                                    data['utime'] = utime;
+                                    data['url'] = url;
+                                    data['size'] = 0;
+                                    data['count'] = 0;
+                                    data['first'] = 1;
+                                    data['recycle'] = 0;
+                                    data['adultonly'] = 0;
+                                    data['untag'] = 0;
+                                    data['status'] = 3;//media type
+                                    data['tags'] = tags;
+                                    data['thumb'] = external_item.thumb;
+                                    data[type] = tags;
+                                    mongo.orig("insert", "storage", data, function(err, item){
+                                        if(err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        //console.log(item);
+                                        console.log('kubo save');
+                                        //console.log(name);
+                                        index++;
+                                        if (index < list_arr.length) {
+                                            recur_save(type, index, list_arr);
+                                        } else {
+                                            page++;
+                                            if (page < 201) {
+                                                recur_kubolist(kuboIndex, page);
+                                            } else {
+                                                page = 1;
+                                                kuboIndex++;
+                                                if (kuboIndex < kubo_url.length) {
+                                                    recur_kubolist(kuboIndex, page);
+                                                } else {
+                                                    setTimeout(function(){
+                                                        callback(null);
+                                                    }, 0);
+                                                }
+                                            }
+                                        }
+                                    });
+                                }, 60000, false, false, 'http://www.123kubo.com/');
+                            } else {
+                                index++;
+                                if (index < list_arr.length) {
+                                    recur_save(type, index, list_arr);
+                                } else {
+                                    page++;
+                                    if (page < 201) {
+                                        recur_kubolist(kuboIndex, page);
+                                    } else {
+                                        page = 1;
+                                        kuboIndex++;
+                                        if (kuboIndex < kubo_url.length) {
+                                            recur_kubolist(kuboIndex, page);
+                                        } else {
+                                            setTimeout(function(){
+                                                callback(null);
+                                            }, 0);
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }, 60000, false, false, 'http://www.123kubo.com/');
+            }
+            break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
             break;
@@ -484,7 +695,7 @@ module.exports = {
                     if (sub_index > obj.ids.length) {
                         sub_index = 1;
                     }
-                    var ret_obj = {id: 'dym_' + obj.ids[sub_index-1]};
+                    var ret_obj = {id: 'dym_' + obj.ids[sub_index-1], complete: true};
                     if (obj.ids.length > 1) {
                         index = (index*10 + sub_index)/10;
                         ret_obj.sub = obj.ids.length;
@@ -517,11 +728,6 @@ module.exports = {
                 }
                 var show_name_s = show_name[1].replace(/\-/g, ' ');
                 console.log(show_name_s);
-                /*var imdb = raw_data.match(/http:\/\/www\.imdb\.com\/title\/(tt\d+)\//);
-                if (imdb) {
-                    imdb = imdb[1];
-                    console.log(imdb);
-                }*/
                 var test_list = raw_data.match(/\d+(\.\d+)? [MG]B<\/td>/g);
                 var raw_list = raw_data.match(/<a href="magnet:\?xt=urn:btih:[^"]+" (target="_blank" rel="nofollow" )?class="magnet" title=".+?( Torrent:)? Magnet Link"[\s\S]+?\d+(\.\d+)? [MG]B<\/td>/g);
                 var list = [];
@@ -606,11 +812,8 @@ module.exports = {
                                 ret_obj['id'] = items[0]._id;
                             } else {
                                 ret_obj['magnet'] = list[index-1].magnet;
-                                //ret_obj['season'] = list[index-1].season;
-                                //ret_obj['imdb'] = imdb;
-                                //ret_obj['search'] = show_name_s;
                             }
-                            //ret_obj['id'] = mongo.objectID("5642fce866cdfab139e6a3f8");
+                            //ret_obj['id'] = 'dri_0B2mid6JabOnnSFpYcmtSd3F5aDQ';
                             setTimeout(function(){
                                 callback(null, ret_obj, is_end, list.length);
                             }, 0);
@@ -707,11 +910,7 @@ module.exports = {
                                     ret_obj['id'] = items[0]._id;
                                 } else {
                                     ret_obj['magnet'] = list[index-1].magnet;
-                                    //ret_obj['season'] = list[index-1].season;
-                                    //ret_obj['imdb'] = imdb;
-                                    //ret_obj['search'] = show_name_s;
                                 }
-                                //ret_obj['id'] = mongo.objectID("5642fce866cdfab139e6a3f8");
                                 setTimeout(function(){
                                     callback(null, ret_obj, is_end, list.length);
                                 }, 0);
@@ -722,6 +921,126 @@ module.exports = {
                     util.handleError({hoerror: 2, message: 'empty list'}, callback, callback);
                 }
             }, 60000, false, false);
+            break;
+            case 'kubo':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var status = raw_data.match(/連載：完結/);
+                var is_end = false;
+                if (status) {
+                    is_end = true;
+                }
+                var flv_url = raw_data.match(/<a href="http:\/\/www\.123kubo\.com\/168player\/youtube\.php\?[^"]+"[^>]+>[^<]+/g);
+                if (flv_url) {
+                    var list = [];
+                    var list_match = false;
+                    var ids = false;
+                    var idType = 0;
+                    for (var i in flv_url) {
+                        list_match = flv_url[i].match(/(168player568|type\d\d?\=)[^\&]+/g);
+                        //console.log(list_match);
+                        if (list_match) {
+                            idType = 0;
+                            for (var j in list_match) {
+                                ids = list_match[j].match(/(168player568|type1\=)([^\=]+)$/);
+                                if (ids) {
+                                    ids = ids[2];
+                                    idType = 1;
+                                    break;
+                                } else {
+                                    ids = list_match[j].match(/type2\=([^\=]+)$/);
+                                    if (ids) {
+                                        ids = ids[1];
+                                        idType = 2;
+                                        break;
+                                    } else {
+                                        ids = list_match[j].match(/type17\=([^\=,]+)/);
+                                        if (ids) {
+                                            ids = ids[1];
+                                            idType = 17;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (idType) {
+                                list_match = flv_url[i].match(/[^>]+$/);
+                                if (list_match) {
+                                    list.push({name: list_match[0], type: idType, ids: ids.match(/[^,]+/g)});
+                                }
+                            }
+                        }
+                    }
+                    //console.log(list);
+                    //console.log(list.length);
+                    if (!list[index-1]) {
+                        util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
+                    }
+                    if (sub_index > list[index-1].ids.length) {
+                        sub_index = 1;
+                    }
+                    var rid = false;
+                    if (list[index-1].type === 2) {
+                        rid = 'dym_' + list[index-1].ids[sub_index-1];
+                    } else if (list[index-1].type === 17) {
+                        rid = 'bil_av' + list[index-1].ids[sub_index-1];
+                    } else {
+                        rid = 'you_' + list[index-1].ids[sub_index-1];
+                    }
+                    var ret_obj = {id: rid, title: list[index-1].name, complete: true};
+                    if (list[index-1].ids.length > 1) {
+                        ret_obj.sub = list[index-1].ids.length;
+                        index = (index*10 + sub_index)/10;
+                    }
+                    ret_obj.index = index;
+                    ret_obj.showId = index;
+                    setTimeout(function(){
+                        callback(null, ret_obj, is_end, list.length);
+                    }, 0);
+                } else {
+                    flv_url = raw_data.match(/id="\d_FLV58">[\s\S]+?href="([^"]+)/);
+                    if (!flv_url) {
+                        util.handleError({hoerror: 2, message: 'no source'}, callback, callback);
+                    }
+                    if (!flv_url[1].match(/^(https|http):\/\//)) {
+                        flv_url[1] = 'http://www.123kubo.com' + flv_url[1];
+                    }
+                    console.log(flv_url[1]);
+                    api.xuiteDownload(flv_url[1], '', function(err, flv_data) {
+                        if (err) {
+                            err.hoerror = 2;
+                            util.handleError(err, callback, callback);
+                        }
+                        var eval_data = flv_data.match(/>(eval\(.*)/);
+                        if (!eval_data) {
+                            util.handleError({hoerror: 2, message: 'empty list'}, callback, callback);
+                        }
+                        var raw_multi_list = eval(eval_data[1]);
+                        var flv_list = raw_multi_list.match(/"bj58".*?\}/);
+                        var raw_list = flv_list[0].match(/\[[^\[\]]+\]/g);
+                        var list = [];
+                        var list_match = false;
+                        for (var i in raw_list) {
+                            list_match = raw_list[i].match(/^\["([^"]+)","fun58_([^"]+)"/);
+                            if (list_match) {
+                                list.push({name: list_match[1], id: 'dri_' + list_match[2]});
+                            }
+                        }
+                        //console.log(list);
+                        //console.log(list.length);
+                        if (!list[index-1]) {
+                            util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
+                        }
+                        var ret_obj = {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false, id: list[index-1].id};
+                        setTimeout(function(){
+                            callback(null, ret_obj, is_end, list.length);
+                        }, 0);
+                    }, 60000, false, false, 'http://www.123kubo.com/');
+                }
+            }, 60000, false, false, 'http://www.123kubo.com/');
             break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);

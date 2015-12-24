@@ -277,7 +277,7 @@ module.exports = {
             req.end();
         });
     },
-    xuiteDownload: function(url, filePath, callback, threshold, is_check, is_file) {
+    xuiteDownload: function(url, filePath, callback, threshold, is_check, is_file, referer) {
         if (!this.setApiQueue('xuiteDownload', [url, filePath, callback, threshold])) {
             return false;
         }
@@ -307,6 +307,9 @@ module.exports = {
                 }
             };
         }
+        if (referer) {
+            options.headers['Referer'] = referer;
+        }
         var this_obj = this;
         var time = 1000;
         var retry = max_retry;
@@ -316,6 +319,7 @@ module.exports = {
                 var req = requestUse.request(options, function(res) {
                     res.body = '';
                     var length = 0;
+                    var is_move = false;
                     if (res.statusCode === 200) {
                         if (res.headers['content-length'] && is_file) {
                             length = Number(res.headers['content-length']);
@@ -396,8 +400,9 @@ module.exports = {
                             console.log(res.headers);
                             util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                         }
+                        is_move = true;
                         setTimeout(function(){
-                            this_obj.xuiteDownload(res.headers.location, filePath, callback, threshold, is_check);
+                            this_obj.xuiteDownload(res.headers.location, filePath, callback, threshold, is_check, is_file, referer);
                         }, 0);
                     } else if (res.statusCode === 400) {
                         console.log(url);
@@ -409,20 +414,22 @@ module.exports = {
                         this_obj.getApiQueue();
                         util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                     }
-                    if (is_file) {
-                        res.on('end', function() {
-                            console.log('res end');
-                        });
-                    } else {
-                        res.on('data', function(chunk){
-                            res.body += chunk;
-                        });
-                        res.on('end', function() {
-                            this_obj.getApiQueue();
-                            setTimeout(function(){
-                                callback(null, res.body);
-                            }, 0);
-                        });
+                    if (!is_move) {
+                        if (is_file) {
+                            res.on('end', function() {
+                                console.log('res end');
+                            });
+                        } else {
+                            res.on('data', function(chunk){
+                                res.body += chunk;
+                            });
+                            res.on('end', function() {
+                                this_obj.getApiQueue();
+                                setTimeout(function(){
+                                    callback(null, res.body);
+                                }, 0);
+                            });
+                        }
                     }
                 });
                 req.on('error', function(e) {

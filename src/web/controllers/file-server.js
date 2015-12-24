@@ -47,6 +47,8 @@ var drive_batch = 100;
 
 var torrent_pool = [];
 
+var external_pool = [];
+
 var https = require('https'),
     net = require('net'),
     child_process = require('child_process'),
@@ -125,11 +127,15 @@ app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
             util.handleError({hoerror: 2, message: "not valid subtitle!!!"}, next, res);
         }
         var filePath = null;
-        var id = req.params.uid.match(/^(you|dym)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil)_/);
         if (id) {
             var ex_type = 'youtube';
             if (id[1] === 'dym') {
                 ex_type = 'dailymotion';
+            } else if (id[1] === 'dri') {
+                ex_type = 'drive';
+            } else if (id[1] === 'bil') {
+                ex_type = 'bilibili';
             }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
@@ -189,7 +195,7 @@ app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
                 if (items.length === 0 ) {
                     util.handleError({hoerror: 2, message: 'file not exist!!!'}, next, callback);
                 }
-                if ((items[0].status !== 3 && items[0].status !== 9) || items[0].owner === 'lovetv') {
+                if ((items[0].status !== 3 && items[0].status !== 9) || items[0].owner === 'lovetv' || items[0].owner === 'eztv') {
                     util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
                 }
                 filePath = util.getFileLocation(items[0].owner, items[0]._id);
@@ -1083,13 +1089,21 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+)?', function(req, res, next)
                 });
             });
         }
-        var id = req.params.uid.match(/^you_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil)_/);
         if (id) {
+            var ex_type = 'youtube';
+            if (id[1] === 'dym') {
+                ex_type = 'dailymotion';
+            } else if (id[1] === 'dri') {
+                ex_type = 'drive';
+            } else if (id[1] === 'bil') {
+                ex_type = 'bilibili';
+            }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
-                util.handleError({hoerror: 2, message: "youtube is not vaild"}, next, res);
+                util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
-            filePath = util.getFileLocation('youtube', id);
+            filePath = util.getFileLocation(ex_type, id);
             fixSub();
         } else {
             id = util.isValidString(req.params.uid, 'uid');
@@ -1129,13 +1143,15 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.uid.match(/^(you|dym)_(.*)/);
+        var id = req.params.uid.match(/^(you|dym|bil)_(.*)/);
         if (!id) {
             util.handleError({hoerror: 2, message: "file is not youtube video!!!"}, next, res);
         }
         var url = null;
         if (id[1] === 'dym') {
             url = 'http://www.dailymotion.com/embed/video/' + id[2];
+        } else if (id[1] === 'bil') {
+            url = 'http://www.bilibili.com/video/' + id[2];
         } else {
             url = 'http://www.youtube.com/watch?v=' + id[2];
         }
@@ -1166,6 +1182,13 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                         ret_obj['video'].splice(0, 0, info.formats[i].url);
                     }
                 }
+            } else if (id[1] === 'bil') {
+                for (var i in info.formats) {
+                    if (info.formats[i].format_id === '0') {
+                        ret_obj['video'].push(info.formats[i].url);
+                        break;
+                    }
+                }
             }
             res.json(ret_obj);
         });
@@ -1178,7 +1201,7 @@ app.get('/api/external/getSubtitle/:uid', function(req, res, next) {
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.uid.match(/^(you|dym)_(.*)/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil)_(.*)/);
         if (!id) {
             util.handleError({hoerror: 2, message: "file is not youtube video!!!"}, next, res);
         }
@@ -1191,6 +1214,12 @@ app.get('/api/external/getSubtitle/:uid', function(req, res, next) {
         if (id[1] === 'dym') {
             url = 'http://www.dailymotion.com/embed/video/' + id[2];
             filePath = util.getFileLocation('dailymotion', id_valid);
+        } else if (id[1] === 'dri') {
+            url = 'https://drive.google.com/open?id=' + id[2];
+            filePath = util.getFileLocation('drive', id_valid);
+        } else if (id[1] === 'bil') {
+            url = 'http://www.bilibili.com/video/' + id[2];
+            filePath = util.getFileLocation('bilibili', id_valid);
         } else {
             url = 'http://www.youtube.com/watch?v=' + id[2];
             filePath = util.getFileLocation('youtube', id_valid);
@@ -1264,11 +1293,15 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
             }
         }
         var filePath = null;
-        var id = req.params.uid.match(/^(you|dym)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil)_/);
         if (id) {
             var ex_type = 'youtube';
             if (id[1] === 'dym') {
                 ex_type = 'dailymotion';
+            } else if (id[1] === 'dri') {
+                ex_type = 'drive';
+            } else if (id[1] === 'bil') {
+                ex_type = 'bilibili';
             }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
@@ -1289,7 +1322,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                 if (items.length <= 0) {
                     util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
                 }
-                if ((items[0].status !== 3 && items[0].status !== 9) || items[0].owner === 'lovetv') {
+                if ((items[0].status !== 3 && items[0].status !== 9) || items[0].owner === 'lovetv' || items[0].owner === 'eztv') {
                     util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
                 }
                 if (req.params.index) {
@@ -2203,31 +2236,22 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-
-        var id = util.isValidString(req.params.uid, 'uid');
-        if (id === false) {
-            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
-        }
         var fileIndex = Number(req.params.index);
         var bufferSize = Number(req.params.size);
-        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items){
-            if (err) {
-                util.handleError(err, next, res);
+        var id = req.params.uid.match(/^dri_/);
+        if (id) {
+            id = util.isValidString(req.params.uid, 'name');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
-            if (items.length === 0) {
-                util.handleError({hoerror: 2, message: 'torrent can not be fund!!!'}, next, res);
-            }
-            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            var filePath = util.getFileLocation('drive', id);
             var bufferPath = filePath + '/' + fileIndex;
             var comPath = bufferPath + '_complete';
-            //var playPath = bufferPath + '_temp';
             var errPath = bufferPath + '_error';
             if (fs.existsSync(errPath)) {
                 util.handleError({hoerror: 2, message: 'torrent video error!!!'}, next, res);
             }
             var newBuffer = false;
-            //var torrent = decodeURIComponent(items[0]['magnet']);
-            //var shortTorrent = torrent.match(/^[^&]+/)[0];
             if (fs.existsSync(comPath)) {
                 var total = fs.statSync(comPath).size;
                 if (total > bufferSize) {
@@ -2241,23 +2265,113 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                     newBuffer = true;
                 }
                 res.json({newBuffer: newBuffer, complete: false, ret_size: total});
-                //if (util.checkAdmin(1, req.user)) {
-                    queueTorrent('add', req.user, decodeURIComponent(items[0]['magnet']), fileIndex, items[0]._id, items[0].owner);
-                //}
+                bufferExternal();
             } else {
-                if (items[0]['playList'][fileIndex].match(/\.mp4$/i) || items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
-                    //if (util.checkAdmin(1, req.user)) {
-                        res.json({start: true});
-                        queueTorrent('add', req.user, decodeURIComponent(items[0]['magnet']), fileIndex, items[0]._id, items[0].owner);
-                    /*} else {
-                        util.handleError({hoerror: 2, message: 'no permission to download!!!'}, next, res);
-                    }*/
+                res.json({start: true});
+                bufferExternal();
+            }
+            function bufferExternal() {
+                if (external_pool.indexOf(id) === -1) {
+                    external_pool.push(id);
+                    console.log(external_pool);
+                    var dri_id = req.params.uid.match(/^dri_(.*)$/);
+                    if (dri_id) {
+                        console.log(bufferPath);
+                        if (!fs.existsSync(filePath)) {
+                            mkdirp(filePath, function(err) {
+                                if(err) {
+                                    util.handleError(err);
+                                    sendWs({type: req.user.username, data: 'buffer fail: ' + err.message}, 0);
+                                } else {
+                                    startBuffer();
+                                }
+                            });
+                        } else {
+                            startBuffer();
+                        }
+                        function startBuffer() {
+                            var bufferP = youtubedl('https://drive.google.com/open?id=' + dri_id[1], [], {cwd: filePath});
+                            bufferP.on('info', function(info) {
+                                console.log('Download started');
+                                console.log('filename: ' + info._filename);
+                                console.log('size: ' + info.size);
+                            });
+                            bufferP.pipe(fs.createWriteStream(bufferPath));
+                            bufferP.on('end', function() {
+                                console.log('finished downloading!');
+                                fs.rename(bufferPath, comPath, function(err) {
+                                    if (err) {
+                                        util.handleError(err);
+                                        sendWs({type: req.user.username, data: 'buffer fail: ' + err.message}, 0);
+                                    }
+                                    external_pool.splice(external_pool.indexOf(id), 1);
+                                    console.log(external_pool);
+                                });
+                            });
+                        }
+                    } else {
+                        console.log('drive id invalid');
+                        console.log(req.params.uid);
+                        sendWs({type: req.user.username, data: 'buffer fail: drive id invalid'}, 0);
+                    }
                 } else {
-                    console.log(items[0]['playList'][fileIndex]);
-                    util.handleError({hoerror: 2, message: 'torrent file cannot preview!!!'}, next, res);
+                    console.log('already buffering');
                 }
             }
-        });
+        } else {
+            id = util.isValidString(req.params.uid, 'uid');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+            }
+            mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items){
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (items.length === 0) {
+                    util.handleError({hoerror: 2, message: 'torrent can not be fund!!!'}, next, res);
+                }
+                var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+                var bufferPath = filePath + '/' + fileIndex;
+                var comPath = bufferPath + '_complete';
+                //var playPath = bufferPath + '_temp';
+                var errPath = bufferPath + '_error';
+                if (fs.existsSync(errPath)) {
+                    util.handleError({hoerror: 2, message: 'torrent video error!!!'}, next, res);
+                }
+                var newBuffer = false;
+                //var torrent = decodeURIComponent(items[0]['magnet']);
+                //var shortTorrent = torrent.match(/^[^&]+/)[0];
+                if (fs.existsSync(comPath)) {
+                    var total = fs.statSync(comPath).size;
+                    if (total > bufferSize) {
+                        newBuffer = true;
+                    }
+                    res.json({newBuffer: newBuffer, complete: true, ret_size: total});
+                } else if (fs.existsSync(bufferPath)) {
+                    var total = fs.statSync(bufferPath).size;
+                    console.log(total);
+                    if (total > bufferSize + 10 * 1024 * 1024) {
+                        newBuffer = true;
+                    }
+                    res.json({newBuffer: newBuffer, complete: false, ret_size: total});
+                    //if (util.checkAdmin(1, req.user)) {
+                        queueTorrent('add', req.user, decodeURIComponent(items[0]['magnet']), fileIndex, items[0]._id, items[0].owner);
+                    //}
+                } else {
+                    if (items[0]['playList'][fileIndex].match(/\.mp4$/i) || items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
+                        //if (util.checkAdmin(1, req.user)) {
+                            res.json({start: true});
+                            queueTorrent('add', req.user, decodeURIComponent(items[0]['magnet']), fileIndex, items[0]._id, items[0].owner);
+                        /*} else {
+                            util.handleError({hoerror: 2, message: 'no permission to download!!!'}, next, res);
+                        }*/
+                    } else {
+                        console.log(items[0]['playList'][fileIndex]);
+                        util.handleError({hoerror: 2, message: 'torrent file cannot preview!!!'}, next, res);
+                    }
+                }
+            });
+        }
     });
 });
 
@@ -2845,18 +2959,14 @@ app.get('/torrent/:index(\\d+)/:uid/:fresh(\\d+)?', function (req, res, next) {
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = util.isValidString(req.params.uid, 'uid'), fileIndex = Number(req.params.index);
-        if (id === false) {
-            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
-        }
-        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items){
-            if (err) {
-                util.handleError(err, next, res);
+        var fileIndex = Number(req.params.index);
+        var id = req.params.uid.match(/^dri_/);
+        if (id) {
+            id = util.isValidString(req.params.uid, 'name');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
-            if (items.length === 0) {
-                util.handleError({hoerror: 2, message: 'torrent can not be fund!!!'}, next, res);
-            }
-            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            var filePath = util.getFileLocation('drive', id);
             var bufferPath = filePath + '/' + fileIndex;
             var comPath = bufferPath + '_complete';
             var errPath = bufferPath + '_error';
@@ -2905,7 +3015,69 @@ app.get('/torrent/:index(\\d+)/:uid/:fresh(\\d+)?', function (req, res, next) {
                     }
                 }
             }
-        });
+        } else {
+            id = util.isValidString(req.params.uid, 'uid');
+            if (id === false) {
+                util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+            }
+            mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (items.length === 0) {
+                    util.handleError({hoerror: 2, message: 'torrent can not be fund!!!'}, next, res);
+                }
+                var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+                var bufferPath = filePath + '/' + fileIndex;
+                var comPath = bufferPath + '_complete';
+                var errPath = bufferPath + '_error';
+                if (fs.existsSync(comPath)) {
+                    var total = fs.statSync(comPath).size;
+                    console.log('complete');
+                    if (req.headers['range']) {
+                        var range = req.headers.range;
+                        var parts = range.replace(/bytes(=|: )/, "").split("-");
+                        var partialstart = parts[0];
+                        var partialend = parts[1];
+
+                        var start = parseInt(partialstart, 10);
+                        var end = partialend ? parseInt(partialend, 10) : total-1;
+                        var chunksize = (end-start)+1;
+                        //console.log(start);
+                        //console.log(end);
+                        //console.log(total);
+                        res.writeHead(206, { 'Content-Range': 'bytes ' + start + '-' + end + '/' + total, 'Accept-Ranges': 'bytes', 'Content-Length': chunksize, 'Content-Type': 'video/mp4' });
+                        fs.createReadStream(comPath, {start: start, end: end}).pipe(res);
+                    } else {
+                        res.writeHead(200, { 'Content-Length': total, 'Content-Type': 'video/mp4' });
+                        fs.createReadStream(comPath).pipe(res);
+                    }
+                } else {
+                    if (fs.existsSync(errPath)) {
+                        util.handleError({hoerror: 2, message: 'video error!!!'}, next, res);
+                    }
+                    if (fs.existsSync(bufferPath)) {
+                        console.log('play');
+                        var total = fs.statSync(bufferPath).size;
+                        if (req.headers['range']) {
+                            var range = req.headers.range;
+                            var parts = range.replace(/bytes(=|: )/, "").split("-");
+                            var partialstart = parts[0];
+                            var partialend = parts[1];
+
+                            var start = parseInt(partialstart, 10);
+                            var end = partialend ? parseInt(partialend, 10) : total-1;
+                            var chunksize = (end-start)+1;
+                            res.writeHead(206, { 'Content-Range': 'bytes ' + start + '-' + end + '/' + total, 'Accept-Ranges': 'bytes', 'Content-Length': chunksize, 'Content-Type': 'video/mp4' });
+                            fs.createReadStream(bufferPath, {start: start, end: end}).pipe(res);
+                        } else {
+                            res.writeHead(200, { 'Content-Length': total, 'Content-Type': 'video/mp4' });
+                            fs.createReadStream(bufferPath).pipe(res);
+                        }
+                    }
+                }
+            });
+        }
     });
 });
 
@@ -2978,7 +3150,7 @@ app.get('/subtitle/:uid/:index(\\d+)?', function(req, res, next){
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.uid.match(/^(you|dym)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil)_/);
         if (id) {
             var id_valid = util.isValidString(req.params.uid, 'name');
             if (id_valid === false) {
@@ -2987,6 +3159,10 @@ app.get('/subtitle/:uid/:index(\\d+)?', function(req, res, next){
             var filePath = null;
             if (id[1] === 'dym') {
                 filePath = util.getFileLocation('dailymotion', id_valid);
+            } else if (id[1] === 'dri') {
+                filePath = util.getFileLocation('drive', id_valid);
+            } else if (id[1] === 'bil') {
+                filePath = util.getFileLocation('bilibili', id_valid);
             } else {
                 filePath = util.getFileLocation('youtube', id_valid);
             }
