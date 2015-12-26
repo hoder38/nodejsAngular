@@ -426,7 +426,7 @@ module.exports = {
                     //console.log(list.length);
                     if (list.length < 1) {
                         page++;
-                        if (page < 201) {
+                        if (page < 301) {
                             recur_kubolist(kuboIndex, page);
                         } else {
                             page = 1;
@@ -492,6 +492,7 @@ module.exports = {
                                     var tags = [];
                                     tags = ['酷播123', '123kubo', '酷播', '影片', 'video'];
                                     if (kuboIndex === 0) {
+                                        tags.push('animation');
                                         tags.push('動畫');
                                     } else if (kuboIndex === 1) {
                                         tags.push('movie');
@@ -558,7 +559,7 @@ module.exports = {
                                             recur_save(type, index, list_arr);
                                         } else {
                                             page++;
-                                            if (page < 201) {
+                                            if (page < 301) {
                                                 recur_kubolist(kuboIndex, page);
                                             } else {
                                                 page = 1;
@@ -580,7 +581,7 @@ module.exports = {
                                     recur_save(type, index, list_arr);
                                 } else {
                                     page++;
-                                    if (page < 201) {
+                                    if (page < 301) {
                                         recur_kubolist(kuboIndex, page);
                                     } else {
                                         page = 1;
@@ -598,6 +599,37 @@ module.exports = {
                         });
                     }
                 }, 60000, false, false, 'http://www.123kubo.com/');
+            }
+            break;
+            case 'yify':
+            if (is_clear) {
+                mongo.orig("remove", "storage", {owner: type, $isolated: 1}, function(err, item2){
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log('perm external file');
+                    console.log(item2);
+                    yifylist();
+                });
+            } else {
+                yifylist();
+            }
+            function yifylist() {
+                api.xuiteDownload('http://www.dm5.com/m122029/history.ashx?cid=122029&mid=4389&page=23&uid=0&language=1', '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log(raw_data);
+                    //api.xuiteDownload('https://yts.ag/movie/the-animatrix-2003', '', function(err, raw_data) {
+                    api.xuiteDownload('http://www.dm5.com/m122029/chapterfun.ashx?cid=122029&page=23&key=&language=1&gtk=6', '', function(err, raw_data) {
+                        if (err) {
+                            err.hoerror = 2;
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(raw_data);
+                    }, 60000, false, false, 'http://www.dm5.com/');
+                }, 60000, false, false, 'http://www.dm5.com/');
             }
             break;
             default:
