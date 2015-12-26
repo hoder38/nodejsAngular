@@ -12,6 +12,8 @@ var genre_list = mime.getOptionTag('eng');
 
 var genre_list_ch = mime.getOptionTag('cht');
 
+var path = require('path');
+
 module.exports = {
     getList: function(type, callback, is_clear) {
         switch (type) {
@@ -74,13 +76,13 @@ module.exports = {
                                 if (list_match) {
                                     if (!list_match[1].match(/^(http|https):\/\//)) {
                                         if (dramaIndex === 0) {
-                                            list_match[1] = 'http://tw.lovetvshow.info' + list_match[1];
+                                            list_match[1] = path.join('http://tw.lovetvshow.info', ist_match[1]);
                                         } else if (dramaIndex === 1) {
-                                            list_match[1] = 'http://cn.lovetvshow.info' + list_match[1];
+                                            list_match[1] = path.join('http://cn.lovetvshow.info', list_match[1]);
                                         } else if (dramaIndex === 2) {
-                                            list_match[1] = 'http://kr5.vslovetv.com' + list_match[1];
+                                            list_match[1] = path.join('http://kr5.vslovetv.com', list_match[1]);
                                         } else if (dramaIndex === 3) {
-                                            list_match[1] = 'http://jp.jplovetv.com' + list_match[1];
+                                            list_match[1] = path.join('http://jp.jplovetv.com', list_match[1]);
                                         }
                                     }
                                     if (list_match[3]) {
@@ -233,7 +235,7 @@ module.exports = {
                         list_match = raw_list[i].match(/^<td class="forum_thread_post"><a href="([^"]+)" class="thread_link">([^<]+)$/);
                         if (list_match) {
                             if (!list_match[1].match(/^(https|http):\/\//)) {
-                                list_match[1] = 'https://eztv.ag' + list_match[1];
+                                list_match[1] = path.join('https://eztv.ag', list_match[1]);
                             }
                             list.push({name: list_match[2], url: list_match[1]});
                         }
@@ -417,7 +419,7 @@ module.exports = {
                         list_match = raw_list[i].match(/href="([^"]+)".*data\-original="([^"]+)".*alt="([^"]+)"/);
                         if (list_match) {
                             if (!list_match[1].match(/^(https|http):\/\//)) {
-                                list_match[1] = 'http://www.123kubo.com' + list_match[1];
+                                list_match[1] = path.join('http://www.123kubo.com', list_match[1]);
                             }
                             list.push({name: list_match[3], url: list_match[1], thumb: list_match[2]});
                         }
@@ -601,7 +603,7 @@ module.exports = {
                 }, 60000, false, false, 'http://www.123kubo.com/');
             }
             break;
-            case 'yify':
+            /*case 'yify':
             if (is_clear) {
                 mongo.orig("remove", "storage", {owner: type, $isolated: 1}, function(err, item2){
                     if(err) {
@@ -631,7 +633,7 @@ module.exports = {
                     }, 60000, false, false, 'http://www.dm5.com/');
                 }, 60000, false, false, 'http://www.dm5.com/');
             }
-            break;
+            break;*/
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
             break;
@@ -676,7 +678,7 @@ module.exports = {
                     }
                 }
                 if (!choose_url.match(/^(http|https):\/\//)) {
-                    choose_url = prefix + choose_url;
+                    choose_url = path.join(prefix, choose_url);
                 }
                 api.xuiteDownload(choose_url, '', function(err, raw_single) {
                     if (err) {
@@ -1038,7 +1040,7 @@ module.exports = {
                         util.handleError({hoerror: 2, message: 'no source'}, callback, callback);
                     }
                     if (!flv_url[1].match(/^(https|http):\/\//)) {
-                        flv_url[1] = 'http://www.123kubo.com' + flv_url[1];
+                        flv_url[1] = path.join('http://www.123kubo.com', flv_url[1]);
                     }
                     console.log(flv_url[1]);
                     api.xuiteDownload(flv_url[1], '', function(err, flv_data) {
