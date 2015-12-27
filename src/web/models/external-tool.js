@@ -482,101 +482,8 @@ module.exports = {
                                 }
                                 api.xuiteDownload(external_item.url, '', function(err, raw_data1) {
                                     if (err) {
-                                        util.handleError(err, callback, callback);
-                                    }
-                                    var info = raw_data1.match(/.*<p>分類：<a.*/);
-                                    var info_tag = [];
-                                    if (info) {
-                                        var info_list = info[0].match(/>[^<：\s]+</g);
-                                        if (info_list) {
-                                            var info_match = false;
-                                            var nick_list = false;
-                                            var nick_match = false;
-                                            info_list.splice(info_list.length-1, 1);
-                                            for (var i in info_list) {
-                                                info_match = info_list[i].match(/^>([^<]+)<$/);
-                                                if (info_match) {
-                                                    nick_list = info_match[1].match(/(^別名:|\/)[^\/]+/g);
-                                                    if (nick_list) {
-                                                        for (var j in nick_list) {
-                                                            nick_match = nick_list[j].match(/(^別名:|\/)([^\/]+)/);
-                                                            if (nick_match) {
-                                                                info_tag.push(nick_match[2]);
-                                                            }
-                                                        }
-                                                    } else {
-                                                        info_tag.push(info_match[1]);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    var oOID = mongo.objectID();
-                                    var tags = [];
-                                    tags = ['酷播123', '123kubo', '酷播', '影片', 'video'];
-                                    if (kuboIndex === 0) {
-                                        tags.push('animation');
-                                        tags.push('動畫');
-                                    } else if (kuboIndex === 1) {
-                                        tags.push('movie');
-                                        tags.push('電影');
-                                    } else {
-                                        tags.push('tv show');
-                                        tags.push('電視劇');
-                                    }
-                                    var utime = Math.round(new Date().getTime() / 1000);
-                                    var normal = tagTool.normalizeTag(type);
-                                    if (!tagTool.isDefaultTag(normal)) {
-                                        if (tags.indexOf(normal) === -1) {
-                                            tags.push(normal);
-                                        }
-                                    }
-                                    normal = tagTool.normalizeTag(name);
-                                    if (!tagTool.isDefaultTag(normal)) {
-                                        if (tags.indexOf(normal) === -1) {
-                                            tags.push(normal);
-                                        }
-                                    }
-                                    for (var i in info_tag) {
-                                        normal = tagTool.normalizeTag(info_tag[i]);
-                                        if (!tagTool.isDefaultTag(normal)) {
-                                            if (tags.indexOf(normal) === -1) {
-                                                tags.push(normal);
-                                            }
-                                        }
-                                        var gindex = genre_list_ch.indexOf(normal);
-                                        if (gindex !== -1) {
-                                            normal = tagTool.normalizeTag(genre_list[gindex]);
-                                            if (!tagTool.isDefaultTag(normal)) {
-                                                if (tags.indexOf(normal) === -1) {
-                                                    tags.push(normal);
-                                                }
-                                            }
-                                        }
-                                    }
-                                    var data = {};
-                                    data['_id'] = oOID;
-                                    data['name'] = name;
-                                    data['owner'] = type;
-                                    data['utime'] = utime;
-                                    data['url'] = url;
-                                    data['size'] = 0;
-                                    data['count'] = 0;
-                                    data['first'] = 1;
-                                    data['recycle'] = 0;
-                                    data['adultonly'] = 0;
-                                    data['untag'] = 0;
-                                    data['status'] = 3;//media type
-                                    data['tags'] = tags;
-                                    data['thumb'] = external_item.thumb;
-                                    data[type] = tags;
-                                    mongo.orig("insert", "storage", data, function(err, item){
-                                        if(err) {
-                                            util.handleError(err, callback, callback);
-                                        }
-                                        //console.log(item);
-                                        console.log('kubo save');
-                                        //console.log(name);
+                                        util.handleError(err);
+                                        console.log('kubo fail');
                                         index++;
                                         if (index < list_arr.length) {
                                             recur_save(type, index, list_arr);
@@ -596,7 +503,121 @@ module.exports = {
                                                 }
                                             }
                                         }
-                                    });
+                                    } else {
+                                        var info = raw_data1.match(/.*<p>分類：<a.*/);
+                                        var info_tag = [];
+                                        if (info) {
+                                            var info_list = info[0].match(/>[^<：\s]+</g);
+                                            if (info_list) {
+                                                var info_match = false;
+                                                var nick_list = false;
+                                                var nick_match = false;
+                                                info_list.splice(info_list.length-1, 1);
+                                                for (var i in info_list) {
+                                                    info_match = info_list[i].match(/^>([^<]+)<$/);
+                                                    if (info_match) {
+                                                        nick_list = info_match[1].match(/(^別名:|\/)[^\/]+/g);
+                                                        if (nick_list) {
+                                                            for (var j in nick_list) {
+                                                                nick_match = nick_list[j].match(/(^別名:|\/)([^\/]+)/);
+                                                                if (nick_match) {
+                                                                    info_tag.push(nick_match[2]);
+                                                                }
+                                                            }
+                                                        } else {
+                                                            info_tag.push(info_match[1]);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        var oOID = mongo.objectID();
+                                        var tags = [];
+                                        tags = ['酷播123', '123kubo', '酷播', '影片', 'video'];
+                                        if (kuboIndex === 0) {
+                                            tags.push('animation');
+                                            tags.push('動畫');
+                                        } else if (kuboIndex === 1) {
+                                            tags.push('movie');
+                                            tags.push('電影');
+                                        } else {
+                                            tags.push('tv show');
+                                            tags.push('電視劇');
+                                        }
+                                        var utime = Math.round(new Date().getTime() / 1000);
+                                        var normal = tagTool.normalizeTag(type);
+                                        if (!tagTool.isDefaultTag(normal)) {
+                                            if (tags.indexOf(normal) === -1) {
+                                                tags.push(normal);
+                                            }
+                                        }
+                                        normal = tagTool.normalizeTag(name);
+                                        if (!tagTool.isDefaultTag(normal)) {
+                                            if (tags.indexOf(normal) === -1) {
+                                                tags.push(normal);
+                                            }
+                                        }
+                                        for (var i in info_tag) {
+                                            normal = tagTool.normalizeTag(info_tag[i]);
+                                            if (!tagTool.isDefaultTag(normal)) {
+                                                if (tags.indexOf(normal) === -1) {
+                                                    tags.push(normal);
+                                                }
+                                            }
+                                            var gindex = genre_list_ch.indexOf(normal);
+                                            if (gindex !== -1) {
+                                                normal = tagTool.normalizeTag(genre_list[gindex]);
+                                                if (!tagTool.isDefaultTag(normal)) {
+                                                    if (tags.indexOf(normal) === -1) {
+                                                        tags.push(normal);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        var data = {};
+                                        data['_id'] = oOID;
+                                        data['name'] = name;
+                                        data['owner'] = type;
+                                        data['utime'] = utime;
+                                        data['url'] = url;
+                                        data['size'] = 0;
+                                        data['count'] = 0;
+                                        data['first'] = 1;
+                                        data['recycle'] = 0;
+                                        data['adultonly'] = 0;
+                                        data['untag'] = 0;
+                                        data['status'] = 3;//media type
+                                        data['tags'] = tags;
+                                        data['thumb'] = external_item.thumb;
+                                        data[type] = tags;
+                                        mongo.orig("insert", "storage", data, function(err, item){
+                                            if(err) {
+                                                util.handleError(err, callback, callback);
+                                            }
+                                            //console.log(item);
+                                            console.log('kubo save');
+                                            //console.log(name);
+                                            index++;
+                                            if (index < list_arr.length) {
+                                                recur_save(type, index, list_arr);
+                                            } else {
+                                                page++;
+                                                if (page < 501) {
+                                                    recur_kubolist(kuboIndex, page);
+                                                } else {
+                                                    page = 1;
+                                                    kuboIndex++;
+                                                    if (kuboIndex < kubo_url.length) {
+                                                        recur_kubolist(kuboIndex, page);
+                                                    } else {
+                                                        setTimeout(function(){
+                                                            callback(null);
+                                                        }, 0);
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    }
                                 }, 60000, false, false, 'http://www.123kubo.com/');
                             } else {
                                 index++;
