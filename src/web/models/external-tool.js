@@ -448,7 +448,7 @@ module.exports = {
                         //console.log(list.length);
                         if (list.length < 1) {
                             page++;
-                            if (page < 501) {
+                            if ((page < 601 && kuboIndex !== 0) || (page < 51 && kuboIndex === 0)) {
                                 recur_kubolist(kuboIndex, page);
                             } else {
                                 page = 1;
@@ -489,7 +489,7 @@ module.exports = {
                                             recur_save(type, index, list_arr);
                                         } else {
                                             page++;
-                                            if (page < 501) {
+                                            if ((page < 601 && kuboIndex !== 0) || (page < 51 && kuboIndex === 0)) {
                                                 recur_kubolist(kuboIndex, page);
                                             } else {
                                                 page = 1;
@@ -602,7 +602,7 @@ module.exports = {
                                                 recur_save(type, index, list_arr);
                                             } else {
                                                 page++;
-                                                if (page < 501) {
+                                                if ((page < 601 && kuboIndex !== 0) || (page < 51 && kuboIndex === 0)) {
                                                     recur_kubolist(kuboIndex, page);
                                                 } else {
                                                     page = 1;
@@ -625,7 +625,7 @@ module.exports = {
                                     recur_save(type, index, list_arr);
                                 } else {
                                     page++;
-                                    if (page < 501) {
+                                    if ((page < 601 && kuboIndex !== 0) || (page < 51 && kuboIndex === 0)) {
                                         recur_kubolist(kuboIndex, page);
                                     } else {
                                         page = 1;
