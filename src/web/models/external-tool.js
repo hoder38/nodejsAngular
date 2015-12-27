@@ -416,44 +416,54 @@ module.exports = {
                 api.xuiteDownload(kubo_url[kuboIndex] + page + '.html', '', function(err, raw_data) {
                     if (err) {
                         err.hoerror = 2;
-                        util.handleError(err, callback, callback);
-                    }
-                    //console.log(raw_data);
-                    var raw_list = raw_data.match(/(.*)data\-original(.*)/g);
-                    var list = [];
-                    var list_match = false;
-                    for (var i in raw_list) {
-                        list_match = raw_list[i].match(/href="([^"]+)".*data\-original="([^"]+)".*alt="([^"]+)"/);
-                        if (list_match) {
-                            if (!list_match[1].match(/^(https|http):\/\//)) {
-                                if (list_match[1].match(/^\//)) {
-                                    list_match[1] = 'http://www.123kubo.com' + list_match[1];
-                                } else {
-                                    list_match[1] = 'http://www.123kubo.com/' + list_match[1];
-                                }
-                            }
-                            list.push({name: list_match[3], url: list_match[1], thumb: list_match[2]});
-                        }
-                    }
-                    //console.log(list);
-                    //console.log(list.length);
-                    if (list.length < 1) {
-                        page++;
-                        if (page < 301) {
+                        util.handleError(err);
+                        page = 1;
+                        kuboIndex++;
+                        if (kuboIndex < kubo_url.length) {
                             recur_kubolist(kuboIndex, page);
                         } else {
-                            page = 1;
-                            kuboIndex++;
-                            if (kuboIndex < kubo_url.length) {
-                                recur_kubolist(kuboIndex, page);
-                            } else {
-                                setTimeout(function(){
-                                    callback(null);
-                                }, 0);
-                            }
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
                         }
                     } else {
-                        recur_save(type, 0, list);
+                        //console.log(raw_data);
+                        var raw_list = raw_data.match(/(.*)data\-original(.*)/g);
+                        var list = [];
+                        var list_match = false;
+                        for (var i in raw_list) {
+                            list_match = raw_list[i].match(/href="([^"]+)".*data\-original="([^"]+)".*alt="([^"]+)"/);
+                            if (list_match) {
+                                if (!list_match[1].match(/^(https|http):\/\//)) {
+                                    if (list_match[1].match(/^\//)) {
+                                        list_match[1] = 'http://www.123kubo.com' + list_match[1];
+                                    } else {
+                                        list_match[1] = 'http://www.123kubo.com/' + list_match[1];
+                                    }
+                                }
+                                list.push({name: list_match[3], url: list_match[1], thumb: list_match[2]});
+                            }
+                        }
+                        //console.log(list);
+                        //console.log(list.length);
+                        if (list.length < 1) {
+                            page++;
+                            if (page < 501) {
+                                recur_kubolist(kuboIndex, page);
+                            } else {
+                                page = 1;
+                                kuboIndex++;
+                                if (kuboIndex < kubo_url.length) {
+                                    recur_kubolist(kuboIndex, page);
+                                } else {
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                }
+                            }
+                        } else {
+                            recur_save(type, 0, list);
+                        }
                     }
                     function recur_save(type, index, list_arr) {
                         var external_item = list_arr[index];
@@ -572,7 +582,7 @@ module.exports = {
                                             recur_save(type, index, list_arr);
                                         } else {
                                             page++;
-                                            if (page < 301) {
+                                            if (page < 501) {
                                                 recur_kubolist(kuboIndex, page);
                                             } else {
                                                 page = 1;
@@ -594,7 +604,7 @@ module.exports = {
                                     recur_save(type, index, list_arr);
                                 } else {
                                     page++;
-                                    if (page < 301) {
+                                    if (page < 501) {
                                         recur_kubolist(kuboIndex, page);
                                     } else {
                                         page = 1;
@@ -614,7 +624,7 @@ module.exports = {
                 }, 60000, false, false, 'http://www.123kubo.com/');
             }
             break;
-            case 'yify':
+            /*case 'yify':
             if (is_clear) {
                 mongo.orig("remove", "storage", {owner: type, $isolated: 1}, function(err, item2){
                     if(err) {
@@ -644,7 +654,7 @@ module.exports = {
                     }, 60000, false, false, 'http://www.dm5.com/');
                 }, 60000, false, false, 'http://www.dm5.com/');
             }
-            break;
+            break;*/
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
             break;
