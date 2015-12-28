@@ -399,7 +399,7 @@ module.exports = {
             }
             break;
             case 'kubo':
-            var kubo_url = ['http://www.123kubo.com/vod-search-id-3-cid--tag--area-%E6%97%A5%E6%9C%AC-tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-3-cid--tag--area-%E6%AD%90%E7%BE%8E-tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-8-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-9-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-10-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-11-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-12-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-14-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-13-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-72-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-4-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-42-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-45-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-44-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-46-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-43-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-47-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-48-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid-16-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid-65-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid-15-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid-17-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid-18-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid-66-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-'];
+            var kubo_item = [{url: 'http://www.123kubo.com/vod-search-id-3-cid--tag--area-%E6%97%A5%E6%9C%AC-tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 50}, {url: 'http://www.123kubo.com/vod-search-id-3-cid--tag--area-%E6%AD%90%E7%BE%8E-tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-1-cid-8-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-1-cid-9-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-1-cid-10-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-1-cid-11-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-1-cid-12-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-1-cid-14-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-1-cid-13-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-1-cid-72-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-41-cid-4-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 5}, {url: 'http://www.123kubo.com/vod-search-id-41-cid-42-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 5}, {url: 'http://www.123kubo.com/vod-search-id-41-cid-45-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 5}, {url: 'http://www.123kubo.com/vod-search-id-41-cid-44-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 5}, {url: 'http://www.123kubo.com/vod-search-id-41-cid-46-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 5}, {url: 'http://www.123kubo.com/vod-search-id-41-cid-43-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 5}, {url: 'http://www.123kubo.com/vod-search-id-2-cid-16-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-2-cid-65-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-2-cid-15-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-2-cid-17-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 20}, {url: 'http://www.123kubo.com/vod-search-id-2-cid-18-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}, {url: 'http://www.123kubo.com/vod-search-id-2-cid-66-area--tag--year--wd--actor--order-vod_hits_month%20desc-p-', page: 10}];
             if (is_clear) {
                 mongo.orig("remove", "storage", {owner: type, $isolated: 1}, function(err, item2){
                     if(err) {
@@ -413,13 +413,13 @@ module.exports = {
                 recur_kubolist(0, 1);
             }
             function recur_kubolist(kuboIndex, page) {
-                api.xuiteDownload(kubo_url[kuboIndex] + page + '.html', '', function(err, raw_data) {
+                api.xuiteDownload(kubo_item.url[kuboIndex] + page + '.html', '', function(err, raw_data) {
                     if (err) {
                         err.hoerror = 2;
                         util.handleError(err);
                         page = 1;
                         kuboIndex++;
-                        if (kuboIndex < kubo_url.length) {
+                        if (kuboIndex < kubo_item.length) {
                             recur_kubolist(kuboIndex, page);
                         } else {
                             setTimeout(function(){
@@ -448,12 +448,12 @@ module.exports = {
                         //console.log(list.length);
                         if (list.length < 1) {
                             page++;
-                            if (page < 51) {
+                            if (page < kubo_item[kuboIndex].page+1) {
                                 recur_kubolist(kuboIndex, page);
                             } else {
                                 page = 1;
                                 kuboIndex++;
-                                if (kuboIndex < kubo_url.length) {
+                                if (kuboIndex < kubo_item.length) {
                                     recur_kubolist(kuboIndex, page);
                                 } else {
                                     setTimeout(function(){
@@ -489,12 +489,12 @@ module.exports = {
                                             recur_save(type, index, list_arr);
                                         } else {
                                             page++;
-                                            if (page < 51) {
+                                            if (page < kubo_item[kuboIndex].page+1) {
                                                 recur_kubolist(kuboIndex, page);
                                             } else {
                                                 page = 1;
                                                 kuboIndex++;
-                                                if (kuboIndex < kubo_url.length) {
+                                                if (kuboIndex < kubo_item.length) {
                                                     recur_kubolist(kuboIndex, page);
                                                 } else {
                                                     setTimeout(function(){
@@ -512,12 +512,12 @@ module.exports = {
                                                 recur_save(type, index, list_arr);
                                             } else {
                                                 page++;
-                                                if (page < 51) {
+                                                if (page < kubo_item[kuboIndex].page+1) {
                                                     recur_kubolist(kuboIndex, page);
                                                 } else {
                                                     page = 1;
                                                     kuboIndex++;
-                                                    if (kuboIndex < kubo_url.length) {
+                                                    if (kuboIndex < kubo_item.length) {
                                                         recur_kubolist(kuboIndex, page);
                                                     } else {
                                                         setTimeout(function(){
@@ -659,12 +659,12 @@ module.exports = {
                                                     recur_save(type, index, list_arr);
                                                 } else {
                                                     page++;
-                                                    if (page < 51) {
+                                                    if (page < kubo_item[kuboIndex].page+1) {
                                                         recur_kubolist(kuboIndex, page);
                                                     } else {
                                                         page = 1;
                                                         kuboIndex++;
-                                                        if (kuboIndex < kubo_url.length) {
+                                                        if (kuboIndex < kubo_item.length) {
                                                             recur_kubolist(kuboIndex, page);
                                                         } else {
                                                             setTimeout(function(){
@@ -683,12 +683,12 @@ module.exports = {
                                     recur_save(type, index, list_arr);
                                 } else {
                                     page++;
-                                    if (page < 51) {
+                                    if (page < kubo_item[kuboIndex].page+1) {
                                         recur_kubolist(kuboIndex, page);
                                     } else {
                                         page = 1;
                                         kuboIndex++;
-                                        if (kuboIndex < kubo_url.length) {
+                                        if (kuboIndex < kubo_item.length) {
                                             recur_kubolist(kuboIndex, page);
                                         } else {
                                             setTimeout(function(){
