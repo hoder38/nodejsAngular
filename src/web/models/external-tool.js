@@ -399,7 +399,7 @@ module.exports = {
             }
             break;
             case 'kubo':
-            var kubo_url = ['http://www.123kubo.com/vod-search-id-3-cid--area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid--area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid--area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid--area--tag--year--wd--actor--order-vod_addtime%20desc-p-'];
+            var kubo_url = ['http://www.123kubo.com/vod-search-id-3-cid--tag--area-%E6%97%A5%E6%9C%AC-tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-3-cid--tag--area-%E6%AD%90%E7%BE%8E-tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-8-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-9-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-10-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-11-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-12-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-14-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-13-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-1-cid-72-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-4-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-42-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-45-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-44-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-46-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-43-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-47-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-41-cid-48-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid-16-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid-65-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid-15-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid-17-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid-18-area--tag--year--wd--actor--order-vod_addtime%20desc-p-', 'http://www.123kubo.com/vod-search-id-2-cid-66-area--tag--year--wd--actor--order-vod_addtime%20desc-p-'];
             if (is_clear) {
                 mongo.orig("remove", "storage", {owner: type, $isolated: 1}, function(err, item2){
                     if(err) {
@@ -448,7 +448,7 @@ module.exports = {
                         //console.log(list.length);
                         if (list.length < 1) {
                             page++;
-                            if ((page < 601 && kuboIndex !== 0) || (page < 51 && kuboIndex === 0)) {
+                            if (page < 51) {
                                 recur_kubolist(kuboIndex, page);
                             } else {
                                 page = 1;
@@ -489,7 +489,7 @@ module.exports = {
                                             recur_save(type, index, list_arr);
                                         } else {
                                             page++;
-                                            if ((page < 601 && kuboIndex !== 0) || (page < 51 && kuboIndex === 0)) {
+                                            if (page < 51) {
                                                 recur_kubolist(kuboIndex, page);
                                             } else {
                                                 page = 1;
@@ -530,16 +530,50 @@ module.exports = {
                                                     }
                                                 }
                                             }
-                                        }
+                                        }2886
                                         var oOID = mongo.objectID();
                                         var tags = [];
                                         tags = ['酷播123', '123kubo', '酷播', '影片', 'video'];
-                                        if (kuboIndex === 0) {
+                                        if (kuboIndex === 0 || kuboIndex === 1) {
                                             tags.push('animation');
                                             tags.push('動畫');
-                                        } else if (kuboIndex === 1) {
+                                        } else if (kuboIndex > 1 && kuboIndex < 10) {
                                             tags.push('movie');
                                             tags.push('電影');
+                                            switch (kuboIndex) {
+                                                case 2:
+                                                tags.push('action');
+                                                tags.push('動作');
+                                                break;
+                                                case 3:
+                                                tags.push('comedy');
+                                                tags.push('喜劇');
+                                                break;
+                                                case 4:
+                                                tags.push('romance');
+                                                tags.push('浪漫');
+                                                break;
+                                                case 5:
+                                                tags.push('sci-fi');
+                                                tags.push('科幻');
+                                                break;
+                                                case 6:
+                                                tags.push('horror');
+                                                tags.push('恐怖');
+                                                break;
+                                                case 7:
+                                                tags.push('drama');
+                                                tags.push('劇情');
+                                                break;
+                                                case 8:
+                                                tags.push('war');
+                                                tags.push('戰爭');
+                                                break;
+                                                case 9:
+                                                tags.push('animation');
+                                                tags.push('動畫');
+                                                break;
+                                            }
                                         } else {
                                             tags.push('tv show');
                                             tags.push('電視劇');
@@ -602,7 +636,7 @@ module.exports = {
                                                 recur_save(type, index, list_arr);
                                             } else {
                                                 page++;
-                                                if ((page < 601 && kuboIndex !== 0) || (page < 51 && kuboIndex === 0)) {
+                                                if (page < 51) {
                                                     recur_kubolist(kuboIndex, page);
                                                 } else {
                                                     page = 1;
@@ -625,7 +659,7 @@ module.exports = {
                                     recur_save(type, index, list_arr);
                                 } else {
                                     page++;
-                                    if ((page < 601 && kuboIndex !== 0) || (page < 51 && kuboIndex === 0)) {
+                                    if (page < 51) {
                                         recur_kubolist(kuboIndex, page);
                                     } else {
                                         page = 1;
