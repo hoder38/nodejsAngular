@@ -2039,13 +2039,13 @@ module.exports = {
                     }
                     var per = Math.ceil(price/yearEPS*1000)/1000;
                     setTimeout(function(){
-                        callback(null, items[0].index + ': ' + per);
+                        callback(null, per, items[0].index);
                     }, 0);
                 });
             } else {
                 var mus = -Math.floor(-yearEPS*1000)/1000;
                 setTimeout(function(){
-                    callback(null, items[0].index + ': ' + mus);
+                    callback(null, mus, items[0].index);
                 }, 0);
             }
         });
@@ -2134,7 +2134,7 @@ module.exports = {
                             yield = Math.ceil(price/dividends*1000)/1000;
                         }
                         setTimeout(function(){
-                            callback(null, items[0].index + ': ' + yield);
+                            callback(null, yield, items[0].index);
                         }, 0);
                     });
                 }, 10000, false, false);
@@ -2306,14 +2306,14 @@ module.exports = {
                                         }
                                         var per = Math.ceil(price/predict_eps*1000)/1000;
                                         setTimeout(function(){
-                                            callback(null, items[0].index + ': ' + ret_str + ' ' + per);
+                                            callback(null, ret_str + ' ' + per, items[0].index);
                                         }, 0);
                                     });
                                 }
                             }
                             if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) <= 0 || predict_eps <= 0) {
                                 setTimeout(function(){
-                                    callback(null, items[0].index + ': ' + ret_str);
+                                    callback(null, ret_str, items[0].index);
                                 }, 0);
                             }
                             console.log('done');

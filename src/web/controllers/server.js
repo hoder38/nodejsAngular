@@ -2170,11 +2170,11 @@ app.get('/api/stock/getPER/:uid', function(req, res,next) {
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        stockTool.getStockPER(id, function(err, result) {
+        stockTool.getStockPER(id, function(err, result, index) {
             if (err) {
                 util.handleError(err, next, res);
             }
-            res.json({per:result});
+            res.json({per:index + ': ' + result});
         });
     });
 });
@@ -2189,11 +2189,11 @@ app.get('/api/stock/getPredictPER/:uid', function(req, res,next) {
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        stockTool.getPredictPER(id, function(err, result) {
+        stockTool.getPredictPER(id, function(err, result, index) {
             if (err) {
                 util.handleError(err, next, res);
             }
-            res.json({per:result});
+            res.json({per: index + ': ' + result});
         });
     });
 });
@@ -2208,11 +2208,11 @@ app.get('/api/stock/getYield/:uid', function(req, res, next) {
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        stockTool.getStockYield(id, function(err, result) {
+        stockTool.getStockYield(id, function(err, result, index) {
             if (err) {
                 util.handleError(err, next, res);
             }
-            res.json({yield:result});
+            res.json({yield:index + ': ' + result});
         });
     });
 });
