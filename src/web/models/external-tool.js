@@ -630,7 +630,7 @@ module.exports = {
                                             }
                                             //console.log(item);
                                             console.log('kubo save');
-                                            //console.log(name);
+                                            console.log(name);
                                             index++;
                                             if (index < list_arr.length) {
                                                 recur_save(type, index, list_arr);
