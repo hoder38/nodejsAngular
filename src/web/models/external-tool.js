@@ -413,7 +413,7 @@ module.exports = {
                 recur_kubolist(0, 1);
             }
             function recur_kubolist(kuboIndex, page) {
-                api.xuiteDownload(kubo_item.url[kuboIndex] + page + '.html', '', function(err, raw_data) {
+                api.xuiteDownload(kubo_item[kuboIndex].url + page + '.html', '', function(err, raw_data) {
                     if (err) {
                         err.hoerror = 2;
                         util.handleError(err);
