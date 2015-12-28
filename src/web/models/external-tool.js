@@ -504,132 +504,8 @@ module.exports = {
                                             }
                                         }
                                     } else {
-                                        var info = raw_data1.match(/.*<p>分類：<a.*/);
-                                        var info_tag = [];
-                                        if (info) {
-                                            var info_list = info[0].match(/>[^<：\s]+</g);
-                                            if (info_list) {
-                                                var info_match = false;
-                                                var nick_list = false;
-                                                var nick_match = false;
-                                                info_list.splice(info_list.length-1, 1);
-                                                for (var i in info_list) {
-                                                    info_match = info_list[i].match(/^>([^<]+)<$/);
-                                                    if (info_match) {
-                                                        nick_list = info_match[1].match(/(^別名:|\/)[^\/]+/g);
-                                                        if (nick_list) {
-                                                            for (var j in nick_list) {
-                                                                nick_match = nick_list[j].match(/(^別名:|\/)([^\/]+)/);
-                                                                if (nick_match) {
-                                                                    info_tag.push(nick_match[2]);
-                                                                }
-                                                            }
-                                                        } else {
-                                                            info_tag.push(info_match[1]);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }2886
-                                        var oOID = mongo.objectID();
-                                        var tags = [];
-                                        tags = ['酷播123', '123kubo', '酷播', '影片', 'video'];
-                                        if (kuboIndex === 0 || kuboIndex === 1) {
-                                            tags.push('animation');
-                                            tags.push('動畫');
-                                        } else if (kuboIndex > 1 && kuboIndex < 10) {
-                                            tags.push('movie');
-                                            tags.push('電影');
-                                            switch (kuboIndex) {
-                                                case 2:
-                                                tags.push('action');
-                                                tags.push('動作');
-                                                break;
-                                                case 3:
-                                                tags.push('comedy');
-                                                tags.push('喜劇');
-                                                break;
-                                                case 4:
-                                                tags.push('romance');
-                                                tags.push('浪漫');
-                                                break;
-                                                case 5:
-                                                tags.push('sci-fi');
-                                                tags.push('科幻');
-                                                break;
-                                                case 6:
-                                                tags.push('horror');
-                                                tags.push('恐怖');
-                                                break;
-                                                case 7:
-                                                tags.push('drama');
-                                                tags.push('劇情');
-                                                break;
-                                                case 8:
-                                                tags.push('war');
-                                                tags.push('戰爭');
-                                                break;
-                                                case 9:
-                                                tags.push('animation');
-                                                tags.push('動畫');
-                                                break;
-                                            }
-                                        } else {
-                                            tags.push('tv show');
-                                            tags.push('電視劇');
-                                        }
-                                        var utime = Math.round(new Date().getTime() / 1000);
-                                        var normal = tagTool.normalizeTag(type);
-                                        if (!tagTool.isDefaultTag(normal)) {
-                                            if (tags.indexOf(normal) === -1) {
-                                                tags.push(normal);
-                                            }
-                                        }
-                                        normal = tagTool.normalizeTag(name);
-                                        if (!tagTool.isDefaultTag(normal)) {
-                                            if (tags.indexOf(normal) === -1) {
-                                                tags.push(normal);
-                                            }
-                                        }
-                                        for (var i in info_tag) {
-                                            normal = tagTool.normalizeTag(info_tag[i]);
-                                            if (!tagTool.isDefaultTag(normal)) {
-                                                if (tags.indexOf(normal) === -1) {
-                                                    tags.push(normal);
-                                                }
-                                            }
-                                            var gindex = genre_list_ch.indexOf(normal);
-                                            if (gindex !== -1) {
-                                                normal = tagTool.normalizeTag(genre_list[gindex]);
-                                                if (!tagTool.isDefaultTag(normal)) {
-                                                    if (tags.indexOf(normal) === -1) {
-                                                        tags.push(normal);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        var data = {};
-                                        data['_id'] = oOID;
-                                        data['name'] = name;
-                                        data['owner'] = type;
-                                        data['utime'] = utime;
-                                        data['url'] = url;
-                                        data['size'] = 0;
-                                        data['count'] = 0;
-                                        data['first'] = 1;
-                                        data['recycle'] = 0;
-                                        data['adultonly'] = 0;
-                                        data['untag'] = 0;
-                                        data['status'] = 3;//media type
-                                        data['tags'] = tags;
-                                        data['thumb'] = external_item.thumb;
-                                        data[type] = tags;
-                                        mongo.orig("insert", "storage", data, function(err, item){
-                                            if(err) {
-                                                util.handleError(err, callback, callback);
-                                            }
-                                            //console.log(item);
-                                            console.log('kubo save');
+                                        if (!raw_data1.match(/>(FLV|YouTube)</i)) {
+                                            console.log('kubo no source');
                                             console.log(name);
                                             index++;
                                             if (index < list_arr.length) {
@@ -650,7 +526,155 @@ module.exports = {
                                                     }
                                                 }
                                             }
-                                        });
+                                        } else {
+                                            var info = raw_data1.match(/.*<p>分類：<a.*/);
+                                            var info_tag = [];
+                                            if (info) {
+                                                var info_list = info[0].match(/>[^<：\s]+</g);
+                                                if (info_list) {
+                                                    var info_match = false;
+                                                    var nick_list = false;
+                                                    var nick_match = false;
+                                                    info_list.splice(info_list.length-1, 1);
+                                                    for (var i in info_list) {
+                                                        info_match = info_list[i].match(/^>([^<]+)<$/);
+                                                        if (info_match) {
+                                                            nick_list = info_match[1].match(/(^別名:|\/)[^\/]+/g);
+                                                            if (nick_list) {
+                                                                for (var j in nick_list) {
+                                                                    nick_match = nick_list[j].match(/(^別名:|\/)([^\/]+)/);
+                                                                    if (nick_match) {
+                                                                        info_tag.push(nick_match[2]);
+                                                                    }
+                                                                }
+                                                            } else {
+                                                                info_tag.push(info_match[1]);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            var oOID = mongo.objectID();
+                                            var tags = [];
+                                            tags = ['酷播123', '123kubo', '酷播', '影片', 'video'];
+                                            if (kuboIndex === 0 || kuboIndex === 1) {
+                                                tags.push('animation');
+                                                tags.push('動畫');
+                                            } else if (kuboIndex > 1 && kuboIndex < 10) {
+                                                tags.push('movie');
+                                                tags.push('電影');
+                                                switch (kuboIndex) {
+                                                    case 2:
+                                                    tags.push('action');
+                                                    tags.push('動作');
+                                                    break;
+                                                    case 3:
+                                                    tags.push('comedy');
+                                                    tags.push('喜劇');
+                                                    break;
+                                                    case 4:
+                                                    tags.push('romance');
+                                                    tags.push('浪漫');
+                                                    break;
+                                                    case 5:
+                                                    tags.push('sci-fi');
+                                                    tags.push('科幻');
+                                                    break;
+                                                    case 6:
+                                                    tags.push('horror');
+                                                    tags.push('恐怖');
+                                                    break;
+                                                    case 7:
+                                                    tags.push('drama');
+                                                    tags.push('劇情');
+                                                    break;
+                                                    case 8:
+                                                    tags.push('war');
+                                                    tags.push('戰爭');
+                                                    break;
+                                                    case 9:
+                                                    tags.push('animation');
+                                                    tags.push('動畫');
+                                                    break;
+                                                }
+                                            } else {
+                                                tags.push('tv show');
+                                                tags.push('電視劇');
+                                            }
+                                            var utime = Math.round(new Date().getTime() / 1000);
+                                            var normal = tagTool.normalizeTag(type);
+                                            if (!tagTool.isDefaultTag(normal)) {
+                                                if (tags.indexOf(normal) === -1) {
+                                                    tags.push(normal);
+                                                }
+                                            }
+                                            normal = tagTool.normalizeTag(name);
+                                            if (!tagTool.isDefaultTag(normal)) {
+                                                if (tags.indexOf(normal) === -1) {
+                                                    tags.push(normal);
+                                                }
+                                            }
+                                            for (var i in info_tag) {
+                                                normal = tagTool.normalizeTag(info_tag[i]);
+                                                if (!tagTool.isDefaultTag(normal)) {
+                                                    if (tags.indexOf(normal) === -1) {
+                                                        tags.push(normal);
+                                                    }
+                                                }
+                                                var gindex = genre_list_ch.indexOf(normal);
+                                                if (gindex !== -1) {
+                                                    normal = tagTool.normalizeTag(genre_list[gindex]);
+                                                    if (!tagTool.isDefaultTag(normal)) {
+                                                        if (tags.indexOf(normal) === -1) {
+                                                            tags.push(normal);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            var data = {};
+                                            data['_id'] = oOID;
+                                            data['name'] = name;
+                                            data['owner'] = type;
+                                            data['utime'] = utime;
+                                            data['url'] = url;
+                                            data['size'] = 0;
+                                            data['count'] = 0;
+                                            data['first'] = 1;
+                                            data['recycle'] = 0;
+                                            data['adultonly'] = 0;
+                                            data['untag'] = 0;
+                                            data['status'] = 3;//media type
+                                            data['tags'] = tags;
+                                            data['thumb'] = external_item.thumb;
+                                            data[type] = tags;
+                                            mongo.orig("insert", "storage", data, function(err, item){
+                                                if(err) {
+                                                    util.handleError(err, callback, callback);
+                                                }
+                                                //console.log(item);
+                                                console.log('kubo save');
+                                                console.log(name);
+                                                index++;
+                                                if (index < list_arr.length) {
+                                                    recur_save(type, index, list_arr);
+                                                } else {
+                                                    page++;
+                                                    if (page < 51) {
+                                                        recur_kubolist(kuboIndex, page);
+                                                    } else {
+                                                        page = 1;
+                                                        kuboIndex++;
+                                                        if (kuboIndex < kubo_url.length) {
+                                                            recur_kubolist(kuboIndex, page);
+                                                        } else {
+                                                            setTimeout(function(){
+                                                                callback(null);
+                                                            }, 0);
+                                                        }
+                                                    }
+                                                }
+                                            });
+                                        }
                                     }
                                 }, 60000, false, false, 'http://www.123kubo.com/');
                             } else {
