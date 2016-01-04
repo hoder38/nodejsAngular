@@ -2100,7 +2100,7 @@ module.exports = {
                     epsRange = epsRange.toString();
                 }
                 setTimeout(function(){
-                    callback(null, [Math.floor(price*7.5)/10 + ', ' + Math.floor(price*8)/10 + ', ' +Math.floor(price*9.5)/10, Math.floor(price*10.5)/10 + ', ' + Math.floor(price*12)/10 + ', ' +Math.floor(price*12.5)/10, epsRange]);
+                    callback(null, [items[0].index + ': ' + Math.floor(price*9.5)/10 + ', ' + Math.floor(price*10.5)/10 + ', ' + Math.floor(price*12)/10, epsRange]);
                 }, 0);
             });
         });
