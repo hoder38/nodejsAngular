@@ -8506,7 +8506,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         }
     }
     $scope.toggleStockPoint = function() {
-        if (this.selectPoint < 2) {
+        if (this.selectPoint < 1) {
             this.selectPoint++;
         } else {
             this.selectPoint = 0;
