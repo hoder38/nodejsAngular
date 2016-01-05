@@ -294,7 +294,7 @@ function completeMimeTag(add) {
     var option_index = -1;
     recur_com();
     function recur_com() {
-        mongo.orig("find", "storage", {}, {limit: 100, skip : search_number, sort: 'name'}, function(err, items){
+        mongo.orig("find", "storage", {}, {limit: 100, skip : search_number, sort: '_id'}, function(err, items){
             if(err) {
                 util.handleError(err);
             } else {
