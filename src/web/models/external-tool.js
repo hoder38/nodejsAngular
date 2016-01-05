@@ -12,6 +12,8 @@ var genre_list = mime.getOptionTag('eng');
 
 var genre_list_ch = mime.getOptionTag('cht');
 
+//type要補到deltag裡
+
 module.exports = {
     getList: function(type, callback, is_clear) {
         switch (type) {

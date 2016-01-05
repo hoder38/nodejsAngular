@@ -329,7 +329,7 @@ module.exports = function(collection) {
                             }, 0);
                         } else {
                             for (var i in items[0]) {
-                                if (util.isValidString(i, 'uid')) {
+                                if (util.isValidString(i, 'uid') || i === 'kubo' || i === 'eztv' || i === 'lovetv') {
                                     tagType.tag[i] = tagType.tag.tags;
                                     mongo.orig("update", collection, {_id: id}, {$pull: tagType.tag}, function(err, item2){
                                         if(err) {
