@@ -1919,6 +1919,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                     if (err) {
                         util.handleError(err, next, res);
                     }
+                    console.log(items);
                     if (items.length === 0) {
                         if (playlist) {
                             if (playlist === 1) {
@@ -2018,10 +2019,12 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                             });
                                         });
                                     } else {
+                                        console.log(videoObj.id);
                                         mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: videoObj.id}, {limit: 1}, function(err, items1){
                                             if (err) {
                                                 util.handleError(err, next, res);
                                             }
+                                            console.log(items1[0]);
                                             if (items1.length === 0 || type === 'music') {
                                                 res.json({playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
                                             } else {
@@ -2103,6 +2106,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                 }
             }
             data['mtime'] = utime;
+            console.log(data);
             mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: data}, function(err, item){
                 if (err) {
                     util.handleError(err, next, res);
@@ -3254,7 +3258,7 @@ function getYoutubeItem(items, type) {
                 items[i].snippet.tags = ['first item'];
             }
             yd = new Date(items[i].snippet.publishedAt.match(/^\d\d\d\d-\d\d-\d\d/)[0]);
-            data = {name: items[i].snippet.title, id: 'you_' + items[i].id, tags: items[i].snippet.tags, recycle: 0, isOwn: false, utime: yd.getTime()/1000, thumb: items[i].snippet.thumbnails.default.url, cid: items[i].snippet.channelId, ctitle: items[i].snippet.channelTitle};
+            data = {name: items[i].snippet.title, id: 'you_' + items[i].id, tags: items[i].snippet.tags, recycle: 0, isOwn: false, utime: yd.getTime()/1000, thumb: items[i].snippet.thumbnails.default.url, cid: items[i].snippet.channelId, ctitle: items[i].snippet.channelTitle, noDb: true};
             if (items[i].statistics) {
                 data['count'] = items[i].statistics.viewCount;
             } else {

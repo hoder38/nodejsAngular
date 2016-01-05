@@ -374,60 +374,45 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                         console.log(item);
                         console.log('save end');
                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                        var relative_arr = [];
-                        mediaTag.def.forEach(function (e) {
-                            relative_arr.push(e);
-                        });
-                        mediaTag.opt.forEach(function (e) {
-                            relative_arr.push(e);
-                        });
-                        var index = 0;
-                        recur_relative();
-                        function recur_relative() {
-                            tagTool.getRelativeTag(relative_arr[index], req.user, mediaTag.opt, next, function(err, relative) {
-                                if (err) {
-                                    util.handleError(err, next, res);
-                                }
-                                index++;
-                                mediaTag.opt = relative;
-                                if (index < relative_arr.length) {
-                                    recur_relative();
+                        tagTool.getRelativeTag(mediaTag.def[0], req.user, mediaTag.opt, next, function(err, relative) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            var reli = 5;
+                            if (relative.length < reli) {
+                                reli = relative.length;
+                            }
+                            if (util.checkAdmin(2 ,req.user)) {
+                                if (item[0].adultonly === 1) {
+                                    mediaTag.def.push('18+');
                                 } else {
-                                    var temp_arr = [];
-                                    var normal = '';
-                                    for (var j in mediaTag.opt) {
-                                        normal = tagTool.normalizeTag(mediaTag.opt[j]);
-                                        if (!tagTool.isDefaultTag(normal)) {
-                                            if (mediaTag.def.indexOf(normal) === -1) {
-                                                temp_arr.push(normal);
-                                            }
-                                        }
-                                    }
-                                    mediaTag.opt = temp_arr;
-                                    if (util.checkAdmin(2 ,req.user)) {
-                                        if (item[0].adultonly === 1) {
-                                            mediaTag.def.push('18+');
-                                        } else {
-                                            mediaTag.opt.push('18+');
-                                        }
-                                    }
-                                    if (item[0].first === 1) {
-                                        mediaTag.def.push('first item');
-                                    } else {
-                                        mediaTag.opt.push('first item');
-                                    }
-                                    res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
-                                    mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
-                                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                                        if(err) {
-                                            util.handleError(err);
-                                        }
-                                        console.log('transcode done');
-                                        console.log(new Date());
-                                    });
+                                    mediaTag.opt.push('18+');
                                 }
+                            }
+                            if (item[0].first === 1) {
+                                mediaTag.def.push('first item');
+                            } else {
+                                mediaTag.opt.push('first item');
+                            }
+                            var normal = '';
+                            for (var i = 0; i < reli; i++) {
+                                normal = tagTool.normalizeTag(relative[i]);
+                                if (!tagTool.isDefaultTag(normal)) {
+                                    if (mediaTag.def.indexOf(normal) === -1 && mediaTag.opt.indexOf(normal) === -1) {
+                                        mediaTag.opt.push(normal);
+                                    }
+                                }
+                            }
+                            res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                            mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
+                                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                if(err) {
+                                    util.handleError(err);
+                                }
+                                console.log('transcode done');
+                                console.log(new Date());
                             });
-                        }
+                        });
                     });
                 }
             });
@@ -790,62 +775,47 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     console.log('save end');
                     sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                     sendWs({type: req.user.username, data: name + ' upload complete'}, item[0].adultonly);
-                    var relative_arr = [];
-                    mediaTag.def.forEach(function (e) {
-                        relative_arr.push(e);
-                    });
-                    mediaTag.opt.forEach(function (e) {
-                        relative_arr.push(e);
-                    });
-                    var index = 0;
-                    recur_relative();
-                    function recur_relative() {
-                        tagTool.getRelativeTag(relative_arr[index], req.user, mediaTag.opt, next, function(err, relative) {
-                            if (err) {
-                                util.handleError(err, next, res);
-                            }
-                            index++;
-                            mediaTag.opt = relative;
-                            if (index < relative_arr.length) {
-                                recur_relative();
+                    tagTool.getRelativeTag(mediaTag.def[0], req.user, mediaTag.opt, next, function(err, relative) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        var reli = 5;
+                        if (relative.length < reli) {
+                            reli = relative.length;
+                        }
+                        if (util.checkAdmin(2 ,req.user)) {
+                            if (item[0].adultonly === 1) {
+                                mediaTag.def.push('18+');
                             } else {
-                                var temp_tag = [];
-                                var normal = '';
-                                for (var j in mediaTag.opt) {
-                                    normal = tagTool.normalizeTag(mediaTag.opt[j]);
-                                    if (!tagTool.isDefaultTag(normal)) {
-                                        if (mediaTag.def.indexOf(normal) === -1) {
-                                            temp_tag.push(normal);
-                                        }
-                                    }
-                                }
-                                mediaTag.opt = temp_tag;
-                                if (util.checkAdmin(2 ,req.user)) {
-                                    if (item[0].adultonly === 1) {
-                                        mediaTag.def.push('18+');
-                                    } else {
-                                        mediaTag.opt.push('18+');
-                                    }
-                                }
-                                if (item[0].first === 1) {
-                                    mediaTag.def.push('first item');
-                                } else {
-                                    mediaTag.opt.push('first item');
-                                }
-                                res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
-                                if (!is_media) {
-                                    mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
-                                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                                        if(err) {
-                                            util.handleError(err);
-                                        }
-                                        console.log('transcode done');
-                                        console.log(new Date());
-                                    });
+                                mediaTag.opt.push('18+');
+                            }
+                        }
+                        if (item[0].first === 1) {
+                            mediaTag.def.push('first item');
+                        } else {
+                            mediaTag.opt.push('first item');
+                        }
+                        var normal = '';
+                        for (var i = 0; i < reli; i++) {
+                            normal = tagTool.normalizeTag(relative[i]);
+                            if (!tagTool.isDefaultTag(normal)) {
+                                if (mediaTag.def.indexOf(normal) === -1 && mediaTag.opt.indexOf(normal) === -1) {
+                                    mediaTag.opt.push(normal);
                                 }
                             }
-                        });
-                    }
+                        }
+                        res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                        if (!is_media) {
+                            mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
+                                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                if(err) {
+                                    util.handleError(err);
+                                }
+                                console.log('transcode done');
+                                console.log(new Date());
+                            });
+                        }
+                    });
                 });
             });
         }
@@ -935,52 +905,37 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
                 console.log(item);
                 console.log('save end');
                 sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                var relative_arr = [];
-                mediaTag.def.forEach(function (e) {
-                    relative_arr.push(e);
-                });
-                mediaTag.opt.forEach(function (e) {
-                    relative_arr.push(e);
-                });
-                var index = 0;
-                recur_relative();
-                function recur_relative() {
-                    tagTool.getRelativeTag(relative_arr[index], req.user, mediaTag.opt, next, function(err, relative) {
-                        if (err) {
-                            util.handleError(err, next, res);
-                        }
-                        index++;
-                        mediaTag.opt = relative;
-                        if (index < relative_arr.length) {
-                            recur_relative();
+                tagTool.getRelativeTag(mediaTag.def[0], req.user, mediaTag.opt, next, function(err, relative) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    var reli = 5;
+                    if (relative.length < reli) {
+                        reli = relative.length;
+                    }
+                    if (util.checkAdmin(2 ,req.user)) {
+                        if (item[0].adultonly === 1) {
+                            mediaTag.def.push('18+');
                         } else {
-                            var temp_tag = [];
-                            var normal = '';
-                            for (var j in mediaTag.opt) {
-                                normal = tagTool.normalizeTag(mediaTag.opt[j]);
-                                if (!tagTool.isDefaultTag(normal)) {
-                                    if (mediaTag.def.indexOf(normal) === -1) {
-                                        temp_tag.push(normal);
-                                    }
-                                }
-                            }
-                            mediaTag.opt = temp_tag;
-                            if (util.checkAdmin(2 ,req.user)) {
-                                if (item[0].adultonly === 1) {
-                                    mediaTag.def.push('18+');
-                                } else {
-                                    mediaTag.opt.push('18+');
-                                }
-                            }
-                            if (item[0].first === 1) {
-                                mediaTag.def.push('first item');
-                            } else {
-                                mediaTag.opt.push('first item');
-                            }
-                            res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                            mediaTag.opt.push('18+');
                         }
-                    });
-                }
+                    }
+                    if (item[0].first === 1) {
+                        mediaTag.def.push('first item');
+                    } else {
+                        mediaTag.opt.push('first item');
+                    }
+                    var normal = '';
+                    for (var i = 0; i < reli; i++) {
+                        normal = tagTool.normalizeTag(relative[i]);
+                        if (!tagTool.isDefaultTag(normal)) {
+                            if (mediaTag.def.indexOf(normal) === -1 && mediaTag.opt.indexOf(normal) === -1) {
+                                mediaTag.opt.push(normal);
+                            }
+                        }
+                    }
+                    res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                });
             });
         });
     });

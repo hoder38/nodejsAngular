@@ -290,7 +290,7 @@
                                     </li>
                                     <li ng-show="videoSwitch">
                                         <a href="#" ng-click="changeMode('video')">
-                                            <span ng-show="video.mode === 1" class="glyphicon glyphicon-arrow-left"></span>{{(video.mode === 0 || video.mode === 1) && 'All' || ''}}{{(video.mode === 2 || video.mode === 3) && '1' || ''}}<span ng-show="video.mode === 3" class="glyphicon glyphicon-repeat"></span>
+                                            <span ng-show="video.mode === 1" class="glyphicon glyphicon-arrow-left"></span>{{(video.mode === 0 || video.mode === 1) && 'All' || ''}}{{(video.mode === 2) && '1' || ''}}
                                         </a>
                                     </li>
                                     <span ng-show="video.playlist&&!videoSwitch">
@@ -367,7 +367,7 @@
                                     </li>
                                     <li ng-show="musicSwitch">
                                         <a href="#" ng-click="changeMode('music')">
-                                            <span ng-show="music.mode === 1" class="glyphicon glyphicon-arrow-left"></span>{{(music.mode === 0 || music.mode === 1) && 'All' || ''}}{{(music.mode === 2 || music.mode === 3) && '1' || ''}}<span ng-show="music.mode === 3" class="glyphicon glyphicon-repeat"></span><span ng-show="music.mode === 4" class="glyphicon glyphicon-random"></span>
+                                            <span ng-show="music.mode === 1" class="glyphicon glyphicon-arrow-left"></span>{{(music.mode === 0 || music.mode === 1) && 'All' || ''}}{{(music.mode === 2) && '1' || ''}}<span ng-show="music.mode === 3" class="glyphicon glyphicon-random"></span>
                                         </a>
                                     </li>
                                     <span ng-show="music.playlist&&!musicSwitch">
