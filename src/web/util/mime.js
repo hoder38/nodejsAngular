@@ -5,7 +5,7 @@ var zip_arr = ['zip', 'rar', '7z', 'cbr', 'cbz'];
 //vlog
 //var video_arr = ['mp4', 'rm', 'mts', 'm2ts', '3gp2', '3gp', 'mpg', 'asf', 'mpeg', 'avi', 'mov', 'wmv', 'flv', 'rmvb', 'webm', 'm4v', 'f4v', 'mkv'];
 var video_vlog_arr = ['rm', 'rmvb'];
-var video_arr = ['webm', 'mp4', 'mts', 'm2ts', '3gp', 'mov', 'avi', 'mpg', 'wmv', 'flv', 'ogv', 'asf', 'mkv', 'm4v'];
+var video_arr = ['webm', 'mp4', 'mts', 'm2ts', '3gp', 'mov', 'avi', 'mpg', 'wmv', 'flv', 'f4v', 'ogv', 'asf', 'mkv', 'm4v'];
 //vlog
 //var music_arr = ['mp3', 'wma', 'wav', 'mid', 'm4a'];
 var music_arr = ['mp3', 'wav', 'ogg', 'm4a'];

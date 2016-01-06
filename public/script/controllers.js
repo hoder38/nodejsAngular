@@ -2018,6 +2018,9 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                                                 }
                                             } else {
                                                 this_obj.$parent[type].hd_list = result.video;
+                                                if (result.sub) {
+                                                    this_obj.$parent[type].playlist.obj.sub = result.sub;
+                                                }
                                                 var hd = 0;
                                                 if (this_obj.$parent[type].hd < this_obj.$parent[type].hd_list.length) {
                                                     hd = this_obj.$parent[type].hd;
@@ -3888,6 +3891,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                             }
                                         } else {
                                             this_obj[type].hd_list = result.video;
+                                            if (result.sub) {
+                                                this_obj[type].playlist.obj.sub = result.sub;
+                                            }
                                             var hd = 0;
                                             if (this_obj[type].hd < this_obj[type].hd_list.length) {
                                                 hd = this_obj[type].hd;
@@ -4249,6 +4255,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                             }
                                                         } else {
                                                             this_obj[type].hd_list = result.video;
+                                                            if (result.sub) {
+                                                                this_obj[type].playlist.obj.sub = result.sub;
+                                                            }
                                                             var hd = 0;
                                                             if (this_obj[type].hd < this_obj[type].hd_list.length) {
                                                                 hd = this_obj[type].hd;
@@ -4511,6 +4520,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                             }
                                                         } else {
                                                             this_obj[type].hd_list = result.video;
+                                                            if (result.sub) {
+                                                                this_obj[type].playlist.obj.sub = result.sub;
+                                                            }
                                                             var hd = 0;
                                                             if (this_obj[type].hd < this_obj[type].hd_list.length) {
                                                                 hd = this_obj[type].hd;
@@ -4731,6 +4743,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                 }
                                             } else {
                                                 this_obj[type].hd_list = result.video;
+                                                if (result.sub) {
+                                                    this_obj[type].playlist.obj.sub = result.sub;
+                                                }
                                                 var hd = 0;
                                                 if (this_obj[type].hd < this_obj[type].hd_list.length) {
                                                     hd = this_obj[type].hd;

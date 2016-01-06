@@ -127,7 +127,7 @@ app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
             util.handleError({hoerror: 2, message: "not valid subtitle!!!"}, next, res);
         }
         var filePath = null;
-        var id = req.params.uid.match(/^(you|dym|dri|bil)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun)_/);
         if (id) {
             var ex_type = 'youtube';
             if (id[1] === 'dym') {
@@ -136,6 +136,14 @@ app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
                 ex_type = 'drive';
             } else if (id[1] === 'bil') {
                 ex_type = 'bilibili';
+            } else if (id[1] === 'soh') {
+                ex_type = 'sohu';
+            } else if (id[1] === 'let') {
+                ex_type = 'letv';
+            } else if (id[1] === 'vqq') {
+                ex_type = 'vqq';
+            } else if (id[1] === 'fun') {
+                ex_type = 'funshion';
             }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
@@ -1044,7 +1052,7 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+)?', function(req, res, next)
                 });
             });
         }
-        var id = req.params.uid.match(/^(you|dym|dri|bil)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun)_/);
         if (id) {
             var ex_type = 'youtube';
             if (id[1] === 'dym') {
@@ -1053,6 +1061,14 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+)?', function(req, res, next)
                 ex_type = 'drive';
             } else if (id[1] === 'bil') {
                 ex_type = 'bilibili';
+            } else if (id[1] === 'soh') {
+                ex_type = 'sohu';
+            } else if (id[1] === 'let') {
+                ex_type = 'letv';
+            } else if (id[1] === 'vqq') {
+                ex_type = 'vqq';
+            } else if (id[1] === 'fun') {
+                ex_type = 'funshion';
             }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
@@ -1098,55 +1114,101 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.uid.match(/^(you|dym|bil)_(.*)/);
+        var id = req.params.uid.match(/^(you|dym|bil|soh|let|vqq|fun)_(.*)/);
         if (!id) {
             util.handleError({hoerror: 2, message: "file is not youtube video!!!"}, next, res);
         }
+        var subIndex = 1;
         var url = null;
         if (id[1] === 'dym') {
             url = 'http://www.dailymotion.com/embed/video/' + id[2];
         } else if (id[1] === 'bil') {
             url = 'http://www.bilibili.com/video/' + id[2];
+        } else if (id[1] === 'soh') {
+            var idsub = id[2].match(/^([^_]+)_([^_]+)_(\d)$/);
+            subIndex = Number(idsub[3]);
+            url = 'http://tv.sohu.com/' + idsub[1] + '/' + idsub[2] + '.shtml';
+        } else if (id[1] === 'let') {
+            url = 'http://www.letv.com/ptv/vplay/' + id[2] + '.html';
+        } else if (id[1] === 'vqq') {
+            var idsub = id[2].match(/^([^_]+)_([^_]+)_([^_]+)$/);
+            url = 'http://v.qq.com/cover/' + idsub[1] + '/' + idsub[2] + '/' + idsub[3] + '.html';
+        } else if (id[1] === 'fun') {
+            var idsub = id[2].match(/^([^_]+)_([^_]+)_([^_]+)$/);
+            url = 'http://www.funshion.com/vplay/' + idsub[1] + '-' + idsub[2] + '.' + idsub[3];
         } else {
             url = 'http://www.youtube.com/watch?v=' + id[2];
         }
-        youtubedl.getInfo(url, [], function(err, info) {
-            if (err) {
-                err.hoerror = 2;
-                util.handleError(err, next, res);
-            }
-            var ret_obj = {title: info.title, video: []};
-            var audio_size = 0;
-            if (id[1] === 'you') {
-                for (var i in info.formats) {
-                    if (info.formats[i].format_note === 'DASH audio') {
-                        if (!audio_size) {
-                            audio_size = info.formats[i].filesize;
-                            ret_obj['audio'] = info.formats[i].url;
-                        } else if (audio_size > info.formats[i].filesize) {
-                            audio_size = info.formats[i].filesize;
-                            ret_obj['audio'] = info.formats[i].url;
+        if (id[1] === 'soh' || id[1] === 'let' || id[1] === 'vqq'|| id[1] === 'fun') {
+            var kubo_url = 'http://888blb1.flvapi.com/video.php?url=gq_' + new Buffer(url).toString('base64') + '_a';
+            api.xuiteDownload(kubo_url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, next, res);
+                }
+                var video_list = raw_data.match(/\!\[CDATA\[[^\]]+/g);
+                if (!video_list) {
+                    util.handleError({hoerror: 2, message: "video invaild!!!"}, next, res);
+                }
+                var list_match = false;
+                var list = [];
+                for (var i in video_list) {
+                    list_match = video_list[i].match(/^\!\[CDATA\[([^\]]+)$/);
+                    if (list_match) {
+                        list.push(list_match[1]);
+                    }
+                }
+                if (list.length < 1) {
+                    util.handleError({hoerror: 2, message: "video invaild!!!"}, next, res);
+                }
+                if (!list[subIndex-1]) {
+                    util.handleError({hoerror: 2, message: "video index invaild!!!"}, next, res);
+                }
+                var ret_obj = {title: 'no name', video: [list[subIndex-1]]};
+                if (list.length > 1) {
+                    ret_obj['sub'] = list.length;
+                }
+                res.json(ret_obj);
+            }, 60000, false, false, 'http://888blb1.flvapi.com/');
+        } else {
+            youtubedl.getInfo(url, [], function(err, info) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, next, res);
+                }
+                var ret_obj = {title: info.title, video: []};
+                var audio_size = 0;
+                if (id[1] === 'you') {
+                    for (var i in info.formats) {
+                        if (info.formats[i].format_note === 'DASH audio') {
+                            if (!audio_size) {
+                                audio_size = info.formats[i].filesize;
+                                ret_obj['audio'] = info.formats[i].url;
+                            } else if (audio_size > info.formats[i].filesize) {
+                                audio_size = info.formats[i].filesize;
+                                ret_obj['audio'] = info.formats[i].url;
+                            }
+                        } else if (info.formats[i].format_note !== 'DASH video' && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
+                            ret_obj['video'].splice(0, 0, info.formats[i].url);
                         }
-                    } else if (info.formats[i].format_note !== 'DASH video' && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
-                        ret_obj['video'].splice(0, 0, info.formats[i].url);
+                    }
+                } else if (id[1] === 'dym') {
+                    for (var i in info.formats) {
+                        if (info.formats[i].format_id.match(/^\d+$/) && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
+                            ret_obj['video'].splice(0, 0, info.formats[i].url);
+                        }
+                    }
+                } else if (id[1] === 'bil') {
+                    for (var i in info.formats) {
+                        if (info.formats[i].format_id === '0') {
+                            ret_obj['video'].push(info.formats[i].url);
+                            break;
+                        }
                     }
                 }
-            } else if (id[1] === 'dym') {
-                for (var i in info.formats) {
-                    if (info.formats[i].format_id.match(/^\d+$/) && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
-                        ret_obj['video'].splice(0, 0, info.formats[i].url);
-                    }
-                }
-            } else if (id[1] === 'bil') {
-                for (var i in info.formats) {
-                    if (info.formats[i].format_id === '0') {
-                        ret_obj['video'].push(info.formats[i].url);
-                        break;
-                    }
-                }
-            }
-            res.json(ret_obj);
-        });
+                res.json(ret_obj);
+            });
+        }
     });
 });
 
@@ -1248,7 +1310,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
             }
         }
         var filePath = null;
-        var id = req.params.uid.match(/^(you|dym|dri|bil)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun)_/);
         if (id) {
             var ex_type = 'youtube';
             if (id[1] === 'dym') {
@@ -1257,6 +1319,14 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                 ex_type = 'drive';
             } else if (id[1] === 'bil') {
                 ex_type = 'bilibili';
+            } else if (id[1] === 'soh') {
+                ex_type = 'sohu';
+            } else if (id[1] === 'let') {
+                ex_type = 'letv';
+            } else if (id[1] === 'vqq') {
+                ex_type = 'vqq';
+            } else if (id[1] === 'fun') {
+                ex_type = 'funshion';
             }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
@@ -3105,7 +3175,7 @@ app.get('/subtitle/:uid/:index(\\d+)?', function(req, res, next){
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.uid.match(/^(you|dym|dri|bil)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun)_/);
         if (id) {
             var id_valid = util.isValidString(req.params.uid, 'name');
             if (id_valid === false) {
@@ -3118,6 +3188,14 @@ app.get('/subtitle/:uid/:index(\\d+)?', function(req, res, next){
                 filePath = util.getFileLocation('drive', id_valid);
             } else if (id[1] === 'bil') {
                 filePath = util.getFileLocation('bilibili', id_valid);
+            } else if (id[1] === 'soh') {
+                filePath = util.getFileLocation('sohu', id_valid);
+            } else if (id[1] === 'let') {
+                filePath = util.getFileLocation('letv', id_valid);
+            } else if (id[1] === 'vqq') {
+                filePath = util.getFileLocation('vqq', id_valid);
+            } else if (id[1] === 'fun') {
+                filePath = util.getFileLocation('funshion', id_valid);
             } else {
                 filePath = util.getFileLocation('youtube', id_valid);
             }

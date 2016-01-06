@@ -835,7 +835,7 @@ module.exports = {
                     if (sub_index > obj.ids.length) {
                         sub_index = 1;
                     }
-                    var ret_obj = {id: 'dym_' + obj.ids[sub_index-1], complete: true};
+                    var ret_obj = {id: 'dym_' + obj.ids[sub_index-1]};
                     if (obj.ids.length > 1) {
                         index = (index*10 + sub_index)/10;
                         ret_obj.sub = obj.ids.length;
@@ -1063,6 +1063,16 @@ module.exports = {
             }, 60000, false, false);
             break;
             case 'kubo':
+            //bj58 fun58 drive youtube dl
+            //bj6 fun3 qq
+            //bj5 fun1 letv
+            //bj8 fun9 funshion
+            //bj7 fun5 sohu
+            //bj wd youku flv
+            //bj10 fun8 iqiyi f4v
+            //bj11 fun10 tudou flv
+            //bj12 fun19 pptv x
+            //bj9 fun7 pps x
             api.xuiteDownload(url, '', function(err, raw_data) {
                 if (err) {
                     err.hoerror = 2;
@@ -1130,7 +1140,7 @@ module.exports = {
                     } else {
                         rid = 'you_' + list[index-1].ids[sub_index-1];
                     }
-                    var ret_obj = {id: rid, title: list[index-1].name, complete: true};
+                    var ret_obj = {id: rid, title: list[index-1].name};
                     if (list[index-1].ids.length > 1) {
                         ret_obj.sub = list[index-1].ids.length;
                         index = (index*10 + sub_index)/10;
@@ -1141,19 +1151,19 @@ module.exports = {
                         callback(null, ret_obj, is_end, list.length);
                     }, 0);
                 } else {
-                    flv_url = raw_data.match(/id="\d_FLV58">[\s\S]+?href="([^"]+)/);
+                    flv_url = raw_data.match(/id="\d_FLV(58|7|5|8|6|9)">[\s\S]+?href="([^"]+)/);
                     if (!flv_url) {
                         util.handleError({hoerror: 2, message: 'no source'}, callback, callback);
                     }
-                    if (!flv_url[1].match(/^(https|http):\/\//)) {
-                        if (flv_url[1].match(/^\//)) {
-                            flv_url[1] = 'http://www.123kubo.com' + flv_url[1];
+                    if (!flv_url[2].match(/^(https|http):\/\//)) {
+                        if (flv_url[2].match(/^\//)) {
+                            flv_url[2] = 'http://www.123kubo.com' + flv_url[2];
                         } else {
-                            flv_url[1] = 'http://www.123kubo.com' + flv_url[1];
+                            flv_url[2] = 'http://www.123kubo.com' + flv_url[2];
                         }
                     }
-                    console.log(flv_url[1]);
-                    api.xuiteDownload(flv_url[1], '', function(err, flv_data) {
+                    console.log(flv_url[2]);
+                    api.xuiteDownload(flv_url[2], '', function(err, flv_data) {
                         if (err) {
                             err.hoerror = 2;
                             util.handleError(err, callback, callback);
@@ -1163,28 +1173,127 @@ module.exports = {
                             util.handleError({hoerror: 2, message: 'empty list'}, callback, callback);
                         }
                         var raw_multi_list = eval(eval_data[1]);
-                        var flv_list = raw_multi_list.match(/"bj58".*?\}/);
-                        if (!flv_list) {
-                            util.handleError({hoerror: 2, message: 'not drive'}, callback, callback);
-                        }
-                        var raw_list = flv_list[0].match(/\[[^\[\]]+\]/g);
-                        var list = [];
-                        var list_match = false;
-                        for (var i in raw_list) {
-                            list_match = raw_list[i].match(/^\["([^"]+)","fun58_([^"]+)"/);
-                            if (list_match) {
-                                list.push({name: list_match[1], id: 'dri_' + list_match[2]});
+                        var ret_obj = driveSource();
+                        if (!ret_obj) {
+                            ret_obj = otherSource(6);
+                            if (!ret_obj) {
+                                ret_obj = otherSource(5);
+                                if (!ret_obj) {
+                                    ret_obj = otherSource(8);
+                                    if (!ret_obj) {
+                                        ret_obj = otherSource(7);
+                                        if (!ret_obj) {
+                                            util.handleError({hoerror: 2, message: 'not flv'}, callback, callback);
+                                        }
+                                    }
+                                }
                             }
                         }
-                        //console.log(list);
-                        //console.log(list.length);
-                        if (!list[index-1]) {
-                            util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
-                        }
-                        var ret_obj = {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false, id: list[index-1].id};
                         setTimeout(function(){
-                            callback(null, ret_obj, is_end, list.length);
+                            callback(null, ret_obj.ret, is_end, ret_obj.total);
                         }, 0);
+                        function driveSource() {
+                            var flv_list = raw_multi_list.match(/"bj58".*?\}/);
+                            if (!flv_list) {
+                                return false;
+                            }
+                            var raw_list = flv_list[0].match(/\[[^\[\]]+\]/g);
+                            if (!raw_list) {
+                                return false;
+                            }
+                            var list = [];
+                            var list_match = false;
+                            for (var i in raw_list) {
+                                list_match = raw_list[i].match(/^\["([^"]+)","fun58_([^"]+)"/);
+                                if (list_match) {
+                                    list.push({name: list_match[1], id: 'dri_' + list_match[2]});
+                                }
+                            }
+                            //console.log(list);
+                            //console.log(list.length);
+                            if (!list[index-1]) {
+                                return false;
+                            }
+                            return {ret: {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false, id: list[index-1].id}, total: list.length};
+                        }
+                        function otherSource(source) {
+                            var flv_list = false;
+                            switch (source) {
+                                case 7:
+                                flv_list = raw_multi_list.match(/"bj7".*?\}/);
+                                break;
+                                case 5:
+                                flv_list = raw_multi_list.match(/"bj5".*?\}/);
+                                break;
+                                case 8:
+                                flv_list = raw_multi_list.match(/"bj8".*?\}/);
+                                break;
+                                case 6:
+                                flv_list = raw_multi_list.match(/"bj6".*?\}/);
+                                break;
+                                default:
+                                return false;
+                                break;
+                            }
+                            if (!flv_list) {
+                                return false;
+                            }
+                            var raw_list = flv_list[0].match(/\[[^\[\]]+\]/g);
+                            if (!raw_list) {
+                                return false;
+                            }
+                            var list = [];
+                            var list_match = false;
+                            switch (source) {
+                                case 7:
+                                for (var i in raw_list) {
+                                    list_match = raw_list[i].match(/^\["([^"]+)","fun5_(\d+)\/([^\.]+)\.[^"]+"/);
+                                    if (list_match) {
+                                        list.push({name: list_match[1], id: 'soh_' + list_match[2] + '_' + list_match[3] + '_' + sub_index});
+                                    }
+                                }
+                                break;
+                                case 5:
+                                for (var i in raw_list) {
+                                    list_match = raw_list[i].match(/^\["([^"]+)","fun1_([^\.]+)\.[^"]+"/);
+                                    if (list_match) {
+                                        list.push({name: list_match[1], id: 'let_' + list_match[2]});
+                                    }
+                                }
+                                break;
+                                case 8:
+                                for (var i in raw_list) {
+                                    list_match = raw_list[i].match(/^\["([^"]+)","fun9_([^\.]+)\.([^"]+)"/);
+                                    if (list_match) {
+                                        list.push({name: list_match[1], id: 'fun_m_' + list_match[2] + '_' + list_match[3]});
+                                    }
+                                }
+                                break;
+                                case 6:
+                                for (var i in raw_list) {
+                                    list_match = raw_list[i].match(/^\["([^"]+)","fun3_([^\/]+)\/([^\/]+)\/([^\.]+)\.[^"]+"/);
+                                    if (list_match) {
+                                        list.push({name: list_match[1], id: 'vqq_' + list_match[2] + '_' + list_match[3] + '_' + list_match[4]});
+                                    }
+                                }
+                                break;
+                                default:
+                                return false;
+                                break;
+                            }
+                            //console.log(list);
+                            //console.log(list.length);
+                            if (!list[index-1]) {
+                                return false;
+                            }
+                            var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
+                            switch (source) {
+                                case 7:
+                                ret.index = ret.showId = (index*10 + sub_index)/10;
+                                break;
+                            }
+                            return {ret: ret, total: list.length};
+                        }
                     }, 60000, false, false, 'http://www.123kubo.com/');
                 }
             }, 60000, false, false, 'http://www.123kubo.com/');
