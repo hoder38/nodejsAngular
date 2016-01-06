@@ -155,7 +155,7 @@ function youtubeAPI(method, data, callback) {
         param = {
             part: 'snippet',
             playlistId: data['id'],
-            maxResults: 5
+            maxResults: 20
         };
         if (data['pageToken']) {
             param.pageToken = data['pageToken'];
