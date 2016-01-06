@@ -1164,7 +1164,7 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                 if (!list[subIndex-1]) {
                     util.handleError({hoerror: 2, message: "video index invaild!!!"}, next, res);
                 }
-                var ret_obj = {title: 'no name', video: [list[subIndex-1]]};
+                var ret_obj = {title: id[1], video: [list[subIndex-1]]};
                 if (list.length > 1) {
                     ret_obj['sub'] = list.length;
                 }
