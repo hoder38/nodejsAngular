@@ -296,7 +296,7 @@
                                     <li ng-show="video.playlist&&videoSwitch" tooltip="no end" tooltip-trigger="mouseenter">
                                         <input type="checkbox" ng-model="noEnd"/>
                                     </li>
-                                    <span ng-show="video.playlist&&!videoSwitch">
+                                    <span ng-show="video.playlist&&!videoSwitch&&video.playlist.total > 1" >
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="videoMove('video', 'previous')">
                                                 <span class="glyphicon glyphicon-chevron-up"></span>
@@ -336,6 +336,7 @@
                                             <option value="2">upload subtitle</option>
                                             <option ng-show="video.list[video.index].thumb" value="3">origin subtitle</option>
                                             <option ng-show="video.list[video.index].noDb" value="4">儲存到local</option>
+                                            <option ng-show="video.list[video.index].cid" value="5">訂閱{{video.list[video.index].ctitle}}</option>
                                         </select>
                                     </li>
                                     <li ng-show="videoSwitch&&video.list[video.index].thumb">
@@ -376,7 +377,7 @@
                                     <li ng-show="musicSwitch" tooltip="no end" tooltip-trigger="mouseenter">
                                         <input type="checkbox" ng-model="noEnd"/>
                                     </li>
-                                    <span ng-show="music.playlist&&!musicSwitch">
+                                    <span ng-show="music.playlist&&!musicSwitch&&music.playlist.total > 1">
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="videoMove('music', 'previous')">
                                                 <span class="glyphicon glyphicon-chevron-up"></span>
@@ -404,10 +405,11 @@
                                             <span class="glyphicon glyphicon-chevron-right"></span>
                                         </a>
                                     </li>
-                                    <li ng-show="music.list[music.index].noDb&&musicSwitch">
+                                    <li ng-show="musicSwitch">
                                         <select ng-model="music.option">
                                             <option value="0">option</option>
-                                            <option value="1">儲存到local</option>
+                                            <option ng-show="music.list[music.index].noDb" value="1">儲存到local</option>
+                                            <option ng-show="music.list[music.index].cid" value="2">訂閱{{music.list[music.index].ctitle}}</option>
                                         </select>
                                     </li>
                                 </ul>

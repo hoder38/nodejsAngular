@@ -465,7 +465,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         queueTorrent('stop', req.user);
                         res.json({stop: true});
                     } else {
-                        mongo.orig("find", "storage", {magnet: encodeTorrent}, {limit: 1}, function(err, items){
+                        mongo.orig("find", "storage", {magnet: encodeTorrent}, {limit: 2}, function(err, items){
                             if (err) {
                                 util.handleError(err, next, res);
                             }
@@ -525,95 +525,109 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         is_media = 3;
                         console.log('youtube');
                     }
-                    youtube_id = url.match(/list=([^&]+)/);
-                    if (youtube_id) {
-                        googleApi.googleApi('y playlist', {id: youtube_id[1], caption: true}, function(err, detaildata) {
-                            if (err) {
-                                util.handleError(err, next, res);
-                            }
-                            if (detaildata.items.length < 1) {
-                                util.handleError({hoerror: 2, message: 'can not find video'}, next, res);
-                            }
-                            var media_name = detaildata.items[0].snippet.title, tag_arr = [], cid = detaildata.items[0].snippet.channelId, ctitle = detaildata.items[0].snippet.channelTitle, thumb = detaildata.items[0].snippet.thumbnails.default.url;
-                            console.log(media_name);
-                            url = util.isValidString(url, 'url');
-                            if (url === false) {
-                                util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
-                            }
-                            if (detaildata.items[0].snippet.tags) {
-                                tag_arr = detaildata.items[0].snippet.tags;
-                            }
-                            if (ctitle) {
-                                tag_arr.push(detaildata.items[0].snippet.channelTitle);
-                            }
-                            if (tag_arr.indexOf('youtube') === -1) {
-                                tag_arr.push('youtube');
-                            }
-                            if (tag_arr.indexOf('youtube') === -1) {
-                                tag_arr.push('youtube');
-                            }
-                            if (is_music) {
-                                if (tag_arr.indexOf('audio') === -1) {
-                                    tag_arr.push('audio');
-                                }
-                                if (tag_arr.indexOf('音頻') === -1) {
-                                    tag_arr.push('音頻');
-                                }
-                            } else {
-                                if (tag_arr.indexOf('video') === -1) {
-                                    tag_arr.push('video');
-                                }
-                                if (tag_arr.indexOf('影片') === -1) {
-                                    tag_arr.push('影片');
-                                }
-                            }
-                            streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
-                        });
-                    } else {
-                        youtube_id = url.match(/v=([^&]+)/);
-                        if (!youtube_id) {
-                            util.handleError({hoerror: 2, message: 'can not find youtube id!!!'}, next, res);
+                    mongo.orig("find", "storage", {url: encodeURIComponent(url)}, {limit: 2}, function(err, items){
+                        if (err) {
+                            util.handleError(err, next, res);
                         }
-                        googleApi.googleApi('y video', {id: youtube_id[1], caption: true}, function(err, detaildata) {
-                            if (err) {
-                                util.handleError(err, next, res);
-                            }
-                            if (detaildata.items.length < 1) {
-                                util.handleError({hoerror: 2, message: 'can not find video'}, next, res);
-                            }
-                            var media_name = detaildata.items[0].snippet.title, tag_arr = [], cid = detaildata.items[0].snippet.channelId, ctitle = detaildata.items[0].snippet.channelTitle, thumb = detaildata.items[0].snippet.thumbnails.default.url;
-                            console.log(media_name);
-                            url = util.isValidString(url, 'url');
-                            if (url === false) {
-                                util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
-                            }
-                            if (detaildata.items[0].snippet.tags) {
-                                tag_arr = detaildata.items[0].snippet.tags;
-                            }
-                            if (ctitle) {
-                                tag_arr.push(detaildata.items[0].snippet.channelTitle);
-                            }
-                            if (tag_arr.indexOf('youtube') === -1) {
-                                tag_arr.push('youtube');
-                            }
-                            if (is_music) {
-                                if (tag_arr.indexOf('audio') === -1) {
-                                    tag_arr.push('audio');
-                                }
-                                if (tag_arr.indexOf('音頻') === -1) {
-                                    tag_arr.push('音頻');
-                                }
-                            } else {
-                                if (tag_arr.indexOf('video') === -1) {
-                                    tag_arr.push('video');
-                                }
-                                if (tag_arr.indexOf('影片') === -1) {
-                                    tag_arr.push('影片');
+                        if (items.length > 0) {
+                            for (var i in items) {
+                                console.log(items[i]);
+                                if (items[i].thumb && items[i].status === is_media) {
+                                    util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                                    break;
                                 }
                             }
-                            streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
-                        });
-                    }
+                        }
+                        youtube_id = url.match(/list=([^&]+)/);
+                        if (youtube_id) {
+                            googleApi.googleApi('y playlist', {id: youtube_id[1], caption: true}, function(err, detaildata) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                if (detaildata.items.length < 1) {
+                                    util.handleError({hoerror: 2, message: 'can not find video'}, next, res);
+                                }
+                                var media_name = detaildata.items[0].snippet.title, tag_arr = [], cid = detaildata.items[0].snippet.channelId, ctitle = detaildata.items[0].snippet.channelTitle, thumb = detaildata.items[0].snippet.thumbnails.default.url;
+                                console.log(media_name);
+                                url = util.isValidString(url, 'url');
+                                if (url === false) {
+                                    util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
+                                }
+                                if (detaildata.items[0].snippet.tags) {
+                                    tag_arr = detaildata.items[0].snippet.tags;
+                                }
+                                if (ctitle) {
+                                    tag_arr.push(detaildata.items[0].snippet.channelTitle);
+                                }
+                                if (tag_arr.indexOf('youtube') === -1) {
+                                    tag_arr.push('youtube');
+                                }
+                                if (tag_arr.indexOf('youtube') === -1) {
+                                    tag_arr.push('youtube');
+                                }
+                                if (is_music) {
+                                    if (tag_arr.indexOf('audio') === -1) {
+                                        tag_arr.push('audio');
+                                    }
+                                    if (tag_arr.indexOf('音頻') === -1) {
+                                        tag_arr.push('音頻');
+                                    }
+                                } else {
+                                    if (tag_arr.indexOf('video') === -1) {
+                                        tag_arr.push('video');
+                                    }
+                                    if (tag_arr.indexOf('影片') === -1) {
+                                        tag_arr.push('影片');
+                                    }
+                                }
+                                streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
+                            });
+                        } else {
+                            youtube_id = url.match(/v=([^&]+)/);
+                            if (!youtube_id) {
+                                util.handleError({hoerror: 2, message: 'can not find youtube id!!!'}, next, res);
+                            }
+                            googleApi.googleApi('y video', {id: youtube_id[1], caption: true}, function(err, detaildata) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                if (detaildata.items.length < 1) {
+                                    util.handleError({hoerror: 2, message: 'can not find video'}, next, res);
+                                }
+                                var media_name = detaildata.items[0].snippet.title, tag_arr = [], cid = detaildata.items[0].snippet.channelId, ctitle = detaildata.items[0].snippet.channelTitle, thumb = detaildata.items[0].snippet.thumbnails.default.url;
+                                console.log(media_name);
+                                url = util.isValidString(url, 'url');
+                                if (url === false) {
+                                    util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
+                                }
+                                if (detaildata.items[0].snippet.tags) {
+                                    tag_arr = detaildata.items[0].snippet.tags;
+                                }
+                                if (ctitle) {
+                                    tag_arr.push(detaildata.items[0].snippet.channelTitle);
+                                }
+                                if (tag_arr.indexOf('youtube') === -1) {
+                                    tag_arr.push('youtube');
+                                }
+                                if (is_music) {
+                                    if (tag_arr.indexOf('audio') === -1) {
+                                        tag_arr.push('audio');
+                                    }
+                                    if (tag_arr.indexOf('音頻') === -1) {
+                                        tag_arr.push('音頻');
+                                    }
+                                } else {
+                                    if (tag_arr.indexOf('video') === -1) {
+                                        tag_arr.push('video');
+                                    }
+                                    if (tag_arr.indexOf('影片') === -1) {
+                                        tag_arr.push('影片');
+                                    }
+                                }
+                                streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
+                            });
+                        }
+                    });
                 } else {
                     api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                         if (err) {
@@ -689,92 +703,106 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     is_media = 3;
                     console.log('youtube');
                 }
-                youtube_id = url.match(/list=([^&]+)/);
-                if (youtube_id) {
-                    googleApi.googleApi('y playlist', {id: youtube_id[1], caption: true}, function(err, detaildata) {
-                        if (err) {
-                            util.handleError(err, next, res);
-                        }
-                        if (detaildata.items.length < 1) {
-                            util.handleError({hoerror: 2, message: 'can not find video'}, next, res);
-                        }
-                        var media_name = detaildata.items[0].snippet.title, tag_arr = [], cid = detaildata.items[0].snippet.channelId, ctitle = detaildata.items[0].snippet.channelTitle, thumb = detaildata.items[0].snippet.thumbnails.default.url;
-                        console.log(media_name);
-                        url = util.isValidString(url, 'url');
-                        if (url === false) {
-                            util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
-                        }
-                        if (detaildata.items[0].snippet.tags) {
-                            tag_arr = detaildata.items[0].snippet.tags;
-                        }
-                        if (ctitle) {
-                            tag_arr.push(detaildata.items[0].snippet.channelTitle);
-                        }
-                        if (tag_arr.indexOf('youtube') === -1) {
-                            tag_arr.push('youtube');
-                        }
-                        if (is_music) {
-                            if (tag_arr.indexOf('audio') === -1) {
-                                tag_arr.push('audio');
-                            }
-                            if (tag_arr.indexOf('音頻') === -1) {
-                                tag_arr.push('音頻');
-                            }
-                        } else {
-                            if (tag_arr.indexOf('video') === -1) {
-                                tag_arr.push('video');
-                            }
-                            if (tag_arr.indexOf('影片') === -1) {
-                                tag_arr.push('影片');
-                            }
-                        }
-                        streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
-                    });
-                } else {
-                    youtube_id = url.match(/v=([^&]+)/);
-                    if (!youtube_id) {
-                        util.handleError({hoerror: 2, message: 'can not find youtube id!!!'}, next, res);
+                mongo.orig("find", "storage", {url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                    if (err) {
+                        util.handleError(err, next, res);
                     }
-                    googleApi.googleApi('y video', {id: youtube_id[1], caption: true}, function(err, detaildata) {
-                        if (err) {
-                            util.handleError(err, next, res);
-                        }
-                        if (detaildata.items.length < 1) {
-                            util.handleError({hoerror: 2, message: 'can not find video'}, next, res);
-                        }
-                        var media_name = detaildata.items[0].snippet.title, tag_arr = [], cid = detaildata.items[0].snippet.channelId, ctitle = detaildata.items[0].snippet.channelTitle, thumb = detaildata.items[0].snippet.thumbnails.default.url;
-                        console.log(media_name);
-                        url = util.isValidString(url, 'url');
-                        if (url === false) {
-                            util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
-                        }
-                        if (detaildata.items[0].snippet.tags) {
-                            tag_arr = detaildata.items[0].snippet.tags;
-                        }
-                        if (ctitle) {
-                            tag_arr.push(detaildata.items[0].snippet.channelTitle);
-                        }
-                        if (tag_arr.indexOf('youtube') === -1) {
-                            tag_arr.push('youtube');
-                        }
-                        if (is_music) {
-                            if (tag_arr.indexOf('audio') === -1) {
-                                tag_arr.push('audio');
-                            }
-                            if (tag_arr.indexOf('音頻') === -1) {
-                                tag_arr.push('音頻');
-                            }
-                        } else {
-                            if (tag_arr.indexOf('video') === -1) {
-                                tag_arr.push('video');
-                            }
-                            if (tag_arr.indexOf('影片') === -1) {
-                                tag_arr.push('影片');
+                    if (items.length > 0) {
+                        for (var i in items) {
+                            console.log(items[i]);
+                            if (items[i].thumb && items[i].status === is_media) {
+                                util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                                break;
                             }
                         }
-                        streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
-                    });
-                }
+                    }
+                    youtube_id = url.match(/list=([^&]+)/);
+                    if (youtube_id) {
+                        googleApi.googleApi('y playlist', {id: youtube_id[1], caption: true}, function(err, detaildata) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (detaildata.items.length < 1) {
+                                util.handleError({hoerror: 2, message: 'can not find video'}, next, res);
+                            }
+                            var media_name = detaildata.items[0].snippet.title, tag_arr = [], cid = detaildata.items[0].snippet.channelId, ctitle = detaildata.items[0].snippet.channelTitle, thumb = detaildata.items[0].snippet.thumbnails.default.url;
+                            console.log(media_name);
+                            url = util.isValidString(url, 'url');
+                            if (url === false) {
+                                util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
+                            }
+                            if (detaildata.items[0].snippet.tags) {
+                                tag_arr = detaildata.items[0].snippet.tags;
+                            }
+                            if (ctitle) {
+                                tag_arr.push(detaildata.items[0].snippet.channelTitle);
+                            }
+                            if (tag_arr.indexOf('youtube') === -1) {
+                                tag_arr.push('youtube');
+                            }
+                            if (is_music) {
+                                if (tag_arr.indexOf('audio') === -1) {
+                                    tag_arr.push('audio');
+                                }
+                                if (tag_arr.indexOf('音頻') === -1) {
+                                    tag_arr.push('音頻');
+                                }
+                            } else {
+                                if (tag_arr.indexOf('video') === -1) {
+                                    tag_arr.push('video');
+                                }
+                                if (tag_arr.indexOf('影片') === -1) {
+                                    tag_arr.push('影片');
+                                }
+                            }
+                            streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
+                        });
+                    } else {
+                        youtube_id = url.match(/v=([^&]+)/);
+                        if (!youtube_id) {
+                            util.handleError({hoerror: 2, message: 'can not find youtube id!!!'}, next, res);
+                        }
+                        googleApi.googleApi('y video', {id: youtube_id[1], caption: true}, function(err, detaildata) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (detaildata.items.length < 1) {
+                                util.handleError({hoerror: 2, message: 'can not find video'}, next, res);
+                            }
+                            var media_name = detaildata.items[0].snippet.title, tag_arr = [], cid = detaildata.items[0].snippet.channelId, ctitle = detaildata.items[0].snippet.channelTitle, thumb = detaildata.items[0].snippet.thumbnails.default.url;
+                            console.log(media_name);
+                            url = util.isValidString(url, 'url');
+                            if (url === false) {
+                                util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
+                            }
+                            if (detaildata.items[0].snippet.tags) {
+                                tag_arr = detaildata.items[0].snippet.tags;
+                            }
+                            if (ctitle) {
+                                tag_arr.push(detaildata.items[0].snippet.channelTitle);
+                            }
+                            if (tag_arr.indexOf('youtube') === -1) {
+                                tag_arr.push('youtube');
+                            }
+                            if (is_music) {
+                                if (tag_arr.indexOf('audio') === -1) {
+                                    tag_arr.push('audio');
+                                }
+                                if (tag_arr.indexOf('音頻') === -1) {
+                                    tag_arr.push('音頻');
+                                }
+                            } else {
+                                if (tag_arr.indexOf('video') === -1) {
+                                    tag_arr.push('video');
+                                }
+                                if (tag_arr.indexOf('影片') === -1) {
+                                    tag_arr.push('影片');
+                                }
+                            }
+                            streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
+                        });
+                    }
+                });
             } else {
                 api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                     if (err) {

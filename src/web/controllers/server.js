@@ -3347,6 +3347,12 @@ function getStorageItem(user, items, mediaHandle) {
                 if (items[i].thumb) {
                     data.thumb = items[i].thumb;
                 }
+                if (items[i].cid) {
+                    data.cid = items[i].cid;
+                }
+                if (items[i].ctitle) {
+                    data.ctitle = items[i].ctitle;
+                }
                 itemList.push(data);
             }
         } else {
@@ -3366,6 +3372,12 @@ function getStorageItem(user, items, mediaHandle) {
                 }
                 if (items[i].thumb) {
                     data.thumb = items[i].thumb;
+                }
+                if (items[i].cid) {
+                    data.cid = items[i].cid;
+                }
+                if (items[i].ctitle) {
+                    data.ctitle = items[i].ctitle;
                 }
                 if (user._id.equals(items[i].owner)) {
                     data.isOwn = true;
@@ -3392,6 +3404,12 @@ function getStorageItem(user, items, mediaHandle) {
                 if (items[i].thumb) {
                     data.thumb = items[i].thumb;
                 }
+                if (items[i].cid) {
+                    data.cid = items[i].cid;
+                }
+                if (items[i].ctitle) {
+                    data.ctitle = items[i].ctitle;
+                }
                 itemList.push(data);
             }
         } else {
@@ -3411,6 +3429,12 @@ function getStorageItem(user, items, mediaHandle) {
                 }
                 if (items[i].thumb) {
                     data.thumb = items[i].thumb;
+                }
+                if (items[i].cid) {
+                    data.cid = items[i].cid;
+                }
+                if (items[i].ctitle) {
+                    data.ctitle = items[i].ctitle;
                 }
                 if (user._id.equals(items[i].owner)) {
                     data.isOwn = true;

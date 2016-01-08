@@ -935,52 +935,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         getItemlist(this_obj, item, 0, true);
     }
 
-    $scope.subscription = function() {
-        if (isValidString(this.toolList.title, 'name')) {
-            var this_obj = this;
-            var bookmarkapi = $resource('/api/bookmark/subscipt', {}, {
-                'subscipt': { method:'POST' }
-            });
-            bookmarkapi.subscipt({name: this.toolList.title, path: ['ych_' + this.toolList.item.cid, 'no local', 'youtube playlist', 'youtube video'], exactly: [false, false]}, function(result) {
-                if (result.loginOK) {
-                    $window.location.href = $location.path();
-                } else {
-                    if (result.id) {
-                        this_obj.bookmarkList.push({id: result.id, name: result.name});
-                    }
-                    if (result.bid) {
-                        result.id = result.bid;
-                        result.name = result.bname;
-                        if (this_obj.feedback.run) {
-                            if (this_obj.feedback.uid === result.id) {
-                                showFeedback(result);
-                            } else {
-                                if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
-                                    this_obj.feedback.queue.push(result);
-                                } else {
-                                    this_obj.feedback.queue.splice(index, 1, result);
-                                }
-                            }
-                        } else {
-                            this_obj.feedback.run = true;
-                            showFeedback(result);
-                        }
-                    }
-                }
-            }, function(errorResult) {
-                if (errorResult.status === 400) {
-                    addAlert(errorResult.data);
-                } else if (errorResult.status === 403) {
-                    addAlert('unknown API!!!');
-                } else if (errorResult.status === 401) {
-                    $window.location.href = $location.path();
-                }
-            });
-        } else {
-            addAlert('Bookmark name is not valid!!!');
-        }
-    }
-
     $scope.gotoStorage = function(this_obj, item, index) {
         this_obj.page = 0;
         this_obj.pageToken = '';
@@ -2230,14 +2184,13 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 } else {
                     this.$parent.toolList.origin = false;
                 }
-                if (item.cid) {
-                    this.$parent.toolList.subscription = true;
-                    this.$parent.toolList.title = item.ctitle;
-                } else {
-                    this.$parent.toolList.subscription = false;
-                }
             } else {
                 this.$parent.toolList.origin = false;
+            }
+            if (item.cid) {
+                this.$parent.toolList.subscription = true;
+                this.$parent.toolList.title = item.ctitle;
+            } else {
                 this.$parent.toolList.subscription = false;
             }
             if (item.noDb) {
@@ -3401,6 +3354,65 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             });
         } else {
             addAlert("invalid url!!!");
+        }
+    }
+
+    $scope.subscription = function(cid, ctitle, type) {
+        if (!cid) {
+            cid = this.toolList.item.cid;
+            ctitle = this.toolList.title;
+            if (this.toolList.item.status === 3) {
+                type = 'video';
+            } else if (this.toolList.item.status === 4) {
+                type = 'music';
+            }
+        }
+        if (type !== 'music' && type !== 'video') {
+            addAlert('Type is not valid!!!');
+        } else {
+            if (isValidString(ctitle, 'name')) {
+                var this_obj = this;
+                var bookmarkapi = $resource('/api/bookmark/subscipt', {}, {
+                    'subscipt': { method:'POST' }
+                });
+                bookmarkapi.subscipt({name: ctitle, path: ['ych_' + cid, 'no local', 'youtube playlist', 'youtube ' + type], exactly: [false, false]}, function(result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    } else {
+                        if (result.id) {
+                            this_obj.bookmarkList.push({id: result.id, name: result.name});
+                        }
+                        if (result.bid) {
+                            result.id = result.bid;
+                            result.name = result.bname;
+                            if (this_obj.feedback.run) {
+                                if (this_obj.feedback.uid === result.id) {
+                                    showFeedback(result);
+                                } else {
+                                    if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                        this_obj.feedback.queue.push(result);
+                                    } else {
+                                        this_obj.feedback.queue.splice(index, 1, result);
+                                    }
+                                }
+                            } else {
+                                this_obj.feedback.run = true;
+                                showFeedback(result);
+                            }
+                        }
+                    }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
+            } else {
+                addAlert('Bookmark name is not valid!!!');
+            }
         }
     }
 
@@ -4854,14 +4866,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         if (newVal) {
             if (newVal === 1) {
                 $scope.mediaToggle('music');
-                openModal("確定要下載音樂到網站上?").then(function () {
-                    if ($scope.music.playlist) {
-                        $scope.save2local(true, $scope.music.playlist.obj.id);
-                    } else {
-                        $scope.save2local(true, $scope.music.id);
-                    }
+                openModal("確定要儲存到網站?").then(function () {
+                    $scope.save2local(true, $scope.music.id);
                 }, function () {
                 });
+            } else if (newVal === 2) {
+                $scope.subscription($scope.music.list[$scope.music.index].cid, $scope.music.list[$scope.music.index].ctitle, 'music');
             }
             $scope.music.option = 0;
         }
@@ -4885,14 +4895,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 $scope.originSubtitle('video');
             } else if (newVal === 4) {
                 $scope.mediaToggle('video');
-                openModal("確定要下載影片到網站上?").then(function () {
-                    if ($scope.video.playlist) {
-                        $scope.save2local(false, $scope.video.playlist.obj.id);
-                    } else {
-                        $scope.save2local(false, $scope.video.id);
-                    }
+                openModal("確定要儲存到網站?").then(function () {
+                    $scope.save2local(false, $scope.video.id);
                 }, function () {
                 });
+            } else if (newVal === 5) {
+                $scope.subscription($scope.video.list[$scope.video.index].cid, $scope.video.list[$scope.video.index].ctitle, 'video');
             }
             $scope.video.option = 0;
         }
