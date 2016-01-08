@@ -2151,7 +2151,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
-    $scope.toolList = {download: false, edit: false, upload:false, searchSub:false, del: false, dir: false, fixYoutube: false, subscription: false, origin: false, download2local: false, title: '', item: null};
+    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, origin: false, save2local: false, title: '', item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -2485,10 +2485,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         this_obj.doc.end = false;
         this_obj.present.end = false;
         getItemlist(this_obj, item, 0, true);
-    }
-
-    $scope.fixYoutube = function() {
-        this.exactlyStorage(this, this.toolList.item.id);
     }
 
     $scope.subscription = function() {
@@ -3739,10 +3735,9 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.searchSub = false;
             this.$parent.toolList.delMedia = false;
             this.$parent.toolList.vlogMedia = false;
-            this.$parent.toolList.fixYoutube = false;
             this.$parent.toolList.subscription = false;
             this.$parent.toolList.origin = false;
-            this.$parent.toolList.download2local = false;
+            this.$parent.toolList.save2local = false;
             confirm_str = item;
         } else {
             if (item.status === 7 || item.status === 8 || item.status === 9 || item.thumb) {
@@ -3752,8 +3747,12 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             }
             this.$parent.toolList.dir = false;
             if (item.isOwn) {
-                this.$parent.toolList.edit = true;
                 this.$parent.toolList.del = true;
+                if (!item.thumb) {
+                    this.$parent.toolList.edit = true;
+                } else {
+                    this.$parent.toolList.edit = false;
+                }
             } else {
                 this.$parent.toolList.edit = false;
                 this.$parent.toolList.del = false;
@@ -3783,17 +3782,20 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 } else {
                     this.$parent.toolList.origin = false;
                 }
-                this.$parent.toolList.fixYoutube = true;
-                this.$parent.toolList.download2local = true;
                 if (item.cid) {
                     this.$parent.toolList.subscription = true;
                     this.$parent.toolList.title = item.ctitle;
+                } else {
+                    this.$parent.toolList.subscription = false;
                 }
             } else {
                 this.$parent.toolList.origin = false;
-                this.$parent.toolList.fixYoutube = false;
                 this.$parent.toolList.subscription = false;
-                this.$parent.toolList.download2local = false;
+            }
+            if (item.noDb) {
+                this.$parent.toolList.save2local = true;
+            } else {
+                this.$parent.toolList.save2local = false;
             }
         }
         this.toggleDropdown($event, 'item');
@@ -4080,6 +4082,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.videoSwitch = false;
     $scope.musicSwitch = false;
     $scope.torrentSwitch = false;
+    $scope.noEnd = false;
     //alert
     $scope.alerts = [];
     var alertTime;
@@ -4732,32 +4735,34 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     }
 
     showFeedback = function (response) {
-        $scope.feedback.name = response.name;
-        $scope.feedback.uid = response.id;
-        $scope.feedback.list = [];
-        for (var i in response.select) {
-            $scope.feedback.list.push({tag: response.select[i], select: true});
-        }
-        for (var i in response.option) {
-            $scope.feedback.list.push({tag: response.option[i], select: false});
-        }
-        $scope.feedback.other = response.other;
-        var index = 0, searchTag='';
-        var historyRelative = [];
-        for (var i in $scope.feedback.history) {
-            searchTag = $scope.feedback.history[i].tag;
-            index = arrayObjectIndexOf($scope.feedback.list, searchTag, "tag");
-            if (index === -1) {
-                $scope.feedback.history[i].history = true;
-                if ($scope.feedback.history[i].select) {
-                    $scope.feedback.list.splice(0, 0, $scope.feedback.history[i]);
-                    historyRelative.push($scope.feedback.history[i].tag);
-                }
-            } else {
-                if ($scope.feedback.list[index].select !== $scope.feedback.history[i].select) {
-                    $scope.feedback.list[index].history = true;
-                    $scope.feedback.list[index].select = $scope.feedback.history[i].select;
-                    $scope.feedback.list.splice(0, 0, $scope.feedback.list.splice(index, 1)[0]);
+        if (response.id) {
+            $scope.feedback.name = response.name;
+            $scope.feedback.uid = response.id;
+            $scope.feedback.list = [];
+            for (var i in response.select) {
+                $scope.feedback.list.push({tag: response.select[i], select: true});
+            }
+            for (var i in response.option) {
+                $scope.feedback.list.push({tag: response.option[i], select: false});
+            }
+            $scope.feedback.other = response.other;
+            var index = 0, searchTag='';
+            var historyRelative = [];
+            for (var i in $scope.feedback.history) {
+                searchTag = $scope.feedback.history[i].tag;
+                index = arrayObjectIndexOf($scope.feedback.list, searchTag, "tag");
+                if (index === -1) {
+                    $scope.feedback.history[i].history = true;
+                    if ($scope.feedback.history[i].select) {
+                        $scope.feedback.list.splice(0, 0, $scope.feedback.history[i]);
+                        historyRelative.push($scope.feedback.history[i].tag);
+                    }
+                } else {
+                    if ($scope.feedback.list[index].select !== $scope.feedback.history[i].select) {
+                        $scope.feedback.list[index].history = true;
+                        $scope.feedback.list[index].select = $scope.feedback.history[i].select;
+                        $scope.feedback.list.splice(0, 0, $scope.feedback.list.splice(index, 1)[0]);
+                    }
                 }
             }
         }
@@ -4882,30 +4887,30 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
     }
 
-    $scope.download2local = function(music, id) {
+    $scope.save2local = function(music, id) {
         if (!id) {
             if (this.toolList.item.id.substr(0, 4) === 'you_') {
                 url =  'https://www.youtube.com/watch?v=' + this.toolList.item.id.substr(4);
-                if (this.toolList.item.status === 4) {
-                    url = url + ':music';
-                }
-            } else if (this.toolList.item.id.substr(0, 4) === 'dym_') {
-                url = 'http://www.dailymotion.com/embed/video/' + this.toolList.item.id.substr(4);
+            } else if (this.toolList.item.id.substr(0, 4) === 'ypl_') {
+                url =  'https://www.youtube.com/watch?list=' + this.toolList.item.id.substr(4);
             } else {
                 addAlert('not external video');
                 return false;
             }
+            if (this.toolList.item.status === 4) {
+                url = url + ':music';
+            }
         } else {
             if (id.substr(0, 4) === 'you_') {
                 url =  'https://www.youtube.com/watch?v=' + id.substr(4);
-                if (music) {
-                    url = url + ':music';
-                }
-            } else if (id.substr(0, 4) === 'dym_') {
-                url =  'http://www.dailymotion.com/embed/video/' + id.substr(4);
+            } else if (id.substr(0, 4) === 'ypl_') {
+                url =  'https://www.youtube.com/watch?list=' + id.substr(4);
             } else {
                 addAlert('not external video');
                 return false;
+            }
+            if (music) {
+                url = url + ':music';
             }
         }
         var this_obj = this;
@@ -5489,20 +5494,24 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         if (this[type].playlist && this[type].playlist.obj.index < this[type].playlist.total) {
             this.videoMove(type, 'next', true);
         } else {
-            if (type === 'music') {
-                this.musicShuffle();
+            if (!this.noEnd && this[type].playlist) {
+                return false;
             } else {
-                switch (this[type].mode) {
-                    case 1:
-                    this.mediaMove(-1, type, true);
-                    break;
-                    case 2:
-                    this.mediaMove(0, type, true, true);
-                    break;
-                    case 0:
-                    default:
-                    this.mediaMove(1, type, true);
-                    break;
+                if (type === 'music') {
+                    this.musicShuffle();
+                } else {
+                    switch (this[type].mode) {
+                        case 1:
+                        this.mediaMove(-1, type, true);
+                        break;
+                        case 2:
+                        this.mediaMove(0, type, true, true);
+                        break;
+                        case 0:
+                        default:
+                        this.mediaMove(1, type, true);
+                        break;
+                    }
                 }
             }
         }
@@ -6399,9 +6408,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 $scope.mediaToggle('music');
                 openModal("確定要下載音樂到網站上?").then(function () {
                     if ($scope.music.playlist) {
-                        $scope.download2local(true, $scope.music.playlist.obj.id);
+                        $scope.save2local(true, $scope.music.playlist.obj.id);
                     } else {
-                        $scope.download2local(true, $scope.music.id);
+                        $scope.save2local(true, $scope.music.id);
                     }
                 }, function () {
                 });
@@ -6430,9 +6439,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 $scope.mediaToggle('video');
                 openModal("確定要下載影片到網站上?").then(function () {
                     if ($scope.video.playlist) {
-                        $scope.download2local(false, $scope.video.playlist.obj.id);
+                        $scope.save2local(false, $scope.video.playlist.obj.id);
                     } else {
-                        $scope.download2local(false, $scope.video.id);
+                        $scope.save2local(false, $scope.video.id);
                     }
                 }, function () {
                 });

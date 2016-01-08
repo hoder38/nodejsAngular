@@ -823,6 +823,14 @@ audio.media-screen {
     color: black;
 }
 
+.external .item-point:hover,.external .item-point:link,.external .item-point:visited,.external .item-point:active {
+    color: gray;
+}
+
+.external {
+    color: gray;
+}
+
 .recycled .item-point:hover,.recycled .item-point:link,.recycled .item-point:visited,.recycled .item-point:active {
     color: #B40404;
 }
@@ -831,11 +839,11 @@ audio.media-screen {
     color: #B40404;
 }
 
-.youtubed .item-point:hover,.youtubed .item-point:link,.youtubed .item-point:visited,.youtubed .item-point:active {
+.outside .item-point:hover,.outside .item-point:link,.outside .item-point:visited,.outside .item-point:active {
     color: red;
 }
 
-.youtubed {
+.outside {
     color: red;
 }
 
