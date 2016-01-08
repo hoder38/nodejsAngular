@@ -887,10 +887,10 @@ var exports = module.exports = {
                             if (!filename) {
                                 filename = path.basename(pathname);
                             }
-                            if (tag_arr.indexOf('audio')) {
+                            if (tag_arr.indexOf('audio') === -1) {
                                 tag_arr.push('audio');
                             }
-                            if (tag_arr.indexOf('音頻')) {
+                            if (tag_arr.indexOf('音頻') === -1) {
                                 tag_arr.push('音頻');
                             }
                             setTimeout(function(){
@@ -916,10 +916,10 @@ var exports = module.exports = {
                                 if (err) {
                                     util.handleError(err);
                                 }
-                                if (tag_arr.indexOf('video')) {
+                                if (tag_arr.indexOf('video') === -1) {
                                     tag_arr.push('video');
                                 }
-                                if (tag_arr.indexOf('影片')) {
+                                if (tag_arr.indexOf('影片') === -1) {
                                     tag_arr.push('影片');
                                 }
                                 setTimeout(function(){

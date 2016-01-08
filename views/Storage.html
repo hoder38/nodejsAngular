@@ -258,14 +258,8 @@
             <li ng-show="toolList.dir" ng-repeat="item in dirList">
                 <a confirmed-click="add2Parent(item)" ng-confirm-click="Would you sure to add" ng-sub-msg="to {{item.show}}?" href="#">{{item.show}}</a>
             </li>
-            <li ng-show="toolList.download2local">
-                <a confirmed-click="download2local()" ng-confirm-click="確定要下載影片到網站上?" href="#">下載到local</a>
-            </li>
-            <!--li ng-show="toolList.downloadMusic">
-                <a confirmed-click="download2local(true)" ng-confirm-click="確定要把影片轉檔成音樂並下載到網站上?" href="#">下載音樂</a>
-            </li-->
-            <li ng-show="toolList.fixYoutube">
-                <a ng-click="fixYoutube()" href="#">固定Youtube</a>
+            <li ng-show="toolList.save2local">
+                <a confirmed-click="save2local()" ng-confirm-click="確定要下載影片到網站上?" href="#">儲存到local</a>
             </li>
             <li ng-show="toolList.subscription">
                 <a ng-click="subscription()" href="#">訂閱{{toolList.title}}</a>
@@ -277,7 +271,7 @@
     <div class="table-responsive">
         <table class="table table-hover">
             <tbody>
-                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'recycling' || ''}} {{item.recycle === 4 && 'recycled' || ''}} {{item.thumb && 'youtubed' || ''}}" ng-if="$index <= dirLocation">
+                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'recycling' || ''}} {{item.recycle === 4 && 'recycled' || ''}} {{item.noDb && 'outside' || ''}} {{item.thumb && 'external' || ''}}" ng-if="$index <= dirLocation">
                     <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
                     <td class="item-name" ng-if="item.media" confirmed-click="handleMedia('act', item)" ng-confirm-click="Would you sure to handle this media?">
                         {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}} {{item.media.split}}
@@ -389,7 +383,7 @@
                         </button>
                     </td>
                 </tr>
-                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'recycling' || ''}} {{item.recycle === 4 && 'recycled' || ''}} {{item.thumb && 'youtubed' || ''}}" ng-if="$index > dirLocation">
+                <tr ng-repeat="item in itemList" class="{{item.id === latest && 'info' || ''}} {{(item.recycle === 1 || item.recycle === 2 || item.recycle === 3) && 'recycling' || ''}} {{item.recycle === 4 && 'recycled' || ''}} {{item.noDb && 'outside' || ''}} {{item.thumb && 'external' || ''}}" ng-if="$index > dirLocation">
                     <td class="item-check text-center"><input type="checkbox" ng-model="item.select" tooltip="點選觀看共同TAG" tooltip-trigger="mouseenter" tooltip-placement="right" /></td>
                     <td class="item-name" ng-if="item.media" confirmed-click="handleMedia('act', item)" ng-confirm-click="Would you sure to handle this media?">
                         {{item.name}}<br />type: {{item.media.type}}<br />key: {{item.media.key}}<br />err: {{item.media.err}} {{item.media.split}}

@@ -293,6 +293,9 @@
                                             <span ng-show="video.mode === 1" class="glyphicon glyphicon-arrow-left"></span>{{(video.mode === 0 || video.mode === 1) && 'All' || ''}}{{(video.mode === 2) && '1' || ''}}
                                         </a>
                                     </li>
+                                    <li ng-show="video.playlist&&videoSwitch" tooltip="no end" tooltip-trigger="mouseenter">
+                                        <input type="checkbox" ng-model="noEnd"/>
+                                    </li>
                                     <span ng-show="video.playlist&&!videoSwitch">
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="videoMove('video', 'previous')">
@@ -332,7 +335,7 @@
                                             <option value="1">search subtitle</option>
                                             <option value="2">upload subtitle</option>
                                             <option ng-show="video.list[video.index].thumb" value="3">origin subtitle</option>
-                                            <option ng-show="video.list[video.index].thumb" value="4">下載到local</option>
+                                            <option ng-show="video.list[video.index].noDb" value="4">儲存到local</option>
                                         </select>
                                     </li>
                                     <li ng-show="videoSwitch&&video.list[video.index].thumb">
@@ -365,10 +368,13 @@
                                             <span class="glyphicon glyphicon-info-sign"></span>
                                         </a>
                                     </li>
-                                    <li ng-show="musicSwitch">
+                                    <li ng-show="music.playlist&&musicSwitch">
                                         <a href="#" ng-click="changeMode('music')">
                                             <span ng-show="music.mode === 1" class="glyphicon glyphicon-arrow-left"></span>{{(music.mode === 0 || music.mode === 1) && 'All' || ''}}{{(music.mode === 2) && '1' || ''}}<span ng-show="music.mode === 3" class="glyphicon glyphicon-random"></span>
                                         </a>
+                                    </li>
+                                    <li ng-show="musicSwitch" tooltip="no end" tooltip-trigger="mouseenter">
+                                        <input type="checkbox" ng-model="noEnd"/>
                                     </li>
                                     <span ng-show="music.playlist&&!musicSwitch">
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
@@ -398,10 +404,10 @@
                                             <span class="glyphicon glyphicon-chevron-right"></span>
                                         </a>
                                     </li>
-                                    <li ng-show="music.list[music.index].thumb&&musicSwitch">
+                                    <li ng-show="music.list[music.index].noDb&&musicSwitch">
                                         <select ng-model="music.option">
                                             <option value="0">option</option>
-                                            <option value="1">下載到local</option>
+                                            <option value="1">儲存到local</option>
                                         </select>
                                     </li>
                                 </ul>

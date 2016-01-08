@@ -439,12 +439,16 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
             util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
         }
         var hide = req.body.hide;
-        var oOID = mongo.objectID();
-        var filePath = util.getFileLocation(req.user._id, oOID);
-        var folderPath = path.dirname(filePath);
         var is_media = 0;
         var encodeTorrent = url;
+        var owner = req.user._id;
         url = decodeURIComponent(url);
+        if (url.match(/^(https|http):\/\/(www\.youtube\.com|youtu\.be)\//)) {
+            owner = 'youtube';
+        }
+        var oOID = mongo.objectID();
+        var filePath = util.getFileLocation(owner, oOID);
+        var folderPath = path.dirname(filePath);
         var shortTorrent = url.match(/^magnet:[^&]+/);
         if (shortTorrent) {
             folderPath = filePath;
@@ -503,7 +507,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                         filename = 'Playlist ' + engine.torrent.name;
                                     }
                                     engine.destroy();
-                                    streamClose(filename, tag_arr, opt_arr, encodeTorrent, playList);
+                                    streamClose(filename, tag_arr, opt_arr, {magnet: encodeTorrent, playlist: playList});
                                 });
                             } else {
                                 util.handleError({hoerror: 2, message: "already has one"}, next, res);
@@ -512,37 +516,104 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     }
                 } else if (url.match(/^(https|http):\/\/(www\.youtube\.com|youtu\.be)\//)) {
                     var is_music = url.match(/^(.*):music$/);
+                    var youtube_id = false;
                     if (is_music) {
                         is_media = 4;
                         console.log('youtube music');
-                        googleApi.googleDownloadYoutube(is_music[1], filePath, function(err, filename, tag_arr) {
-                            if (err) {
-                                sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
-                                util.handleError(err, next, res);
-                            }
-                            streamClose(filename, tag_arr);
-                        }, true);
+                        url = is_music[1];
                     } else {
                         is_media = 3;
                         console.log('youtube');
-                        googleApi.googleDownloadYoutube(url, filePath, function(err, filename, tag_arr) {
+                    }
+                    youtube_id = url.match(/list=([^&]+)/);
+                    if (youtube_id) {
+                        googleApi.googleApi('y playlist', {id: youtube_id[1], caption: true}, function(err, detaildata) {
                             if (err) {
-                                sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, item[0].adultonly);
                                 util.handleError(err, next, res);
                             }
-                            streamClose(filename, tag_arr);
+                            if (detaildata.items.length < 1) {
+                                util.handleError({hoerror: 2, message: 'can not find video'}, next, res);
+                            }
+                            var media_name = detaildata.items[0].snippet.title, tag_arr = [], cid = detaildata.items[0].snippet.channelId, ctitle = detaildata.items[0].snippet.channelTitle, thumb = detaildata.items[0].snippet.thumbnails.default.url;
+                            console.log(media_name);
+                            url = util.isValidString(url, 'url');
+                            if (url === false) {
+                                util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
+                            }
+                            if (detaildata.items[0].snippet.tags) {
+                                tag_arr = detaildata.items[0].snippet.tags;
+                            }
+                            if (ctitle) {
+                                tag_arr.push(detaildata.items[0].snippet.channelTitle);
+                            }
+                            if (tag_arr.indexOf('youtube') === -1) {
+                                tag_arr.push('youtube');
+                            }
+                            if (tag_arr.indexOf('youtube') === -1) {
+                                tag_arr.push('youtube');
+                            }
+                            if (is_music) {
+                                if (tag_arr.indexOf('audio') === -1) {
+                                    tag_arr.push('audio');
+                                }
+                                if (tag_arr.indexOf('音頻') === -1) {
+                                    tag_arr.push('音頻');
+                                }
+                            } else {
+                                if (tag_arr.indexOf('video') === -1) {
+                                    tag_arr.push('video');
+                                }
+                                if (tag_arr.indexOf('影片') === -1) {
+                                    tag_arr.push('影片');
+                                }
+                            }
+                            streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
+                        });
+                    } else {
+                        youtube_id = url.match(/v=([^&]+)/);
+                        if (!youtube_id) {
+                            util.handleError({hoerror: 2, message: 'can not find youtube id!!!'}, next, res);
+                        }
+                        googleApi.googleApi('y video', {id: youtube_id[1], caption: true}, function(err, detaildata) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (detaildata.items.length < 1) {
+                                util.handleError({hoerror: 2, message: 'can not find video'}, next, res);
+                            }
+                            var media_name = detaildata.items[0].snippet.title, tag_arr = [], cid = detaildata.items[0].snippet.channelId, ctitle = detaildata.items[0].snippet.channelTitle, thumb = detaildata.items[0].snippet.thumbnails.default.url;
+                            console.log(media_name);
+                            url = util.isValidString(url, 'url');
+                            if (url === false) {
+                                util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
+                            }
+                            if (detaildata.items[0].snippet.tags) {
+                                tag_arr = detaildata.items[0].snippet.tags;
+                            }
+                            if (ctitle) {
+                                tag_arr.push(detaildata.items[0].snippet.channelTitle);
+                            }
+                            if (tag_arr.indexOf('youtube') === -1) {
+                                tag_arr.push('youtube');
+                            }
+                            if (is_music) {
+                                if (tag_arr.indexOf('audio') === -1) {
+                                    tag_arr.push('audio');
+                                }
+                                if (tag_arr.indexOf('音頻') === -1) {
+                                    tag_arr.push('音頻');
+                                }
+                            } else {
+                                if (tag_arr.indexOf('video') === -1) {
+                                    tag_arr.push('video');
+                                }
+                                if (tag_arr.indexOf('影片') === -1) {
+                                    tag_arr.push('影片');
+                                }
+                            }
+                            streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
                         });
                     }
-                } else if (url.match(/^(https|http):\/\/www\.dailymotion\.com\//)) {
-                    console.log('dailymotion');
-                    is_media = 3;
-                    googleApi.googleDownloadExternal(url, filePath, function(err, filename, tag_arr) {
-                        if (err) {
-                            sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, item[0].adultonly);
-                            util.handleError(err, next, res);
-                        }
-                        streamClose(filename, tag_arr);
-                    });
                 } else {
                     api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                         if (err) {
@@ -552,7 +623,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         if (!filename) {
                             filename = path.basename(pathname);
                         }
-                        streamClose(filename, []);
+                        streamClose(filename, [], []);
                     });
                 }
             });
@@ -601,7 +672,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                 filename = 'Playlist ' + engine.torrent.name;
                             }
                             engine.destroy();
-                            streamClose(filename, tag_arr, opt_arr, encodeTorrent, playList);
+                            streamClose(filename, tag_arr, opt_arr, {magnet: encodeTorrent, playlist: playList});
                         });
                     } else {
                         util.handleError({hoerror: 2, message: "already has one"}, next, res);
@@ -609,37 +680,101 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 });
             } else if (url.match(/^(https|http):\/\/(www\.youtube\.com|youtu\.be)\//)) {
                 var is_music = url.match(/^(.*):music$/);
+                var youtube_id = false;
                 if (is_music) {
                     is_media = 4;
                     console.log('youtube music');
-                    googleApi.googleDownloadYoutube(is_music[1], filePath, function(err, filename, tag_arr) {
-                        if (err) {
-                            sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
-                            util.handleError(err, next, res);
-                        }
-                        streamClose(filename, tag_arr);
-                    }, true);
+                    url = is_music[1];
                 } else {
                     is_media = 3;
                     console.log('youtube');
-                    googleApi.googleDownloadYoutube(url, filePath, function(err, filename, tag_arr) {
+                }
+                youtube_id = url.match(/list=([^&]+)/);
+                if (youtube_id) {
+                    googleApi.googleApi('y playlist', {id: youtube_id[1], caption: true}, function(err, detaildata) {
                         if (err) {
-                            sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
                             util.handleError(err, next, res);
                         }
-                        streamClose(filename, tag_arr);
+                        if (detaildata.items.length < 1) {
+                            util.handleError({hoerror: 2, message: 'can not find video'}, next, res);
+                        }
+                        var media_name = detaildata.items[0].snippet.title, tag_arr = [], cid = detaildata.items[0].snippet.channelId, ctitle = detaildata.items[0].snippet.channelTitle, thumb = detaildata.items[0].snippet.thumbnails.default.url;
+                        console.log(media_name);
+                        url = util.isValidString(url, 'url');
+                        if (url === false) {
+                            util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
+                        }
+                        if (detaildata.items[0].snippet.tags) {
+                            tag_arr = detaildata.items[0].snippet.tags;
+                        }
+                        if (ctitle) {
+                            tag_arr.push(detaildata.items[0].snippet.channelTitle);
+                        }
+                        if (tag_arr.indexOf('youtube') === -1) {
+                            tag_arr.push('youtube');
+                        }
+                        if (is_music) {
+                            if (tag_arr.indexOf('audio') === -1) {
+                                tag_arr.push('audio');
+                            }
+                            if (tag_arr.indexOf('音頻') === -1) {
+                                tag_arr.push('音頻');
+                            }
+                        } else {
+                            if (tag_arr.indexOf('video') === -1) {
+                                tag_arr.push('video');
+                            }
+                            if (tag_arr.indexOf('影片') === -1) {
+                                tag_arr.push('影片');
+                            }
+                        }
+                        streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
+                    });
+                } else {
+                    youtube_id = url.match(/v=([^&]+)/);
+                    if (!youtube_id) {
+                        util.handleError({hoerror: 2, message: 'can not find youtube id!!!'}, next, res);
+                    }
+                    googleApi.googleApi('y video', {id: youtube_id[1], caption: true}, function(err, detaildata) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (detaildata.items.length < 1) {
+                            util.handleError({hoerror: 2, message: 'can not find video'}, next, res);
+                        }
+                        var media_name = detaildata.items[0].snippet.title, tag_arr = [], cid = detaildata.items[0].snippet.channelId, ctitle = detaildata.items[0].snippet.channelTitle, thumb = detaildata.items[0].snippet.thumbnails.default.url;
+                        console.log(media_name);
+                        url = util.isValidString(url, 'url');
+                        if (url === false) {
+                            util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
+                        }
+                        if (detaildata.items[0].snippet.tags) {
+                            tag_arr = detaildata.items[0].snippet.tags;
+                        }
+                        if (ctitle) {
+                            tag_arr.push(detaildata.items[0].snippet.channelTitle);
+                        }
+                        if (tag_arr.indexOf('youtube') === -1) {
+                            tag_arr.push('youtube');
+                        }
+                        if (is_music) {
+                            if (tag_arr.indexOf('audio') === -1) {
+                                tag_arr.push('audio');
+                            }
+                            if (tag_arr.indexOf('音頻') === -1) {
+                                tag_arr.push('音頻');
+                            }
+                        } else {
+                            if (tag_arr.indexOf('video') === -1) {
+                                tag_arr.push('video');
+                            }
+                            if (tag_arr.indexOf('影片') === -1) {
+                                tag_arr.push('影片');
+                            }
+                        }
+                        streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
                     });
                 }
-            } else if (url.match(/^(https|http):\/\/www\.dailymotion\.com\//)) {
-                    console.log('dailymotion');
-                    is_media = 3;
-                    googleApi.googleDownloadExternal(url, filePath, function(err, filename, tag_arr) {
-                        if (err) {
-                            sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, item[0].adultonly);
-                            util.handleError(err, next, res);
-                        }
-                        streamClose(filename, tag_arr);
-                    });
             } else {
                 api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                     if (err) {
@@ -653,7 +788,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 });
             }
         }
-        function streamClose(filename, tag_arr, opt_arr, magnet, playlist){
+        function streamClose(filename, tag_arr, opt_arr, db_obj){
             var name = util.toValidName(filename);
             if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
                 name = mime.addPost(name, '1');
@@ -665,9 +800,13 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
             data['name'] = name;
             data['owner'] = oUser_id;
             data['utime'] = utime;
-            var stats = fs.statSync(filePath);
-            if (stats.isFile()) {
-                data['size'] = stats["size"];
+            if (fs.existsSync(filePath)) {
+                var stats = fs.statSync(filePath);
+                if (stats.isFile()) {
+                    data['size'] = stats["size"];
+                } else {
+                    data['size'] = 0;
+                }
             } else {
                 data['size'] = 0;
             }
@@ -685,7 +824,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 data['untag'] = 1;
                 data['first'] = 1;
             }
-            if (magnet) {
+            if (db_obj && db_obj['magnet']) {
                 data['status'] = 9;//media type
             } else {
                 data['status'] = 0;//media type
@@ -712,12 +851,28 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 }
                 if (tag_arr) {
                     var is_d = false;
+                    var oIndex = -1;
+                    var option_cht = mime.getOptionTag('cht');
+                    var option_eng = mime.getOptionTag('eng');
                     for (var i in tag_arr) {
                         normal = tagTool.normalizeTag(tag_arr[i]);
                         is_d = tagTool.isDefaultTag(normal);
                         if (!is_d) {
                             if (mediaTag.def.indexOf(normal) === -1) {
                                 mediaTag.def.push(normal);
+                                oIndex = option_cht.indexOf(normal);
+                                if (oIndex !== -1) {
+                                    if (mediaTag.def.indexOf(option_eng[oIndex]) === -1) {
+                                        mediaTag.def.push(option_eng[oIndex]);
+                                    }
+                                } else {
+                                    oIndex = option_eng.indexOf(normal);
+                                    if (oIndex !== -1) {
+                                        if (mediaTag.def.indexOf(option_cht[oIndex]) === -1) {
+                                            mediaTag.def.push(option_cht[oIndex]);
+                                        }
+                                    }
+                                }
                             }
                         } else {
                             if (is_d.index === 0) {
@@ -768,11 +923,8 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 }
                 DBdata['tags'] = mediaTag.def;
                 DBdata[oUser_id] = mediaTag.def;
-                if (magnet) {
-                    DBdata['magnet'] = magnet;
-                }
-                if (playlist) {
-                    DBdata['playList'] = playlist;
+                for (var i in db_obj) {
+                    DBdata[i] = db_obj[i];
                 }
                 mongo.orig("insert", "storage", DBdata, function(err, item){
                     if(err) {
@@ -812,7 +964,11 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                 }
                             }
                         }
-                        res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                        if (DBdata['untag']) {
+                            res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                        } else {
+                            res.json({apiOK: true});
+                        }
                         if (!is_media) {
                             mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
                                 sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
@@ -3275,7 +3431,7 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                 if (items[0].recycle !== 4) {
                     util.handleError({hoerror: 2, message: 'recycle file first!!!'}, next, res);
                 }
-                if (items[0].status === 7 || items[0].status === 8) {
+                if (items[0].status === 7 || items[0].status === 8 || items[0].thumb) {
                     mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
                         if(err) {
                             util.handleError(err, next, res);
@@ -3373,7 +3529,7 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                 recur_backup();
             }
             function recur_backup() {
-                if (items[0].status === 7 || items[0].status === 8) {
+                if (items[0].status === 7 || items[0].status === 8 || items[0].thumb) {
                     mongo.orig("update", "storage", { _id: id }, {$set: {recycle: 4}}, function(err, item3){
                         if(err) {
                             util.handleError(err);

@@ -12,6 +12,8 @@ var genre_list = mime.getOptionTag('eng');
 
 var genre_list_ch = mime.getOptionTag('cht');
 
+var googleApi = require("../models/api-tool-google.js");
+
 //type要補到deltag裡
 
 module.exports = {
@@ -741,7 +743,7 @@ module.exports = {
             break;
         }
     },
-    getSingleId: function(type, url, index, callback) {
+    getSingleId: function(type, url, index, callback, pageToken, back) {
         if (index < 1) {
             util.handleError({hoerror: 2, message: 'index must > 1'}, callback, callback);
         }
@@ -1063,7 +1065,7 @@ module.exports = {
             }, 60000, false, false);
             break;
             case 'kubo':
-            //bj58 fun58 drive youtube dl
+            //bj58 fun58 drive youtube dl  fun23 bilibili
             //bj6 fun3 qq
             //bj5 fun1 letv
             //bj8 fun9 funshion
@@ -1298,9 +1300,51 @@ module.exports = {
                 }
             }, 60000, false, false, 'http://www.123kubo.com/');
             break;
+            case 'youtube':
+            var youtube_id = false;
+            youtube_id = url.match(/list=([^&]+)/);
+            if (youtube_id) {
+                this.youtubePlaylist(youtube_id[1], function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    setTimeout(function(){
+                        callback(null, obj, false, total, obj_arr, pageN, pageP, pageToken);
+                    }, 0);
+                }, pageToken, back);
+            } else {
+                youtube_id = url.match(/v=([^&]+)/);
+                var ret_obj = {id: 'you_' + youtube_id[1], index: 1, showId: 1};
+                setTimeout(function(){
+                    callback(null, ret_obj, false, 1);
+                }, 0);
+            }
+            break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
             break;
         }
+    },
+    youtubePlaylist: function(id, callback, pageToken, back) {
+        var query = {id: id};
+        if (pageToken) {
+            query['pageToken'] = pageToken;
+        }
+        console.log(query);
+        googleApi.googleApi('y playItem', query, function(err, vId_arr, total, nPageToken, pPageToken) {
+            if (err) {
+                util.handleError(err, callback, callback);
+            }
+            if (total <= 0) {
+                util.handleError({hoerror: 2, message: "playlist is empty"}, callback, callback);
+            }
+            var ret_obj = vId_arr[0];
+            if (back) {
+                ret_obj = vId_arr[vId_arr.length-1];
+            }
+            setTimeout(function(){
+                callback(null, ret_obj, false, total, vId_arr, nPageToken, pPageToken, pageToken);
+            }, 0);
+        });
     }
 };

@@ -1887,7 +1887,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
             if (id === false) {
                 util.handleError({hoerror: 2, message: "file is not vaild"}, next, res);
             }
-            if (obj && obj.match(/^(external|\d+(\.\d+)?)$/)) {
+            if (obj && obj.match(/^(you_.*|external|\d+(\.\d+)?)$/)) {
                 playlist = 2;
                 if (obj === 'external') {
                     obj = null;
@@ -1922,21 +1922,21 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                     if (items.length === 0) {
                         if (playlist) {
                             if (playlist === 1) {
-                                googleApi.googleApi('y playItem', {id: playlistId}, function(err, vId_arr, total, nPageToken, pPageToken) {
+                                externalTool.youtubePlaylist(playlistId, function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken) {
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
                                     if (total <= 0) {
                                         util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
                                     }
-                                    mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: vId_arr[0].id}, {limit: 1}, function(err, items1){
+                                    mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj}, {limit: 1}, function(err, items1){
                                         if (err) {
                                             util.handleError(err, next, res);
                                         }
                                         if (items1.length === 0 || type === 'music') {
-                                            res.json({playlist: {obj_arr: vId_arr, obj: vId_arr[0], pageN: nPageToken, pageP: pPageToken, pageToken: null, total: total}});
+                                            res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
                                         } else {
-                                            res.json({time: items1[0].recordTime, playlist: {obj_arr: vId_arr, obj: vId_arr[0], pageN: nPageToken, pageP: pPageToken, pageToken: null, total: total}});
+                                            res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
                                         }
                                     });
                                 });
@@ -1948,7 +1948,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                     if (items1.length === 0) {
                                         util.handleError({hoerror: 2, message: "cannot find external"}, next, res);
                                     }
-                                    externalTool.getSingleId(items1[0].owner, decodeURIComponent(items1[0].url), 1, function(err, obj, is_end, total) {
+                                    externalTool.getSingleId(items1[0].owner, decodeURIComponent(items1[0].url), 1, function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken) {
                                         if (err) {
                                             util.handleError(err, next, res);
                                         }
@@ -1960,10 +1960,18 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                                 if (err) {
                                                     util.handleError(err, next, res);
                                                 }
-                                                if (items1.length === 0 || type === 'music') {
-                                                    res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                                if (obj_arr) {
+                                                    if (items1.length === 0 || type === 'music') {
+                                                        res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                    } else {
+                                                        res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                    }
                                                 } else {
-                                                    res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
+                                                    if (items1.length === 0 || type === 'music') {
+                                                        res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                                    } else {
+                                                        res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
+                                                    }
                                                 }
                                             });
                                         } else {
@@ -1978,58 +1986,50 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                     } else {
                         if (playlist) {
                             if (playlist === 1) {
-                                var query = {id: playlistId};
-                                if (items[0].pageToken) {
-                                    query['pageToken'] = items[0].pageToken;
-                                }
-                                googleApi.googleApi('y playItem', query, function(err, vId_arr, total, nPageToken, pPageToken) {
+                                externalTool.youtubePlaylist(playlistId, function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken) {
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
                                     if (total <= 0) {
                                         util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
                                     }
-                                    var videoObj = vId_arr[0];
-                                    if (req.params.back) {
-                                        videoObj = vId_arr[vId_arr.length-1];
-                                    }
                                     var is_new = true;
-                                    for (var i in vId_arr) {
-                                        if (vId_arr[i].id === items[0].recordTime) {
-                                            videoObj = vId_arr[i];
+                                    for (var i in obj_arr) {
+                                        if (obj_arr[i].id === items[0].recordTime) {
+                                            obj = obj_arr[i];
                                             is_new = false;
                                             break;
                                         }
                                     }
                                     if (is_new) {
-                                        mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: {recordTime: videoObj.id}}, function(err, item){
+                                        mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: {recordTime: obj.id}}, function(err, item){
                                             if (err) {
                                                 util.handleError(err, next, res);
                                             }
-                                            mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: videoObj.id}, {limit: 1}, function(err, items1){
+                                            mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
                                                 if (err) {
                                                     util.handleError(err, next, res);
                                                 }
                                                 if (items1.length === 0 || type === 'music') {
-                                                    res.json({playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
+                                                    res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
                                                 } else {
-                                                    res.json({time: items1[0].recordTime, playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
+                                                    res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
                                                 }
                                             });
                                         });
                                     } else {
-                                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: videoObj.id}, {limit: 1}, function(err, items1){
+                                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
                                             if (err) {
                                                 util.handleError(err, next, res);
                                             }
                                             if (items1.length === 0 || type === 'music') {
-                                                res.json({playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
+                                                res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
                                             } else {
-                                                res.json({time: items1[0].recordTime, playlist: {obj_arr: vId_arr, obj: videoObj, pageN: nPageToken, pageP: pPageToken, pageToken: items[0].pageToken, total: total}});
+                                                res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
                                             }
                                         });
                                     }
-                                });
+                                }, items[0].pageToken, req.params.back);
                             } else if (playlist === 2) {
                                 mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items1){
                                     if (err) {
@@ -2038,7 +2038,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                     if (items1.length === 0) {
                                         util.handleError({hoerror: 2, message: "cannot find external"}, next, res);
                                     }
-                                    externalTool.getSingleId(items1[0].owner, decodeURIComponent(items1[0].url), items[0].recordTime, function(err, obj, is_end, total) {
+                                    externalTool.getSingleId(items1[0].owner, decodeURIComponent(items1[0].url), items[0].recordTime, function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken) {
                                         if (err) {
                                             util.handleError(err, next, res);
                                         }
@@ -2046,20 +2046,59 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                             util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
                                         }
                                         if (obj.id) {
-                                            mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
-                                                if (err) {
-                                                    util.handleError(err, next, res);
+                                            if (obj_arr) {
+                                                var is_new = true;
+                                                for (var i in obj_arr) {
+                                                    if (obj_arr[i].id === items[0].recordTime) {
+                                                        obj = obj_arr[i];
+                                                        is_new = false;
+                                                        break;
+                                                    }
                                                 }
-                                                if (items1.length === 0 || type === 'music') {
-                                                    res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                                if (is_new) {
+                                                    mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: {recordTime: obj.id}}, function(err, item){
+                                                        if (err) {
+                                                            util.handleError(err, next, res);
+                                                        }
+                                                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
+                                                            if (err) {
+                                                                util.handleError(err, next, res);
+                                                            }
+                                                            if (items1.length === 0 || type === 'music') {
+                                                                res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                            } else {
+                                                                res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                            }
+                                                        });
+                                                    });
                                                 } else {
-                                                    res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
+                                                    mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
+                                                        if (err) {
+                                                            util.handleError(err, next, res);
+                                                        }
+                                                        if (items1.length === 0 || type === 'music') {
+                                                            res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                        } else {
+                                                            res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                        }
+                                                    });
                                                 }
-                                            });
+                                            } else {
+                                                mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
+                                                    if (err) {
+                                                        util.handleError(err, next, res);
+                                                    }
+                                                    if (items1.length === 0 || type === 'music') {
+                                                        res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                                    } else {
+                                                        res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
+                                                    }
+                                                });
+                                            }
                                         } else {
                                             res.json({playlist: {obj: obj, end: is_end, total: total}});
                                         }
-                                    });
+                                    }, items[0].pageToken, req.params.back);
                                 });
                             }
                         } else {
