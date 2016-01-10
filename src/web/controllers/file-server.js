@@ -507,7 +507,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                         filename = 'Playlist ' + engine.torrent.name;
                                     }
                                     engine.destroy();
-                                    streamClose(filename, tag_arr, opt_arr, {magnet: encodeTorrent, playlist: playList});
+                                    streamClose(filename, tag_arr, opt_arr, {magnet: encodeTorrent, playList: playList});
                                 });
                             } else {
                                 util.handleError({hoerror: 2, message: "already has one"}, next, res);
