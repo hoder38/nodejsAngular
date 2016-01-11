@@ -1429,55 +1429,40 @@ function newBookmarkItem(name, user, session, bpath, bexactly, callback) {
                     console.log(item);
                     console.log('save end');
                     sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                    var opt = [];
-                    var relative_arr = [];
-                    tags.forEach(function (e) {
-                        relative_arr.push(e);
-                    });
-                    opt.forEach(function (e) {
-                        relative_arr.push(e);
-                    });
-                    var index = 0;
-                    recur_relative();
-                    function recur_relative() {
-                        tagTool.getRelativeTag(relative_arr[index], user, opt, callback, function(err, relative) {
-                            if (err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            index++;
-                            opt = relative;
-                            if (index < relative_arr.length) {
-                                recur_relative();
+                    var opt = mime.getOptionTag();
+                    tagTool.getRelativeTag(tags[0], user, opt, callback, function(err, relative) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var reli = 5;
+                        if (relative.length < reli) {
+                            reli = relative.length;
+                        }
+                        if (util.checkAdmin(2, user)) {
+                            if (item[0].adultonly === 1) {
+                                tags.push('18+');
                             } else {
-                                var temp_tag = [];
-                                var normal = '';
-                                for (var j in opt) {
-                                    normal = tagTool.normalizeTag(opt[j]);
-                                    if (!tagTool.isDefaultTag(normal)) {
-                                        if (tags.indexOf(normal) === -1) {
-                                            temp_tag.push(normal);
-                                        }
-                                    }
-                                }
-                                opt = temp_tag;
-                                if (util.checkAdmin(2, user)) {
-                                    if (item[0].adultonly === 1) {
-                                        tags.push('18+');
-                                    } else {
-                                        opt.push('18+');
-                                    }
-                                }
-                                if (item[0].first === 1) {
-                                    tags.push('first item');
-                                } else {
-                                    opt.push('first item');
-                                }
-                                setTimeout(function(){
-                                    callback(null, item[0]._id, bookName, tags, opt);
-                                }, 0);
+                                opt.push('18+');
                             }
-                        });
-                    }
+                        }
+                        if (item[0].first === 1) {
+                            tags.push('first item');
+                        } else {
+                            opt.push('first item');
+                        }
+                        var normal = '';
+                        for (var i = 0; i < reli; i++) {
+                            normal = tagTool.normalizeTag(relative[i]);
+                            if (!tagTool.isDefaultTag(normal)) {
+                                if (tags.indexOf(normal) === -1 && opt.indexOf(normal) === -1) {
+                                    opt.push(normal);
+                                }
+                            }
+                        }
+                        setTimeout(function(){
+                            callback(null, item[0]._id, bookName, tags, opt);
+                        }, 0);
+                    });
                 });
             }
             if (channel) {

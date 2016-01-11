@@ -995,7 +995,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         if (DBdata['untag']) {
                             res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
                         } else {
-                            res.json({apiOK: true});
+                            res.json({id: item[0]._id});
                         }
                         if (!is_media) {
                             mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {

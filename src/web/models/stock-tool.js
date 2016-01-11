@@ -2291,7 +2291,7 @@ module.exports = {
                                 previous_sales += sales_pre[i];
                             }
 
-                            ret_str = Math.ceil(((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3)/true_sales-1)*1000)/10 + '% ' + Math.ceil(true_sales/previous_sales*1000 - 1000)/10 + '%';
+                            ret_str = start_month + 'th ' + Math.ceil(((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3)/true_sales-1)*1000)/10 + '% ' + Math.ceil(true_sales/previous_sales*1000 - 1000)/10 + '%';
                             if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) > 0) {
                                 var predict_profit = managementStatus.a + managementStatus.b * predict_sales_0 * 1000;
                                 predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_1 * 1000;

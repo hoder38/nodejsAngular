@@ -1660,20 +1660,22 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 } else {
                     item.name = result.name;
                     this_obj.itemNameNew = false;
-                    if (this_obj.feedback.run) {
-                        if (this_obj.feedback.uid === result.id) {
-                            showFeedback(result);
-                        } else {
-                            var index = arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id');
-                            if (index === -1) {
-                                this_obj.feedback.queue.push(result);
+                    if (result.name) {
+                        if (this_obj.feedback.run) {
+                            if (this_obj.feedback.uid === result.id) {
+                                showFeedback(result);
                             } else {
-                                this_obj.feedback.queue.splice(index, 1, result);
+                                var index = arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id');
+                                if (index === -1) {
+                                    this_obj.feedback.queue.push(result);
+                                } else {
+                                    this_obj.feedback.queue.splice(index, 1, result);
+                                }
                             }
+                        } else {
+                            this_obj.feedback.run = true;
+                            showFeedback(result);
                         }
-                    } else {
-                        this_obj.feedback.run = true;
-                        showFeedback(result);
                     }
                 }
             }, function(errorResult) {
@@ -2362,19 +2364,21 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     if (result.bid) {
                         result.id = result.bid;
                         result.name = result.bname;
-                        if (this_obj.feedback.run) {
-                            if (this_obj.feedback.uid === result.id) {
-                                showFeedback(result);
-                            } else {
-                                if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
-                                    this_obj.feedback.queue.push(result);
+                        if (result.name) {
+                            if (this_obj.feedback.run) {
+                                if (this_obj.feedback.uid === result.id) {
+                                    showFeedback(result);
                                 } else {
-                                    this_obj.feedback.queue.splice(index, 1, result);
+                                    if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                        this_obj.feedback.queue.push(result);
+                                    } else {
+                                        this_obj.feedback.queue.splice(index, 1, result);
+                                    }
                                 }
+                            } else {
+                                this_obj.feedback.run = true;
+                                showFeedback(result);
                             }
-                        } else {
-                            this_obj.feedback.run = true;
-                            showFeedback(result);
                         }
                     }
                 }
@@ -2987,19 +2991,21 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     };
     uploader.onSuccessItem = function(fileItem, response, status, headers) {
         //console.info('onSuccessItem', fileItem, response, status, headers);
-        if ($scope.feedback.run) {
-            if ($scope.feedback.uid === response.id) {
-                showFeedback(response);
-            } else {
-                if (arrayObjectIndexOf($scope.feedback.queue, response.id, 'id') === -1) {
-                    $scope.feedback.queue.push(response);
+        if (response.id) {
+            if ($scope.feedback.run) {
+                if ($scope.feedback.uid === response.id) {
+                    showFeedback(response);
                 } else {
-                    $scope.feedback.queue.splice(index, 1, response);
+                    if (arrayObjectIndexOf($scope.feedback.queue, response.id, 'id') === -1) {
+                        $scope.feedback.queue.push(response);
+                    } else {
+                        $scope.feedback.queue.splice(index, 1, response);
+                    }
                 }
+            } else {
+                this_obj.feedback.run = true;
+                showFeedback(response);
             }
-        } else {
-            $scope.feedback.run = true;
-            showFeedback(response);
         }
     };
 
@@ -3257,20 +3263,22 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     if (result.stop) {
                         addAlert('torrent was stoped');
                     } else {
-                        if (this_obj.feedback.run) {
-                            if (this_obj.feedback.uid === result.id) {
-                                showFeedback(result);
-                            } else {
-                                var index = arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id');
-                                if (index === -1) {
-                                    this_obj.feedback.queue.push(result);
+                        if (result.name) {
+                            if (this_obj.feedback.run) {
+                                if (this_obj.feedback.uid === result.id) {
+                                    showFeedback(result);
                                 } else {
-                                    this_obj.feedback.queue.splice(index, 1, result);
+                                    var index = arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id');
+                                    if (index === -1) {
+                                        this_obj.feedback.queue.push(result);
+                                    } else {
+                                        this_obj.feedback.queue.splice(index, 1, result);
+                                    }
                                 }
+                            } else {
+                                this_obj.feedback.run = true;
+                                showFeedback(result);
                             }
-                        } else {
-                            this_obj.feedback.run = true;
-                            showFeedback(result);
                         }
                     }
                 }
@@ -3327,20 +3335,22 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    if (this_obj.feedback.run) {
-                        if (this_obj.feedback.uid === result.id) {
-                            showFeedback(result);
-                        } else {
-                            var index = arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id');
-                            if (index === -1) {
-                                this_obj.feedback.queue.push(result);
+                    if (result.name) {
+                        if (this_obj.feedback.run) {
+                            if (this_obj.feedback.uid === result.id) {
+                                showFeedback(result);
                             } else {
-                                this_obj.feedback.queue.splice(index, 1, result);
+                                var index = arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id');
+                                if (index === -1) {
+                                    this_obj.feedback.queue.push(result);
+                                } else {
+                                    this_obj.feedback.queue.splice(index, 1, result);
+                                }
                             }
+                        } else {
+                            this_obj.feedback.run = true;
+                            showFeedback(result);
                         }
-                    } else {
-                        this_obj.feedback.run = true;
-                        showFeedback(result);
                     }
                 }
             }, function(errorResult) {
@@ -3385,19 +3395,21 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         if (result.bid) {
                             result.id = result.bid;
                             result.name = result.bname;
-                            if (this_obj.feedback.run) {
-                                if (this_obj.feedback.uid === result.id) {
-                                    showFeedback(result);
-                                } else {
-                                    if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
-                                        this_obj.feedback.queue.push(result);
+                            if (result.name) {
+                                if (this_obj.feedback.run) {
+                                    if (this_obj.feedback.uid === result.id) {
+                                        showFeedback(result);
                                     } else {
-                                        this_obj.feedback.queue.splice(index, 1, result);
+                                        if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                            this_obj.feedback.queue.push(result);
+                                        } else {
+                                            this_obj.feedback.queue.splice(index, 1, result);
+                                        }
                                     }
+                                } else {
+                                    this_obj.feedback.run = true;
+                                    showFeedback(result);
                                 }
-                            } else {
-                                this_obj.feedback.run = true;
-                                showFeedback(result);
                             }
                         }
                     }
@@ -3434,19 +3446,21 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    if (this_obj.feedback.run) {
-                        if (this_obj.feedback.uid === result.id) {
-                            showFeedback(result);
-                        } else {
-                            if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
-                                this_obj.feedback.queue.push(result);
+                    if (result.name) {
+                        if (this_obj.feedback.run) {
+                            if (this_obj.feedback.uid === result.id) {
+                                showFeedback(result);
                             } else {
-                                this_obj.feedback.queue.splice(index, 1, result);
+                                if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                    this_obj.feedback.queue.push(result);
+                                } else {
+                                    this_obj.feedback.queue.splice(index, 1, result);
+                                }
                             }
+                        } else {
+                            this_obj.feedback.run = true;
+                            showFeedback(result);
                         }
-                    } else {
-                        this_obj.feedback.run = true;
-                        showFeedback(result);
                     }
                 }
             }, function(errorResult) {
@@ -3869,6 +3883,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                         if (result.loginOK) {
                                             $window.location.href = $location.path();
                                         } else {
+                                            console.log(result);
                                             videoId = this_obj[type].playlist.obj.id = result.id;
                                             this_obj[type].src = $scope.main_url + '/torrent/0/' + videoId;
                                             removeCue();
