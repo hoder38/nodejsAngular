@@ -1433,7 +1433,7 @@ module.exports = {
             }, 60000, false, false);
             break;
             case 'kubo':
-            //bj58 fun58 drive youtube dl  fun23 bilibili
+            //bj58 fun58 drive youtube dl fun23 bilibili
             //bj6 fun3 qq
             //bj5 fun1 letv
             //bj8 fun9 funshion
@@ -1579,12 +1579,24 @@ module.exports = {
                                     list.push({name: list_match[1], id: 'dri_' + list_match[2]});
                                 }
                             }
-                            //console.log(list);
-                            //console.log(list.length);
-                            if (!list[index-1]) {
-                                return false;
+                            if (list.length > 0) {
+                                if (!list[index-1]) {
+                                    return false;
+                                }
+                                return {ret: {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false, id: list[index-1].id}, total: list.length};
+                            } else {
+                                for (var i in raw_list) {
+                                    list_match = raw_list[i].match(/^\["([^"]+)","fun23_video\/([^"]+)\/"/);
+                                    if (list_match) {
+                                        list.push({name: list_match[1], id: 'bil_' + list_match[2]});
+                                    }
+                                }
+                                if (!list[index-1]) {
+                                    return false;
+                                }
+                                var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
+                                return {ret: ret, total: list.length};
                             }
-                            return {ret: {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false, id: list[index-1].id}, total: list.length};
                         }
                         function otherSource(source) {
                             var flv_list = false;

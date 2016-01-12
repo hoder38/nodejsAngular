@@ -1363,7 +1363,7 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
         } else {
             url = 'http://www.youtube.com/watch?v=' + id[2];
         }
-        if (id[1] === 'soh' || id[1] === 'let' || id[1] === 'vqq'|| id[1] === 'fun') {
+        if (id[1] === 'soh' || id[1] === 'let' || id[1] === 'vqq' || id[1] === 'fun' || id[1] === 'bil') {
             var kubo_url = 'http://888blb1.flvapi.com/video.php?url=gq_' + new Buffer(url).toString('base64') + '_a';
             api.xuiteDownload(kubo_url, '', function(err, raw_data) {
                 if (err) {
@@ -1422,13 +1422,13 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                             ret_obj['video'].splice(0, 0, info.formats[i].url);
                         }
                     }
-                } else if (id[1] === 'bil') {
+                /*} else if (id[1] === 'bil') {
                     for (var i in info.formats) {
                         if (info.formats[i].format_id === '0') {
                             ret_obj['video'].push(info.formats[i].url);
                             break;
                         }
-                    }
+                    }*/
                 }
                 res.json(ret_obj);
             });

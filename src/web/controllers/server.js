@@ -516,6 +516,9 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
         } else {
             youtubeQuery();
         }
+        function yifyQuery() {
+
+        }
         function youtubeQuery() {
             query = tagTool.getYoutubeQuery(parentList.cur, sortName, pageToken);
             if (query) {
