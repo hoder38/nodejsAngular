@@ -824,11 +824,11 @@ audio.media-screen {
 }
 
 .external .item-point:hover,.external .item-point:link,.external .item-point:visited,.external .item-point:active {
-    color: gray;
+    color: red;
 }
 
 .external {
-    color: gray;
+    color: red;
 }
 
 .recycled .item-point:hover,.recycled .item-point:link,.recycled .item-point:visited,.recycled .item-point:active {
@@ -840,11 +840,11 @@ audio.media-screen {
 }
 
 .outside .item-point:hover,.outside .item-point:link,.outside .item-point:visited,.outside .item-point:active {
-    color: red;
+    color: blue;
 }
 
 .outside {
-    color: red;
+    color: blue;
 }
 
 .recycling .item-point:hover,.recycling .item-point:link,.recycling .item-point:visited,.recycling .item-point:active {

@@ -4854,6 +4854,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 url =  'https://www.youtube.com/watch?v=' + this.toolList.item.id.substr(4);
             } else if (this.toolList.item.id.substr(0, 4) === 'ypl_') {
                 url =  'https://www.youtube.com/watch?list=' + this.toolList.item.id.substr(4);
+            } else if (this.toolList.item.id.substr(0, 4) === 'kub_') {
+                url =  'http://www.123kubo.com/vod-read-id-' + this.toolList.item.id.substr(4) + '.html';
             } else {
                 addAlert('not external video');
                 return false;
@@ -4866,6 +4868,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 url =  'https://www.youtube.com/watch?v=' + id.substr(4);
             } else if (id.substr(0, 4) === 'ypl_') {
                 url =  'https://www.youtube.com/watch?list=' + id.substr(4);
+            } else if (id.substr(0, 4) === 'kub_') {
+                url =  'http://www.123kubo.com/vod-read-id-' + id.substr(4) + '.html';
             } else {
                 addAlert('not external video');
                 return false;

@@ -14,9 +14,373 @@ var genre_list_ch = mime.getOptionTag('cht');
 
 var googleApi = require("../models/api-tool-google.js");
 
+var kubo_type = [['動作片', '喜劇片', '愛情片', '科幻片', '恐怖片', '劇情片', '戰爭片', '動畫片', '微電影'], ['台灣劇', '港劇', '大陸劇', '歐美劇', '韓劇', '日劇', '新/馬/泰/其他劇', '布袋戲', '綜藝', '美食旅遊', '訪談節目', '男女交友', '選秀競賽', '典禮晚會', '新聞時事', '投資理財', '歌劇戲曲'], ['動漫', '電影動畫片']];
 //type要補到deltag裡
 
 module.exports = {
+    getSingleList: function(url, callback) {
+        api.xuiteDownload(url, '', function(err, raw_data) {
+            if (err) {
+                err.hoerror = 2;
+                util.handleError(err, callback, callback);
+            }
+            var raw_list = raw_data.match(/(.*)data\-original[\s\S]+?更新：\d\d\d\d-\d\d-\d\d/g);
+            var list = [];
+            var list_match = false;
+            var item_match = false;
+            var data = null;
+            var tags = [];
+            var act_match = false;
+            if (raw_list) {
+                for (var i in raw_list) {
+                    list_match = raw_list[i].match(/href=".*-(\d+)\.html".*data\-original="([^"]+)".*alt="([^"]+)"/);
+                    if (list_match) {
+                        data = {name: list_match[3], id: list_match[1], thumb: list_match[2]};
+                        tags = ['動畫', 'animation'];
+                        item_match = raw_list[i].match(/地區\/年份：(.*)\/(\d+)/);
+                        if (item_match) {
+                            if (tags.indexOf(item_match[1]) === -1) {
+                                tags.push(item_match[1]);
+                            }
+                            if (tags.indexOf(item_match[2]) === -1) {
+                                tags.push(item_match[2]);
+                            }
+                        }
+                        item_match = raw_list[i].match(/主演：(.*)<\/p>/);
+                        if (item_match) {
+                            act_match = item_match[0].match(/>[^<>]+<\/a/g);
+                            if (act_match) {
+                                for (var j in act_match) {
+                                    item_match = act_match[j].match(/>([^<>]+)<\/a/);
+                                    if (item_match) {
+                                        if (tags.indexOf(item_match[1]) === -1) {
+                                            tags.push(item_match[1]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        data['tags'] = tags;
+                        item_match = raw_list[i].match(/月熱度：(\d+)/);
+                        if (item_match) {
+                            data['count'] = Number(item_match[1]);
+                        } else {
+                            data['count'] = 0;
+                        }
+                        item_match = raw_list[i].match(/更新：(\d\d\d\d-\d\d-\d\d)/);
+                        if (item_match) {
+                            data['date'] = item_match[1];
+                        } else {
+                            data['date'] = '1970-01-01';
+                        }
+                        list.push(data);
+                    }
+                }
+            } else {
+                raw_list = raw_data.match(/\.html"><img src="[\s\S]+?\d\d:\d\d<\/cite>/g);
+                if (raw_list) {
+                    for (var i in raw_list) {
+                        list_match = raw_list[i].match(/<img src="([^"]+)"/);
+                        if (list_match) {
+                            data = {thumb: list_match[1]};
+                            list_match = raw_list[i].match(/vod-read-id-(\d+).html">(.*?)\-([^\-]+?)<\/a>/);
+                            if (list_match) {
+                                data['id'] = list_match[1];
+                                data['name'] = list_match[2].replace(/<\/?b>/g, '');
+                                tags = [list_match[3]];
+                                for (var j in kubo_type) {
+                                    if (kubo_type[j].indexOf(list_match[3]) !== -1) {
+                                        if (j === '2') {
+                                            if (tags.indexOf('animation') === -1) {
+                                                tags.push('animation');
+                                            }
+                                            if (tags.indexOf('動畫') === -1) {
+                                                tags.push('動畫');
+                                            }
+                                        } else if (j === '0') {
+                                            if (tags.indexOf('movie') === -1) {
+                                                tags.push('movie');
+                                            }
+                                            if (tags.indexOf('電影') === -1) {
+                                                tags.push('電影');
+                                            }
+                                            switch (kubo_type[j].indexOf(list_match[3])) {
+                                                case 0:
+                                                if (tags.indexOf('action') === -1) {
+                                                    tags.push('action');
+                                                }
+                                                if (tags.indexOf('動作') === -1) {
+                                                    tags.push('動作');
+                                                }
+                                                break;
+                                                case 1:
+                                                if (tags.indexOf('comedy') === -1) {
+                                                    tags.push('comedy');
+                                                }
+                                                if (tags.indexOf('喜劇') === -1) {
+                                                    tags.push('喜劇');
+                                                }
+                                                break;
+                                                case 2:
+                                                if (tags.indexOf('romance') === -1) {
+                                                    tags.push('romance');
+                                                }
+                                                if (tags.indexOf('浪漫') === -1) {
+                                                    tags.push('浪漫');
+                                                }
+                                                break;
+                                                case 3:
+                                                if (tags.indexOf('sci-fi') === -1) {
+                                                    tags.push('sci-fi');
+                                                }
+                                                if (tags.indexOf('科幻') === -1) {
+                                                    tags.push('科幻');
+                                                }
+                                                break;
+                                                case 4:
+                                                if (tags.indexOf('horror') === -1) {
+                                                    tags.push('horror');
+                                                }
+                                                if (tags.indexOf('恐怖') === -1) {
+                                                    tags.push('恐怖');
+                                                }
+                                                break;
+                                                case 5:
+                                                if (tags.indexOf('drama') === -1) {
+                                                    tags.push('drama');
+                                                }
+                                                if (tags.indexOf('劇情') === -1) {
+                                                    tags.push('劇情');
+                                                }
+                                                break;
+                                                case 6:
+                                                if (tags.indexOf('war') === -1) {
+                                                    tags.push('war');
+                                                }
+                                                if (tags.indexOf('戰爭') === -1) {
+                                                    tags.push('戰爭');
+                                                }
+                                                break;
+                                                case 7:
+                                                if (tags.indexOf('animation') === -1) {
+                                                    tags.push('animation');
+                                                }
+                                                if (tags.indexOf('動畫') === -1) {
+                                                    tags.push('動畫');
+                                                }
+                                                break;
+                                            }
+                                        } else if (j === '1') {
+                                            if (tags.indexOf('tv show') === -1) {
+                                                tags.push('tv show');
+                                            }
+                                            if (tags.indexOf('電視劇') === -1) {
+                                                tags.push('電視劇');
+                                            }
+                                        }
+                                    }
+                                }
+                                item_match = raw_list[i].match(/地區:<a[^>]+>([^<]+)/);
+                                if (item_match) {
+                                    if (tags.indexOf(item_match[1]) === -1) {
+                                        tags.push(item_match[1]);
+                                    }
+                                }
+                                item_match = raw_list[i].match(/年份:<a[^>]+>(\d+)/);
+                                if (item_match) {
+                                    if (tags.indexOf(item_match[1]) === -1) {
+                                        tags.push(item_match[1]);
+                                    }
+                                }
+                                item_match = raw_list[i].match(/演出:(.*)/);
+                                if (item_match) {
+                                    act_match = item_match[0].match(/>[^<>]+<\/a/g);
+                                    if (act_match) {
+                                        for (var j in act_match) {
+                                            item_match = act_match[j].match(/>([^<>]+)<\/a/);
+                                            if (item_match) {
+                                                if (tags.indexOf(item_match[1]) === -1) {
+                                                    tags.push(item_match[1]);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                data['tags'] = tags;
+                                item_match = raw_list[i].match(/月熱度:(\d+)/);
+                                if (item_match) {
+                                    data['count'] = Number(item_match[1]);
+                                } else {
+                                    data['count'] = 0;
+                                }
+                                item_match = raw_list[i].match(/更新時間:(\d\d\d\d)年(\d\d)月(\d\d)日/);
+                                if (item_match) {
+                                    data['date'] = item_match[1] + '-' + item_match[2] + '-' + item_match[3];
+                                } else {
+                                    data['date'] = '1970-01-01';
+                                }
+                            }
+                        }
+                        list.push(data);
+                    }
+                }
+            }
+            setTimeout(function(){
+                callback(null, list);
+            }, 0);
+        }, 60000, false, false, 'http://www.123kubo.com/');
+    },
+    saveSingle: function(type, id, callback) {
+        switch (type) {
+            case 'kubo':
+            var url = 'http://www.123kubo.com/vod-read-id-' + id + '.html';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                if (!raw_data.match(/>(FLV|YouTube)</i)) {
+                    util.handleError({hoerror: 2, message: "kubo no source"}, callback, callback);
+                }
+                var info = raw_data.match(/"vpic"[^"]+"([^"]+)" alt="([^"]+)/);
+                if (!info) {
+                    util.handleError({hoerror: 2, message: "kubo no info"}, callback, callback);
+                }
+                var name = info[2];
+                var thumb = info[1];
+                info = raw_data.match(/.*<p>分類：<a.*/);
+                var info_tag = ['kubo', '酷播123', '123kubo', '酷播', '影片', 'video'];
+                if (info) {
+                    var info_list = info[0].match(/>[^<：\s]+</g);
+                    if (info_list) {
+                        var info_match = false;
+                        var nick_list = false;
+                        var nick_match = false;
+                        //info_list.splice(info_list.length-1, 1);
+                        for (var i in info_list) {
+                            info_match = info_list[i].match(/^>([^<]+)<$/);
+                            if (info_match) {
+                                nick_list = info_match[1].match(/(^別名:|\/)[^\/]+/g);
+                                if (nick_list) {
+                                    for (var j in nick_list) {
+                                        nick_match = nick_list[j].match(/(^別名:|\/)([^\/]+)/);
+                                        if (nick_match) {
+                                            if (info_tag.indexOf(nick_match[2]) === -1) {
+                                                info_tag.push(nick_match[2]);
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    if (info_tag.indexOf(info_match[1]) === -1) {
+                                        info_tag.push(info_match[1]);
+                                    }
+                                    for (var j in kubo_type) {
+                                        if (kubo_type[j].indexOf(info_match[1]) !== -1) {
+                                            if (j === '2') {
+                                                if (info_tag.indexOf('animation') === -1) {
+                                                    info_tag.push('animation');
+                                                }
+                                                if (info_tag.indexOf('動畫') === -1) {
+                                                    info_tag.push('動畫');
+                                                }
+                                            } else if (j === '0') {
+                                                if (info_tag.indexOf('movie') === -1) {
+                                                    info_tag.push('movie');
+                                                }
+                                                if (info_tag.indexOf('電影') === -1) {
+                                                    info_tag.push('電影');
+                                                }
+                                                switch (kubo_type[j].indexOf(info_match[1])) {
+                                                    case 0:
+                                                    if (info_tag.indexOf('action') === -1) {
+                                                        info_tag.push('action');
+                                                    }
+                                                    if (info_tag.indexOf('動作') === -1) {
+                                                        info_tag.push('動作');
+                                                    }
+                                                    break;
+                                                    case 1:
+                                                    if (info_tag.indexOf('comedy') === -1) {
+                                                        info_tag.push('comedy');
+                                                    }
+                                                    if (info_tag.indexOf('喜劇') === -1) {
+                                                        info_tag.push('喜劇');
+                                                    }
+                                                    break;
+                                                    case 2:
+                                                    if (info_tag.indexOf('romance') === -1) {
+                                                        info_tag.push('romance');
+                                                    }
+                                                    if (info_tag.indexOf('浪漫') === -1) {
+                                                        info_tag.push('浪漫');
+                                                    }
+                                                    break;
+                                                    case 3:
+                                                    if (info_tag.indexOf('sci-fi') === -1) {
+                                                        info_tag.push('sci-fi');
+                                                    }
+                                                    if (info_tag.indexOf('科幻') === -1) {
+                                                        info_tag.push('科幻');
+                                                    }
+                                                    break;
+                                                    case 4:
+                                                    if (info_tag.indexOf('horror') === -1) {
+                                                        info_tag.push('horror');
+                                                    }
+                                                    if (info_tag.indexOf('恐怖') === -1) {
+                                                        info_tag.push('恐怖');
+                                                    }
+                                                    break;
+                                                    case 5:
+                                                    if (info_tag.indexOf('drama') === -1) {
+                                                        info_tag.push('drama');
+                                                    }
+                                                    if (info_tag.indexOf('劇情') === -1) {
+                                                        info_tag.push('劇情');
+                                                    }
+                                                    break;
+                                                    case 6:
+                                                    if (info_tag.indexOf('war') === -1) {
+                                                        info_tag.push('war');
+                                                    }
+                                                    if (info_tag.indexOf('戰爭') === -1) {
+                                                        info_tag.push('戰爭');
+                                                    }
+                                                    break;
+                                                    case 7:
+                                                    if (info_tag.indexOf('animation') === -1) {
+                                                        info_tag.push('animation');
+                                                    }
+                                                    if (info_tag.indexOf('動畫') === -1) {
+                                                        info_tag.push('動畫');
+                                                    }
+                                                    break;
+                                                }
+                                            } else if (j === '1') {
+                                                if (info_tag.indexOf('tv show') === -1) {
+                                                    info_tag.push('tv show');
+                                                }
+                                                if (info_tag.indexOf('電視劇') === -1) {
+                                                    info_tag.push('電視劇');
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, name, info_tag, 'kubo', thumb, url);
+                }, 0);
+            }, 60000, false, false, 'http://www.123kubo.com/');
+            break;
+            default:
+            util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
+            break;
+        }
+    },
     getList: function(type, callback, is_clear) {
         switch (type) {
             case 'lovetv':
@@ -744,14 +1108,18 @@ module.exports = {
         }
     },
     getSingleId: function(type, url, index, callback, pageToken, back) {
-        if (index < 1) {
-            util.handleError({hoerror: 2, message: 'index must > 1'}, callback, callback);
+        if ((typeof index) === 'number') {
+            if (index < 1) {
+                util.handleError({hoerror: 2, message: 'index must > 1'}, callback, callback);
+            }
+            var sub_index = (+index)*10%10;
+            if (sub_index === 0) {
+                sub_index++;
+            }
+            index = Math.floor(+index);
+        } else if (type !== 'youtube'){
+            util.handleError({hoerror: 2, message: 'index invalid'}, callback, callback);
         }
-        var sub_index = (+index)*10%10;
-        if (sub_index === 0) {
-            sub_index++;
-        }
-        index = Math.floor(+index);
         switch (type) {
             case 'lovetv':
             var prefix = url.match(/^((http|https):\/\/[^\/]+)\//);
@@ -1304,12 +1672,12 @@ module.exports = {
             var youtube_id = false;
             youtube_id = url.match(/list=([^&]+)/);
             if (youtube_id) {
-                this.youtubePlaylist(youtube_id[1], function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken) {
+                this.youtubePlaylist(youtube_id[1], index, function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken, is_new) {
                     if (err) {
                         util.handleError(err, callback, callback);
                     }
                     setTimeout(function(){
-                        callback(null, obj, false, total, obj_arr, pageN, pageP, pageToken);
+                        callback(null, obj, false, total, obj_arr, pageN, pageP, pageToken, is_new);
                     }, 0);
                 }, pageToken, back);
             } else {
@@ -1325,12 +1693,11 @@ module.exports = {
             break;
         }
     },
-    youtubePlaylist: function(id, callback, pageToken, back) {
+    youtubePlaylist: function(id, index, callback, pageToken, back) {
         var query = {id: id};
         if (pageToken) {
             query['pageToken'] = pageToken;
         }
-        console.log(query);
         googleApi.googleApi('y playItem', query, function(err, vId_arr, total, nPageToken, pPageToken) {
             if (err) {
                 util.handleError(err, callback, callback);
@@ -1342,8 +1709,20 @@ module.exports = {
             if (back) {
                 ret_obj = vId_arr[vId_arr.length-1];
             }
+            var is_new = true;
+            if (index === 1) {
+                is_new = false;
+            } else {
+                for (var i in vId_arr) {
+                    if (vId_arr[i].id === index) {
+                        ret_obj = vId_arr[i];
+                        is_new = false;
+                        break;
+                    }
+                }
+            }
             setTimeout(function(){
-                callback(null, ret_obj, false, total, vId_arr, nPageToken, pPageToken, pageToken);
+                callback(null, ret_obj, false, total, vId_arr, nPageToken, pPageToken, pageToken, is_new);
             }, 0);
         });
     }

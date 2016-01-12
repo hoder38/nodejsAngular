@@ -1,12 +1,14 @@
 var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 
-var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'youtube video', 'youtube playlist', 'youtube music', 'youtube music playlist', 'playlist unactive', 'kubo movie', 'kubo tv show', 'kubo animation'];
+var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'youtube video', 'youtube playlist', 'youtube music', 'youtube music playlist', 'playlist unactive', 'kubo movie', 'kubo tv series', 'kubo tv show', 'kubo animation'];
 
 var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'country', 'tw': '國家'}, {'name': 'year', 'tw': '年份'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'publisher', 'tw': '出版社'}, {'name': 'language', 'tw': '語言'}];
 var stock_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'country', 'tw': '國家'}, {'name': 'market type', 'tw': '市場種類'}, {'name': 'category', 'tw': '產業分類'}];
 var password_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'category', 'tw': '功能分類'}, {'name': 'platform', 'tw': '平台'}];
 var adultonly_arr = [{'name': 'adult_command', 'tw': '18+指令'}, {'name': 'av_actress', 'tw': 'AV女優'}, {'name': 'adultonly_author', 'tw': '18+作者'}, {'name': 'adultonly_category', 'tw': '18+分類'}, {'name': 'adultonly_producer', 'tw': '成人片商'}, {'name': 'adultonly_franchise', 'tw': '成人系列作'}];
+
+var kubo_country = ['香港', '台灣', '大陸', '日本', '韓國', '歐美', '泰國', '新馬', '印度', '海外'];
 
 var queryLimit = 20;
 
@@ -193,13 +195,13 @@ module.exports = function(collection) {
                 setSingleArray: function(value) {
                     var normal = normalize(value);
                     var defau = isDefaultTag(normal);
-                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10 || defau.index === 11 || defau.index === 13 || defau.index === 14 || defau.index === 15 || defau.index === 20 || defau.index === 21) {
+                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10 || defau.index === 11 || defau.index === 13 || defau.index === 14 || defau.index === 15 || defau.index === 16 || defau.index === 20 || defau.index === 21) {
                         return true;
                     } else {
                         for (var i = 0; i < search[name].index; i++) {
                             normal = search[name].tags[i];
                             defau = isDefaultTag(normal);
-                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10 && defau.index !== 11 &&defau.index !== 13 && defau.index !== 14 && defau.index !== 15 && defau.index !== 20 && defau.index !== 21) {
+                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10 && defau.index !== 11 &&defau.index !== 13 && defau.index !== 14 && defau.index !== 15 && defau.index !== 16 && defau.index !== 20 && defau.index !== 21) {
                                 search[name].tags = search[name].tags.slice(0, i);
                                 search[name].exactly = search[name].exactly.slice(0, i);
                                 search[name].index = search[name].tags.length;
@@ -329,7 +331,7 @@ module.exports = function(collection) {
                             }, 0);
                         } else {
                             for (var i in items[0]) {
-                                if (util.isValidString(i, 'uid') || i === 'kubo' || i === 'eztv' || i === 'lovetv') {
+                                if (util.isValidString(i, 'uid') || i === 'kubo' || i === 'eztv' || i === 'lovetv'|| i === 'youtube') {
                                     tagType.tag[i] = tagType.tag.tags;
                                     mongo.orig("update", collection, {_id: id}, {$pull: tagType.tag}, function(err, item2){
                                         if(err) {
@@ -1321,7 +1323,64 @@ module.exports = function(collection) {
             return query;
         },
         getKuboQuery: function(search_arr, sortName, page) {
-
+            var order = 'vod_hits_month';
+            var sOrder = 2;
+            if (sortName === 'count') {
+                sOrder = 2;
+                order = 'vod_hits_month';
+            } else if (sortName === 'mtime') {
+                sOrder = 1;
+                order = 'vod_addtime';
+            }
+            var searchWord = null;
+            var year = 0;
+            var type = 0;
+            var country = '';
+            for (var i in search_arr) {
+                index = isDefaultTag(normalize(search_arr[i]));
+                if (!index || index.index === 0 || index.index === 6) {
+                    if (search_arr[i].match(/^\d\d\d\d$/)) {
+                        if (Number(search_arr[i]) < 2100 && Number(search_arr[i]) > 1800) {
+                            year = Number(search_arr[i]);
+                            searchWord = null;
+                        }
+                    } else if (kubo_country.indexOf(search_arr[i]) !== -1) {
+                        country = kubo_country[kubo_country.indexOf(search_arr[i])];
+                        searchWord = null;
+                    } else {
+                        searchWord = denormalize(search_arr[i]);
+                        year = 0;
+                        country = '';
+                    }
+                //movie
+                } else if (index.index === 13) {
+                    type = 1;
+                //tv series
+                } else if (index.index === 14) {
+                    type = 2;
+                //tv show
+                } else if (index.index === 15) {
+                    type = 41;
+                //animation
+                } else if (index.index === 16) {
+                    type = 3;
+                }
+            }
+            if (type) {
+                var url = null;
+                if (searchWord) {
+                    url = 'http://www.123kubo.com/index.php?s=home-Vod-innersearch-q-' + searchWord + '-order-' + sOrder;
+                    if (page > 1) {
+                        url = 'http://www.123kubo.com/index.php?s=Vod-innersearch-q-' + searchWord + '-order-' + sOrder + '-page-' + page;
+                    }
+                    return url;
+                } else {
+                    var url = 'http://www.123kubo.com/vod-search-id-' + type + '-cid--tag--area-' + country + '-tag--year-' + year + '-wd--actor--order-' + order + '%20desc-p-';
+                    return url + page + '.html';
+                }
+            } else {
+                return false;
+            }
         }
     };
 };
@@ -1395,7 +1454,7 @@ var getStorageQuerySql = function(user, tagList, exactly) {
                     console.log({recycle: {$ne: 0}, utime: {$lt: time}});
                     return {nosql: {recycle: {$ne: 0}, utime: {$lt: time}}};
                 }
-            } else if (index.index === 4 || index.index === 6 || index.index === 8 || index.index === 9 || index.index === 10 || index.index === 11 || index.index === 13 || index.index === 14 || index.index === 15) {
+            } else if (index.index === 4 || index.index === 6 || index.index === 8 || index.index === 9 || index.index === 10 || index.index === 11 || index.index === 13 || index.index === 14 || index.index === 15 || index.index === 16) {
             } else if (index.index === 5) {
                 delete nosql['first'];
                 is_first = false;

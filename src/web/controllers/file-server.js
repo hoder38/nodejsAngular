@@ -27,7 +27,7 @@ var mediaHandleTool = require("../models/mediaHandle-tool.js")(sendWs);
 
 var externalTool = require('../models/external-tool.js');
 
-var external_interval = 259200000;
+var external_interval = 172800000;
 
 var external_time = 0;
 
@@ -628,6 +628,26 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             });
                         }
                     });
+                } else if (url.match(/^(https|http):\/\/www\.123kubo\.com\//)) {
+                    mongo.orig("find", "storage", {url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (items.length > 0) {
+                            util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                        }
+                        var kubo_id = url.match(/vod-read-id-(\d+).html$/);
+                        if (!kubo_id) {
+                            util.handleError({hoerror: 2, message: "kubo url invalid"}, next, res);
+                        }
+                        is_media = 3;
+                        externalTool.saveSingle('kubo', kubo_id[1], function(err, media_name, tag_arr, owner, thumb, url) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
+                        });
+                    });
                 } else {
                     api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                         if (err) {
@@ -802,6 +822,26 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             streamClose(media_name, tag_arr, [], {owner: 'youtube', untag: 0, thumb: thumb, cid: cid, ctitle: ctitle, url: url});
                         });
                     }
+                });
+            } else if (url.match(/^(https|http):\/\/www\.123kubo\.com\//)) {
+                mongo.orig("find", "storage", {url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (items.length > 0) {
+                        util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                    }
+                    var kubo_id = url.match(/vod-read-id-(\d+).html$/);
+                    if (!kubo_id) {
+                        util.handleError({hoerror: 2, message: "kubo url invalid"}, next, res);
+                    }
+                    is_media = 3;
+                    externalTool.saveSingle('kubo', kubo_id[1], function(err, media_name, tag_arr, owner, thumb, url) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
+                    });
                 });
             } else {
                 api.xuiteDownload(url, filePath, function(err, pathname, filename) {
@@ -4134,19 +4174,9 @@ function loopUpdateExternal(error, countdown) {
                     external_time = 1;
                     console.log('loopUpdateExternal end');
                 } else {
-                    console.log('kubo');
+                    external_time = 1;
+                    console.log('loopUpdateExternal end');
                     console.log(new Date());
-                    externalTool.getList('kubo', function(err) {
-                        if (err) {
-                            util.handleError(err);
-                            external_time = 1;
-                            console.log('loopUpdateExternal end');
-                        } else {
-                            external_time = 1;
-                            console.log('loopUpdateExternal end');
-                            console.log(new Date());
-                        }
-                    });
                 }
             });
         }

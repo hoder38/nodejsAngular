@@ -494,95 +494,135 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
         if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
             sortName = req.cookies.fileSortName;
         }
-        var query = tagTool.getYoutubeQuery(parentList.cur, sortName, req.params.pageToken);
+        var index = 1;
+        var pageToken = false;
+        if (req.params.pageToken) {
+            index = req.params.pageToken.match(/^\d+/);
+            pageToken = req.params.pageToken.match(/^[^\d]+$/);
+        }
+        var itemList = [];
+        var retPageToken = '';
+        var query = tagTool.getKuboQuery(parentList.cur, sortName, index);
         if (query) {
-            googleApi.googleApi('y search', query, function(err, metadata) {
+            externalTool.getSingleList(query, function(err, list) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
-                if (!metadata.items) {
-                    util.handleError({hoerror: 2, message: "search error"}, next, res);
-                }
-                var video_id = [];
-                var playlist_id = [];
-                if (metadata.items.length > 0 || (query.id_arr && query.id_arr.length > 0) || (query.pl_arr && query.pl_arr.length > 0)) {
-                    if (query.id_arr) {
-                        for (var i in query.id_arr) {
-                            video_id.push(query.id_arr[i]);
-                        }
+                itemList = getKuboItem(list);
+                index++;
+                retPageToken = index.toString();
+                youtubeQuery();
+            });
+        } else {
+            youtubeQuery();
+        }
+        function youtubeQuery() {
+            query = tagTool.getYoutubeQuery(parentList.cur, sortName, pageToken);
+            if (query) {
+                googleApi.googleApi('y search', query, function(err, metadata) {
+                    if (err) {
+                        util.handleError(err, next, res);
                     }
-                    if (query.pl_arr) {
-                        for (var i in query.pl_arr) {
-                            playlist_id.push(query.pl_arr[i]);
-                        }
+                    if (!metadata.items) {
+                        util.handleError({hoerror: 2, message: "search error"}, next, res);
                     }
-                    for (var i in metadata.items) {
-                        if (metadata.items[i].id) {
-                            if (metadata.items[i].id.videoId) {
-                                video_id.push(metadata.items[i].id.videoId);
-                            } else if (metadata.items[i].id.playlistId) {
-                                playlist_id.push(metadata.items[i].id.playlistId);
+                    var video_id = [];
+                    var playlist_id = [];
+                    if (metadata.items.length > 0 || (query.id_arr && query.id_arr.length > 0) || (query.pl_arr && query.pl_arr.length > 0)) {
+                        if (query.id_arr) {
+                            for (var i in query.id_arr) {
+                                video_id.push(query.id_arr[i]);
                             }
                         }
-                    }
-                    if (video_id.length > 0) {
-                        googleApi.googleApi('y video', {id: video_id.join(',')}, function(err, detaildata) {
-                            if (err) {
-                                util.handleError(err, next, res);
+                        if (query.pl_arr) {
+                            for (var i in query.pl_arr) {
+                                playlist_id.push(query.pl_arr[i]);
                             }
-                            if (playlist_id.length > 0) {
-                                googleApi.googleApi('y playlist', {id: playlist_id.join(',')}, function(err, detaildata1) {
-                                    if (err) {
-                                        util.handleError(err, next, res);
-                                    }
-                                    for (var i in query.pl_arr) {
-                                        for (var j in detaildata1.items) {
-                                            if (detaildata1.items[j].id === query.pl_arr[i]) {
-                                                detaildata.items.splice(0, 0, detaildata1.items.splice(j, 1)[0]);
-                                                break;
+                        }
+                        for (var i in metadata.items) {
+                            if (metadata.items[i].id) {
+                                if (metadata.items[i].id.videoId) {
+                                    video_id.push(metadata.items[i].id.videoId);
+                                } else if (metadata.items[i].id.playlistId) {
+                                    playlist_id.push(metadata.items[i].id.playlistId);
+                                }
+                            }
+                        }
+                        if (video_id.length > 0) {
+                            googleApi.googleApi('y video', {id: video_id.join(',')}, function(err, detaildata) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                if (playlist_id.length > 0) {
+                                    googleApi.googleApi('y playlist', {id: playlist_id.join(',')}, function(err, detaildata1) {
+                                        if (err) {
+                                            util.handleError(err, next, res);
+                                        }
+                                        for (var i in query.pl_arr) {
+                                            for (var j in detaildata1.items) {
+                                                if (detaildata1.items[j].id === query.pl_arr[i]) {
+                                                    detaildata.items.splice(0, 0, detaildata1.items.splice(j, 1)[0]);
+                                                    break;
+                                                }
                                             }
                                         }
-                                    }
-                                    detaildata.items = detaildata.items.concat(detaildata1.items);
-                                    var itemList = getYoutubeItem(detaildata.items, query.type);
+                                        detaildata.items = detaildata.items.concat(detaildata1.items);
+                                        itemList = itemList.concat(getYoutubeItem(detaildata.items, query.type));
+                                        if (metadata.nextPageToken) {
+                                            retPageToken = retPageToken + metadata.nextPageToken;
+                                            res.json({itemList: itemList, pageToken: retPageToken});
+                                        } else if (retPageToken) {
+                                            res.json({itemList: itemList, pageToken: retPageToken});
+                                        } else {
+                                            res.json({itemList: itemList});
+                                        }
+                                    });
+                                } else {
+                                    itemList = itemList.concat(getYoutubeItem(detaildata.items, query.type));
                                     if (metadata.nextPageToken) {
-                                        res.json({itemList: itemList, pageToken: metadata.nextPageToken});
+                                        retPageToken = retPageToken + metadata.nextPageToken;
+                                        res.json({itemList: itemList, pageToken: retPageToken});
+                                    } else if (retPageToken) {
+                                        res.json({itemList: itemList, pageToken: retPageToken});
                                     } else {
                                         res.json({itemList: itemList});
                                     }
-                                });
-                            } else {
-                                var itemList = getYoutubeItem(detaildata.items, query.type);
+                                }
+                            });
+                        } else if (playlist_id.length > 0) {
+                            googleApi.googleApi('y playlist', {id: playlist_id.join(',')}, function(err, detaildata) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                itemList = itemList.concat(getYoutubeItem(detaildata.items, query.type));
                                 if (metadata.nextPageToken) {
-                                    res.json({itemList: itemList, pageToken: metadata.nextPageToken});
+                                    retPageToken = retPageToken + metadata.nextPageToken;
+                                    res.json({itemList: itemList, pageToken: retPageToken});
+                                } else if (retPageToken) {
+                                    res.json({itemList: itemList, pageToken: retPageToken});
                                 } else {
                                     res.json({itemList: itemList});
                                 }
-                            }
-                        });
-                    } else if (playlist_id.length > 0) {
-                        googleApi.googleApi('y playlist', {id: playlist_id.join(',')}, function(err, detaildata) {
-                            if (err) {
-                                util.handleError(err, next, res);
-                            }
-                            var itemList = getYoutubeItem(detaildata.items, query.type);
-                            if (metadata.nextPageToken) {
-                                res.json({itemList: itemList, pageToken: metadata.nextPageToken});
-                            } else {
-                                res.json({itemList: itemList});
-                            }
-                        });
-                    }
-                } else {
-                    if (metadata.nextPageToken) {
-                        res.json({itemList: [], pageToken: metadata.nextPageToken});
+                            });
+                        }
                     } else {
-                        res.json({itemList: []});
+                        if (metadata.nextPageToken) {
+                            retPageToken = retPageToken + metadata.nextPageToken;
+                            res.json({itemList: itemList, pageToken: retPageToken});
+                        } else if (retPageToken) {
+                            res.json({itemList: itemList, pageToken: retPageToken});
+                        } else {
+                            res.json({itemList: itemList});
+                        }
                     }
+                });
+            } else {
+                if (retPageToken) {
+                    res.json({itemList: itemList, pageToken: retPageToken});
+                } else {
+                    res.json({itemList: itemList});
                 }
-            });
-        } else {
-            res.json({itemList: []});
+            }
         }
     });
 });
@@ -1854,14 +1894,17 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.id.match(/^(you|ypl)_(.*)$/);
+        var id = req.params.id.match(/^(you|ypl|kub)_(.*)$/);
         var playlist = 0;
         var playlistId = null;
         var obj = req.params.obj;
         if (id) {
             if (id[1] === 'ypl') {
                 playlist = 1;
-                var playlistId = id[2];
+                playlistId = id[2];
+            } else if (id[1] === 'kub') {
+                playlist = 3;
+                playlistId = id[2];
             }
             id = util.isValidString(req.params.id, 'name');
             if (id === false) {
@@ -1907,7 +1950,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                     if (items.length === 0) {
                         if (playlist) {
                             if (playlist === 1) {
-                                externalTool.youtubePlaylist(playlistId, function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken) {
+                                externalTool.youtubePlaylist(playlistId, 1, function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken) {
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
@@ -1919,9 +1962,9 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                             util.handleError(err, next, res);
                                         }
                                         if (items1.length === 0 || type === 'music') {
-                                            res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                            res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, end: is_end, total: total}});
                                         } else {
-                                            res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                            res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, end: is_end, total: total}});
                                         }
                                     });
                                 });
@@ -1947,9 +1990,9 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                                 }
                                                 if (obj_arr) {
                                                     if (items1.length === 0 || type === 'music') {
-                                                        res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                        res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, end: is_end, total: total}});
                                                     } else {
-                                                        res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                        res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, end: is_end, total: total}});
                                                     }
                                                 } else {
                                                     if (items1.length === 0 || type === 'music') {
@@ -1964,6 +2007,29 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                         }
                                     });
                                 });
+                            } else if (playlist === 3) {
+                                externalTool.getSingleId('kubo', 'http://www.123kubo.com/vod-read-id-' + playlistId + '.html', 1, function(err, obj, is_end, total) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (total <= 0) {
+                                        util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
+                                    }
+                                    if (obj.id) {
+                                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            if (items1.length === 0 || type === 'music') {
+                                                res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                            } else {
+                                                res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
+                                            }
+                                        });
+                                    } else {
+                                        res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                    }
+                                });
                             }
                         } else {
                             res.json({apiOK: true});
@@ -1971,20 +2037,12 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                     } else {
                         if (playlist) {
                             if (playlist === 1) {
-                                externalTool.youtubePlaylist(playlistId, function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken) {
+                                externalTool.youtubePlaylist(playlistId, items[0].recordTime, function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken, is_new) {
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
                                     if (total <= 0) {
                                         util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
-                                    }
-                                    var is_new = true;
-                                    for (var i in obj_arr) {
-                                        if (obj_arr[i].id === items[0].recordTime) {
-                                            obj = obj_arr[i];
-                                            is_new = false;
-                                            break;
-                                        }
                                     }
                                     if (is_new) {
                                         mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: {recordTime: obj.id}}, function(err, item){
@@ -1996,9 +2054,9 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                                     util.handleError(err, next, res);
                                                 }
                                                 if (items1.length === 0 || type === 'music') {
-                                                    res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                    res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, end: is_end, total: total}});
                                                 } else {
-                                                    res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                    res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, end: is_end, total: total}});
                                                 }
                                             });
                                         });
@@ -2008,9 +2066,9 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                                 util.handleError(err, next, res);
                                             }
                                             if (items1.length === 0 || type === 'music') {
-                                                res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, end: is_end, total: total}});
                                             } else {
-                                                res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, end: is_end, total: total}});
                                             }
                                         });
                                     }
@@ -2023,7 +2081,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                     if (items1.length === 0) {
                                         util.handleError({hoerror: 2, message: "cannot find external"}, next, res);
                                     }
-                                    externalTool.getSingleId(items1[0].owner, decodeURIComponent(items1[0].url), items[0].recordTime, function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken) {
+                                    externalTool.getSingleId(items1[0].owner, decodeURIComponent(items1[0].url), items[0].recordTime, function(err, obj, is_end, total, obj_arr, pageN, pageP, pageToken, is_new) {
                                         if (err) {
                                             util.handleError(err, next, res);
                                         }
@@ -2031,52 +2089,39 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                             util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
                                         }
                                         if (obj.id) {
-                                            if (obj_arr) {
-                                                var is_new = true;
-                                                for (var i in obj_arr) {
-                                                    if (obj_arr[i].id === items[0].recordTime) {
-                                                        obj = obj_arr[i];
-                                                        is_new = false;
-                                                        break;
+                                            if (is_new) {
+                                                mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: {recordTime: obj.id}}, function(err, item){
+                                                    if (err) {
+                                                        util.handleError(err, next, res);
                                                     }
-                                                }
-                                                if (is_new) {
-                                                    mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: {recordTime: obj.id}}, function(err, item){
-                                                        if (err) {
-                                                            util.handleError(err, next, res);
-                                                        }
-                                                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
-                                                            if (err) {
-                                                                util.handleError(err, next, res);
-                                                            }
-                                                            if (items1.length === 0 || type === 'music') {
-                                                                res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
-                                                            } else {
-                                                                res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
-                                                            }
-                                                        });
-                                                    });
-                                                } else {
                                                     mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
                                                         if (err) {
                                                             util.handleError(err, next, res);
                                                         }
                                                         if (items1.length === 0 || type === 'music') {
-                                                            res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                            res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, end: is_end, total: total}});
                                                         } else {
-                                                            res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, total: total}});
+                                                            res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, end: is_end, total: total}});
                                                         }
                                                     });
-                                                }
+                                                });
                                             } else {
                                                 mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
                                                     if (err) {
                                                         util.handleError(err, next, res);
                                                     }
-                                                    if (items1.length === 0 || type === 'music') {
-                                                        res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                                    if (obj_arr) {
+                                                        if (items1.length === 0 || type === 'music') {
+                                                            res.json({playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, end: is_end, total: total}});
+                                                        } else {
+                                                            res.json({time: items1[0].recordTime, playlist: {obj_arr: obj_arr, obj: obj, pageN: pageN, pageP: pageP, pageToken: pageToken, end: is_end, total: total}});
+                                                        }
                                                     } else {
-                                                        res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
+                                                        if (items1.length === 0 || type === 'music') {
+                                                            res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                                        } else {
+                                                            res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
+                                                        }
                                                     }
                                                 });
                                             }
@@ -2084,6 +2129,29 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                             res.json({playlist: {obj: obj, end: is_end, total: total}});
                                         }
                                     }, items[0].pageToken, req.params.back);
+                                });
+                            } else if (playlist === 3) {
+                                externalTool.getSingleId('kubo', 'http://www.123kubo.com/vod-read-id-' + playlistId + '.html', items[0].recordTime, function(err, obj, is_end, total) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (total <= 0) {
+                                        util.handleError({hoerror: 2, message: "playlist is empty"}, next, res);
+                                    }
+                                    if (obj.id) {
+                                        mongo.orig("find", "storageRecord", {userId: req.user._id, fileId: obj.id}, {limit: 1}, function(err, items1){
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            if (items1.length === 0 || type === 'music') {
+                                                res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                            } else {
+                                                res.json({time: items1[0].recordTime, playlist: {obj: obj, end: is_end, total: total}});
+                                            }
+                                        });
+                                    } else {
+                                        res.json({playlist: {obj: obj, end: is_end, total: total}});
+                                    }
                                 });
                             }
                         } else {
@@ -3264,6 +3332,19 @@ function checkLogin(req, res, next, callback) {
             callback(req, res, next);
         }, 0);
     }
+}
+
+function getKuboItem(items) {
+    var itemList = [];
+    var data = null;
+    var yd = null;
+    for (var i in items) {
+        yd = new Date(items[i].date);
+        items[i].tags.push('first item');
+        data = {name: items[i].name, id: 'kub_' + items[i].id, tags: items[i].tags, recycle: 0, isOwn: false, utime: yd.getTime()/1000, thumb: items[i].thumb, noDb: true, status: 3, count: items[i].count};
+        itemList.push(data);
+    }
+    return itemList;
 }
 
 function getYoutubeItem(items, type) {
