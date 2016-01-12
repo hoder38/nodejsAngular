@@ -1108,7 +1108,7 @@ module.exports = {
         }
     },
     getSingleId: function(type, url, index, callback, pageToken, back) {
-        if ((typeof index) === 'number') {
+        if ((typeof index) === 'number' || index.match(/^[\d\.]+$/)) {
             if (index < 1) {
                 util.handleError({hoerror: 2, message: 'index must > 1'}, callback, callback);
             }
