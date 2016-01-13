@@ -13,6 +13,8 @@ var kubo_country = ['香港', '台灣', '大陸', '日本', '韓國', '歐美', 
 
 var yify_type = mime.getOptionTag('eng');
 
+var yify_type_cht = mime.getOptionTag('cht');
+
 var queryLimit = 20;
 
 var handleTime = 7200,
@@ -1398,6 +1400,9 @@ module.exports = function(collection) {
                     if (yify_type.indexOf(normalize(search_arr[i])) !== -1) {
                         searchType = normalize(search_arr[i]);
                         searchWord = 0;
+                    } else if (yify_type_cht.indexOf(normalize(search_arr[i])) !== -1) {
+                        searchType = yify_type[yify_type_cht.indexOf(normalize(search_arr[i]))];
+                        searchWord = 0;
                     } else {
                         searchWord = denormalize(search_arr[i]);
                         searchType = 'all';
@@ -1418,6 +1423,7 @@ module.exports = function(collection) {
                 if (page > 1) {
                     url =  url + '?page=' + page;
                 }
+                console.log(url);
                 return url;
             } else {
                 return false;
