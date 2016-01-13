@@ -1205,7 +1205,7 @@ module.exports = function(sendWs) {
                 }, 0);
             } else if (status === 8) {
                 setTimeout(function(){
-                    callback(null, false, {def: [], opt: []}, DBdata);
+                    callback(null, false, {def: [], opt: mime.getOptionTag()}, DBdata);
                 }, 0);
             } else if (status === 9) {
                 setTimeout(function(){

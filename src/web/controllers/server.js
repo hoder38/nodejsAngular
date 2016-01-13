@@ -500,24 +500,37 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
             index = req.params.pageToken.match(/^\d+/);
             pageToken = req.params.pageToken.match(/^[^\d]+$/);
         }
+        var nextIndex = index + 1;
+        nextIndex = nextIndex.toString();
         var itemList = [];
         var retPageToken = '';
         var query = tagTool.getKuboQuery(parentList.cur, sortName, index);
         if (query) {
-            externalTool.getSingleList(query, function(err, list) {
+            externalTool.getSingleList('kubo', query, function(err, list) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
                 itemList = getKuboItem(list);
-                index++;
-                retPageToken = index.toString();
-                youtubeQuery();
+                retPageToken = nextIndex;
+                yifyQuery();
             });
         } else {
-            youtubeQuery();
+            yifyQuery();
         }
         function yifyQuery() {
-
+            var query = tagTool.getYifyQuery(parentList.cur, sortName, index);
+            if (query) {
+                externalTool.getSingleList('yify', query, function(err, list) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    itemList = getYifyItem(list);
+                    retPageToken = nextIndex;
+                    youtubeQuery();
+                });
+            } else {
+                youtubeQuery();
+            }
         }
         function youtubeQuery() {
             query = tagTool.getYoutubeQuery(parentList.cur, sortName, pageToken);
@@ -1472,7 +1485,13 @@ function newBookmarkItem(name, user, session, bpath, bexactly, callback) {
                     console.log(item);
                     console.log('save end');
                     sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                    var opt = mime.getOptionTag();
+                    var optiontag = mime.getOptionTag();
+                    var opt = [];
+                    for (var i in optiontag) {
+                        if (tags.indexOf(optiontag[i]) === -1) {
+                            opt.push(optiontag[i]);
+                        }
+                    }
                     tagTool.getRelativeTag(tags[0], user, opt, callback, function(err, relative) {
                         if (err) {
                             util.handleError(err, callback, callback);
@@ -1897,7 +1916,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.id.match(/^(you|ypl|kub)_(.*)$/);
+        var id = req.params.id.match(/^(you|ypl|kub|yif)_(.*)$/);
         var playlist = 0;
         var playlistId = null;
         var obj = req.params.obj;
@@ -1907,6 +1926,9 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                 playlistId = id[2];
             } else if (id[1] === 'kub') {
                 playlist = 3;
+                playlistId = id[2];
+            } else if (id[1] === 'yif') {
+                playlist = 4;
                 playlistId = id[2];
             }
             id = util.isValidString(req.params.id, 'name');
@@ -2010,8 +2032,14 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                         }
                                     });
                                 });
-                            } else if (playlist === 3) {
-                                externalTool.getSingleId('kubo', 'http://www.123kubo.com/vod-read-id-' + playlistId + '.html', 1, function(err, obj, is_end, total) {
+                            } else if (playlist > 2) {
+                                var playurl = 'http://www.123kubo.com/vod-read-id-' + playlistId + '.html';
+                                var playtype = 'kubo';
+                                if (playlist === 4) {
+                                    playurl = 'https://yts.ag/movie/' + playlistId;
+                                    playtype = 'yify';
+                                }
+                                externalTool.getSingleId(playtype, playurl, 1, function(err, obj, is_end, total) {
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
@@ -2133,8 +2161,14 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                         }
                                     }, items[0].pageToken, req.params.back);
                                 });
-                            } else if (playlist === 3) {
-                                externalTool.getSingleId('kubo', 'http://www.123kubo.com/vod-read-id-' + playlistId + '.html', items[0].recordTime, function(err, obj, is_end, total) {
+                            } else if (playlist > 2) {
+                                var playurl = 'http://www.123kubo.com/vod-read-id-' + playlistId + '.html';
+                                var playtype = 'kubo';
+                                if (playlist === 4) {
+                                    playurl = 'https://yts.ag/movie/' + playlistId;
+                                    playtype = 'yify';
+                                }
+                                externalTool.getSingleId(playtype, playurl, items[0].recordTime, function(err, obj, is_end, total) {
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
@@ -3066,7 +3100,7 @@ app.get('/api/getUser', function(req, res, next){
     });
 });
 
-app.get('/subtitle/:uid/:index(\\d+)?', function(req, res, next){
+app.get('/subtitle/:uid/:index(\\d+|v)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle');
         console.log(new Date());
@@ -3345,6 +3379,19 @@ function getKuboItem(items) {
         yd = new Date(items[i].date);
         items[i].tags.push('first item');
         data = {name: items[i].name, id: 'kub_' + items[i].id, tags: items[i].tags, recycle: 0, isOwn: false, utime: yd.getTime()/1000, thumb: items[i].thumb, noDb: true, status: 3, count: items[i].count};
+        itemList.push(data);
+    }
+    return itemList;
+}
+
+function getYifyItem(items) {
+    var itemList = [];
+    var data = null;
+    var yd = null;
+    for (var i in items) {
+        yd = new Date(items[i].date);
+        items[i].tags.push('first item');
+        data = {name: items[i].name, id: 'yif_' + items[i].id, tags: items[i].tags, recycle: 0, isOwn: false, utime: yd.getTime()/1000, thumb: items[i].thumb, noDb: true, status: 3, count: items[i].rating};
         itemList.push(data);
     }
     return itemList;

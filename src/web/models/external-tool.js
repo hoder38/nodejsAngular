@@ -18,217 +18,304 @@ var kubo_type = [['動作片', '喜劇片', '愛情片', '科幻片', '恐怖片
 //type要補到deltag裡
 
 module.exports = {
-    getSingleList: function(url, callback) {
-        api.xuiteDownload(url, '', function(err, raw_data) {
-            if (err) {
-                err.hoerror = 2;
-                util.handleError(err, callback, callback);
-            }
-            var raw_list = raw_data.match(/(.*)data\-original[\s\S]+?更新：\d\d\d\d-\d\d-\d\d/g);
-            var list = [];
-            var list_match = false;
-            var item_match = false;
-            var data = null;
-            var tags = [];
-            var act_match = false;
-            if (raw_list) {
-                for (var i in raw_list) {
-                    list_match = raw_list[i].match(/href=".*-(\d+)\.html".*data\-original="([^"]+)".*alt="([^"]+)"/);
-                    if (list_match) {
-                        data = {name: list_match[3], id: list_match[1], thumb: list_match[2]};
-                        tags = ['動畫', 'animation'];
-                        item_match = raw_list[i].match(/地區\/年份：(.*)\/(\d+)/);
-                        if (item_match) {
-                            if (tags.indexOf(item_match[1]) === -1) {
-                                tags.push(item_match[1]);
+    getSingleList: function(type, url, callback) {
+        switch (type) {
+            case 'kubo':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/(.*)data\-original[\s\S]+?更新：\d\d\d\d-\d\d-\d\d/g);
+                var list = [];
+                var list_match = false;
+                var item_match = false;
+                var data = null;
+                var tags = [];
+                var act_match = false;
+                if (raw_list) {
+                    var type_id = url.match(/vod-search-id-(\d+)/);
+                    if (!type_id) {
+                        util.handleError({hoerror: 2, message: 'unknown kubo type'}, callback, callback);
+                    }
+                    type_id = type_id[1];
+                    for (var i in raw_list) {
+                        list_match = raw_list[i].match(/href=".*-(\d+)\.html".*data\-original="([^"]+)".*alt="([^"]+)"/);
+                        if (list_match) {
+                            data = {name: list_match[3], id: list_match[1], thumb: list_match[2]};
+                            if (type_id === '1') {
+                                tags = ['電影', 'movie'];
+                            } else if (type_id === '3') {
+                                tags = ['動畫', 'animation'];
+                            } else {
+                                tags = ['電視劇', 'tv show'];
                             }
-                            if (tags.indexOf(item_match[2]) === -1) {
-                                tags.push(item_match[2]);
+                            item_match = raw_list[i].match(/地區\/年份：(.*)\/(\d+)/);
+                            if (item_match) {
+                                if (tags.indexOf(item_match[1]) === -1) {
+                                    tags.push(item_match[1]);
+                                }
+                                if (tags.indexOf(item_match[2]) === -1) {
+                                    tags.push(item_match[2]);
+                                }
                             }
-                        }
-                        item_match = raw_list[i].match(/主演：(.*)<\/p>/);
-                        if (item_match) {
-                            act_match = item_match[0].match(/>[^<>]+<\/a/g);
-                            if (act_match) {
-                                for (var j in act_match) {
-                                    item_match = act_match[j].match(/>([^<>]+)<\/a/);
-                                    if (item_match) {
-                                        if (tags.indexOf(item_match[1]) === -1) {
-                                            tags.push(item_match[1]);
+                            item_match = raw_list[i].match(/主演：(.*)<\/p>/);
+                            if (item_match) {
+                                act_match = item_match[0].match(/>[^<>]+<\/a/g);
+                                if (act_match) {
+                                    for (var j in act_match) {
+                                        item_match = act_match[j].match(/>([^<>]+)<\/a/);
+                                        if (item_match) {
+                                            if (tags.indexOf(item_match[1]) === -1) {
+                                                tags.push(item_match[1]);
+                                            }
                                         }
                                     }
                                 }
                             }
+                            data['tags'] = tags;
+                            item_match = raw_list[i].match(/月熱度：(\d+)/);
+                            if (item_match) {
+                                data['count'] = Number(item_match[1]);
+                            } else {
+                                data['count'] = 0;
+                            }
+                            item_match = raw_list[i].match(/更新：(\d\d\d\d-\d\d-\d\d)/);
+                            if (item_match) {
+                                data['date'] = item_match[1];
+                            } else {
+                                data['date'] = '1970-01-01';
+                            }
+                            list.push(data);
                         }
-                        data['tags'] = tags;
-                        item_match = raw_list[i].match(/月熱度：(\d+)/);
-                        if (item_match) {
-                            data['count'] = Number(item_match[1]);
-                        } else {
-                            data['count'] = 0;
-                        }
-                        item_match = raw_list[i].match(/更新：(\d\d\d\d-\d\d-\d\d)/);
-                        if (item_match) {
-                            data['date'] = item_match[1];
-                        } else {
-                            data['date'] = '1970-01-01';
-                        }
-                        list.push(data);
                     }
-                }
-            } else {
-                raw_list = raw_data.match(/\.html"><img src="[\s\S]+?\d\d:\d\d<\/cite>/g);
-                if (raw_list) {
-                    for (var i in raw_list) {
-                        list_match = raw_list[i].match(/<img src="([^"]+)"/);
-                        if (list_match) {
-                            data = {thumb: list_match[1]};
-                            list_match = raw_list[i].match(/vod-read-id-(\d+).html">(.*?)\-([^\-]+?)<\/a>/);
+                } else {
+                    raw_list = raw_data.match(/\.html"><img src="[\s\S]+?\d\d:\d\d<\/cite>/g);
+                    if (raw_list) {
+                        for (var i in raw_list) {
+                            list_match = raw_list[i].match(/<img src="([^"]+)"/);
                             if (list_match) {
-                                data['id'] = list_match[1];
-                                data['name'] = list_match[2].replace(/<\/?b>/g, '');
-                                tags = [list_match[3]];
-                                for (var j in kubo_type) {
-                                    if (kubo_type[j].indexOf(list_match[3]) !== -1) {
-                                        if (j === '2') {
-                                            if (tags.indexOf('animation') === -1) {
-                                                tags.push('animation');
-                                            }
-                                            if (tags.indexOf('動畫') === -1) {
-                                                tags.push('動畫');
-                                            }
-                                        } else if (j === '0') {
-                                            if (tags.indexOf('movie') === -1) {
-                                                tags.push('movie');
-                                            }
-                                            if (tags.indexOf('電影') === -1) {
-                                                tags.push('電影');
-                                            }
-                                            switch (kubo_type[j].indexOf(list_match[3])) {
-                                                case 0:
-                                                if (tags.indexOf('action') === -1) {
-                                                    tags.push('action');
-                                                }
-                                                if (tags.indexOf('動作') === -1) {
-                                                    tags.push('動作');
-                                                }
-                                                break;
-                                                case 1:
-                                                if (tags.indexOf('comedy') === -1) {
-                                                    tags.push('comedy');
-                                                }
-                                                if (tags.indexOf('喜劇') === -1) {
-                                                    tags.push('喜劇');
-                                                }
-                                                break;
-                                                case 2:
-                                                if (tags.indexOf('romance') === -1) {
-                                                    tags.push('romance');
-                                                }
-                                                if (tags.indexOf('浪漫') === -1) {
-                                                    tags.push('浪漫');
-                                                }
-                                                break;
-                                                case 3:
-                                                if (tags.indexOf('sci-fi') === -1) {
-                                                    tags.push('sci-fi');
-                                                }
-                                                if (tags.indexOf('科幻') === -1) {
-                                                    tags.push('科幻');
-                                                }
-                                                break;
-                                                case 4:
-                                                if (tags.indexOf('horror') === -1) {
-                                                    tags.push('horror');
-                                                }
-                                                if (tags.indexOf('恐怖') === -1) {
-                                                    tags.push('恐怖');
-                                                }
-                                                break;
-                                                case 5:
-                                                if (tags.indexOf('drama') === -1) {
-                                                    tags.push('drama');
-                                                }
-                                                if (tags.indexOf('劇情') === -1) {
-                                                    tags.push('劇情');
-                                                }
-                                                break;
-                                                case 6:
-                                                if (tags.indexOf('war') === -1) {
-                                                    tags.push('war');
-                                                }
-                                                if (tags.indexOf('戰爭') === -1) {
-                                                    tags.push('戰爭');
-                                                }
-                                                break;
-                                                case 7:
+                                data = {thumb: list_match[1]};
+                                list_match = raw_list[i].match(/vod-read-id-(\d+).html">(.*?)\-([^\-]+?)<\/a>/);
+                                if (list_match) {
+                                    data['id'] = list_match[1];
+                                    data['name'] = list_match[2].replace(/<\/?b>/g, '');
+                                    tags = [list_match[3]];
+                                    for (var j in kubo_type) {
+                                        if (kubo_type[j].indexOf(list_match[3]) !== -1) {
+                                            if (j === '2') {
                                                 if (tags.indexOf('animation') === -1) {
                                                     tags.push('animation');
                                                 }
                                                 if (tags.indexOf('動畫') === -1) {
                                                     tags.push('動畫');
                                                 }
-                                                break;
-                                            }
-                                        } else if (j === '1') {
-                                            if (tags.indexOf('tv show') === -1) {
-                                                tags.push('tv show');
-                                            }
-                                            if (tags.indexOf('電視劇') === -1) {
-                                                tags.push('電視劇');
-                                            }
-                                        }
-                                    }
-                                }
-                                item_match = raw_list[i].match(/地區:<a[^>]+>([^<]+)/);
-                                if (item_match) {
-                                    if (tags.indexOf(item_match[1]) === -1) {
-                                        tags.push(item_match[1]);
-                                    }
-                                }
-                                item_match = raw_list[i].match(/年份:<a[^>]+>(\d+)/);
-                                if (item_match) {
-                                    if (tags.indexOf(item_match[1]) === -1) {
-                                        tags.push(item_match[1]);
-                                    }
-                                }
-                                item_match = raw_list[i].match(/演出:(.*)/);
-                                if (item_match) {
-                                    act_match = item_match[0].match(/>[^<>]+<\/a/g);
-                                    if (act_match) {
-                                        for (var j in act_match) {
-                                            item_match = act_match[j].match(/>([^<>]+)<\/a/);
-                                            if (item_match) {
-                                                if (tags.indexOf(item_match[1]) === -1) {
-                                                    tags.push(item_match[1]);
+                                            } else if (j === '0') {
+                                                if (tags.indexOf('movie') === -1) {
+                                                    tags.push('movie');
+                                                }
+                                                if (tags.indexOf('電影') === -1) {
+                                                    tags.push('電影');
+                                                }
+                                                switch (kubo_type[j].indexOf(list_match[3])) {
+                                                    case 0:
+                                                    if (tags.indexOf('action') === -1) {
+                                                        tags.push('action');
+                                                    }
+                                                    if (tags.indexOf('動作') === -1) {
+                                                        tags.push('動作');
+                                                    }
+                                                    break;
+                                                    case 1:
+                                                    if (tags.indexOf('comedy') === -1) {
+                                                        tags.push('comedy');
+                                                    }
+                                                    if (tags.indexOf('喜劇') === -1) {
+                                                        tags.push('喜劇');
+                                                    }
+                                                    break;
+                                                    case 2:
+                                                    if (tags.indexOf('romance') === -1) {
+                                                        tags.push('romance');
+                                                    }
+                                                    if (tags.indexOf('浪漫') === -1) {
+                                                        tags.push('浪漫');
+                                                    }
+                                                    break;
+                                                    case 3:
+                                                    if (tags.indexOf('sci-fi') === -1) {
+                                                        tags.push('sci-fi');
+                                                    }
+                                                    if (tags.indexOf('科幻') === -1) {
+                                                        tags.push('科幻');
+                                                    }
+                                                    break;
+                                                    case 4:
+                                                    if (tags.indexOf('horror') === -1) {
+                                                        tags.push('horror');
+                                                    }
+                                                    if (tags.indexOf('恐怖') === -1) {
+                                                        tags.push('恐怖');
+                                                    }
+                                                    break;
+                                                    case 5:
+                                                    if (tags.indexOf('drama') === -1) {
+                                                        tags.push('drama');
+                                                    }
+                                                    if (tags.indexOf('劇情') === -1) {
+                                                        tags.push('劇情');
+                                                    }
+                                                    break;
+                                                    case 6:
+                                                    if (tags.indexOf('war') === -1) {
+                                                        tags.push('war');
+                                                    }
+                                                    if (tags.indexOf('戰爭') === -1) {
+                                                        tags.push('戰爭');
+                                                    }
+                                                    break;
+                                                    case 7:
+                                                    if (tags.indexOf('animation') === -1) {
+                                                        tags.push('animation');
+                                                    }
+                                                    if (tags.indexOf('動畫') === -1) {
+                                                        tags.push('動畫');
+                                                    }
+                                                    break;
+                                                }
+                                            } else if (j === '1') {
+                                                if (tags.indexOf('tv show') === -1) {
+                                                    tags.push('tv show');
+                                                }
+                                                if (tags.indexOf('電視劇') === -1) {
+                                                    tags.push('電視劇');
                                                 }
                                             }
                                         }
                                     }
+                                    item_match = raw_list[i].match(/地區:<a[^>]+>([^<]+)/);
+                                    if (item_match) {
+                                        if (tags.indexOf(item_match[1]) === -1) {
+                                            tags.push(item_match[1]);
+                                        }
+                                    }
+                                    item_match = raw_list[i].match(/年份:<a[^>]+>(\d+)/);
+                                    if (item_match) {
+                                        if (tags.indexOf(item_match[1]) === -1) {
+                                            tags.push(item_match[1]);
+                                        }
+                                    }
+                                    item_match = raw_list[i].match(/演出:(.*)/);
+                                    if (item_match) {
+                                        act_match = item_match[0].match(/>[^<>]+<\/a/g);
+                                        if (act_match) {
+                                            for (var j in act_match) {
+                                                item_match = act_match[j].match(/>([^<>]+)<\/a/);
+                                                if (item_match) {
+                                                    if (tags.indexOf(item_match[1]) === -1) {
+                                                        tags.push(item_match[1]);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    data['tags'] = tags;
+                                    item_match = raw_list[i].match(/月熱度:(\d+)/);
+                                    if (item_match) {
+                                        data['count'] = Number(item_match[1]);
+                                    } else {
+                                        data['count'] = 0;
+                                    }
+                                    item_match = raw_list[i].match(/更新時間:(\d\d\d\d)年(\d\d)月(\d\d)日/);
+                                    if (item_match) {
+                                        data['date'] = item_match[1] + '-' + item_match[2] + '-' + item_match[3];
+                                    } else {
+                                        data['date'] = '1970-01-01';
+                                    }
                                 }
-                                data['tags'] = tags;
-                                item_match = raw_list[i].match(/月熱度:(\d+)/);
-                                if (item_match) {
-                                    data['count'] = Number(item_match[1]);
-                                } else {
-                                    data['count'] = 0;
-                                }
-                                item_match = raw_list[i].match(/更新時間:(\d\d\d\d)年(\d\d)月(\d\d)日/);
-                                if (item_match) {
-                                    data['date'] = item_match[1] + '-' + item_match[2] + '-' + item_match[3];
-                                } else {
-                                    data['date'] = '1970-01-01';
+                            }
+                            list.push(data);
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false, 'http://www.123kubo.com/');
+            break;
+            case 'yify':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/class="browse-movie-wrap[\s\S]+?class="browse-movie-year">\d\d\d\d/g);
+                var list = [];
+                var list_match = false;
+                var data = null;
+                var genre_match = false;
+                var genre_item = null;
+                var tags = [];
+                if (raw_list) {
+                    for (var i in raw_list) {
+                        list_match = raw_list[i].match(/class="browse-movie-title">([^<]+)/);
+                        if (list_match) {
+                            data = {name: list_match[1]};
+                            list_match = raw_list[i].match(/a href="https:\/\/yts\.ag\/movie\/([^"]+)"/);
+                            if (list_match) {
+                                data['id'] = list_match[1];
+                                list_match = raw_list[i].match(/src="([^"]+)"/);
+                                if (list_match) {
+                                    tags = ['movie', '電影'];
+                                    data['thumb'] = list_match[1];
+                                    list_match = raw_list[i].match(/class="browse-movie-year">(\d\d\d\d)/);
+                                    if (list_match) {
+                                        data['date'] = list_match[1] + '-01-01';
+                                        if (tags.indexOf(list_match[1]) === -1) {
+                                            tags.push(list_match[1]);
+                                        }
+                                    } else {
+                                        data['date'] = '1970-01-01';
+                                    }
+                                    list_match = raw_list[i].match(/class="rating">(\d+(\.\d+)?)/);
+                                    if (list_match) {
+                                        data['rating'] = Number(list_match[1]);
+                                    } else {
+                                        data['rating'] = 0;
+                                    }
+                                    list_match = raw_list[i].match(/<h4>[^<]+<\/h4>/g);
+                                    if (list_match) {
+                                        for (var j in list_match) {
+                                            genre_match = list_match[j].match(/>(.*)</);
+                                            if (genre_match) {
+                                                genre_item = tagTool.normalizeTag(genre_match[1]);
+                                                if (genre_list.indexOf(genre_item) !== -1) {
+                                                    if (tags.indexOf(genre_item) === -1) {
+                                                        tags.push(genre_item);
+                                                    }
+                                                    if (tags.indexOf(genre_list_ch[genre_list.indexOf(genre_item)]) === -1) {
+                                                        tags.push(genre_list_ch[genre_list.indexOf(genre_item)]);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    data['tags'] = tags;
+                                    list.push(data);
                                 }
                             }
                         }
-                        list.push(data);
                     }
                 }
-            }
-            setTimeout(function(){
-                callback(null, list);
-            }, 0);
-        }, 60000, false, false, 'http://www.123kubo.com/');
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false, 'https://yts.ag/');
+            break;
+            default:
+            util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
+            break;
+        }
     },
     saveSingle: function(type, id, callback) {
         switch (type) {
@@ -256,7 +343,9 @@ module.exports = {
                         var info_match = false;
                         var nick_list = false;
                         var nick_match = false;
-                        //info_list.splice(info_list.length-1, 1);
+                        if (!info_list[info_list.length-1].match(/^>\d\d\d\d<$/)) {
+                            info_list.splice(info_list.length-1, 1);
+                        }
                         for (var i in info_list) {
                             info_match = info_list[i].match(/^>([^<]+)<$/);
                             if (info_match) {
@@ -375,6 +464,80 @@ module.exports = {
                     callback(null, name, info_tag, 'kubo', thumb, url);
                 }, 0);
             }, 60000, false, false, 'http://www.123kubo.com/');
+            break;
+            case 'yify':
+            var url = 'https://yts.ag/movie/' + id;
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var info = raw_data.match(/<h1>([^<]+)<\/h1>/);
+                if (!info) {
+                    util.handleError({hoerror: 2, message: "yify no info"}, callback, callback);
+                }
+                var info_match = false;
+                var item_match = false;
+                var genre_item = null;
+                var name = info[1];
+                info = raw_data.match(/class="img-responsive" src="([^"]+)"/);
+                if (!info) {
+                    util.handleError({hoerror: 2, message: "yify no info"}, callback, callback);
+                }
+                var thumb = info[1];
+                console.log(name);
+                console.log(thumb);
+                var info_tag = ['yify', 'video', '影片', 'movie', '電影'];
+                info = raw_data.match(/"http:\/\/www\.imdb\.com\/title\/(tt\d+)\/"/);
+                if (info) {
+                    if (info_tag.indexOf(info[1]) === -1) {
+                        info_tag.push(info[1]);
+                    }
+                }
+                info = raw_data.match(/itemprop="director"[^>]+><[^>]+>([^<]+)/);
+                if (info) {
+                    if (info_tag.indexOf(info[1]) === -1) {
+                        info_tag.push(info[1]);
+                    }
+                }
+                info = raw_data.match(/itemprop="actor"[^>]+><[^>]+>[^<]+/g);
+                if (info) {
+                    for (var i in info) {
+                        info_match = info[i].match(/^itemprop="actor"[^>]+><[^>]+>([^<]+)$/);
+                        if (info_match) {
+                            if (info_tag.indexOf(info_match[1]) === -1) {
+                                info_tag.push(info_match[1]);
+                            }
+                        }
+                    }
+                }
+                info = raw_data.match(/<h2>[^<]+<\/h2>/g);
+                if (info) {
+                    info.splice(0, 2);
+                    for (var i in info) {
+                        info_match = info[i].match(/^<h2>([^<]+)<\/h2>$/);
+                        if (info_match) {
+                            if (info_match[1].match(/^\d\d\d\d$/)) {
+                                if (info_tag.indexOf(info_match[1]) === -1) {
+                                    info_tag.push(info_match[1]);
+                                }
+                            } else {
+                                item_match = info_match[1].match(/[A-Za-z\-]+/g);
+                                if (item_match) {
+                                    for (var j in item_match) {
+                                        if (info_tag.indexOf(item_match[j]) === -1) {
+                                            info_tag.push(item_match[j]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, name, info_tag, 'yify', thumb, url);
+                }, 0);
+            }, 60000, false, false, 'https://yts.ag/');
             break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
@@ -750,7 +913,7 @@ module.exports = {
                                             }, 0);
                                         }
                                     });
-                                }, 60000, false, false);
+                                }, 60000, false, false, 'https://eztv.ag/');
                             } else {
                                 index++;
                                 if (index < list_arr.length) {
@@ -763,7 +926,7 @@ module.exports = {
                             }
                         });
                     }
-                }, 60000, false, false);
+                }, 60000, false, false, 'https://eztv.ag/');
             }
             break;
             case 'kubo':
@@ -1425,12 +1588,12 @@ module.exports = {
                                     callback(null, ret_obj, is_end, list.length);
                                 }, 0);
                             });
-                        }, 60000, false, false);
+                        }, 60000, false, false, 'https://eztv.ag/');
                     }
                 } else {
                     util.handleError({hoerror: 2, message: 'empty list'}, callback, callback);
                 }
-            }, 60000, false, false);
+            }, 60000, false, false, 'https://eztv.ag/');
             break;
             case 'kubo':
             //bj58 fun58 drive youtube dl fun23 bilibili
@@ -1699,6 +1862,48 @@ module.exports = {
                     callback(null, ret_obj, false, 1);
                 }, 0);
             }
+            break;
+            case 'yify':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var show_name = raw_data.match(/<h1>([^<]+)<\/h1>/);
+                if (!show_name) {
+                    util.handleError({hoerror: 2, message: 'unknown name!!!'}, callback, callback);
+                }
+                show_name = show_name[1];
+                var magnet = raw_data.match(/href="(magnet:\?[^"]+)".*1080p Magnet"/);
+                if (!magnet) {
+                    magnet = raw_data.match(/href="(magnet:\?[^"]+)".*720p Magnet"/);
+                    if (!magnet) {
+                        util.handleError({hoerror: 2, message: 'cannot find magnet!!!'}, callback, callback);
+                    } else {
+                        magnet = magnet[1];
+                    }
+                } else {
+                    magnet = magnet[1];
+                }
+                var ret_obj = {index: 1, showId: 1, title: show_name, is_magnet: true, complete: false};
+                var encodeTorrent = util.isValidString(magnet, 'url');
+                if (encodeTorrent === false) {
+                    util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
+                }
+                mongo.orig("find", "storage", {magnet: encodeTorrent}, {limit: 1}, function(err, items){
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    if (items.length > 0) {
+                        ret_obj['id'] = items[0]._id;
+                    } else {
+                        ret_obj['magnet'] = magnet;
+                    }
+                    setTimeout(function(){
+                        callback(null, ret_obj, false, 1);
+                    }, 0);
+                });
+            }, 60000, false, false, 'https://yts.ag/');
             break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);

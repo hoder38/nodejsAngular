@@ -112,7 +112,7 @@ app.use(function(req, res, next) {
     }
 });
 
-app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
+app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('upload subtitle');
         console.log(new Date());
@@ -208,6 +208,18 @@ app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
                 }
                 filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 if (items[0].status === 9 && req.params.index) {
+                    if (req.params.index) {
+                        if (req.params.index === 'v') {
+                            for (var i in items[0]['playList']) {
+                                if (items[0]['playList'][i].match(/\.mp4$/i) || items[0]['playList'][i].match(/\.mkv$/i)) {
+                                    fileIndex = i;
+                                    break;
+                                }
+                            }
+                        } else {
+                            fileIndex = Number(req.params.index);
+                        }
+                    }
                     fileIndex = Number(req.params.index);
                     filePath = filePath + '/' + fileIndex;
                 }
@@ -648,6 +660,26 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
                         });
                     });
+                } else if (url.match(/^(https|http):\/\/yts\.ag\/movie\//)) {
+                    mongo.orig("find", "storage", {url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (items.length > 0) {
+                            util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                        }
+                        var yify_id = url.match(/[^\/]+$/);
+                        if (!yify_id) {
+                            util.handleError({hoerror: 2, message: "kubo url invalid"}, next, res);
+                        }
+                        is_media = 3;
+                        externalTool.saveSingle('yify', yify_id[0], function(err, media_name, tag_arr, owner, thumb, url) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
+                        });
+                    });
                 } else {
                     api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                         if (err) {
@@ -837,6 +869,26 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     }
                     is_media = 3;
                     externalTool.saveSingle('kubo', kubo_id[1], function(err, media_name, tag_arr, owner, thumb, url) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
+                    });
+                });
+            } else if (url.match(/^(https|http):\/\/yts\.ag\/movie\//)) {
+                mongo.orig("find", "storage", {url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (items.length > 0) {
+                        util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                    }
+                    var yify_id = url.match(/[^\/]+$/);
+                    if (!yify_id) {
+                        util.handleError({hoerror: 2, message: "yify url invalid"}, next, res);
+                    }
+                    is_media = 3;
+                    externalTool.saveSingle('yify', yify_id[0], function(err, media_name, tag_arr, owner, thumb, url) {
                         if (err) {
                             util.handleError(err, next, res);
                         }
@@ -1173,7 +1225,7 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
     });
 });
 
-app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+)?', function(req, res, next) {
+app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle fix');
         console.log(new Date());
@@ -1316,7 +1368,16 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+)?', function(req, res, next)
                     util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
                 }
                 if (req.params.index) {
-                    fileIndex = Number(req.params.index);
+                    if (req.params.index === 'v') {
+                        for (var i in items[0]['playList']) {
+                            if (items[0]['playList'][i].match(/\.mp4$/i) || items[0]['playList'][i].match(/\.mkv$/i)) {
+                                fileIndex = i;
+                                break;
+                            }
+                        }
+                    } else {
+                        fileIndex = Number(req.params.index);
+                    }
                 }
                 if (items[0].status === 9 && !items[0]['playList'][fileIndex].match(/\.mp4$/i) && !items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
                     util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
@@ -1474,7 +1535,7 @@ app.get('/api/external/getSubtitle/:uid', function(req, res, next) {
     });
 });
 
-app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
+app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle search');
         console.log(new Date());
@@ -1575,7 +1636,16 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                     util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
                 }
                 if (req.params.index) {
-                    fileIndex = Number(req.params.index);
+                    if (req.params.index === 'v') {
+                        for (var i in items[0]['playList']) {
+                            if (items[0]['playList'][i].match(/\.mp4$/i) || items[0]['playList'][i].match(/\.mkv$/i)) {
+                                fileIndex = i;
+                                break;
+                            }
+                        }
+                    } else {
+                        fileIndex = Number(req.params.index);
+                    }
                 }
                 if (items[0].status === 9 && !items[0]['playList'][fileIndex].match(/\.mp4$/i) && !items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
                     util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
@@ -2479,13 +2549,17 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
     });
 });
 
-app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, next) {
+//只有torent check跟torrent有v, sub沒有
+app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("torrent check");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var fileIndex = Number(req.params.index);
+        var fileIndex = 0;
+        if (req.params.index.match(/^\d+$/)) {
+            fileIndex = Number(req.params.index);
+        }
         var bufferSize = Number(req.params.size);
         var id = req.params.uid.match(/^dri_/);
         if (id) {
@@ -2578,6 +2652,14 @@ app.get('/api/torrent/check/:uid/:index(\\d+)/:size(\\d+)', function(req, res, n
                 }
                 if (items.length === 0) {
                     util.handleError({hoerror: 2, message: 'torrent can not be fund!!!'}, next, res);
+                }
+                if (req.params.index === 'v') {
+                    for (var i in items[0]['playList']) {
+                        if (items[0]['playList'][i].match(/\.mp4$/i) || items[0]['playList'][i].match(/\.mkv$/i)) {
+                            fileIndex = i;
+                            break;
+                        }
+                    }
                 }
                 var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 var bufferPath = filePath + '/' + fileIndex;
@@ -3202,13 +3284,16 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
     }
 }
 
-app.get('/torrent/:index(\\d+)/:uid/:fresh(\\d+)?', function (req, res, next) {
+app.get('/torrent/:index(\\d+|v)/:uid/:fresh(\\d+)?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("torrent");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var fileIndex = Number(req.params.index);
+        var fileIndex = 0;
+        if (req.params.index.match(/^\d+$/)) {
+            fileIndex = Number(req.params.index);
+        }
         var id = req.params.uid.match(/^dri_/);
         if (id) {
             id = util.isValidString(req.params.uid, 'name');
@@ -3275,6 +3360,14 @@ app.get('/torrent/:index(\\d+)/:uid/:fresh(\\d+)?', function (req, res, next) {
                 }
                 if (items.length === 0) {
                     util.handleError({hoerror: 2, message: 'torrent can not be fund!!!'}, next, res);
+                }
+                if (req.params.index === 'v') {
+                    for (var i in items[0]['playList']) {
+                        if (items[0]['playList'][i].match(/\.mp4$/i) || items[0]['playList'][i].match(/\.mkv$/i)) {
+                            fileIndex = i;
+                            break;
+                        }
+                    }
                 }
                 var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 var bufferPath = filePath + '/' + fileIndex;
@@ -3393,7 +3486,7 @@ app.get('/video/:uid', function (req, res, next) {
     });
 });
 
-app.get('/subtitle/:uid/:index(\\d+)?', function(req, res, next){
+app.get('/subtitle/:uid/:index(\\d+|v)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle');
         console.log(new Date());
@@ -3459,7 +3552,16 @@ app.get('/subtitle/:uid/:index(\\d+)?', function(req, res, next){
                 } else if (items[0].status === 9) {
                     var fileIndex = 0;
                     if (req.params.index) {
-                        fileIndex = Number(req.params.index);
+                        if (req.params.index === 'v') {
+                            for (var i in items[0]['playList']) {
+                                if (items[0]['playList'][i].match(/\.mp4$/i) || items[0]['playList'][i].match(/\.mkv$/i)) {
+                                    fileIndex = i;
+                                    break;
+                                }
+                            }
+                        } else {
+                            fileIndex = Number(req.params.index);
+                        }
                     }
                     var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                     fs.exists(filePath + '/' + fileIndex + '.vtt', function (exists) {
