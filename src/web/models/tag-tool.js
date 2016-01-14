@@ -21,7 +21,7 @@ var handleTime = 7200,
     unactive_day = 5,
     unactive_hit = 10;
 
-var bookmarkLimit = 50;
+var bookmarkLimit = 100;
 
 //relative
 var search_limit = 100;
@@ -1420,10 +1420,12 @@ module.exports = function(collection) {
                     order = 'year';
                 }
                 url = url + order;
+                if (url === 'https://yts.ag/browse-movies/0/all/all/0/latest') {
+                    url = 'https://yts.ag/browse-movies';
+                }
                 if (page > 1) {
                     url =  url + '?page=' + page;
                 }
-                console.log(url);
                 return url;
             } else {
                 return false;

@@ -1234,37 +1234,6 @@ module.exports = {
                 }, 60000, false, false, 'http://www.123kubo.com/');
             }
             break;
-            /*case 'yify':
-            if (is_clear) {
-                mongo.orig("remove", "storage", {owner: type, $isolated: 1}, function(err, item2){
-                    if(err) {
-                        util.handleError(err, callback, callback);
-                    }
-                    console.log('perm external file');
-                    console.log(item2);
-                    yifylist();
-                });
-            } else {
-                yifylist();
-            }
-            function yifylist() {
-                api.xuiteDownload('http://www.dm5.com/m122029/history.ashx?cid=122029&mid=4389&page=23&uid=0&language=1', '', function(err, raw_data) {
-                    if (err) {
-                        err.hoerror = 2;
-                        util.handleError(err, callback, callback);
-                    }
-                    console.log(raw_data);
-                    //api.xuiteDownload('https://yts.ag/movie/the-animatrix-2003', '', function(err, raw_data) {
-                    api.xuiteDownload('http://www.dm5.com/m122029/chapterfun.ashx?cid=122029&page=23&key=&language=1&gtk=6', '', function(err, raw_data) {
-                        if (err) {
-                            err.hoerror = 2;
-                            util.handleError(err, callback, callback);
-                        }
-                        console.log(raw_data);
-                    }, 60000, false, false, 'http://www.dm5.com/');
-                }, 60000, false, false, 'http://www.dm5.com/');
-            }
-            break;*/
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
             break;
@@ -1406,7 +1375,6 @@ module.exports = {
                 var list = [];
                 var list_match = false;
                 var episode_match = false;
-                var size_match = false;
                 var season = -1;
                 var size = 0;
                 if (raw_list) {
@@ -1415,7 +1383,7 @@ module.exports = {
                         for (var i in raw_list) {
                             list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)" (target="_blank" rel="nofollow" )?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
                             if (list_match) {
-                                var episode_match = list_match[3].match(/ S?(\d+)[XE](\d+) /i);
+                                episode_match = list_match[3].match(/ S?(\d+)[XE](\d+) /i);
                                 if (episode_match) {
                                     if (episode_match[1].length === 1) {
                                         season = '00' + episode_match[1];
@@ -1477,7 +1445,8 @@ module.exports = {
                         if (encodeTorrent === false) {
                             util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
                         }
-                        mongo.orig("find", "storage", {magnet: encodeTorrent}, {limit: 1}, function(err, items){
+                        var torrentHash = list[index-1].magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                        mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0]}}, {limit: 1}, function(err, items){
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
@@ -1513,7 +1482,7 @@ module.exports = {
                             for (var i in raw_list) {
                                 list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)" (target="_blank" rel="nofollow" )?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
                                 if (list_match) {
-                                    var episode_match = list_match[3].match(/ S?(\d+)[XE](\d+) /i);
+                                    episode_match = list_match[3].match(/ S?(\d+)[XE](\d+) /i);
                                     if (episode_match) {
                                         if (episode_match[1].length === 1) {
                                             season = '00' + episode_match[1];
@@ -1575,7 +1544,8 @@ module.exports = {
                             if (encodeTorrent === false) {
                                 util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
                             }
-                            mongo.orig("find", "storage", {magnet: encodeTorrent}, {limit: 1}, function(err, items){
+                            var torrentHash = list[index-1].magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                            mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0]}}, {limit: 1}, function(err, items){
                                 if (err) {
                                     util.handleError(err, callback, callback);
                                 }
@@ -1890,7 +1860,8 @@ module.exports = {
                 if (encodeTorrent === false) {
                     util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
                 }
-                mongo.orig("find", "storage", {magnet: encodeTorrent}, {limit: 1}, function(err, items){
+                var torrentHash = magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0]}}, {limit: 1}, function(err, items){
                     if (err) {
                         util.handleError(err, callback, callback);
                     }

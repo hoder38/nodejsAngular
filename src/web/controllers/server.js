@@ -497,7 +497,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
         var index = 1;
         var pageToken = false;
         if (req.params.pageToken) {
-            index = req.params.pageToken.match(/^\d+/);
+            index = Number(req.params.pageToken.match(/^\d+/));
             pageToken = req.params.pageToken.match(/^[^\d]+$/);
         }
         var nextIndex = index + 1;
@@ -3318,6 +3318,8 @@ app.use(function(err, req, res, next) {
     util.handleError(err);
     res.send('server error occur', 500);
 });
+
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 process.on('uncaughtException', function(err) {
     console.log('Threw Exception: %s  %s', err.name, err.message);

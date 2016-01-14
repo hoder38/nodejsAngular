@@ -477,7 +477,8 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         queueTorrent('stop', req.user);
                         res.json({stop: true});
                     } else {
-                        mongo.orig("find", "storage", {magnet: encodeTorrent}, {limit: 2}, function(err, items){
+                        var torrentHash = shortTorrent.match(/[^:]+$/);
+                        mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0]}}, {limit: 1}, function(err, items){
                             if (err) {
                                 util.handleError(err, next, res);
                             }
@@ -696,54 +697,60 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
         } else {
             if (shortTorrent) {
                 shortTorrent = shortTorrent[0];
-                mongo.orig("find", "storage", {magnet: encodeTorrent}, {limit: 1}, function(err, items){
-                    if (err) {
-                        util.handleError(err, next, res);
-                    }
-                    if (items.length === 0) {
-                        var realPath = folderPath + '/real';
-                        var engine = torrentStream(url, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
-                        var playList = [];
-                        var tag_arr = ['torrent', 'playlist'];
-                        var opt_arr = [];
-                        var mediaType = null, mediaTag = null;
-                        engine.on('ready', function() {
-                            engine.files.forEach(function(file) {
-                                //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
-                                playList.push(file.path);
-                                console.log(file.name);
-                                mediaType = mime.mediaType(file.name);
-                                if (mediaType) {
-                                    mediaTag = mime.mediaTag(mediaType['type']);
-                                    for (var i in mediaTag.def) {
-                                        if (tag_arr.indexOf(mediaTag.def[i]) === -1) {
-                                            tag_arr.push(mediaTag.def[i]);
+                if (shortTorrent === 'magnet:stop') {
+                    queueTorrent('stop', req.user);
+                    res.json({stop: true});
+                } else {
+                    var torrentHash = shortTorrent.match(/[^:]+$/);
+                    mongo.orig("find", "storage", {$regex: torrentHash[0]}, {limit: 1}, function(err, items){
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (items.length === 0) {
+                            var realPath = folderPath + '/real';
+                            var engine = torrentStream(url, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
+                            var playList = [];
+                            var tag_arr = ['torrent', 'playlist'];
+                            var opt_arr = [];
+                            var mediaType = null, mediaTag = null;
+                            engine.on('ready', function() {
+                                engine.files.forEach(function(file) {
+                                    //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
+                                    playList.push(file.path);
+                                    console.log(file.name);
+                                    mediaType = mime.mediaType(file.name);
+                                    if (mediaType) {
+                                        mediaTag = mime.mediaTag(mediaType['type']);
+                                        for (var i in mediaTag.def) {
+                                            if (tag_arr.indexOf(mediaTag.def[i]) === -1) {
+                                                tag_arr.push(mediaTag.def[i]);
+                                            }
+                                        }
+                                        for (var i in mediaTag.opt) {
+                                            if (tag_arr.indexOf(mediaTag.opt[i]) === -1 && opt_arr.indexOf(mediaTag.opt[i]) === -1) {
+                                                opt_arr.push(mediaTag.opt[i]);
+                                            }
                                         }
                                     }
-                                    for (var i in mediaTag.opt) {
-                                        if (tag_arr.indexOf(mediaTag.opt[i]) === -1 && opt_arr.indexOf(mediaTag.opt[i]) === -1) {
-                                            opt_arr.push(mediaTag.opt[i]);
-                                        }
-                                    }
+                                    //}
+                                });
+                                //insert
+                                if (playList.length <= 0) {
+                                    engine.destroy();
+                                    util.handleError({hoerror: 2, message: "empty content!!!"}, next, res);
                                 }
-                                //}
-                            });
-                            //insert
-                            if (playList.length <= 0) {
+                                var filename = 'Playlist torrent ';
+                                if (engine.torrent.name) {
+                                    filename = 'Playlist ' + engine.torrent.name;
+                                }
                                 engine.destroy();
-                                util.handleError({hoerror: 2, message: "empty content!!!"}, next, res);
-                            }
-                            var filename = 'Playlist torrent ';
-                            if (engine.torrent.name) {
-                                filename = 'Playlist ' + engine.torrent.name;
-                            }
-                            engine.destroy();
-                            streamClose(filename, tag_arr, opt_arr, {magnet: encodeTorrent, playlist: playList});
-                        });
-                    } else {
-                        util.handleError({hoerror: 2, message: "already has one"}, next, res);
-                    }
-                });
+                                streamClose(filename, tag_arr, opt_arr, {magnet: encodeTorrent, playlist: playList});
+                            });
+                        } else {
+                            util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                        }
+                    });
+                }
             } else if (url.match(/^(https|http):\/\/(www\.youtube\.com|youtu\.be)\//)) {
                 var is_music = url.match(/^(.*):music$/);
                 var youtube_id = false;
@@ -4066,6 +4073,8 @@ app.use(function(err, req, res, next) {
     util.handleError(err);
     res.send('server error occur', 500);
 });
+
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 process.on('uncaughtException', function(err) {
     console.log('Threw Exception: %s  %s', err.name, err.message);

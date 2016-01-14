@@ -290,6 +290,7 @@ module.exports = {
             port: 80,
             path: urlParse.path,
             method: 'GET',
+            family: 4,
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
@@ -302,6 +303,7 @@ module.exports = {
                 port: 443,
                 path: urlParse.path,
                 method: 'GET',
+                family: 4,
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
@@ -310,12 +312,16 @@ module.exports = {
         if (referer) {
             options.headers['Referer'] = referer;
         }
+        if (!is_file) {
+            options.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36';
+        }
         var this_obj = this;
         var time = 1000;
         var retry = max_retry;
         recur_download(time);
         function recur_download(time) {
             setTimeout(function(){
+                //var is_200 = false;
                 var req = requestUse.request(options, function(res) {
                     res.body = '';
                     var length = 0;
@@ -404,6 +410,7 @@ module.exports = {
                         setTimeout(function(){
                             this_obj.xuiteDownload(res.headers.location, filePath, callback, threshold, is_check, is_file, referer);
                         }, 0);
+                        req.abort();
                     } else if (res.statusCode === 400) {
                         console.log(url);
                         console.log(options);
@@ -421,10 +428,12 @@ module.exports = {
                             });
                         } else {
                             res.on('data', function(chunk){
+                                //is_200 = true;
                                 res.body += chunk;
                             });
                             res.on('end', function() {
                                 this_obj.getApiQueue();
+                                req.abort();
                                 setTimeout(function(){
                                     callback(null, res.body);
                                 }, 0);
@@ -462,6 +471,26 @@ module.exports = {
                         util.handleError(e, callback, callback, 400, null);
                     }
                 });
+                /*if (!is_file) {
+                    req.setTimeout(10000, function() {
+                        console.log('timeout');
+                        console.log(new Date());
+                        if (!is_200) {
+                            req.abort();
+                            retry--;
+                            console.log(retry);
+                            if (retry === 0) {
+                                console.log(options);
+                                this_obj.getApiQueue();
+                                util.handleError({hoerror: 2, message: "download not complete"}, callback, callback);
+                            } else {
+                                setTimeout(function(){
+                                    recur_download(500);
+                                }, 0);
+                            }
+                        }
+                    });
+                }*/
                 req.end();
             }, time);
         }
