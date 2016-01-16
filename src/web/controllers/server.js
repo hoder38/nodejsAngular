@@ -504,6 +504,8 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
         nextIndex = nextIndex.toString();
         var itemList = [];
         var retPageToken = '';
+        madQuery();
+        return;
         var query = tagTool.getKuboQuery(parentList.cur, sortName, index);
         if (query) {
             externalTool.getSingleList('kubo', query, function(err, list) {
@@ -530,6 +532,22 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                 });
             } else {
                 youtubeQuery();
+            }
+        }
+        function madQuery() {
+            //var query = tagTool.getYifyQuery(parentList.cur, sortName, index);
+            var query = 'http://www.cartoonmad.com/comic01.html';
+            if (query) {
+                externalTool.getSingleList('cartoonmad', query, function(err, list) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    itemList = getMadItem(list);
+                    retPageToken = nextIndex;
+                    res.json({itemList: itemList, pageToken: retPageToken});
+                });
+            } else {
+                res.json({itemList: itemList});
             }
         }
         function youtubeQuery() {
@@ -1780,10 +1798,10 @@ app.get('/api/media/record/:id/:time/:pId?', function(req, res, next){
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        if (!req.params.time.match(/^\d+(&\d+)?$/)) {
+        if (!req.params.time.match(/^\d+(&\d+|\.\d+)?$/)) {
             util.handleError({hoerror: 2, message: "timestamp is not vaild"}, next, res);
         }
-        var id = req.params.id.match(/^(you|dym|dri|bil|soh|let|vqq|fun)_/);
+        var id = req.params.id.match(/^(you|dym|dri|bil|soh|let|vqq|fun|mad)_/);
         if (id) {
             id = util.isValidString(req.params.id, 'name');
             if (id === false) {
@@ -1916,7 +1934,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.id.match(/^(you|ypl|kub|yif)_(.*)$/);
+        var id = req.params.id.match(/^(you|ypl|kub|yif|mad)_(.*)$/);
         var playlist = 0;
         var playlistId = null;
         var obj = req.params.obj;
@@ -1929,6 +1947,9 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                 playlistId = id[2];
             } else if (id[1] === 'yif') {
                 playlist = 4;
+                playlistId = id[2];
+            } else if (id[1] === 'mad') {
+                playlist = 5;
                 playlistId = id[2];
             }
             id = util.isValidString(req.params.id, 'name');
@@ -2038,6 +2059,9 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                 if (playlist === 4) {
                                     playurl = 'https://yts.ag/movie/' + playlistId;
                                     playtype = 'yify';
+                                } else if (playlist === 5) {
+                                    playurl = 'http://www.cartoomad.com/comic/' + playlistId + '.html';
+                                    playtype = 'cartoonmad';
                                 }
                                 externalTool.getSingleId(playtype, playurl, 1, function(err, obj, is_end, total) {
                                     if (err) {
@@ -2167,6 +2191,9 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                 if (playlist === 4) {
                                     playurl = 'https://yts.ag/movie/' + playlistId;
                                     playtype = 'yify';
+                                } else if (playlist === 5) {
+                                    playurl = 'http://www.cartoomad.com/comic/' + playlistId + '.html';
+                                    playtype = 'cartoonmad';
                                 }
                                 externalTool.getSingleId(playtype, playurl, items[0].recordTime, function(err, obj, is_end, total) {
                                     if (err) {
@@ -3394,6 +3421,19 @@ function getYifyItem(items) {
         yd = new Date(items[i].date);
         items[i].tags.push('first item');
         data = {name: items[i].name, id: 'yif_' + items[i].id, tags: items[i].tags, recycle: 0, isOwn: false, utime: yd.getTime()/1000, thumb: items[i].thumb, noDb: true, status: 3, count: items[i].rating};
+        itemList.push(data);
+    }
+    return itemList;
+}
+
+function getMadItem(items) {
+    var itemList = [];
+    var data = null;
+    var yd = null;
+    for (var i in items) {
+        yd = new Date(items[i].date);
+        items[i].tags.push('first item');
+        data = {name: items[i].name, id: 'mad_' + items[i].id, tags: items[i].tags, recycle: 0, isOwn: false, utime: 0, thumb: items[i].thumb, noDb: true, status: 2, count: 0};
         itemList.push(data);
     }
     return itemList;

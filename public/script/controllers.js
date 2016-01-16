@@ -1820,6 +1820,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             case 'image':
                 preType = 'image';
                 this.image.showId = this.image.presentId = 1;
+                this.image.itemName = '';
                 status = 2;
                 break;
             case 'video':
@@ -1895,103 +1896,111 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                             this_obj.$parent[type].iframeOffset = null;
                             this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id + '/doc';
                         } else if (item.thumb) {
-                            this_obj.$parent[type].pageToken = '';
-                            if ($scope.pageToken) {
-                                this_obj.$parent[type].pageToken = $scope.pageToken;
-                            }
-                            this_obj.$parent[type].src = item.thumb;
-                            if (type === 'video') {
-                                video.poster = this_obj.$parent[type].src;
-                            }
-                            var is_magnet = false;
-                            if (this_obj.$parent[type].playlist) {
-                                if (this_obj.$parent[type].playlist.obj.id) {
-                                    videoId = this_obj.$parent[type].playlist.obj.id;
+                            if (this_obj.$parent[type].playlist && this_obj.$parent[type].playlist.obj.img_url) {
+                                this_obj.$parent[type].src = this_obj.$parent[type].playlist.obj.img_url;
+                                this_obj.$parent[type].itemName = ':' + this_obj.$parent[type].playlist.obj.title;
+                                this_obj.$parent[type].showId = this_obj.$parent[type].playlist.obj.showId;
+                                this_obj.$parent[type].presentId = this_obj.$parent[type].playlist.obj.index;
+                                item.present = this_obj.$parent[type].playlist.total;
+                            } else {
+                                this_obj.$parent[type].pageToken = '';
+                                if ($scope.pageToken) {
+                                    this_obj.$parent[type].pageToken = $scope.pageToken;
                                 }
-                                if (this_obj.$parent[type].playlist.obj.is_magnet) {
-                                    is_magnet = true;
-                                    this_obj.$parent[type].itemName = ':' + this_obj.$parent[type].playlist.obj.title;
+                                this_obj.$parent[type].src = item.thumb;
+                                if (type === 'video') {
+                                    video.poster = this_obj.$parent[type].src;
+                                }
+                                var is_magnet = false;
+                                if (this_obj.$parent[type].playlist) {
                                     if (this_obj.$parent[type].playlist.obj.id) {
-                                        this_obj.$parent[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                    } else {
-                                        if (isValidString(this_obj.$parent[type].playlist.obj.magnet, 'url')) {
-                                            var uploadurl = $scope.main_url + '/api/upload/url';
-                                            if (this_obj.$parent.adultonly) {
-                                                uploadurl = $scope.main_url + '/api/upload/url/1';
-                                            }
-                                            var upApi = $resource(uploadurl, {}, {
-                                                'uploadUrl': { method:'POST', withCredentials: true }
-                                            });
-                                            upApi.uploadUrl({url: this_obj.$parent[type].playlist.obj.magnet, hide: true}, function (result) {
-                                                if (result.loginOK) {
-                                                    $window.location.href = $location.path();
-                                                } else {
-                                                    videoId = this_obj.$parent[type].playlist.obj.id = result.id;
-                                                    this_obj.$parent[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                                    removeCue();
-                                                    this_obj.$parent[type].sub = '/subtitle/' + videoId + '/v';
-                                                }
-                                            }, function(errorResult) {
-                                                if (errorResult.status === 400) {
-                                                    addAlert(errorResult.data);
-                                                } else if (errorResult.status === 403) {
-                                                    addAlert('unknown API!!!');
-                                                } else if (errorResult.status === 401) {
-                                                    $window.location.href = $location.path();
-                                                }
-                                            });
+                                        videoId = this_obj.$parent[type].playlist.obj.id;
+                                    }
+                                    if (this_obj.$parent[type].playlist.obj.is_magnet) {
+                                        is_magnet = true;
+                                        this_obj.$parent[type].itemName = ':' + this_obj.$parent[type].playlist.obj.title;
+                                        if (this_obj.$parent[type].playlist.obj.id) {
+                                            this_obj.$parent[type].src = $scope.main_url + '/torrent/v/' + videoId;
                                         } else {
-                                            addAlert('magnet not valid');
+                                            if (isValidString(this_obj.$parent[type].playlist.obj.magnet, 'url')) {
+                                                var uploadurl = $scope.main_url + '/api/upload/url';
+                                                if (this_obj.$parent.adultonly) {
+                                                    uploadurl = $scope.main_url + '/api/upload/url/1';
+                                                }
+                                                var upApi = $resource(uploadurl, {}, {
+                                                    'uploadUrl': { method:'POST', withCredentials: true }
+                                                });
+                                                upApi.uploadUrl({url: this_obj.$parent[type].playlist.obj.magnet, hide: true}, function (result) {
+                                                    if (result.loginOK) {
+                                                        $window.location.href = $location.path();
+                                                    } else {
+                                                        videoId = this_obj.$parent[type].playlist.obj.id = result.id;
+                                                        this_obj.$parent[type].src = $scope.main_url + '/torrent/v/' + videoId;
+                                                        removeCue();
+                                                        this_obj.$parent[type].sub = '/subtitle/' + videoId + '/v';
+                                                    }
+                                                }, function(errorResult) {
+                                                    if (errorResult.status === 400) {
+                                                        addAlert(errorResult.data);
+                                                    } else if (errorResult.status === 403) {
+                                                        addAlert('unknown API!!!');
+                                                    } else if (errorResult.status === 401) {
+                                                        $window.location.href = $location.path();
+                                                    }
+                                                });
+                                            } else {
+                                                addAlert('magnet not valid');
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            if (!is_magnet) {
-                                var externalApi = $resource(this_obj.main_url + '/api/external/getSingle/' + videoId, {}, {
-                                    'getSingle': { method:'GET', withCredentials: true }
-                                });
-                                externalApi.getSingle({}, function (result) {
-                                    if (result.loginOK) {
-                                        $window.location.href = $location.path();
-                                    } else {
-                                        if (videoId === this_obj.$parent[type].id || (this_obj.$parent[type].playlist && videoId === this_obj.$parent[type].playlist.obj.id)) {
-                                            if (this_obj.$parent[type].playlist) {
-                                                if (this_obj.$parent[type].playlist.obj.title) {
-                                                    this_obj.$parent[type].itemName = ':' + this_obj.$parent[type].playlist.obj.title;
+                                if (!is_magnet) {
+                                    var externalApi = $resource(this_obj.main_url + '/api/external/getSingle/' + videoId, {}, {
+                                        'getSingle': { method:'GET', withCredentials: true }
+                                    });
+                                    externalApi.getSingle({}, function (result) {
+                                        if (result.loginOK) {
+                                            $window.location.href = $location.path();
+                                        } else {
+                                            if (videoId === this_obj.$parent[type].id || (this_obj.$parent[type].playlist && videoId === this_obj.$parent[type].playlist.obj.id)) {
+                                                if (this_obj.$parent[type].playlist) {
+                                                    if (this_obj.$parent[type].playlist.obj.title) {
+                                                        this_obj.$parent[type].itemName = ':' + this_obj.$parent[type].playlist.obj.title;
+                                                    } else {
+                                                        this_obj.$parent[type].itemName = ':' + result.title;
+                                                    }
+                                                }
+                                                if (type === 'music') {
+                                                    if (result.audio) {
+                                                        this_obj.$parent[type].src = result.audio;
+                                                    } else {
+                                                        this_obj.$parent[type].src = result.video[0];
+                                                    }
                                                 } else {
-                                                    this_obj.$parent[type].itemName = ':' + result.title;
+                                                    this_obj.$parent[type].hd_list = result.video;
+                                                    if (result.sub) {
+                                                        this_obj.$parent[type].playlist.obj.sub = result.sub;
+                                                    }
+                                                    var hd = 0;
+                                                    if (this_obj.$parent[type].hd < this_obj.$parent[type].hd_list.length) {
+                                                        hd = this_obj.$parent[type].hd;
+                                                    } else {
+                                                        hd = this_obj.$parent[type].hd_list.length - 1;
+                                                    }
+                                                    this_obj.$parent[type].src = this_obj.$parent[type].hd_list[hd];
                                                 }
-                                            }
-                                            if (type === 'music') {
-                                                if (result.audio) {
-                                                    this_obj.$parent[type].src = result.audio;
-                                                } else {
-                                                    this_obj.$parent[type].src = result.video[0];
-                                                }
-                                            } else {
-                                                this_obj.$parent[type].hd_list = result.video;
-                                                if (result.sub) {
-                                                    this_obj.$parent[type].playlist.obj.sub = result.sub;
-                                                }
-                                                var hd = 0;
-                                                if (this_obj.$parent[type].hd < this_obj.$parent[type].hd_list.length) {
-                                                    hd = this_obj.$parent[type].hd;
-                                                } else {
-                                                    hd = this_obj.$parent[type].hd_list.length - 1;
-                                                }
-                                                this_obj.$parent[type].src = this_obj.$parent[type].hd_list[hd];
                                             }
                                         }
-                                    }
-                                }, function(errorResult) {
-                                    if (errorResult.status === 400) {
-                                        addAlert(errorResult.data);
-                                    } else if (errorResult.status === 403) {
-                                        addAlert('unknown API!!!');
-                                    } else if (errorResult.status === 401) {
-                                        $window.location.href = $location.path();
-                                    }
-                                });
+                                    }, function(errorResult) {
+                                        if (errorResult.status === 400) {
+                                            addAlert(errorResult.data);
+                                        } else if (errorResult.status === 403) {
+                                            addAlert('unknown API!!!');
+                                        } else if (errorResult.status === 401) {
+                                            $window.location.href = $location.path();
+                                        }
+                                    });
+                                }
                             }
                         } else {
                             this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id;
@@ -2047,10 +2056,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         var torrentApi = $resource('/api/torrent/query/preview/' + item.id, {}, {
             'query': { method:'GET'}
         });
-        //torrentApi.query({torrent: 'magnet:?xt=urn:btih:fc2d08cb56916db71959755c46774a33b8c91261'}, function (result) {
-        //magnet:?xt=urn:btih:NYUTBHOPLRSEHADVYBS3UWSYDD2ATJFE
-        //torrentApi.query({torrent: 'magnet:?xt=urn:btih:15d8402278b44bdd1286ac410c7c0bf76cb63653&dn=The.Walking.Dead.S06E04.PROPER.720p.HDTV.x264-KILLERS%5Bettv%5D&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Fopen.demonii.com%3A1337&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Fexodus.desync.com%3A6969'}, function (result) {
-        //torrentApi.query({torrent: 'magnet:?xt=urn:btih:76baf98e3797c103eb02f668075ad047f10df130&dn=The.Man.from.U.N.C.L.E.2015.1080p.WEB-DL.x264.AC3-JYK&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Fopen.demonii.com%3A1337&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Fexodus.desync.com%3A6969'}, function (result) {
         torrentApi.query({}, function(result) {
             if (result.loginOK) {
                 $window.location.href = $location.path();
@@ -2469,7 +2474,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.isExtend = false;
     $scope.adultonly = false;
     $scope.mediaShow = [];
-    $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
+    $scope.image = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, itemName: ""};
     $scope.video = {id: "", src: "", sub: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', option: 0, playlist: null, mode: 0, itemName: "", hd: 0, hd_list: []};
     $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', option: 0, playlist: null, mode: 0, itemName: ""};
     $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, mode: false};
@@ -3653,6 +3658,10 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 if (record !== 1) {
                     time = record;
                 }
+            } else if (type === 'image' && this[type].playlist) {
+                if (!end) {
+                    time = this[type].presentId;
+                }
             } else {
                 if (callback) {
                     setTimeout(function(){
@@ -4013,31 +4022,71 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     }
 
     $scope.imgMove = function(number) {
+        //playlist 跟local分開
         if (number === 0) {
-            if (this.image.showId >= 1 && this.image.showId <= this.image.maxId) {
-                this.image.presentId = this.image.showId;
+            if (this.image.playlist) {
+                var sIndex = this.image.showId*10;
+                if (sIndex >= 1 && Math.floor(sIndex/10) <= this.image.maxId) {
+                    this.image.presentId = +this.image.showId;
+                } else {
+                    this.image.showId = this.image.presentId;
+                    return false;
+                }
+            } else if (this.image.showId >= 1 && this.image.showId <= this.image.maxId) {
+                this.image.presentId = +this.image.showId;
             } else {
                 this.image.showId = this.image.presentId;
                 return false;
             }
         } else {
-            var newIndex = +this.image.presentId + number;
-            if (newIndex >= 1 && newIndex <= this.image.maxId) {
-                this.image.presentId = newIndex;
-                this.image.showId = this.image.presentId;
+            var pIndex = this.image.presentId*10;
+            var newIndex = 0;
+            if (this.image.playlist) {
+                var bIndex = Math.floor(pIndex/10);
+                newIndex = number + pIndex%10;
+                if (newIndex >= 1 && newIndex <= this.image.playlist.obj.sub) {
+                    this.image.presentId = newIndex/10 + bIndex;
+                    this.image.showId = this.image.presentId;
+                } else {
+
+                    //下一本
+                    this.image.showId = this.image.presentId;
+                    return false;
+
+                }
             } else {
-                this.image.showId = this.image.presentId;
-                return false;
+                newIndex = (pIndex + number*10) / 10;
+                if (newIndex >= 1 && newIndex <= this.image.maxId) {
+                    this.image.presentId = newIndex;
+                    this.image.showId = this.image.presentId;
+                } else {
+                    this.image.showId = this.image.presentId;
+                    return false;
+                }
             }
         }
-        this.image.src = this.main_url + '/image/' + this.image.list[this.image.index + this.image.back].id + '/' + this.image.presentId;
+        if (this.image.playlist) {
+            this.image.playlist.obj.img_url = this.image.playlist.obj.img_url.replace(/\d\d\d\.jpg$/, '00' + newIndex + '.jpg');
+            this.image.src = this.image.playlist.obj.img_url;
+        } else {
+            this.image.src = this.main_url + '/image/' + this.image.list[this.image.index + this.image.back].id + '/' + this.image.presentId;
+        }
     }
 
     $scope.nextImage = function() {
-        if (this.image.presentId === this.image.maxId) {
-            this.mediaMove(1, 'image');
+        if (this.image.playlist) {
+            var pIndex = +this.image.presentId*10;
+            if (Math.floor(pIndex/10) === this.image.maxId && pIndex%10 === this.image.playlist.obj.sub) {
+                this.mediaMove(1, 'image');
+            } else {
+                this.imgMove(1);
+            }
         } else {
-            this.imgMove(1);
+            if (this.image.presentId === this.image.maxId) {
+                this.mediaMove(1, 'image');
+            } else {
+                this.imgMove(1);
+            }
         }
     }
 
@@ -4093,6 +4142,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 preType = 'image';
                 status = 2;
                 this.image.showId = this.image.presentId = 1;
+                this.video.itemName = '';
                 break;
             case 'video':
                 preType = 'video';
@@ -4230,98 +4280,106 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                         this_obj[type].iframeOffset = null;
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                     } else if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
-                                        this_obj[type].src = this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb;
-                                        if (type === 'video') {
-                                            video.poster = this_obj[type].src;
-                                        }
-                                        var is_magnet = false;
-                                        if (this_obj[type].playlist) {
-                                            if (this_obj[type].playlist.obj.id) {
-                                                videoId = this_obj[type].playlist.obj.id;
+                                        if (this_obj[type].playlist && this_obj[type].playlist.obj.img_url) {
+                                            this_obj[type].src = this_obj[type].playlist.obj.img_url;
+                                            this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
+                                            this_obj[type].showId = this_obj[type].playlist.obj.showId;
+                                            this_obj[type].presentId = this_obj[type].playlist.obj.index;
+                                            this_obj[type].maxId = this_obj[type].playlist.total;
+                                        } else {
+                                            this_obj[type].src = this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb;
+                                            if (type === 'video') {
+                                                video.poster = this_obj[type].src;
                                             }
-                                            if (this_obj[type].playlist.obj.is_magnet) {
-                                                is_magnet = true;
-                                                this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
+                                            var is_magnet = false;
+                                            if (this_obj[type].playlist) {
                                                 if (this_obj[type].playlist.obj.id) {
-                                                    this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                                    isOri();
-                                                } else {
-                                                    if (isValidString(this_obj[type].playlist.obj.magnet, 'url')) {
-                                                        var uploadurl = $scope.main_url + '/api/upload/url';
-                                                        if (this_obj.adultonly) {
-                                                            uploadurl = $scope.main_url + '/api/upload/url/1';
-                                                        }
-                                                        var upApi = $resource(uploadurl, {}, {
-                                                            'uploadUrl': { method:'POST', withCredentials: true }
-                                                        });
-                                                        upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true}, function (result) {
-                                                            if (result.loginOK) {
-                                                                $window.location.href = $location.path();
-                                                            } else {
-                                                                videoId = this_obj[type].playlist.obj.id = result.id;
-                                                                this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                                                isOri();
-                                                                removeCue();
-                                                                this_obj[type].sub = '/subtitle/' + videoId + '/v';
-                                                            }
-                                                        }, function(errorResult) {
-                                                            if (errorResult.status === 400) {
-                                                                addAlert(errorResult.data);
-                                                            } else if (errorResult.status === 403) {
-                                                                addAlert('unknown API!!!');
-                                                            } else if (errorResult.status === 401) {
-                                                                $window.location.href = $location.path();
-                                                            }
-                                                        });
+                                                    videoId = this_obj[type].playlist.obj.id;
+                                                }
+                                                if (this_obj[type].playlist.obj.is_magnet) {
+                                                    is_magnet = true;
+                                                    this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
+                                                    if (this_obj[type].playlist.obj.id) {
+                                                        this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
+                                                        isOri();
                                                     } else {
-                                                        addAlert('magnet not valid');
+                                                        if (isValidString(this_obj[type].playlist.obj.magnet, 'url')) {
+                                                            var uploadurl = $scope.main_url + '/api/upload/url';
+                                                            if (this_obj.adultonly) {
+                                                                uploadurl = $scope.main_url + '/api/upload/url/1';
+                                                            }
+                                                            var upApi = $resource(uploadurl, {}, {
+                                                                'uploadUrl': { method:'POST', withCredentials: true }
+                                                            });
+                                                            upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true}, function (result) {
+                                                                if (result.loginOK) {
+                                                                    $window.location.href = $location.path();
+                                                                } else {
+                                                                    videoId = this_obj[type].playlist.obj.id = result.id;
+                                                                    this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
+                                                                    isOri();
+                                                                    removeCue();
+                                                                    this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                                }
+                                                            }, function(errorResult) {
+                                                                if (errorResult.status === 400) {
+                                                                    addAlert(errorResult.data);
+                                                                } else if (errorResult.status === 403) {
+                                                                    addAlert('unknown API!!!');
+                                                                } else if (errorResult.status === 401) {
+                                                                    $window.location.href = $location.path();
+                                                                }
+                                                            });
+                                                        } else {
+                                                            addAlert('magnet not valid');
+                                                        }
                                                     }
                                                 }
                                             }
-                                        }
-                                        if (!is_magnet) {
-                                            var externalApi = $resource($scope.main_url + '/api/external/getSingle/' + videoId, {}, {
-                                                'getSingle': { method:'GET', withCredentials: true }
-                                            });
-                                            externalApi.getSingle({}, function (result) {
-                                                if (result.loginOK) {
-                                                    $window.location.href = $location.path();
-                                                } else {
-                                                    if (videoId === this_obj[type].id || (this_obj[type].playlist && videoId === this_obj[type].playlist.obj.id)) {
-                                                        if (this_obj[type].playlist) {
-                                                            this_obj[type].itemName = ':' + result.title;
-                                                        }
-                                                        if (type === 'music') {
-                                                            if (result.audio) {
-                                                                this_obj[type].src = result.audio;
+                                            if (!is_magnet) {
+                                                var externalApi = $resource($scope.main_url + '/api/external/getSingle/' + videoId, {}, {
+                                                    'getSingle': { method:'GET', withCredentials: true }
+                                                });
+                                                externalApi.getSingle({}, function (result) {
+                                                    if (result.loginOK) {
+                                                        $window.location.href = $location.path();
+                                                    } else {
+                                                        if (videoId === this_obj[type].id || (this_obj[type].playlist && videoId === this_obj[type].playlist.obj.id)) {
+                                                            if (this_obj[type].playlist) {
+                                                                this_obj[type].itemName = ':' + result.title;
+                                                            }
+                                                            if (type === 'music') {
+                                                                if (result.audio) {
+                                                                    this_obj[type].src = result.audio;
+                                                                } else {
+                                                                    this_obj[type].src = result.video[0];
+                                                                }
                                                             } else {
-                                                                this_obj[type].src = result.video[0];
+                                                                this_obj[type].hd_list = result.video;
+                                                                if (result.sub) {
+                                                                    this_obj[type].playlist.obj.sub = result.sub;
+                                                                }
+                                                                var hd = 0;
+                                                                if (this_obj[type].hd < this_obj[type].hd_list.length) {
+                                                                    hd = this_obj[type].hd;
+                                                                } else {
+                                                                    hd = this_obj[type].hd_list.length - 1;
+                                                                }
+                                                                this_obj[type].src = this_obj[type].hd_list[hd];
                                                             }
-                                                        } else {
-                                                            this_obj[type].hd_list = result.video;
-                                                            if (result.sub) {
-                                                                this_obj[type].playlist.obj.sub = result.sub;
-                                                            }
-                                                            var hd = 0;
-                                                            if (this_obj[type].hd < this_obj[type].hd_list.length) {
-                                                                hd = this_obj[type].hd;
-                                                            } else {
-                                                                hd = this_obj[type].hd_list.length - 1;
-                                                            }
-                                                            this_obj[type].src = this_obj[type].hd_list[hd];
+                                                            isOri();
                                                         }
-                                                        isOri();
                                                     }
-                                                }
-                                            }, function(errorResult) {
-                                                if (errorResult.status === 400) {
-                                                    addAlert(errorResult.data);
-                                                } else if (errorResult.status === 403) {
-                                                    addAlert('unknown API!!!');
-                                                } else if (errorResult.status === 401) {
-                                                    $window.location.href = $location.path();
-                                                }
-                                            });
+                                                }, function(errorResult) {
+                                                    if (errorResult.status === 400) {
+                                                        addAlert(errorResult.data);
+                                                    } else if (errorResult.status === 403) {
+                                                        addAlert('unknown API!!!');
+                                                    } else if (errorResult.status === 401) {
+                                                        $window.location.href = $location.path();
+                                                    }
+                                                });
+                                            }
                                         }
                                     } else {
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -4345,7 +4403,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 }
                             });
                         }
-                        if (type === 'video' || type === 'music') {
+                        if (type === 'video' || type === 'music' || type === 'image') {
                             var Info = null;
                             if (this_obj[type].pageToken) {
                                 Info = $resource('/api/youtube/get/' + this_obj[type].pageToken, {}, {
@@ -4495,98 +4553,106 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                         this_obj[type].iframeOffset = null;
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                     } else if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
-                                        this_obj[type].src = this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb;
-                                        if (type === 'video') {
-                                            video.poster = this_obj[type].src;
-                                        }
-                                        var is_magnet = false;
-                                        if (this_obj[type].playlist) {
-                                            if (this_obj[type].playlist.obj.id) {
-                                                videoId = this_obj[type].playlist.obj.id;
+                                        if (this_obj[type].playlist && this_obj[type].playlist.obj.img_url) {
+                                            this_obj[type].src = this_obj[type].playlist.obj.img_url;
+                                            this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
+                                            this_obj[type].showId = this_obj[type].playlist.obj.showId;
+                                            this_obj[type].presentId = this_obj[type].playlist.obj.index;
+                                            this_obj[type].maxId = this_obj[type].playlist.total;
+                                        } else {
+                                            this_obj[type].src = this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb;
+                                            if (type === 'video') {
+                                                video.poster = this_obj[type].src;
                                             }
-                                            if (this_obj[type].playlist.obj.is_magnet) {
-                                                is_magnet = true;
-                                                this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
+                                            var is_magnet = false;
+                                            if (this_obj[type].playlist) {
                                                 if (this_obj[type].playlist.obj.id) {
-                                                    this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                                    isOri();
-                                                } else {
-                                                    if (isValidString(this_obj[type].playlist.obj.magnet, 'url')) {
-                                                        var uploadurl = $scope.main_url + '/api/upload/url';
-                                                        if (this_obj.adultonly) {
-                                                            uploadurl = $scope.main_url + '/api/upload/url/1';
-                                                        }
-                                                        var upApi = $resource(uploadurl, {}, {
-                                                            'uploadUrl': { method:'POST', withCredentials: true }
-                                                        });
-                                                        upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true}, function (result) {
-                                                            if (result.loginOK) {
-                                                                $window.location.href = $location.path();
-                                                            } else {
-                                                                videoId = this_obj[type].playlist.obj.id = result.id;
-                                                                this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                                                isOri();
-                                                                removeCue();
-                                                                this_obj[type].sub = '/subtitle/' + videoId + '/v';
-                                                            }
-                                                        }, function(errorResult) {
-                                                            if (errorResult.status === 400) {
-                                                                addAlert(errorResult.data);
-                                                            } else if (errorResult.status === 403) {
-                                                                addAlert('unknown API!!!');
-                                                            } else if (errorResult.status === 401) {
-                                                                $window.location.href = $location.path();
-                                                            }
-                                                        });
+                                                    videoId = this_obj[type].playlist.obj.id;
+                                                }
+                                                if (this_obj[type].playlist.obj.is_magnet) {
+                                                    is_magnet = true;
+                                                    this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
+                                                    if (this_obj[type].playlist.obj.id) {
+                                                        this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
+                                                        isOri();
                                                     } else {
-                                                        addAlert('magnet not valid');
+                                                        if (isValidString(this_obj[type].playlist.obj.magnet, 'url')) {
+                                                            var uploadurl = $scope.main_url + '/api/upload/url';
+                                                            if (this_obj.adultonly) {
+                                                                uploadurl = $scope.main_url + '/api/upload/url/1';
+                                                            }
+                                                            var upApi = $resource(uploadurl, {}, {
+                                                                'uploadUrl': { method:'POST', withCredentials: true }
+                                                            });
+                                                            upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true}, function (result) {
+                                                                if (result.loginOK) {
+                                                                    $window.location.href = $location.path();
+                                                                } else {
+                                                                    videoId = this_obj[type].playlist.obj.id = result.id;
+                                                                    this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
+                                                                    isOri();
+                                                                    removeCue();
+                                                                    this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                                }
+                                                            }, function(errorResult) {
+                                                                if (errorResult.status === 400) {
+                                                                    addAlert(errorResult.data);
+                                                                } else if (errorResult.status === 403) {
+                                                                    addAlert('unknown API!!!');
+                                                                } else if (errorResult.status === 401) {
+                                                                    $window.location.href = $location.path();
+                                                                }
+                                                            });
+                                                        } else {
+                                                            addAlert('magnet not valid');
+                                                        }
                                                     }
                                                 }
                                             }
-                                        }
-                                        if (!is_magnet) {
-                                            var externalApi = $resource($scope.main_url + '/api/external/getSingle/' + videoId, {}, {
-                                                'getSingle': { method:'GET', withCredentials: true }
-                                            });
-                                            externalApi.getSingle({}, function (result) {
-                                                if (result.loginOK) {
-                                                    $window.location.href = $location.path();
-                                                } else {
-                                                    if (videoId === this_obj[type].id || (this_obj[type].playlist && videoId === this_obj[type].playlist.obj.id)) {
-                                                        if (this_obj[type].playlist) {
-                                                            this_obj[type].itemName = ':' + result.title;
-                                                        }
-                                                        if (type === 'music') {
-                                                            if (result.audio) {
-                                                                this_obj[type].src = result.audio;
+                                            if (!is_magnet) {
+                                                var externalApi = $resource($scope.main_url + '/api/external/getSingle/' + videoId, {}, {
+                                                    'getSingle': { method:'GET', withCredentials: true }
+                                                });
+                                                externalApi.getSingle({}, function (result) {
+                                                    if (result.loginOK) {
+                                                        $window.location.href = $location.path();
+                                                    } else {
+                                                        if (videoId === this_obj[type].id || (this_obj[type].playlist && videoId === this_obj[type].playlist.obj.id)) {
+                                                            if (this_obj[type].playlist) {
+                                                                this_obj[type].itemName = ':' + result.title;
+                                                            }
+                                                            if (type === 'music') {
+                                                                if (result.audio) {
+                                                                    this_obj[type].src = result.audio;
+                                                                } else {
+                                                                    this_obj[type].src = result.video[0];
+                                                                }
                                                             } else {
-                                                                this_obj[type].src = result.video[0];
+                                                                this_obj[type].hd_list = result.video;
+                                                                if (result.sub) {
+                                                                    this_obj[type].playlist.obj.sub = result.sub;
+                                                                }
+                                                                var hd = 0;
+                                                                if (this_obj[type].hd < this_obj[type].hd_list.length) {
+                                                                    hd = this_obj[type].hd;
+                                                                } else {
+                                                                    hd = this_obj[type].hd_list.length - 1;
+                                                                }
+                                                                this_obj[type].src = this_obj[type].hd_list[hd];
                                                             }
-                                                        } else {
-                                                            this_obj[type].hd_list = result.video;
-                                                            if (result.sub) {
-                                                                this_obj[type].playlist.obj.sub = result.sub;
-                                                            }
-                                                            var hd = 0;
-                                                            if (this_obj[type].hd < this_obj[type].hd_list.length) {
-                                                                hd = this_obj[type].hd;
-                                                            } else {
-                                                                hd = this_obj[type].hd_list.length - 1;
-                                                            }
-                                                            this_obj[type].src = this_obj[type].hd_list[hd];
+                                                            isOri();
                                                         }
-                                                        isOri();
                                                     }
-                                                }
-                                            }, function(errorResult) {
-                                                if (errorResult.status === 400) {
-                                                    addAlert(errorResult.data);
-                                                } else if (errorResult.status === 403) {
-                                                    addAlert('unknown API!!!');
-                                                } else if (errorResult.status === 401) {
-                                                    $window.location.href = $location.path();
-                                                }
-                                            });
+                                                }, function(errorResult) {
+                                                    if (errorResult.status === 400) {
+                                                        addAlert(errorResult.data);
+                                                    } else if (errorResult.status === 403) {
+                                                        addAlert('unknown API!!!');
+                                                    } else if (errorResult.status === 401) {
+                                                        $window.location.href = $location.path();
+                                                    }
+                                                });
+                                            }
                                         }
                                     } else {
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
@@ -4620,7 +4686,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 'youtube': { method:'GET' }
                             });
                         }
-                        if (type === 'video' || type === 'music') {
+                        if (type === 'video' || type === 'music' || type === 'image') {
                             Info.youtube({}, function(result) {
                                 if (result.pageToken) {
                                     this_obj[type].pageToken = result.pageToken;
@@ -4677,8 +4743,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 this.mediaRecord(type, docRecord, ended, true, function() {
                     afterRecord();
                 });
+            } else {
+                afterRecord();
             }
-            afterRecord();
             function afterRecord() {
                 var append = '';
                 if (this_obj[type].list[this_obj[type].index + this_obj[type].back].url) {
@@ -4718,98 +4785,106 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             this_obj[type].iframeOffset = null;
                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                         } else if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
-                            this_obj[type].src = this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb;
-                            if (type === 'video') {
-                                video.poster = this_obj[type].src;
-                            }
-                            var is_magnet = false;
-                            if (this_obj[type].playlist) {
-                                if (this_obj[type].playlist.obj.id) {
-                                    videoId = this_obj[type].playlist.obj.id;
+                            if (this_obj[type].playlist && this_obj[type].playlist.obj.img_url) {
+                                this_obj[type].src = this_obj[type].playlist.obj.img_url;
+                                this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
+                                this_obj[type].showId = this_obj[type].playlist.obj.showId;
+                                this_obj[type].presentId = this_obj[type].playlist.obj.index;
+                                this_obj[type].maxId = this_obj[type].playlist.total;
+                            } else {
+                                this_obj[type].src = this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb;
+                                if (type === 'video') {
+                                    video.poster = this_obj[type].src;
                                 }
-                                if (this_obj[type].playlist.obj.is_magnet) {
-                                    is_magnet = true;
-                                    this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
+                                var is_magnet = false;
+                                if (this_obj[type].playlist) {
                                     if (this_obj[type].playlist.obj.id) {
-                                        this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                        isOri();
-                                    } else {
-                                        if (isValidString(this_obj[type].playlist.obj.magnet, 'url')) {
-                                            var uploadurl = $scope.main_url + '/api/upload/url';
-                                            if (this_obj.adultonly) {
-                                                uploadurl = $scope.main_url + '/api/upload/url/1';
-                                            }
-                                            var upApi = $resource(uploadurl, {}, {
-                                                'uploadUrl': { method:'POST', withCredentials: true }
-                                            });
-                                            upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true}, function (result) {
-                                                if (result.loginOK) {
-                                                    $window.location.href = $location.path();
-                                                } else {
-                                                    videoId = this_obj[type].playlist.obj.id = result.id;
-                                                    this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                                    isOri();
-                                                    removeCue();
-                                                    this_obj[type].sub = '/subtitle/' + videoId + '/v';
-                                                }
-                                            }, function(errorResult) {
-                                                if (errorResult.status === 400) {
-                                                    addAlert(errorResult.data);
-                                                } else if (errorResult.status === 403) {
-                                                    addAlert('unknown API!!!');
-                                                } else if (errorResult.status === 401) {
-                                                    $window.location.href = $location.path();
-                                                }
-                                            });
+                                        videoId = this_obj[type].playlist.obj.id;
+                                    }
+                                    if (this_obj[type].playlist.obj.is_magnet) {
+                                        is_magnet = true;
+                                        this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
+                                        if (this_obj[type].playlist.obj.id) {
+                                            this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
+                                            isOri();
                                         } else {
-                                            addAlert('magnet not valid');
+                                            if (isValidString(this_obj[type].playlist.obj.magnet, 'url')) {
+                                                var uploadurl = $scope.main_url + '/api/upload/url';
+                                                if (this_obj.adultonly) {
+                                                    uploadurl = $scope.main_url + '/api/upload/url/1';
+                                                }
+                                                var upApi = $resource(uploadurl, {}, {
+                                                    'uploadUrl': { method:'POST', withCredentials: true }
+                                                });
+                                                upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true}, function (result) {
+                                                    if (result.loginOK) {
+                                                        $window.location.href = $location.path();
+                                                    } else {
+                                                        videoId = this_obj[type].playlist.obj.id = result.id;
+                                                        this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
+                                                        isOri();
+                                                        removeCue();
+                                                        this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                    }
+                                                }, function(errorResult) {
+                                                    if (errorResult.status === 400) {
+                                                        addAlert(errorResult.data);
+                                                    } else if (errorResult.status === 403) {
+                                                        addAlert('unknown API!!!');
+                                                    } else if (errorResult.status === 401) {
+                                                        $window.location.href = $location.path();
+                                                    }
+                                                });
+                                            } else {
+                                                addAlert('magnet not valid');
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            if (!is_magnet) {
-                                var externalApi = $resource($scope.main_url + '/api/external/getSingle/' + videoId, {}, {
-                                    'getSingle': { method:'GET', withCredentials: true }
-                                });
-                                externalApi.getSingle({}, function (result) {
-                                    if (result.loginOK) {
-                                        $window.location.href = $location.path();
-                                    } else {
-                                        if (videoId === this_obj[type].id || (this_obj[type].playlist && videoId === this_obj[type].playlist.obj.id)) {
-                                            if (this_obj[type].playlist) {
-                                                this_obj[type].itemName = ':' + result.title;
-                                            }
-                                            if (type === 'music') {
-                                                if (result.audio) {
-                                                    this_obj[type].src = result.audio;
+                                if (!is_magnet) {
+                                    var externalApi = $resource($scope.main_url + '/api/external/getSingle/' + videoId, {}, {
+                                        'getSingle': { method:'GET', withCredentials: true }
+                                    });
+                                    externalApi.getSingle({}, function (result) {
+                                        if (result.loginOK) {
+                                            $window.location.href = $location.path();
+                                        } else {
+                                            if (videoId === this_obj[type].id || (this_obj[type].playlist && videoId === this_obj[type].playlist.obj.id)) {
+                                                if (this_obj[type].playlist) {
+                                                    this_obj[type].itemName = ':' + result.title;
+                                                }
+                                                if (type === 'music') {
+                                                    if (result.audio) {
+                                                        this_obj[type].src = result.audio;
+                                                    } else {
+                                                        this_obj[type].src = result.video[0];
+                                                    }
                                                 } else {
-                                                    this_obj[type].src = result.video[0];
+                                                    this_obj[type].hd_list = result.video;
+                                                    if (result.sub) {
+                                                        this_obj[type].playlist.obj.sub = result.sub;
+                                                    }
+                                                    var hd = 0;
+                                                    if (this_obj[type].hd < this_obj[type].hd_list.length) {
+                                                        hd = this_obj[type].hd;
+                                                    } else {
+                                                        hd = this_obj[type].hd_list.length - 1;
+                                                    }
+                                                    this_obj[type].src = this_obj[type].hd_list[hd];
                                                 }
-                                            } else {
-                                                this_obj[type].hd_list = result.video;
-                                                if (result.sub) {
-                                                    this_obj[type].playlist.obj.sub = result.sub;
-                                                }
-                                                var hd = 0;
-                                                if (this_obj[type].hd < this_obj[type].hd_list.length) {
-                                                    hd = this_obj[type].hd;
-                                                } else {
-                                                    hd = this_obj[type].hd_list.length - 1;
-                                                }
-                                                this_obj[type].src = this_obj[type].hd_list[hd];
+                                                isOri();
                                             }
-                                            isOri();
                                         }
-                                    }
-                                }, function(errorResult) {
-                                    if (errorResult.status === 400) {
-                                        addAlert(errorResult.data);
-                                    } else if (errorResult.status === 403) {
-                                        addAlert('unknown API!!!');
-                                    } else if (errorResult.status === 401) {
-                                        $window.location.href = $location.path();
-                                    }
-                                });
+                                    }, function(errorResult) {
+                                        if (errorResult.status === 400) {
+                                            addAlert(errorResult.data);
+                                        } else if (errorResult.status === 403) {
+                                            addAlert('unknown API!!!');
+                                        } else if (errorResult.status === 401) {
+                                            $window.location.href = $location.path();
+                                        }
+                                    });
+                                }
                             }
                         } else {
                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id;

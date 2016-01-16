@@ -219,7 +219,7 @@
                         </a>
                         <div class="panel-heading" ng-click="mediaToggle('image')">
                             <h4 class="panel-title">
-                                {{(image.index) >= 0 && (image.index+1) || image.index}} : {{image.name}}<i class="pull-right glyphicon glyphicon-remove"></i>
+                                {{(image.index) >= 0 && (image.index+1) || image.index}} : {{image.name}}{{image.playlist.end && '(已完結)' || ''}}{{image.itemName}}<i class="pull-right glyphicon glyphicon-remove"></i>
                             </h4>
                         </div>
                         <div class="panel-body media-trim">

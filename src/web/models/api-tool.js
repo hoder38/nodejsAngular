@@ -277,7 +277,7 @@ module.exports = {
             req.end();
         });
     },
-    xuiteDownload: function(url, filePath, callback, threshold, is_check, is_file, referer) {
+    xuiteDownload: function(url, filePath, callback, threshold, is_check, is_file, referer, not_utf8) {
         if (!this.setApiQueue('xuiteDownload', [url, filePath, callback, threshold])) {
             return false;
         }
@@ -428,12 +428,19 @@ module.exports = {
                             });
                         } else {
                             res.on('data', function(chunk){
-                                //is_200 = true;
-                                res.body += chunk;
+                                if (not_utf8) {
+                                    res.body = Buffer.concat([new Buffer(res.body), new Buffer(chunk)]);
+                                } else {
+                                    //is_200 = true;
+                                    res.body += chunk;
+                                }
                             });
                             res.on('end', function() {
                                 this_obj.getApiQueue();
                                 req.abort();
+                                if (not_utf8) {
+                                    res.body = util.bufferToString(res.body);
+                                }
                                 setTimeout(function(){
                                     callback(null, res.body);
                                 }, 0);

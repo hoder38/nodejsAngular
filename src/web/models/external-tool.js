@@ -312,6 +312,32 @@ module.exports = {
                 }, 0);
             }, 60000, false, false, 'https://yts.ag/');
             break;
+            case 'cartoonmad':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var comic_data = raw_data.match(/<span class="covertxt">.*/);
+                var raw_list = comic_data[0].match(/<a href=.*?.jpg/g);
+                var list = [];
+                var list_match = false;
+                var tags = [];
+                var data = null;
+                for (var i in raw_list) {
+                    list_match = raw_list[i].match(/(\d+).*?title="([^"]+)".*?src="(.*)$/);
+                    if (list_match) {
+                        data = {id: list_match[1], name: list_match[2], thumb: list_match[3]};
+                        tags = ['漫畫', 'comic'];
+                        data['tags'] = tags;
+                        list.push(data);
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false, 'http://www.cartoonmad.com/', true);
+            break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
             break;
@@ -605,7 +631,7 @@ module.exports = {
                                 if (list_match) {
                                     if (!list_match[1].match(/^(http|https):\/\//)) {
                                         if (list_match[1].match(/^\//)) {
-                                            list_match[1] = '/' + list_match[1];
+                                            list_match[1] = list_match[1];
                                         } else {
                                             list_match[1] = '/' + list_match[1];
                                         }
@@ -772,7 +798,7 @@ module.exports = {
                                 if (list_match[1].match(/^\//)) {
                                     list_match[1] = 'https://eztv.ag' + list_match[1];
                                 } else {
-                                    list_match[1] = 'https://eztv.ag' + list_match[1];
+                                    list_match[1] = 'https://eztv.ag/' + list_match[1];
                                 }
                             }
                             list.push({name: list_match[2], url: list_match[1]});
@@ -1662,7 +1688,7 @@ module.exports = {
                         if (flv_url[2].match(/^\//)) {
                             flv_url[2] = 'http://www.123kubo.com' + flv_url[2];
                         } else {
-                            flv_url[2] = 'http://www.123kubo.com' + flv_url[2];
+                            flv_url[2] = 'http://www.123kubo.com/' + flv_url[2];
                         }
                     }
                     console.log(flv_url[2]);
@@ -1875,6 +1901,63 @@ module.exports = {
                     }, 0);
                 });
             }, 60000, false, false, 'https://yts.ag/');
+            break;
+            case 'cartoonmad':
+            var mad_id = url.match(/\d+/);
+            if (!mad_id) {
+                util.handleError({hoerror: 2, message: 'comic id invalid'}, callback, callback);
+            }
+            var is_end = false;
+            mad_id = mad_id[0];
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                if (raw_data.match(/http:\/\/img\.cartoonmad\.com\/image\/chap9\.gif/)) {
+                    is_end = true;
+                }
+                var pattern = new RegExp('\\/comic\\/' + mad_id + '\\d+\\.html', 'g');
+                var raw_list = raw_data.match(pattern);
+                if (!raw_list[index-1]) {
+                    util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
+                }
+                pattern = new RegExp('^' + '\\/comic\\/' + mad_id + '(\\d\\d\\d\\d)(\\d)(\\d\\d\\d)');
+                var info = raw_list[index-1].match(pattern);
+                if (!info) {
+                    util.handleError({hoerror: 2, message: 'comic info unknown'}, callback, callback);
+                }
+                var url_s = null;
+                if (!raw_list[index-1].match(/^(https|http):\/\//)) {
+                    if (raw_list[index-1].match(/^\//)) {
+                        url_s = 'http://www.cartoomad.com' + raw_list[index-1];
+                    } else {
+                        url_s = 'http://www.cartoomad.com/' + raw_list[index-1];
+                    }
+                } else {
+                    url_s = raw_list[index-1];
+                }
+                api.xuiteDownload(url_s, '', function(err, raw_data_s) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    pattern = new RegExp('src="(http:\\/\\/.*?\\/' + mad_id + '\\/[^"]+)');
+                    var img_url = raw_data_s.match(pattern);
+                    if (!img_url) {
+                        util.handleError({hoerror: 2, message: 'comic url unknown'}, callback, callback);
+                    }
+                    var title = '第' + info[1] + '卷';
+                    if (info[2] === '2') {
+                        title = '第' + info[1] + '話';
+                    }
+                    var ret = {title: title, img_url: img_url[1], sub: Number(info[3])};
+                    ret.index = ret.showId = (index*10 + sub_index)/10;
+                    setTimeout(function(){
+                        callback(null, ret, is_end, raw_list.length);
+                    }, 0);
+                }, 60000, false, false, 'http://www.cartoonmad.com/', true);
+            }, 60000, false, false, 'http://www.cartoonmad.com/', true);
             break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
