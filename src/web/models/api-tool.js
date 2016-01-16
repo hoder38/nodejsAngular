@@ -249,7 +249,7 @@ module.exports = {
             }
             var options = {
                 host: "my.xuite.net",
-                path: "/service/account/token.php?grant_type=refresh_token&client_id=" + api_key + "&client_secret=" + api_secret + "&refresh_token=" + tokens[0]["refresh_token"] + "&redirect_uri=http://114.32.213.158/refresh",
+                path: "/service/account/token.php?grant_type=refresh_token&client_id=" + api_key + "&client_secret=" + api_secret + "&refresh_token=" + tokens[0]["refresh_token"] + "&redirect_uri=http://anomopi.com/refresh",
                 port: 443,
                 method: 'GET',
                 headers: {
@@ -277,7 +277,7 @@ module.exports = {
             req.end();
         });
     },
-    xuiteDownload: function(url, filePath, callback, threshold, is_check, is_file, referer) {
+    xuiteDownload: function(url, filePath, callback, threshold, is_check, is_file, referer, not_utf8) {
         if (!this.setApiQueue('xuiteDownload', [url, filePath, callback, threshold])) {
             return false;
         }
@@ -428,12 +428,19 @@ module.exports = {
                             });
                         } else {
                             res.on('data', function(chunk){
-                                //is_200 = true;
-                                res.body += chunk;
+                                if (not_utf8) {
+                                    res.body = Buffer.concat([new Buffer(res.body), new Buffer(chunk)]);
+                                } else {
+                                    //is_200 = true;
+                                    res.body += chunk;
+                                }
                             });
                             res.on('end', function() {
                                 this_obj.getApiQueue();
                                 req.abort();
+                                if (not_utf8) {
+                                    res.body = util.bufferToString(res.body);
+                                }
                                 setTimeout(function(){
                                     callback(null, res.body);
                                 }, 0);
