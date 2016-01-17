@@ -249,7 +249,7 @@ module.exports = {
             }
             var options = {
                 host: "my.xuite.net",
-                path: "/service/account/token.php?grant_type=refresh_token&client_id=" + api_key + "&client_secret=" + api_secret + "&refresh_token=" + tokens[0]["refresh_token"] + "&redirect_uri=http://114.32.213.158/refresh",
+                path: "/service/account/token.php?grant_type=refresh_token&client_id=" + api_key + "&client_secret=" + api_secret + "&refresh_token=" + tokens[0]["refresh_token"] + "&redirect_uri=http://anomopi.com/refresh",
                 port: 443,
                 method: 'GET',
                 headers: {
