@@ -1675,7 +1675,8 @@ module.exports = {
                         if (!eval_data) {
                             util.handleError({hoerror: 2, message: 'empty list'}, callback, callback);
                         }
-                        var raw_multi_list = eval(eval_data[1]);
+                        eval(eval_data[1]);
+                        var raw_multi_list = ff_urls;
                         var ret_obj = driveSource();
                         if (!ret_obj) {
                             ret_obj = otherSource(6);
