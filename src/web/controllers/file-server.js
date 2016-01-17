@@ -3686,7 +3686,7 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                     }
                 }
             } else if (req.params.recycle === '0'){
-                if (!util.checkAdmin(1, req.user) && !req.user._id.equals(items[0].owner)) {
+                if (!util.checkAdmin(1, req.user) && (!util.isValidString(items[0].owner, 'uid') || !req.user._id.equals(items[0].owner))) {
                     util.handleError({hoerror: 2, message: 'file is not yours!!!'}, next, res);
                 }
                 mongo.orig("update", "storage", { _id: id }, {$set: {recycle: recycle, utime: Math.round(new Date().getTime() / 1000)}}, function(err, item2){

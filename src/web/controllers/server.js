@@ -3497,7 +3497,7 @@ function getStorageItem(user, items, mediaHandle) {
                 if (items[i].ctitle) {
                     data.ctitle = items[i].ctitle;
                 }
-                if (user._id.equals(items[i].owner)) {
+                if (util.isValidString(items[i].owner, 'uid') && user._id.equals(items[i].owner)) {
                     data.isOwn = true;
                 }
                 itemList.push(data);
@@ -3554,7 +3554,7 @@ function getStorageItem(user, items, mediaHandle) {
                 if (items[i].ctitle) {
                     data.ctitle = items[i].ctitle;
                 }
-                if (user._id.equals(items[i].owner)) {
+                if (util.isValidString(items[i].owner, 'uid') && user._id.equals(items[i].owner)) {
                     data.isOwn = true;
                 }
                 itemList.push(data);

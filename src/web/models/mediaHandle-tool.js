@@ -617,7 +617,7 @@ module.exports = function(sendWs) {
                 if (items.length === 0) {
                     util.handleError({hoerror: 2, message: 'file not exist!!!'}, next, callback);
                 }
-                if (!util.checkAdmin(1, user) && !user._id.equals(items[0].owner)) {
+                if (!util.checkAdmin(1, user) && (!util.isValidString(items[0].owner, 'uid') || !user._id.equals(items[0].owner))) {
                     util.handleError({hoerror: 2, message: 'file is not yours!!!'}, next, callback);
                 }
                 mongo.orig("update", "storage", { _id: id }, {$set: {name: name}}, function(err, item2){
