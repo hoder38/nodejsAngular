@@ -1390,42 +1390,45 @@ module.exports = function(collection) {
             }
         },
         getYifyQuery: function(search_arr, sortName, page) {
-            var url = 'https://yts.ag/browse-movies/';
+            var url = 'https://yts.ag/api/v2/list_movies.json';
             var search = false;
-            var searchType = 'all';
-            var searchWord = 0;
+            var genre = null;
+            var query_term = null;
             for (var i in search_arr) {
                 index = isDefaultTag(normalize(search_arr[i]));
                 if (!index || index.index === 0 || index.index === 6) {
                     if (yify_type.indexOf(normalize(search_arr[i])) !== -1) {
-                        searchType = normalize(search_arr[i]);
-                        searchWord = 0;
+                        genre = normalize(search_arr[i]);
+                        query_term = null;
                     } else if (yify_type_cht.indexOf(normalize(search_arr[i])) !== -1) {
-                        searchType = yify_type[yify_type_cht.indexOf(normalize(search_arr[i]))];
-                        searchWord = 0;
+                        genre = yify_type[yify_type_cht.indexOf(normalize(search_arr[i]))];
+                        query_term = null;
                     } else {
-                        searchWord = denormalize(search_arr[i]);
-                        searchType = 'all';
+                        query_term = denormalize(search_arr[i]);
+                        genre = null;
                     }
                 } else if (index.index === 17) {
                     search = true;
                 }
             }
             if (search) {
-                url = url + searchWord + '/all/' + searchType + '/0/';
-                var order = 'latest';
+                var order = 'date_added';
                 if (sortName === 'count') {
                     order = 'rating';
                 } else if (sortName === 'mtime') {
                     order = 'year';
                 }
-                url = url + order;
-                if (url === 'https://yts.ag/browse-movies/0/all/all/0/latest') {
-                    url = 'https://yts.ag/browse-movies';
-                }
+                url = url + '?sort_by=' + order;
                 if (page > 1) {
-                    url =  url + '?page=' + page;
+                    url =  url + '&page=' + page;
                 }
+                if (query_term) {
+                    url =  url + '&query_term=' + query_term;
+                }
+                if (genre) {
+                    url =  url + '&genre=' + genre;
+                }
+                console.log(url);
                 return url;
             } else {
                 return false;

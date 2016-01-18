@@ -484,7 +484,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         res.json({stop: true});
                     } else {
                         var torrentHash = shortTorrent.match(/[^:]+$/);
-                        mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0]}}, {limit: 1}, function(err, items){
+                        mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
                             if (err) {
                                 util.handleError(err, next, res);
                             }
@@ -708,7 +708,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     res.json({stop: true});
                 } else {
                     var torrentHash = shortTorrent.match(/[^:]+$/);
-                    mongo.orig("find", "storage", {$regex: torrentHash[0]}, {limit: 1}, function(err, items){
+                    mongo.orig("find", "storage", {$regex: torrentHash[0], $options: 'i'}, {limit: 1}, function(err, items){
                         if (err) {
                             util.handleError(err, next, res);
                         }

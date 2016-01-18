@@ -2036,7 +2036,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                 var playurl = 'http://www.123kubo.com/vod-read-id-' + playlistId + '.html';
                                 var playtype = 'kubo';
                                 if (playlist === 4) {
-                                    playurl = 'https://yts.ag/movie/' + playlistId;
+                                    playurl = 'https://yts.ag/api/v2/movie_details.json?movie_id=' + playlistId;
                                     playtype = 'yify';
                                 }
                                 externalTool.getSingleId(playtype, playurl, 1, function(err, obj, is_end, total) {
@@ -2165,7 +2165,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                 var playurl = 'http://www.123kubo.com/vod-read-id-' + playlistId + '.html';
                                 var playtype = 'kubo';
                                 if (playlist === 4) {
-                                    playurl = 'https://yts.ag/movie/' + playlistId;
+                                    playurl = 'https://yts.ag/api/v2/movie_details.json?movie_id=' + playlistId;
                                     playtype = 'yify';
                                 }
                                 externalTool.getSingleId(playtype, playurl, items[0].recordTime, function(err, obj, is_end, total) {
