@@ -27,7 +27,7 @@ var mediaHandleTool = require("../models/mediaHandle-tool.js")(sendWs);
 
 var externalTool = require('../models/external-tool.js');
 
-var external_interval = 172800000;
+var external_interval = 604800000;
 
 var external_time = 0;
 
@@ -127,7 +127,7 @@ app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
             util.handleError({hoerror: 2, message: "not valid subtitle!!!"}, next, res);
         }
         var filePath = null;
-        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud)_/);
         if (id) {
             var ex_type = 'youtube';
             if (id[1] === 'dym') {
@@ -144,6 +144,12 @@ app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
                 ex_type = 'vqq';
             } else if (id[1] === 'fun') {
                 ex_type = 'funshion';
+            } else if (id[1] === 'kdr') {
+                ex_type = 'kubodrive';
+            } else if (id[1] === 'yuk') {
+                ex_type = 'youku';
+            } else if (id[1] === 'tud') {
+                ex_type = 'tudou';
             }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
@@ -478,7 +484,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         res.json({stop: true});
                     } else {
                         var torrentHash = shortTorrent.match(/[^:]+$/);
-                        mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0]}}, {limit: 1}, function(err, items){
+                        mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
                             if (err) {
                                 util.handleError(err, next, res);
                             }
@@ -702,7 +708,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     res.json({stop: true});
                 } else {
                     var torrentHash = shortTorrent.match(/[^:]+$/);
-                    mongo.orig("find", "storage", {$regex: torrentHash[0]}, {limit: 1}, function(err, items){
+                    mongo.orig("find", "storage", {$regex: torrentHash[0], $options: 'i'}, {limit: 1}, function(err, items){
                         if (err) {
                             util.handleError(err, next, res);
                         }
@@ -1335,7 +1341,7 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, nex
                 });
             });
         }
-        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud)_/);
         if (id) {
             var ex_type = 'youtube';
             if (id[1] === 'dym') {
@@ -1352,6 +1358,12 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, nex
                 ex_type = 'vqq';
             } else if (id[1] === 'fun') {
                 ex_type = 'funshion';
+            } else if (id[1] === 'kdr') {
+                ex_type = 'kubodrive';
+            } else if (id[1] === 'yuk') {
+                ex_type = 'youku';
+            } else if (id[1] === 'tud') {
+                ex_type = 'tudou';
             }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
@@ -1406,7 +1418,7 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.uid.match(/^(you|dym|bil|soh|let|vqq|fun)_(.*)/);
+        var id = req.params.uid.match(/^(you|dym|bil|soh|let|vqq|fun|kdr|yuk|tud)_(.*)/);
         if (!id) {
             util.handleError({hoerror: 2, message: "file is not youtube video!!!"}, next, res);
         }
@@ -1428,10 +1440,17 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
         } else if (id[1] === 'fun') {
             var idsub = id[2].match(/^([^_]+)_([^_]+)_([^_]+)$/);
             url = 'http://www.funshion.com/vplay/' + idsub[1] + '-' + idsub[2] + '.' + idsub[3];
+        } else if (id[1] === 'kdr') {
+            url = id[2];
+        } else if (id[1] === 'yuk') {
+            url = 'http://v.youku.com/v_show/id_' + id[2] + '.html';
+        } else if (id[1] === 'tud') {
+            var idsub = id[2].match(/^([^_]+)_([^_]+)$/);
+            url = 'http://www.tudou.com/albumplay/' + idsub[1] +'/' + idsub[2] +'.html';
         } else {
             url = 'http://www.youtube.com/watch?v=' + id[2];
         }
-        if (id[1] === 'soh' || id[1] === 'let' || id[1] === 'vqq' || id[1] === 'fun' || id[1] === 'bil') {
+        if (id[1] === 'soh' || id[1] === 'let' || id[1] === 'vqq' || id[1] === 'fun' || id[1] === 'bil' || id[1] === 'yuk' || id[1] === 'tud') {
             var kubo_url = 'http://888blb1.flvapi.com/video.php?url=gq_' + new Buffer(url).toString('base64') + '_a';
             api.xuiteDownload(kubo_url, '', function(err, raw_data) {
                 if (err) {
@@ -1462,6 +1481,37 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                 }
                 res.json(ret_obj);
             }, 60000, false, false, 'http://888blb1.flvapi.com/');
+        } else if (id[1] === 'kdr') {
+            var kubo_url = 'http://jaiwen.com/jx/gg58/xml.php?url=gg_' + url + '_cq';
+            api.xuiteDownload(kubo_url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, next, res);
+                }
+                var video_list = raw_data.match(/\!\[CDATA\[[^\]]+/g);
+                if (!video_list) {
+                    util.handleError({hoerror: 2, message: "video invaild!!!"}, next, res);
+                }
+                var list_match = false;
+                var list = [];
+                for (var i in video_list) {
+                    list_match = video_list[i].match(/^\!\[CDATA\[([^\]]+)$/);
+                    if (list_match) {
+                        list.push(list_match[1]);
+                    }
+                }
+                if (list.length < 1) {
+                    util.handleError({hoerror: 2, message: "video invaild!!!"}, next, res);
+                }
+                if (!list[subIndex-1]) {
+                    util.handleError({hoerror: 2, message: "video index invaild!!!"}, next, res);
+                }
+                var ret_obj = {title: id[1], video: [list[subIndex-1]]};
+                if (list.length > 1) {
+                    ret_obj['sub'] = list.length;
+                }
+                res.json(ret_obj);
+            }, 60000, false, false, 'http://forum.123kubo.com/jx/gdplayer/ck.php?url=' + url);
         } else {
             youtubedl.getInfo(url, [], function(err, info) {
                 if (err) {
@@ -1510,7 +1560,7 @@ app.get('/api/external/getSubtitle/:uid', function(req, res, next) {
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.uid.match(/^(you|dym|dri|bil)_(.*)/);
+        var id = req.params.uid.match(/^(you|dym|dri)_(.*)/);
         if (!id) {
             util.handleError({hoerror: 2, message: "file is not youtube video!!!"}, next, res);
         }
@@ -1526,9 +1576,9 @@ app.get('/api/external/getSubtitle/:uid', function(req, res, next) {
         } else if (id[1] === 'dri') {
             url = 'https://drive.google.com/open?id=' + id[2];
             filePath = util.getFileLocation('drive', id_valid);
-        } else if (id[1] === 'bil') {
+        /*} else if (id[1] === 'bil') {
             url = 'http://www.bilibili.com/video/' + id[2];
-            filePath = util.getFileLocation('bilibili', id_valid);
+            filePath = util.getFileLocation('bilibili', id_valid);*/
         } else {
             url = 'http://www.youtube.com/watch?v=' + id[2];
             filePath = util.getFileLocation('youtube', id_valid);
@@ -1602,7 +1652,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
             }
         }
         var filePath = null;
-        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud)_/);
         if (id) {
             var ex_type = 'youtube';
             if (id[1] === 'dym') {
@@ -1619,6 +1669,12 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                 ex_type = 'vqq';
             } else if (id[1] === 'fun') {
                 ex_type = 'funshion';
+            } else if (id[1] === 'kdr') {
+                ex_type = 'kubodrive';
+            } else if (id[1] === 'yuk') {
+                ex_type = 'youku';
+            } else if (id[1] === 'tud') {
+                ex_type = 'tudou';
             }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
@@ -3499,7 +3555,7 @@ app.get('/subtitle/:uid/:index(\\d+|v)?', function(req, res, next){
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud)_/);
         if (id) {
             var id_valid = util.isValidString(req.params.uid, 'name');
             if (id_valid === false) {
@@ -3520,6 +3576,12 @@ app.get('/subtitle/:uid/:index(\\d+|v)?', function(req, res, next){
                 filePath = util.getFileLocation('vqq', id_valid);
             } else if (id[1] === 'fun') {
                 filePath = util.getFileLocation('funshion', id_valid);
+            } else if (id[1] === 'kdr') {
+                filePath = util.getFileLocation('kubodrive', id_valid);
+            } else if (id[1] === 'yuk') {
+                filePath = util.getFileLocation('youku', id_valid);
+            } else if (id[1] === 'tud') {
+                filePath = util.getFileLocation('tudou', id_valid);
             } else {
                 filePath = util.getFileLocation('youtube', id_valid);
             }

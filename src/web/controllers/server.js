@@ -1801,7 +1801,7 @@ app.get('/api/media/record/:id/:time/:pId?', function(req, res, next){
         if (!req.params.time.match(/^\d+(&\d+|\.\d+)?$/)) {
             util.handleError({hoerror: 2, message: "timestamp is not vaild"}, next, res);
         }
-        var id = req.params.id.match(/^(you|dym|dri|bil|soh|let|vqq|fun|mad)_/);
+        var id = req.params.id.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud|mad)_/);
         if (id) {
             id = util.isValidString(req.params.id, 'name');
             if (id === false) {
@@ -2057,7 +2057,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                 var playurl = 'http://www.123kubo.com/vod-read-id-' + playlistId + '.html';
                                 var playtype = 'kubo';
                                 if (playlist === 4) {
-                                    playurl = 'https://yts.ag/movie/' + playlistId;
+                                    playurl = 'https://yts.ag/api/v2/movie_details.json?movie_id=' + playlistId;
                                     playtype = 'yify';
                                 } else if (playlist === 5) {
                                     playurl = 'http://www.cartoomad.com/comic/' + playlistId + '.html';
@@ -2189,7 +2189,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                 var playurl = 'http://www.123kubo.com/vod-read-id-' + playlistId + '.html';
                                 var playtype = 'kubo';
                                 if (playlist === 4) {
-                                    playurl = 'https://yts.ag/movie/' + playlistId;
+                                    playurl = 'https://yts.ag/api/v2/movie_details.json?movie_id=' + playlistId;
                                     playtype = 'yify';
                                 } else if (playlist === 5) {
                                     playurl = 'http://www.cartoomad.com/comic/' + playlistId + '.html';

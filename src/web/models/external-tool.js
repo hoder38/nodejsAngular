@@ -244,68 +244,37 @@ module.exports = {
             }, 60000, false, false, 'http://www.123kubo.com/');
             break;
             case 'yify':
-            api.xuiteDownload(url, '', function(err, raw_data) {
+            api.xuiteDownload(url, '', function(err, json_data) {
                 if (err) {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                var raw_list = raw_data.match(/class="browse-movie-wrap[\s\S]+?class="browse-movie-year">\d\d\d\d/g);
+                if (json_data['status'] !== 'ok' || !json_data['data'] || !json_data['data']['movies']) {
+                    util.handleError({hoerror: 2, message: 'yify api fail'}, callback, callback);
+                }
                 var list = [];
-                var list_match = false;
                 var data = null;
-                var genre_match = false;
-                var genre_item = null;
                 var tags = [];
-                if (raw_list) {
-                    for (var i in raw_list) {
-                        list_match = raw_list[i].match(/class="browse-movie-title">([^<]+)/);
-                        if (list_match) {
-                            data = {name: list_match[1]};
-                            list_match = raw_list[i].match(/a href="https:\/\/yts\.ag\/movie\/([^"]+)"/);
-                            if (list_match) {
-                                data['id'] = list_match[1];
-                                list_match = raw_list[i].match(/src="([^"]+)"/);
-                                if (list_match) {
-                                    tags = ['movie', '電影'];
-                                    data['thumb'] = list_match[1];
-                                    list_match = raw_list[i].match(/class="browse-movie-year">(\d\d\d\d)/);
-                                    if (list_match) {
-                                        data['date'] = list_match[1] + '-01-01';
-                                        if (tags.indexOf(list_match[1]) === -1) {
-                                            tags.push(list_match[1]);
-                                        }
-                                    } else {
-                                        data['date'] = '1970-01-01';
-                                    }
-                                    list_match = raw_list[i].match(/class="rating">(\d+(\.\d+)?)/);
-                                    if (list_match) {
-                                        data['rating'] = Number(list_match[1]);
-                                    } else {
-                                        data['rating'] = 0;
-                                    }
-                                    list_match = raw_list[i].match(/<h4>[^<]+<\/h4>/g);
-                                    if (list_match) {
-                                        for (var j in list_match) {
-                                            genre_match = list_match[j].match(/>(.*)</);
-                                            if (genre_match) {
-                                                genre_item = tagTool.normalizeTag(genre_match[1]);
-                                                if (genre_list.indexOf(genre_item) !== -1) {
-                                                    if (tags.indexOf(genre_item) === -1) {
-                                                        tags.push(genre_item);
-                                                    }
-                                                    if (tags.indexOf(genre_list_ch[genre_list.indexOf(genre_item)]) === -1) {
-                                                        tags.push(genre_list_ch[genre_list.indexOf(genre_item)]);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    data['tags'] = tags;
-                                    list.push(data);
-                                }
+                var genre_item = null;
+                for (var i in json_data['data']['movies']) {
+                    data = {name: json_data['data']['movies'][i]['title'], id: json_data['data']['movies'][i]['id'], thumb: json_data['data']['movies'][i]['small_cover_image'], date: json_data['data']['movies'][i]['year'] + '-01-01', rating: json_data['data']['movies'][i]['rating'], };
+                    tags = ['movie', '電影'];
+                    if (tags.indexOf(json_data['data']['movies'][i]['year'].toString()) === -1) {
+                        tags.push(json_data['data']['movies'][i]['year'].toString());
+                    }
+                    for (var j in json_data['data']['movies'][i]['genres']) {
+                        genre_item = tagTool.normalizeTag(json_data['data']['movies'][i]['genres'][j]);
+                        if (genre_list.indexOf(genre_item) !== -1) {
+                            if (tags.indexOf(genre_item) === -1) {
+                                tags.push(genre_item);
+                            }
+                            if (tags.indexOf(genre_list_ch[genre_list.indexOf(genre_item)]) === -1) {
+                                tags.push(genre_list_ch[genre_list.indexOf(genre_item)]);
                             }
                         }
                     }
+                    data['tags'] = tags;
+                    list.push(data);
                 }
                 setTimeout(function(){
                     callback(null, list);
@@ -492,72 +461,32 @@ module.exports = {
             }, 60000, false, false, 'http://www.123kubo.com/');
             break;
             case 'yify':
-            var url = 'https://yts.ag/movie/' + id;
+            var url = 'https://yts.ag/api/v2/movie_details.json?with_cast=true&movie_id=' + id;
             api.xuiteDownload(url, '', function(err, raw_data) {
                 if (err) {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                var info = raw_data.match(/<h1>([^<]+)<\/h1>/);
-                if (!info) {
-                    util.handleError({hoerror: 2, message: "yify no info"}, callback, callback);
+                if (json_data['status'] !== 'ok' || !json_data['data']['movie']) {
+                    util.handleError({hoerror: 2, message: 'yify api fail'}, callback, callback);
                 }
-                var info_match = false;
-                var item_match = false;
-                var genre_item = null;
-                var name = info[1];
-                info = raw_data.match(/class="img-responsive" src="([^"]+)"/);
-                if (!info) {
-                    util.handleError({hoerror: 2, message: "yify no info"}, callback, callback);
-                }
-                var thumb = info[1];
-                console.log(name);
-                console.log(thumb);
+                var name = json_data['data']['movie']['title'];
+                var thumb = json_data['data']['movie']['small_cover_image'];
                 var info_tag = ['yify', 'video', '影片', 'movie', '電影'];
-                info = raw_data.match(/"http:\/\/www\.imdb\.com\/title\/(tt\d+)\/"/);
-                if (info) {
-                    if (info_tag.indexOf(info[1]) === -1) {
-                        info_tag.push(info[1]);
+                if (info_tag.indexOf(json_data['data']['movie']['imdb_code']) === -1) {
+                    info_tag.push(json_data['data']['movie']['imdb_code']);
+                }
+                if (info_tag.indexOf(json_data['data']['movie']['year'].toString()) === -1) {
+                    info_tag.push(json_data['data']['movie']['year'].toString());
+                }
+                for (var i in json_data['data']['movie']['genres']) {
+                    if (info_tag.indexOf(json_data['data']['movie']['genres'][i]) === -1) {
+                        info_tag.push(json_data['data']['movie']['genres'][i]);
                     }
                 }
-                info = raw_data.match(/itemprop="director"[^>]+><[^>]+>([^<]+)/);
-                if (info) {
-                    if (info_tag.indexOf(info[1]) === -1) {
-                        info_tag.push(info[1]);
-                    }
-                }
-                info = raw_data.match(/itemprop="actor"[^>]+><[^>]+>[^<]+/g);
-                if (info) {
-                    for (var i in info) {
-                        info_match = info[i].match(/^itemprop="actor"[^>]+><[^>]+>([^<]+)$/);
-                        if (info_match) {
-                            if (info_tag.indexOf(info_match[1]) === -1) {
-                                info_tag.push(info_match[1]);
-                            }
-                        }
-                    }
-                }
-                info = raw_data.match(/<h2>[^<]+<\/h2>/g);
-                if (info) {
-                    info.splice(0, 2);
-                    for (var i in info) {
-                        info_match = info[i].match(/^<h2>([^<]+)<\/h2>$/);
-                        if (info_match) {
-                            if (info_match[1].match(/^\d\d\d\d$/)) {
-                                if (info_tag.indexOf(info_match[1]) === -1) {
-                                    info_tag.push(info_match[1]);
-                                }
-                            } else {
-                                item_match = info_match[1].match(/[A-Za-z\-]+/g);
-                                if (item_match) {
-                                    for (var j in item_match) {
-                                        if (info_tag.indexOf(item_match[j]) === -1) {
-                                            info_tag.push(item_match[j]);
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                for (var i in json_data['data']['movie']['cast']) {
+                    if (info_tag.indexOf(json_data['data']['movie']['cast'][i]['name']) === -1) {
+                        info_tag.push(json_data['data']['movie']['cast'][i]['name']);
                     }
                 }
                 setTimeout(function(){
@@ -738,7 +667,9 @@ module.exports = {
                                 console.log(name);
                                 index++;
                                 if (index < list_arr.length) {
-                                    recur_save(type, index, list_arr);
+                                    setTimeout(function(){
+                                        recur_save(type, index, list_arr);
+                                    }, 30000);
                                 } else {
                                     dramaIndex++;
                                     if (dramaIndex < dramaList.length) {
@@ -753,7 +684,9 @@ module.exports = {
                         } else {
                             index++;
                             if (index < list_arr.length) {
-                                recur_save(type, index, list_arr);
+                                setTimeout(function(){
+                                    recur_save(type, index, list_arr);
+                                }, 30000);
                             } else {
                                 dramaIndex++;
                                 if (dramaIndex < dramaList.length) {
@@ -829,6 +762,7 @@ module.exports = {
                                 }
                                 api.xuiteDownload(external_item.url, '', function(err, raw_data1) {
                                     if (err) {
+                                        err.hoerror = 2;
                                         util.handleError(err, callback, callback);
                                     }
                                     var genre = raw_data1.match(/(<br\/>|<br \/>)Genre:([^<]*)(<br\/>|<br \/>)/);
@@ -932,7 +866,9 @@ module.exports = {
                                         console.log(name);
                                         index++;
                                         if (index < list_arr.length) {
-                                            recur_save(type, index, list_arr);
+                                            setTimeout(function(){
+                                                recur_save(type, index, list_arr);
+                                            }, 30000);
                                         } else {
                                             setTimeout(function(){
                                                 callback(null);
@@ -943,7 +879,9 @@ module.exports = {
                             } else {
                                 index++;
                                 if (index < list_arr.length) {
-                                    recur_save(type, index, list_arr);
+                                    setTimeout(function(){
+                                        recur_save(type, index, list_arr);
+                                    }, 30000);
                                 } else {
                                     setTimeout(function(){
                                         callback(null);
@@ -1043,7 +981,9 @@ module.exports = {
                                         console.log('kubo fail');
                                         index++;
                                         if (index < list_arr.length) {
-                                            recur_save(type, index, list_arr);
+                                            setTimeout(function(){
+                                                recur_save(type, index, list_arr);
+                                            }, 30000);
                                         } else {
                                             page++;
                                             if (page < kubo_item[kuboIndex].page+1) {
@@ -1066,7 +1006,9 @@ module.exports = {
                                             console.log(name);
                                             index++;
                                             if (index < list_arr.length) {
-                                                recur_save(type, index, list_arr);
+                                                setTimeout(function(){
+                                                    recur_save(type, index, list_arr);
+                                                }, 30000);
                                             } else {
                                                 page++;
                                                 if (page < kubo_item[kuboIndex].page+1) {
@@ -1213,7 +1155,9 @@ module.exports = {
                                                 console.log(name);
                                                 index++;
                                                 if (index < list_arr.length) {
-                                                    recur_save(type, index, list_arr);
+                                                    setTimeout(function(){
+                                                        recur_save(type, index, list_arr);
+                                                    }, 30000);
                                                 } else {
                                                     page++;
                                                     if (page < kubo_item[kuboIndex].page+1) {
@@ -1237,7 +1181,9 @@ module.exports = {
                             } else {
                                 index++;
                                 if (index < list_arr.length) {
-                                    recur_save(type, index, list_arr);
+                                    setTimeout(function(){
+                                        recur_save(type, index, list_arr);
+                                    }, 30000);
                                 } else {
                                     page++;
                                     if (page < kubo_item[kuboIndex].page+1) {
@@ -1377,134 +1323,141 @@ module.exports = {
             }, 60000, false, false);
             break;
             case 'eztv':
-            api.xuiteDownload(url, '', function(err, raw_data) {
-                if (err) {
-                    err.hoerror = 2;
-                    util.handleError(err, callback, callback);
-                }
-                var status = raw_data.match(/Status: <b>([^<]+)<\/b>/);
-                var is_end = false;
-                if (!status) {
-                    util.handleError({hoerror: 2, message: 'unknown status!!!'}, callback, callback);
-                }
-                if (status[1] === 'Ended') {
-                    is_end = true;
-                }
-                var show_name = url.match(/https:\/\/[^\/]+\/shows\/\d+\/([^\/]+)\//);
-                if (!show_name) {
-                    util.handleError({hoerror: 2, message: 'unknown name!!!'}, callback, callback);
-                }
-                var show_name_s = show_name[1].replace(/\-/g, ' ');
-                console.log(show_name_s);
-                var test_list = raw_data.match(/\d+(\.\d+)? [MG]B<\/td>/g);
-                var raw_list = raw_data.match(/<a href="magnet:\?xt=urn:btih:[^"]+" (target="_blank" rel="nofollow" )?class="magnet" title=".+?( Torrent:)? Magnet Link"[\s\S]+?\d+(\.\d+)? [MG]B<\/td>/g);
-                var list = [];
-                var list_match = false;
-                var episode_match = false;
-                var season = -1;
-                var size = 0;
-                if (raw_list) {
-                    console.log(raw_list.length);
-                    if (test_list.length < 100) {
-                        for (var i in raw_list) {
-                            list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)" (target="_blank" rel="nofollow" )?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
-                            if (list_match) {
-                                episode_match = list_match[3].match(/ S?(\d+)[XE](\d+) /i);
-                                if (episode_match) {
-                                    if (episode_match[1].length === 1) {
-                                        season = '00' + episode_match[1];
-                                    } else if (episode_match[1].length === 2) {
-                                        season = '0' + episode_match[1];
-                                    } else {
-                                        season = episode_match[1];
+            if (url.match(/^https:\/\/eztv\.ag\/search\//)) {
+                console.log('start more');
+                api.xuiteDownload(url, '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    var is_end = false;
+                    var show_name = url.match(/([^\/]+)$/);
+                    if (!show_name) {
+                        util.handleError({hoerror: 2, message: 'unknown name!!!'}, callback, callback);
+                    }
+                    var show_name_s = show_name[1].replace(/\-/g, ' ');
+                    console.log(show_name_s);
+                    var pattern = new RegExp('<a href="magnet:\\?xt=urn:btih:[^"]+" (target="_blank" rel="nofollow" )?class="magnet" title="' + show_name_s + '.+?( Torrent:)? Magnet Link"[\\s\\S]+?\\d+(\\.\\d+)? [MG]B<\\/td>', 'ig');
+                    console.log(pattern);
+                    var raw_list = raw_data.match(pattern);
+                    if (!raw_list) {
+                        util.handleError({hoerror: 2, message: 'empty list'}, callback, callback);
+                    }
+                    var list = [];
+                    var list_match = false;
+                    var episode_match = false;
+                    var season = -1;
+                    var size = 0;
+                    for (var i in raw_list) {
+                        list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)" (target="_blank" rel="nofollow" )?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
+                        if (list_match) {
+                            episode_match = list_match[3].match(/ S?(\d+)[XE](\d+) /i);
+                            if (episode_match) {
+                                if (episode_match[1].length === 1) {
+                                    season = '00' + episode_match[1];
+                                } else if (episode_match[1].length === 2) {
+                                    season = '0' + episode_match[1];
+                                } else {
+                                    season = episode_match[1];
+                                }
+                                if (episode_match[2].length === 1) {
+                                    season = season + '00' + episode_match[2];
+                                } else if (episode_match[2].length === 2) {
+                                    season = season + '0' + episode_match[2];
+                                } else {
+                                    season = season + episode_match[2];
+                                }
+                                if (list_match[7] === 'G') {
+                                    size = Number(list_match[5])*1000;
+                                } else {
+                                    size = Number(list_match[5]);
+                                }
+                                var sIndex = -1;
+                                for (var j = 0, len = list.length; j < len; j++) {
+                                    if (list[j]['season'] === season) {
+                                        sIndex = j;
+                                        break;
                                     }
-                                    if (episode_match[2].length === 1) {
-                                        season = season + '00' + episode_match[2];
-                                    } else if (episode_match[2].length === 2) {
-                                        season = season + '0' + episode_match[2];
-                                    } else {
-                                        season = season + episode_match[2];
-                                    }
-                                    if (list_match[7] === 'G') {
-                                        size = Number(list_match[5])*1000;
-                                    } else {
-                                        size = Number(list_match[5]);
-                                    }
-                                    var sIndex = -1;
+                                }
+                                if (sIndex === -1) {
                                     for (var j = 0, len = list.length; j < len; j++) {
-                                        if (list[j]['season'] === season) {
-                                            sIndex = j;
+                                        if (list[j]['season'] > season) {
+                                            list.splice(j, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
                                             break;
                                         }
                                     }
-                                    if (sIndex === -1) {
-                                        for (var j = 0, len = list.length; j < len; j++) {
-                                            if (list[j]['season'] > season) {
-                                                list.splice(j, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
-                                                break;
-                                            }
-                                        }
-                                        if (j === len) {
-                                            list.splice(len, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
-                                        }
-                                    } else {
-                                        if (list[j].size <= 2000 && size <= 2000) {
-                                            if (list[j].size < size) {
-                                                list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
-                                            }
-                                        } else if (list[j].size > 2000 && size > 2000) {
-                                            if (list[j].size > size) {
-                                                list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
-                                            }
-                                        } else if (size <= 2000) {
+                                    if (j === len) {
+                                        list.splice(len, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                    }
+                                } else {
+                                    if (list[j].size <= 2000 && size <= 2000) {
+                                        if (list[j].size < size) {
                                             list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
                                         }
+                                    } else if (list[j].size > 2000 && size > 2000) {
+                                        if (list[j].size > size) {
+                                            list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                        }
+                                    } else if (size <= 2000) {
+                                        list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
                                     }
                                 }
                             }
                         }
-                        if (!list[index-1]) {
-                            util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
+                    }
+                    if (!list[index-1]) {
+                        util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
+                    }
+                    var ret_obj = {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false};
+                    var encodeTorrent = util.isValidString(list[index-1].magnet, 'url');
+                    if (encodeTorrent === false) {
+                        util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
+                    }
+                    var torrentHash = list[index-1].magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                    mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                        if (err) {
+                            util.handleError(err, callback, callback);
                         }
-                        var ret_obj = {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false};
-                        var encodeTorrent = util.isValidString(list[index-1].magnet, 'url');
-                        if (encodeTorrent === false) {
-                            util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
+                        if (items.length > 0) {
+                            ret_obj['id'] = items[0]._id;
+                        } else {
+                            ret_obj['magnet'] = list[index-1].magnet;
                         }
-                        var torrentHash = list[index-1].magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
-                        mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0]}}, {limit: 1}, function(err, items){
-                            if (err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            if (items.length > 0) {
-                                ret_obj['id'] = items[0]._id;
-                            } else {
-                                ret_obj['magnet'] = list[index-1].magnet;
-                            }
-                            //ret_obj['id'] = 'dri_0B2mid6JabOnnSFpYcmtSd3F5aDQ';
-                            setTimeout(function(){
-                                callback(null, ret_obj, is_end, list.length);
-                            }, 0);
-                        });
-                    } else {
-                        console.log('too much');
-                        api.xuiteDownload('https://eztv.ag/search/' + show_name[1], '', function(err, more_data) {
-                            if (err) {
-                                err.hoerror = 2;
-                                util.handleError(err, callback, callback);
-                            }
-                            var pattern = new RegExp('<a href="magnet:\\?xt=urn:btih:[^"]+" (target="_blank" rel="nofollow" )?class="magnet" title="' + show_name_s + '.+?( Torrent:)? Magnet Link"[\\s\\S]+?\\d+(\\.\\d+)? [MG]B<\\/td>', 'ig');
-                            console.log(pattern);
-                            var raw_list_m = more_data.match(pattern);
-                            if (raw_list_m) {
-                                console.log(raw_list_m.length);
-                            } else {
-                                console.log('more empty');
-                                raw_list_m = [];
-                            }
-                            if (raw_list_m.length > raw_list.length) {
-                                raw_list = raw_list_m;
-                            }
+                        setTimeout(function(){
+                            callback(null, ret_obj, is_end, list.length);
+                        }, 0);
+                    });
+                }, 60000, false, false, 'https://eztv.ag/');
+            } else {
+                api.xuiteDownload(url, '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    var status = raw_data.match(/Status: <b>([^<]+)<\/b>/);
+                    var is_end = false;
+                    if (!status) {
+                        util.handleError({hoerror: 2, message: 'unknown status!!!'}, callback, callback);
+                    }
+                    if (status[1] === 'Ended') {
+                        is_end = true;
+                    }
+                    var show_name = url.match(/^https:\/\/[^\/]+\/shows\/\d+\/([^\/]+)/);
+                    if (!show_name) {
+                        util.handleError({hoerror: 2, message: 'unknown name!!!'}, callback, callback);
+                    }
+                    var show_name_s = show_name[1].replace(/\-/g, ' ');
+                    console.log(show_name_s);
+                    var test_list = raw_data.match(/\d+(\.\d+)? [MG]B<\/td>/g);
+                    var raw_list = raw_data.match(/<a href="magnet:\?xt=urn:btih:[^"]+" (target="_blank" rel="nofollow" )?class="magnet" title=".+?( Torrent:)? Magnet Link"[\s\S]+?\d+(\.\d+)? [MG]B<\/td>/g);
+                    var list = [];
+                    var list_match = false;
+                    var episode_match = false;
+                    var season = -1;
+                    var size = 0;
+                    if (raw_list) {
+                        console.log(raw_list.length);
+                        if (test_list.length < 100) {
                             for (var i in raw_list) {
                                 list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)" (target="_blank" rel="nofollow" )?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
                                 if (list_match) {
@@ -1571,7 +1524,7 @@ module.exports = {
                                 util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
                             }
                             var torrentHash = list[index-1].magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
-                            mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0]}}, {limit: 1}, function(err, items){
+                            mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
                                 if (err) {
                                     util.handleError(err, callback, callback);
                                 }
@@ -1580,26 +1533,132 @@ module.exports = {
                                 } else {
                                     ret_obj['magnet'] = list[index-1].magnet;
                                 }
+                                //ret_obj['id'] = 'dri_0B2mid6JabOnnSFpYcmtSd3F5aDQ';
                                 setTimeout(function(){
                                     callback(null, ret_obj, is_end, list.length);
                                 }, 0);
                             });
-                        }, 60000, false, false, 'https://eztv.ag/');
+                        } else {
+                            console.log('too much');
+                            api.xuiteDownload('https://eztv.ag/search/' + show_name[1], '', function(err, more_data) {
+                                if (err) {
+                                    err.hoerror = 2;
+                                    util.handleError(err, callback, callback);
+                                }
+                                var pattern = new RegExp('<a href="magnet:\\?xt=urn:btih:[^"]+" (target="_blank" rel="nofollow" )?class="magnet" title="' + show_name_s + '.+?( Torrent:)? Magnet Link"[\\s\\S]+?\\d+(\\.\\d+)? [MG]B<\\/td>', 'ig');
+                                console.log(pattern);
+                                var raw_list_m = more_data.match(pattern);
+                                if (raw_list_m) {
+                                    console.log(raw_list_m.length);
+                                } else {
+                                    console.log('more empty');
+                                    raw_list_m = [];
+                                }
+                                if (raw_list_m.length > raw_list.length) {
+                                    raw_list = raw_list_m;
+                                }
+                                for (var i in raw_list) {
+                                    list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)" (target="_blank" rel="nofollow" )?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
+                                    if (list_match) {
+                                        episode_match = list_match[3].match(/ S?(\d+)[XE](\d+) /i);
+                                        if (episode_match) {
+                                            if (episode_match[1].length === 1) {
+                                                season = '00' + episode_match[1];
+                                            } else if (episode_match[1].length === 2) {
+                                                season = '0' + episode_match[1];
+                                            } else {
+                                                season = episode_match[1];
+                                            }
+                                            if (episode_match[2].length === 1) {
+                                                season = season + '00' + episode_match[2];
+                                            } else if (episode_match[2].length === 2) {
+                                                season = season + '0' + episode_match[2];
+                                            } else {
+                                                season = season + episode_match[2];
+                                            }
+                                            if (list_match[7] === 'G') {
+                                                size = Number(list_match[5])*1000;
+                                            } else {
+                                                size = Number(list_match[5]);
+                                            }
+                                            var sIndex = -1;
+                                            for (var j = 0, len = list.length; j < len; j++) {
+                                                if (list[j]['season'] === season) {
+                                                    sIndex = j;
+                                                    break;
+                                                }
+                                            }
+                                            if (sIndex === -1) {
+                                                for (var j = 0, len = list.length; j < len; j++) {
+                                                    if (list[j]['season'] > season) {
+                                                        list.splice(j, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                        break;
+                                                    }
+                                                }
+                                                if (j === len) {
+                                                    list.splice(len, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                }
+                                            } else {
+                                                if (list[j].size <= 2000 && size <= 2000) {
+                                                    if (list[j].size < size) {
+                                                        list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                    }
+                                                } else if (list[j].size > 2000 && size > 2000) {
+                                                    if (list[j].size > size) {
+                                                        list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                    }
+                                                } else if (size <= 2000) {
+                                                    list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                if (!list[index-1]) {
+                                    util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
+                                }
+                                var ret_obj = {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false};
+                                var encodeTorrent = util.isValidString(list[index-1].magnet, 'url');
+                                if (encodeTorrent === false) {
+                                    util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
+                                }
+                                var torrentHash = list[index-1].magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                                mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    if (items.length > 0) {
+                                        ret_obj['id'] = items[0]._id;
+                                    } else {
+                                        ret_obj['magnet'] = list[index-1].magnet;
+                                    }
+                                    mongo.orig("update", "storage", {owner: 'eztv', url: encodeURIComponent(url)}, {$set: {url: encodeURIComponent('https://eztv.ag/search/' + show_name[1])}}, function(err, item){
+                                        if (err) {
+                                            util.handleError(err, next, res);
+                                        }
+                                        console.log(item);
+                                        setTimeout(function(){
+                                            callback(null, ret_obj, is_end, list.length);
+                                        }, 0);
+                                    });
+                                });
+                            }, 60000, false, false, 'https://eztv.ag/');
+                        }
+                    } else {
+                        util.handleError({hoerror: 2, message: 'empty list'}, callback, callback);
                     }
-                } else {
-                    util.handleError({hoerror: 2, message: 'empty list'}, callback, callback);
-                }
-            }, 60000, false, false, 'https://eztv.ag/');
+                }, 60000, false, false, 'https://eztv.ag/');
+            }
             break;
             case 'kubo':
             //bj58 fun58 drive youtube dl fun23 bilibili
+            //bj wd youku
+            //bj11 fun10 tudou
             //bj6 fun3 qq
             //bj5 fun1 letv
             //bj8 fun9 funshion
             //bj7 fun5 sohu
-            //bj wd youku flv
             //bj10 fun8 iqiyi f4v
-            //bj11 fun10 tudou flv
             //bj12 fun19 pptv x
             //bj9 fun7 pps x
             api.xuiteDownload(url, '', function(err, raw_data) {
@@ -1680,7 +1739,7 @@ module.exports = {
                         callback(null, ret_obj, is_end, list.length);
                     }, 0);
                 } else {
-                    flv_url = raw_data.match(/id="\d_FLV(58|7|5|8|6|9)">[\s\S]+?href="([^"]+)/);
+                    flv_url = raw_data.match(/id="\d_FLV(58||11|6|5|8|7)">[\s\S]+?href="([^"]+)/);
                     if (!flv_url) {
                         util.handleError({hoerror: 2, message: 'no source'}, callback, callback);
                     }
@@ -1701,20 +1760,15 @@ module.exports = {
                         if (!eval_data) {
                             util.handleError({hoerror: 2, message: 'empty list'}, callback, callback);
                         }
-                        var raw_multi_list = eval(eval_data[1]);
+                        eval(eval_data[1]);
+                        var raw_multi_list = ff_urls;
                         var ret_obj = driveSource();
                         if (!ret_obj) {
-                            ret_obj = otherSource(6);
+                            ret_obj = youkuSource();
                             if (!ret_obj) {
-                                ret_obj = otherSource(5);
+                                ret_obj = otherSource();
                                 if (!ret_obj) {
-                                    ret_obj = otherSource(8);
-                                    if (!ret_obj) {
-                                        ret_obj = otherSource(7);
-                                        if (!ret_obj) {
-                                            util.handleError({hoerror: 2, message: 'not flv'}, callback, callback);
-                                        }
-                                    }
+                                    util.handleError({hoerror: 2, message: 'not flv'}, callback, callback);
                                 }
                             }
                         }
@@ -1735,47 +1789,45 @@ module.exports = {
                             for (var i in raw_list) {
                                 list_match = raw_list[i].match(/^\["([^"]+)","fun58_([^"]+)"/);
                                 if (list_match) {
-                                    list.push({name: list_match[1], id: 'dri_' + list_match[2]});
+                                    list.push({name: list_match[1], id: 'kdr_' + new Buffer(list_match[2]).toString('base64')});
                                 }
                             }
                             if (list.length > 0) {
                                 if (!list[index-1]) {
                                     return false;
                                 }
-                                return {ret: {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false, id: list[index-1].id}, total: list.length};
+                                //return {ret: {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false, id: list[index-1].id}, total: list.length};
+                                return {ret: {index: index, showId: index, title: list[index-1].name, id: list[index-1].id}, total: list.length};
                             } else {
                                 for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^\["([^"]+)","fun23_video\/([^"]+)\/"/);
+                                    list_match = raw_list[i].match(/^\["([^"]+)","([^_]+)_wd1"/);
                                     if (list_match) {
-                                        list.push({name: list_match[1], id: 'bil_' + list_match[2]});
+                                        list.push({name: list_match[1], id: 'yuk_' + list_match[2]});
                                     }
                                 }
-                                if (!list[index-1]) {
-                                    return false;
+                                if (list.length > 0) {
+                                    if (!list[index-1]) {
+                                        return false;
+                                    }
+                                    var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
+                                    return {ret: ret, total: list.length};
+                                } else {
+                                    for (var i in raw_list) {
+                                        list_match = raw_list[i].match(/^\["([^"]+)","fun23_video\/([^"]+)\/"/);
+                                        if (list_match) {
+                                            list.push({name: list_match[1], id: 'bil_' + list_match[2]});
+                                        }
+                                    }
+                                    if (!list[index-1]) {
+                                        return false;
+                                    }
+                                    var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
+                                    return {ret: ret, total: list.length};
                                 }
-                                var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
-                                return {ret: ret, total: list.length};
                             }
                         }
-                        function otherSource(source) {
-                            var flv_list = false;
-                            switch (source) {
-                                case 7:
-                                flv_list = raw_multi_list.match(/"bj7".*?\}/);
-                                break;
-                                case 5:
-                                flv_list = raw_multi_list.match(/"bj5".*?\}/);
-                                break;
-                                case 8:
-                                flv_list = raw_multi_list.match(/"bj8".*?\}/);
-                                break;
-                                case 6:
-                                flv_list = raw_multi_list.match(/"bj6".*?\}/);
-                                break;
-                                default:
-                                return false;
-                                break;
-                            }
+                        function youkuSource() {
+                            var flv_list = raw_multi_list.match(/"bj".*?\}/);
                             if (!flv_list) {
                                 return false;
                             }
@@ -1785,53 +1837,115 @@ module.exports = {
                             }
                             var list = [];
                             var list_match = false;
-                            switch (source) {
-                                case 7:
-                                for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^\["([^"]+)","fun5_(\d+)\/([^\.]+)\.[^"]+"/);
-                                    if (list_match) {
-                                        list.push({name: list_match[1], id: 'soh_' + list_match[2] + '_' + list_match[3] + '_' + sub_index});
-                                    }
+                            for (var i in raw_list) {
+                                list_match = raw_list[i].match(/^\["([^"]+)","([^_]+)_wd1"/);
+                                if (list_match) {
+                                    list.push({name: list_match[1], id: 'yuk_' + list_match[2]});
                                 }
-                                break;
-                                case 5:
-                                for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^\["([^"]+)","fun1_([^\.]+)\.[^"]+"/);
-                                    if (list_match) {
-                                        list.push({name: list_match[1], id: 'let_' + list_match[2]});
-                                    }
-                                }
-                                break;
-                                case 8:
-                                for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^\["([^"]+)","fun9_([^\.]+)\.([^"]+)"/);
-                                    if (list_match) {
-                                        list.push({name: list_match[1], id: 'fun_m_' + list_match[2] + '_' + list_match[3]});
-                                    }
-                                }
-                                break;
-                                case 6:
-                                for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^\["([^"]+)","fun3_([^\/]+)\/([^\/]+)\/([^\.]+)\.[^"]+"/);
-                                    if (list_match) {
-                                        list.push({name: list_match[1], id: 'vqq_' + list_match[2] + '_' + list_match[3] + '_' + list_match[4]});
-                                    }
-                                }
-                                break;
-                                default:
-                                return false;
-                                break;
                             }
-                            //console.log(list);
-                            //console.log(list.length);
                             if (!list[index-1]) {
                                 return false;
                             }
                             var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
-                            switch (source) {
-                                case 7:
+                            return {ret: ret, total: list.length};
+                        }
+                        function otherSource() {
+                            var flv_list11 = raw_multi_list.match(/"bj11".*?\}/);
+                            var flv_list6 = raw_multi_list.match(/"bj6".*?\}/);
+                            var flv_list5 = raw_multi_list.match(/"bj5".*?\}/);
+                            var flv_list8 = raw_multi_list.match(/"bj8".*?\}/);
+                            var flv_list7 = raw_multi_list.match(/"bj7".*?\}/);
+                            if (!flv_list11 && !flv_list6 && !flv_list5 && !flv_list8 && !flv_list7) {
+                                return false;
+                            }
+                            var list11 = [];
+                            var list6 = [];
+                            var list5 = [];
+                            var list8 = [];
+                            var list7 = [];
+                            var list_match = false;
+                            var raw_list = false;
+                            if (flv_list11) {
+                                raw_list = flv_list11[0].match(/\[[^\[\]]+\]/g);
+                                if (raw_list) {
+                                    for (var i in raw_list) {
+                                        list_match = raw_list[i].match(/^\["([^"]+)","fun10_([^\/]+)\/([^\/]+)\.[^"]+"/);
+                                        if (list_match) {
+                                            list11.push({name: list_match[1], id: 'tud_' + list_match[2] + '_' + list_match[3]});
+                                        }
+                                    }
+                                }
+                            }
+                            if (flv_list6) {
+                                raw_list = flv_list6[0].match(/\[[^\[\]]+\]/g);
+                                if (raw_list) {
+                                    for (var i in raw_list) {
+                                        list_match = raw_list[i].match(/^\["([^"]+)","fun3_([^\/]+)\/([^\/]+)\/([^\.]+)\.[^"]+"/);
+                                        if (list_match) {
+                                            list6.push({name: list_match[1], id: 'vqq_' + list_match[2] + '_' + list_match[3] + '_' + list_match[4]});
+                                        }
+                                    }
+                                }
+                            }
+                            if (flv_list5) {
+                                raw_list = flv_list5[0].match(/\[[^\[\]]+\]/g);
+                                if (raw_list) {
+                                    for (var i in raw_list) {
+                                        list_match = raw_list[i].match(/^\["([^"]+)","fun1_([^\.]+)\.[^"]+"/);
+                                        if (list_match) {
+                                            list5.push({name: list_match[1], id: 'let_' + list_match[2]});
+                                        }
+                                    }
+                                }
+                            }
+                            if (flv_list8) {
+                                raw_list = flv_list8[0].match(/\[[^\[\]]+\]/g);
+                                if (raw_list) {
+                                    for (var i in raw_list) {
+                                        list_match = raw_list[i].match(/^\["([^"]+)","fun9_([^\.]+)\.([^"]+)"/);
+                                        if (list_match) {
+                                            list8.push({name: list_match[1], id: 'fun_m_' + list_match[2] + '_' + list_match[3]});
+                                        }
+                                    }
+                                }
+                            }
+                            if (flv_list7) {
+                                raw_list = flv_list7[0].match(/\[[^\[\]]+\]/g);
+                                if (raw_list) {
+                                    for (var i in raw_list) {
+                                        list_match = raw_list[i].match(/^\["([^"]+)","fun5_(\d+)\/([^\.]+)\.[^"]+"/);
+                                        if (list_match) {
+                                            list7.push({name: list_match[1], id: 'soh_' + list_match[2] + '_' + list_match[3] + '_' + sub_index});
+                                        }
+                                    }
+                                }
+                            }
+                            var list = list11;
+                            var is_sub = false;
+                            if (list6.length > list.length) {
+                                list = list6;
+                            }
+                            if (list5.length > list.length) {
+                                list = list5;
+                            }
+                            if (list8.length > list.length) {
+                                list = list8;
+                            }
+                            if (list7.length > list.length) {
+                                list = list7;
+                                is_sub = true;
+                            }
+                            console.log(list11.length);
+                            console.log(list6.length);
+                            console.log(list5.length);
+                            console.log(list8.length);
+                            console.log(list7.length);
+                            if (!list[index-1]) {
+                                return false;
+                            }
+                            var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
+                            if (is_sub) {
                                 ret.index = ret.showId = (index*10 + sub_index)/10;
-                                break;
                             }
                             return {ret: ret, total: list.length};
                         }
@@ -1860,26 +1974,20 @@ module.exports = {
             }
             break;
             case 'yify':
-            api.xuiteDownload(url, '', function(err, raw_data) {
+            api.xuiteDownload(url, '', function(err, json_data) {
                 if (err) {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                var show_name = raw_data.match(/<h1>([^<]+)<\/h1>/);
-                if (!show_name) {
-                    util.handleError({hoerror: 2, message: 'unknown name!!!'}, callback, callback);
+                if (json_data['status'] !== 'ok' || !json_data['data']['movie']) {
+                    util.handleError({hoerror: 2, message: 'yify api fail'}, callback, callback);
                 }
-                show_name = show_name[1];
-                var magnet = raw_data.match(/href="(magnet:\?[^"]+)".*1080p Magnet"/);
-                if (!magnet) {
-                    magnet = raw_data.match(/href="(magnet:\?[^"]+)".*720p Magnet"/);
-                    if (!magnet) {
-                        util.handleError({hoerror: 2, message: 'cannot find magnet!!!'}, callback, callback);
-                    } else {
-                        magnet = magnet[1];
+                var show_name = json_data['data']['movie']['title'];
+                var magnet = null;
+                for (var i in json_data['data']['movie']['torrents']) {
+                    if (json_data['data']['movie']['torrents'][i]['quality'] === '1080p' || (!magnet && json_data['data']['movie']['torrents'][i]['quality'] === '720p')) {
+                        magnet = 'magnet:?xt=urn:btih:' + json_data['data']['movie']['torrents'][i]['hash'] + '&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969';
                     }
-                } else {
-                    magnet = magnet[1];
                 }
                 var ret_obj = {index: 1, showId: 1, title: show_name, is_magnet: true, complete: false};
                 var encodeTorrent = util.isValidString(magnet, 'url');
@@ -1887,7 +1995,7 @@ module.exports = {
                     util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
                 }
                 var torrentHash = magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
-                mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0]}}, {limit: 1}, function(err, items){
+                mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
                     if (err) {
                         util.handleError(err, callback, callback);
                     }
