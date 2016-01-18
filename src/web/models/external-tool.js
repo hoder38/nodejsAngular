@@ -1322,6 +1322,7 @@ module.exports = {
                     var episode_match = false;
                     var season = -1;
                     var size = 0;
+                    console.log(raw_list);
                     for (var i in raw_list) {
                         list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)" (target="_blank" rel="nofollow" )?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
                         if (list_match) {
@@ -1379,6 +1380,7 @@ module.exports = {
                             }
                         }
                     }
+                    console.log(list);
                     if (!list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
@@ -1513,6 +1515,7 @@ module.exports = {
                                 }, 0);
                             });
                         } else {
+                            var is_more = false;
                             console.log('too much');
                             api.xuiteDownload('https://eztv.ag/search/' + show_name[1], '', function(err, more_data) {
                                 if (err) {
@@ -1529,6 +1532,7 @@ module.exports = {
                                     raw_list_m = [];
                                 }
                                 if (raw_list_m.length > raw_list.length) {
+                                    is_more = true;
                                     raw_list = raw_list_m;
                                 }
                                 for (var i in raw_list) {
@@ -1606,15 +1610,21 @@ module.exports = {
                                     } else {
                                         ret_obj['magnet'] = list[index-1].magnet;
                                     }
-                                    mongo.orig("update", "storage", {owner: 'eztv', url: encodeURIComponent(url)}, {$set: {url: encodeURIComponent('https://eztv.ag/search/' + show_name[1])}}, function(err, item){
-                                        if (err) {
-                                            util.handleError(err, next, res);
-                                        }
-                                        console.log(item);
+                                    if (is_more) {
+                                        mongo.orig("update", "storage", {owner: 'eztv', url: encodeURIComponent(url)}, {$set: {url: encodeURIComponent('https://eztv.ag/search/' + show_name[1])}}, function(err, item){
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            console.log(item);
+                                            setTimeout(function(){
+                                                callback(null, ret_obj, is_end, list.length);
+                                            }, 0);
+                                        });
+                                    } else {
                                         setTimeout(function(){
                                             callback(null, ret_obj, is_end, list.length);
                                         }, 0);
-                                    });
+                                    }
                                 });
                             }, 60000, false, false, 'https://eztv.ag/');
                         }
