@@ -712,7 +712,9 @@ module.exports = {
                                 console.log(name);
                                 index++;
                                 if (index < list_arr.length) {
-                                    recur_save(type, index, list_arr);
+                                    setTimeout(function(){
+                                        recur_save(type, index, list_arr);
+                                    }, 30000);
                                 } else {
                                     dramaIndex++;
                                     if (dramaIndex < dramaList.length) {
@@ -727,7 +729,9 @@ module.exports = {
                         } else {
                             index++;
                             if (index < list_arr.length) {
-                                recur_save(type, index, list_arr);
+                                setTimeout(function(){
+                                    recur_save(type, index, list_arr);
+                                }, 30000);
                             } else {
                                 dramaIndex++;
                                 if (dramaIndex < dramaList.length) {
@@ -803,6 +807,7 @@ module.exports = {
                                 }
                                 api.xuiteDownload(external_item.url, '', function(err, raw_data1) {
                                     if (err) {
+                                        err.hoerror = 2;
                                         util.handleError(err, callback, callback);
                                     }
                                     var genre = raw_data1.match(/(<br\/>|<br \/>)Genre:([^<]*)(<br\/>|<br \/>)/);
@@ -906,7 +911,9 @@ module.exports = {
                                         console.log(name);
                                         index++;
                                         if (index < list_arr.length) {
-                                            recur_save(type, index, list_arr);
+                                            setTimeout(function(){
+                                                recur_save(type, index, list_arr);
+                                            }, 30000);
                                         } else {
                                             setTimeout(function(){
                                                 callback(null);
@@ -917,7 +924,9 @@ module.exports = {
                             } else {
                                 index++;
                                 if (index < list_arr.length) {
-                                    recur_save(type, index, list_arr);
+                                    setTimeout(function(){
+                                        recur_save(type, index, list_arr);
+                                    }, 30000);
                                 } else {
                                     setTimeout(function(){
                                         callback(null);
@@ -1017,7 +1026,9 @@ module.exports = {
                                         console.log('kubo fail');
                                         index++;
                                         if (index < list_arr.length) {
-                                            recur_save(type, index, list_arr);
+                                            setTimeout(function(){
+                                                recur_save(type, index, list_arr);
+                                            }, 30000);
                                         } else {
                                             page++;
                                             if (page < kubo_item[kuboIndex].page+1) {
@@ -1040,7 +1051,9 @@ module.exports = {
                                             console.log(name);
                                             index++;
                                             if (index < list_arr.length) {
-                                                recur_save(type, index, list_arr);
+                                                setTimeout(function(){
+                                                    recur_save(type, index, list_arr);
+                                                }, 30000);
                                             } else {
                                                 page++;
                                                 if (page < kubo_item[kuboIndex].page+1) {
@@ -1187,7 +1200,9 @@ module.exports = {
                                                 console.log(name);
                                                 index++;
                                                 if (index < list_arr.length) {
-                                                    recur_save(type, index, list_arr);
+                                                    setTimeout(function(){
+                                                        recur_save(type, index, list_arr);
+                                                    }, 30000);
                                                 } else {
                                                     page++;
                                                     if (page < kubo_item[kuboIndex].page+1) {
@@ -1211,7 +1226,9 @@ module.exports = {
                             } else {
                                 index++;
                                 if (index < list_arr.length) {
-                                    recur_save(type, index, list_arr);
+                                    setTimeout(function(){
+                                        recur_save(type, index, list_arr);
+                                    }, 30000);
                                 } else {
                                     page++;
                                     if (page < kubo_item[kuboIndex].page+1) {
@@ -1567,13 +1584,13 @@ module.exports = {
             break;
             case 'kubo':
             //bj58 fun58 drive youtube dl fun23 bilibili
+            //bj wd youku
+            //bj11 fun10 tudou
             //bj6 fun3 qq
             //bj5 fun1 letv
             //bj8 fun9 funshion
             //bj7 fun5 sohu
-            //bj wd youku flv
             //bj10 fun8 iqiyi f4v
-            //bj11 fun10 tudou flv
             //bj12 fun19 pptv x
             //bj9 fun7 pps x
             api.xuiteDownload(url, '', function(err, raw_data) {
@@ -1654,7 +1671,7 @@ module.exports = {
                         callback(null, ret_obj, is_end, list.length);
                     }, 0);
                 } else {
-                    flv_url = raw_data.match(/id="\d_FLV(58|7|5|8|6|9)">[\s\S]+?href="([^"]+)/);
+                    flv_url = raw_data.match(/id="\d_FLV(58||11|6|5|8|7)">[\s\S]+?href="([^"]+)/);
                     if (!flv_url) {
                         util.handleError({hoerror: 2, message: 'no source'}, callback, callback);
                     }
@@ -1679,17 +1696,11 @@ module.exports = {
                         var raw_multi_list = ff_urls;
                         var ret_obj = driveSource();
                         if (!ret_obj) {
-                            ret_obj = otherSource(6);
+                            ret_obj = youkuSource();
                             if (!ret_obj) {
-                                ret_obj = otherSource(5);
+                                ret_obj = otherSource();
                                 if (!ret_obj) {
-                                    ret_obj = otherSource(8);
-                                    if (!ret_obj) {
-                                        ret_obj = otherSource(7);
-                                        if (!ret_obj) {
-                                            util.handleError({hoerror: 2, message: 'not flv'}, callback, callback);
-                                        }
-                                    }
+                                    util.handleError({hoerror: 2, message: 'not flv'}, callback, callback);
                                 }
                             }
                         }
@@ -1710,47 +1721,45 @@ module.exports = {
                             for (var i in raw_list) {
                                 list_match = raw_list[i].match(/^\["([^"]+)","fun58_([^"]+)"/);
                                 if (list_match) {
-                                    list.push({name: list_match[1], id: 'dri_' + list_match[2]});
+                                    list.push({name: list_match[1], id: 'kdr_' + new Buffer(list_match[2]).toString('base64')});
                                 }
                             }
                             if (list.length > 0) {
                                 if (!list[index-1]) {
                                     return false;
                                 }
-                                return {ret: {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false, id: list[index-1].id}, total: list.length};
+                                //return {ret: {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false, id: list[index-1].id}, total: list.length};
+                                return {ret: {index: index, showId: index, title: list[index-1].name, id: list[index-1].id}, total: list.length};
                             } else {
                                 for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^\["([^"]+)","fun23_video\/([^"]+)\/"/);
+                                    list_match = raw_list[i].match(/^\["([^"]+)","([^_]+)_wd1"/);
                                     if (list_match) {
-                                        list.push({name: list_match[1], id: 'bil_' + list_match[2]});
+                                        list.push({name: list_match[1], id: 'yuk_' + list_match[2]});
                                     }
                                 }
-                                if (!list[index-1]) {
-                                    return false;
+                                if (list.length > 0) {
+                                    if (!list[index-1]) {
+                                        return false;
+                                    }
+                                    var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
+                                    return {ret: ret, total: list.length};
+                                } else {
+                                    for (var i in raw_list) {
+                                        list_match = raw_list[i].match(/^\["([^"]+)","fun23_video\/([^"]+)\/"/);
+                                        if (list_match) {
+                                            list.push({name: list_match[1], id: 'bil_' + list_match[2]});
+                                        }
+                                    }
+                                    if (!list[index-1]) {
+                                        return false;
+                                    }
+                                    var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
+                                    return {ret: ret, total: list.length};
                                 }
-                                var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
-                                return {ret: ret, total: list.length};
                             }
                         }
-                        function otherSource(source) {
-                            var flv_list = false;
-                            switch (source) {
-                                case 7:
-                                flv_list = raw_multi_list.match(/"bj7".*?\}/);
-                                break;
-                                case 5:
-                                flv_list = raw_multi_list.match(/"bj5".*?\}/);
-                                break;
-                                case 8:
-                                flv_list = raw_multi_list.match(/"bj8".*?\}/);
-                                break;
-                                case 6:
-                                flv_list = raw_multi_list.match(/"bj6".*?\}/);
-                                break;
-                                default:
-                                return false;
-                                break;
-                            }
+                        function youkuSource() {
+                            var flv_list = raw_multi_list.match(/"bj".*?\}/);
                             if (!flv_list) {
                                 return false;
                             }
@@ -1760,53 +1769,115 @@ module.exports = {
                             }
                             var list = [];
                             var list_match = false;
-                            switch (source) {
-                                case 7:
-                                for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^\["([^"]+)","fun5_(\d+)\/([^\.]+)\.[^"]+"/);
-                                    if (list_match) {
-                                        list.push({name: list_match[1], id: 'soh_' + list_match[2] + '_' + list_match[3] + '_' + sub_index});
-                                    }
+                            for (var i in raw_list) {
+                                list_match = raw_list[i].match(/^\["([^"]+)","([^_]+)_wd1"/);
+                                if (list_match) {
+                                    list.push({name: list_match[1], id: 'yuk_' + list_match[2]});
                                 }
-                                break;
-                                case 5:
-                                for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^\["([^"]+)","fun1_([^\.]+)\.[^"]+"/);
-                                    if (list_match) {
-                                        list.push({name: list_match[1], id: 'let_' + list_match[2]});
-                                    }
-                                }
-                                break;
-                                case 8:
-                                for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^\["([^"]+)","fun9_([^\.]+)\.([^"]+)"/);
-                                    if (list_match) {
-                                        list.push({name: list_match[1], id: 'fun_m_' + list_match[2] + '_' + list_match[3]});
-                                    }
-                                }
-                                break;
-                                case 6:
-                                for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^\["([^"]+)","fun3_([^\/]+)\/([^\/]+)\/([^\.]+)\.[^"]+"/);
-                                    if (list_match) {
-                                        list.push({name: list_match[1], id: 'vqq_' + list_match[2] + '_' + list_match[3] + '_' + list_match[4]});
-                                    }
-                                }
-                                break;
-                                default:
-                                return false;
-                                break;
                             }
-                            //console.log(list);
-                            //console.log(list.length);
                             if (!list[index-1]) {
                                 return false;
                             }
                             var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
-                            switch (source) {
-                                case 7:
+                            return {ret: ret, total: list.length};
+                        }
+                        function otherSource() {
+                            var flv_list11 = raw_multi_list.match(/"bj11".*?\}/);
+                            var flv_list6 = raw_multi_list.match(/"bj6".*?\}/);
+                            var flv_list5 = raw_multi_list.match(/"bj5".*?\}/);
+                            var flv_list8 = raw_multi_list.match(/"bj8".*?\}/);
+                            var flv_list7 = raw_multi_list.match(/"bj7".*?\}/);
+                            if (!flv_list11 && !flv_list6 && !flv_list5 && !flv_list8 && !flv_list7) {
+                                return false;
+                            }
+                            var list11 = [];
+                            var list6 = [];
+                            var list5 = [];
+                            var list8 = [];
+                            var list7 = [];
+                            var list_match = false;
+                            var raw_list = false;
+                            if (flv_list11) {
+                                raw_list = flv_list11[0].match(/\[[^\[\]]+\]/g);
+                                if (raw_list) {
+                                    for (var i in raw_list) {
+                                        list_match = raw_list[i].match(/^\["([^"]+)","fun10_([^\/]+)\/([^\/]+)\.[^"]+"/);
+                                        if (list_match) {
+                                            list11.push({name: list_match[1], id: 'tud_' + list_match[2] + '_' + list_match[3]});
+                                        }
+                                    }
+                                }
+                            }
+                            if (flv_list6) {
+                                raw_list = flv_list6[0].match(/\[[^\[\]]+\]/g);
+                                if (raw_list) {
+                                    for (var i in raw_list) {
+                                        list_match = raw_list[i].match(/^\["([^"]+)","fun3_([^\/]+)\/([^\/]+)\/([^\.]+)\.[^"]+"/);
+                                        if (list_match) {
+                                            list6.push({name: list_match[1], id: 'vqq_' + list_match[2] + '_' + list_match[3] + '_' + list_match[4]});
+                                        }
+                                    }
+                                }
+                            }
+                            if (flv_list5) {
+                                raw_list = flv_list5[0].match(/\[[^\[\]]+\]/g);
+                                if (raw_list) {
+                                    for (var i in raw_list) {
+                                        list_match = raw_list[i].match(/^\["([^"]+)","fun1_([^\.]+)\.[^"]+"/);
+                                        if (list_match) {
+                                            list5.push({name: list_match[1], id: 'let_' + list_match[2]});
+                                        }
+                                    }
+                                }
+                            }
+                            if (flv_list8) {
+                                raw_list = flv_list8[0].match(/\[[^\[\]]+\]/g);
+                                if (raw_list) {
+                                    for (var i in raw_list) {
+                                        list_match = raw_list[i].match(/^\["([^"]+)","fun9_([^\.]+)\.([^"]+)"/);
+                                        if (list_match) {
+                                            list8.push({name: list_match[1], id: 'fun_m_' + list_match[2] + '_' + list_match[3]});
+                                        }
+                                    }
+                                }
+                            }
+                            if (flv_list7) {
+                                raw_list = flv_list7[0].match(/\[[^\[\]]+\]/g);
+                                if (raw_list) {
+                                    for (var i in raw_list) {
+                                        list_match = raw_list[i].match(/^\["([^"]+)","fun5_(\d+)\/([^\.]+)\.[^"]+"/);
+                                        if (list_match) {
+                                            list7.push({name: list_match[1], id: 'soh_' + list_match[2] + '_' + list_match[3] + '_' + sub_index});
+                                        }
+                                    }
+                                }
+                            }
+                            var list = list11;
+                            var is_sub = false;
+                            if (list6.length > list.length) {
+                                list = list6;
+                            }
+                            if (list5.length > list.length) {
+                                list = list5;
+                            }
+                            if (list8.length > list.length) {
+                                list = list8;
+                            }
+                            if (list7.length > list.length) {
+                                list = list7;
+                                is_sub = true;
+                            }
+                            console.log(list11.length);
+                            console.log(list6.length);
+                            console.log(list5.length);
+                            console.log(list8.length);
+                            console.log(list7.length);
+                            if (!list[index-1]) {
+                                return false;
+                            }
+                            var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
+                            if (is_sub) {
                                 ret.index = ret.showId = (index*10 + sub_index)/10;
-                                break;
                             }
                             return {ret: ret, total: list.length};
                         }

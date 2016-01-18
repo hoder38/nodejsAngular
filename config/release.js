@@ -30,7 +30,7 @@ module.exports = {
     hint: true,
     autoUpload: true,
     updateStock: true,
-    updateExternal: false,
+    updateExternal: true,
     api_limit: 5,
     torrent_limit: 5
 };

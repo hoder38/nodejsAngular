@@ -1783,7 +1783,7 @@ app.get('/api/media/record/:id/:time/:pId?', function(req, res, next){
         if (!req.params.time.match(/^\d+(&\d+)?$/)) {
             util.handleError({hoerror: 2, message: "timestamp is not vaild"}, next, res);
         }
-        var id = req.params.id.match(/^(you|dym|dri|bil|soh|let|vqq|fun)_/);
+        var id = req.params.id.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud)_/);
         if (id) {
             id = util.isValidString(req.params.id, 'name');
             if (id === false) {
