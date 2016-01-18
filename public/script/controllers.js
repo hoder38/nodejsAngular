@@ -4023,52 +4023,75 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
 
     $scope.imgMove = function(number) {
         //playlist 跟local分開
-        if (number === 0) {
-            if (this.image.playlist) {
-                var sIndex = this.image.showId*10;
-                if (sIndex >= 1 && Math.floor(sIndex/10) <= this.image.maxId) {
-                    this.image.presentId = +this.image.showId;
-                } else {
-                    this.image.showId = this.image.presentId;
-                    return false;
-                }
-            } else if (this.image.showId >= 1 && this.image.showId <= this.image.maxId) {
-                this.image.presentId = +this.image.showId;
-            } else {
-                this.image.showId = this.image.presentId;
-                return false;
-            }
-        } else {
-            var pIndex = this.image.presentId*10;
-            var newIndex = 0;
-            if (this.image.playlist) {
-                var bIndex = Math.floor(pIndex/10);
-                newIndex = number + pIndex%10;
-                if (newIndex >= 1 && newIndex <= this.image.playlist.obj.sub) {
-                    this.image.presentId = newIndex/10 + bIndex;
-                    this.image.showId = this.image.presentId;
-                } else {
-
-                    //下一本
-                    this.image.showId = this.image.presentId;
-                    return false;
-
-                }
-            } else {
-                newIndex = (pIndex + number*10) / 10;
-                if (newIndex >= 1 && newIndex <= this.image.maxId) {
-                    this.image.presentId = newIndex;
-                    this.image.showId = this.image.presentId;
-                } else {
-                    this.image.showId = this.image.presentId;
-                    return false;
-                }
-            }
-        }
         if (this.image.playlist) {
-            this.image.playlist.obj.img_url = this.image.playlist.obj.img_url.replace(/\d\d\d\.jpg$/, '00' + newIndex + '.jpg');
-            this.image.src = this.image.playlist.obj.img_url;
+            if (number === 0) {
+                var subIndex = (this.image.showId*10)%10;
+                var sIndex = Math.floor(this.image.showId);
+                if (subIndex >= 1 && subIndex <= this.image.playlist.obj.sub) {
+                    this.image.presentId = this.image.showId;
+                    //record
+                } else {
+                    if (newIndex < 1 && sIndex > 1) {
+                        //settime
+                        sIndex--;
+                        newIndex = this.image.playlist.obj.sub;
+                        this.image.presentId = this.image.showId = (sIndex*10 + newIndex)/10;
+                    } else if (newIndex > this.image.playlist.obj.sub && pIndex < this.image.maxId) {
+                        //settime
+                        sIndex++;
+                        newIndex = 1;
+                        this.image.presentId = this.image.showId = (sIndex*10 + newIndex)/10;
+                    } else {
+                        this.image.showId = this.image.presentId;
+                        return false;
+                    }
+                }
+            } else {
+                var subIndex = (this.image.presentId*10)%10;
+                var pIndex = Math.floor(this.image.presentId);
+                var newIndex = subIndex + number;
+                if (newIndex >= 1 && newIndex <= this.image.playlist.obj.sub) {
+                    this.image.presentId = (pIndex*10 + newIndex)/10;
+                    this.image.showId = this.image.presentId;
+                    //record
+                } else {
+                    if (newIndex < 1 && pIndex > 1) {
+                        //settime
+                        pIndex--;
+                        newIndex = this.image.playlist.obj.sub;
+                        this.image.showId = this.image.presentId = (pIndex*10 + newIndex)/10;
+                    } else if (newIndex > this.image.playlist.obj.sub && pIndex < this.image.maxId) {
+                        //settime
+                        pIndex++;
+                        newIndex = 1;
+                        this.image.showId = this.image.presentId = (pIndex*10 + newIndex)/10;
+                    } else {
+                        this.image.showId = this.image.presentId;
+                        return false;
+                    }
+                }
+            }
+            /*this.image.playlist.obj.img_url = this.image.playlist.obj.img_url.replace(/\d\d\d\.jpg$/, '00' + newIndex + '.jpg');
+            this.image.src = this.image.playlist.obj.img_url;*/
         } else {
+            if (number === 0) {
+                this.image.showId = Math.floor(this.image.showId);
+                if (this.image.showId >= 1 && this.image.showId <= this.image.maxId) {
+                    this.image.presentId = this.image.showId;
+                } else {
+                    this.image.showId = this.image.presentId;
+                    return false;
+                }
+            } else {
+                this.image.presentId = Math.floor(this.image.presentId);
+                var newIndex = this.image.presentId + number;
+                if (newIndex >= 1 && newIndex <= this.image.maxId) {
+                    this.image.showId = this.image.presentId = newIndex;
+                } else {
+                    this.image.showId = this.image.presentId;
+                    return false;
+                }
+            }
             this.image.src = this.main_url + '/image/' + this.image.list[this.image.index + this.image.back].id + '/' + this.image.presentId;
         }
     }
@@ -4082,6 +4105,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 this.imgMove(1);
             }
         } else {
+            this.image.presentId = Math.floor(this.image.presentId);
             if (this.image.presentId === this.image.maxId) {
                 this.mediaMove(1, 'image');
             } else {
@@ -4091,10 +4115,20 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     }
 
     $scope.prevImage = function() {
-        if (this.image.presentId === 1) {
-            this.mediaMove(-1, 'image');
+        if (this.image.playlist) {
+            var pIndex = +this.image.presentId*10;
+            if (Math.floor(pIndex/10) === 1 && pIndex%10 === 1) {
+                this.mediaMove(-1, 'image');
+            } else {
+                this.imgMove(-1);
+            }
         } else {
-            this.imgMove(-1);
+            this.image.presentId = Math.floor(this.image.presentId);
+            if (this.image.presentId === 1) {
+                this.mediaMove(-1, 'image');
+            } else {
+                this.imgMove(-1);
+            }
         }
     }
 
