@@ -1337,7 +1337,7 @@ module.exports = {
                     }
                     var show_name_s = show_name[1].replace(/\-/g, ' ');
                     console.log(show_name_s);
-                    var pattern = new RegExp('<a href="magnet:\\?xt=urn:btih:[^"]+" (target="_blank" rel="nofollow" )?class="magnet" title="' + show_name_s + '.+?( Torrent:)? Magnet Link"[\\s\\S]+?\\d+(\\.\\d+)? [MG]B<\\/td>', 'ig');
+                    var pattern = new RegExp('<a href="magnet:\\?xt=urn:btih:[^"]+".*?class="magnet" title="' + show_name_s + '.+?( Torrent:)? Magnet Link"[\\s\\S]+?\\d+(\\.\\d+)? [MG]B<\\/td>', 'ig');
                     console.log(pattern);
                     var raw_list = raw_data.match(pattern);
                     if (!raw_list) {
@@ -1349,9 +1349,9 @@ module.exports = {
                     var season = -1;
                     var size = 0;
                     for (var i in raw_list) {
-                        list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)" (target="_blank" rel="nofollow" )?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
+                        list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)".*?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
                         if (list_match) {
-                            episode_match = list_match[3].match(/ S?(\d+)[XE](\d+) /i);
+                            episode_match = list_match[2].match(/ S?(\d+)[XE](\d+) /i);
                             if (episode_match) {
                                 if (episode_match[1].length === 1) {
                                     season = '00' + episode_match[1];
@@ -1367,10 +1367,10 @@ module.exports = {
                                 } else {
                                     season = season + episode_match[2];
                                 }
-                                if (list_match[7] === 'G') {
-                                    size = Number(list_match[5])*1000;
+                                if (list_match[6] === 'G') {
+                                    size = Number(list_match[4])*1000;
                                 } else {
-                                    size = Number(list_match[5]);
+                                    size = Number(list_match[4]);
                                 }
                                 var sIndex = -1;
                                 for (var j = 0, len = list.length; j < len; j++) {
@@ -1382,29 +1382,30 @@ module.exports = {
                                 if (sIndex === -1) {
                                     for (var j = 0, len = list.length; j < len; j++) {
                                         if (list[j]['season'] > season) {
-                                            list.splice(j, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                            list.splice(j, 0, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                             break;
                                         }
                                     }
                                     if (j === len) {
-                                        list.splice(len, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                        list.splice(len, 0, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                     }
                                 } else {
                                     if (list[j].size <= 2000 && size <= 2000) {
                                         if (list[j].size < size) {
-                                            list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                            list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                         }
                                     } else if (list[j].size > 2000 && size > 2000) {
                                         if (list[j].size > size) {
-                                            list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                            list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                         }
                                     } else if (size <= 2000) {
-                                        list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                        list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                     }
                                 }
                             }
                         }
                     }
+                    console.log(list);
                     if (!list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
@@ -1449,7 +1450,7 @@ module.exports = {
                     var show_name_s = show_name[1].replace(/\-/g, ' ');
                     console.log(show_name_s);
                     var test_list = raw_data.match(/\d+(\.\d+)? [MG]B<\/td>/g);
-                    var raw_list = raw_data.match(/<a href="magnet:\?xt=urn:btih:[^"]+" (target="_blank" rel="nofollow" )?class="magnet" title=".+?( Torrent:)? Magnet Link"[\s\S]+?\d+(\.\d+)? [MG]B<\/td>/g);
+                    var raw_list = raw_data.match(/<a href="magnet:\?xt=urn:btih:[^"]+".*?class="magnet" title=".+?( Torrent:)? Magnet Link"[\s\S]+?\d+(\.\d+)? [MG]B<\/td>/g);
                     var list = [];
                     var list_match = false;
                     var episode_match = false;
@@ -1459,9 +1460,9 @@ module.exports = {
                         console.log(raw_list.length);
                         if (test_list.length < 100) {
                             for (var i in raw_list) {
-                                list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)" (target="_blank" rel="nofollow" )?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
+                                list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)".*?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
                                 if (list_match) {
-                                    episode_match = list_match[3].match(/ S?(\d+)[XE](\d+) /i);
+                                    episode_match = list_match[2].match(/ S?(\d+)[XE](\d+) /i);
                                     if (episode_match) {
                                         if (episode_match[1].length === 1) {
                                             season = '00' + episode_match[1];
@@ -1477,10 +1478,10 @@ module.exports = {
                                         } else {
                                             season = season + episode_match[2];
                                         }
-                                        if (list_match[7] === 'G') {
-                                            size = Number(list_match[5])*1000;
+                                        if (list_match[6] === 'G') {
+                                            size = Number(list_match[4])*1000;
                                         } else {
-                                            size = Number(list_match[5]);
+                                            size = Number(list_match[4]);
                                         }
                                         var sIndex = -1;
                                         for (var j = 0, len = list.length; j < len; j++) {
@@ -1492,24 +1493,24 @@ module.exports = {
                                         if (sIndex === -1) {
                                             for (var j = 0, len = list.length; j < len; j++) {
                                                 if (list[j]['season'] > season) {
-                                                    list.splice(j, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                    list.splice(j, 0, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                                     break;
                                                 }
                                             }
                                             if (j === len) {
-                                                list.splice(len, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                list.splice(len, 0, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                             }
                                         } else {
                                             if (list[j].size <= 2000 && size <= 2000) {
                                                 if (list[j].size < size) {
-                                                    list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                    list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                                 }
                                             } else if (list[j].size > 2000 && size > 2000) {
                                                 if (list[j].size > size) {
-                                                    list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                    list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                                 }
                                             } else if (size <= 2000) {
-                                                list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                             }
                                         }
                                     }
@@ -1539,13 +1540,14 @@ module.exports = {
                                 }, 0);
                             });
                         } else {
+                            var is_more = false;
                             console.log('too much');
                             api.xuiteDownload('https://eztv.ag/search/' + show_name[1], '', function(err, more_data) {
                                 if (err) {
                                     err.hoerror = 2;
                                     util.handleError(err, callback, callback);
                                 }
-                                var pattern = new RegExp('<a href="magnet:\\?xt=urn:btih:[^"]+" (target="_blank" rel="nofollow" )?class="magnet" title="' + show_name_s + '.+?( Torrent:)? Magnet Link"[\\s\\S]+?\\d+(\\.\\d+)? [MG]B<\\/td>', 'ig');
+                                var pattern = new RegExp('<a href="magnet:\\?xt=urn:btih:[^"]+".*?class="magnet" title="' + show_name_s + '.+?( Torrent:)? Magnet Link"[\\s\\S]+?\\d+(\\.\\d+)? [MG]B<\\/td>', 'ig');
                                 console.log(pattern);
                                 var raw_list_m = more_data.match(pattern);
                                 if (raw_list_m) {
@@ -1555,12 +1557,13 @@ module.exports = {
                                     raw_list_m = [];
                                 }
                                 if (raw_list_m.length > raw_list.length) {
+                                    is_more = true;
                                     raw_list = raw_list_m;
                                 }
                                 for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)" (target="_blank" rel="nofollow" )?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
+                                    list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)".*?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
                                     if (list_match) {
-                                        episode_match = list_match[3].match(/ S?(\d+)[XE](\d+) /i);
+                                        episode_match = list_match[2].match(/ S?(\d+)[XE](\d+) /i);
                                         if (episode_match) {
                                             if (episode_match[1].length === 1) {
                                                 season = '00' + episode_match[1];
@@ -1576,10 +1579,10 @@ module.exports = {
                                             } else {
                                                 season = season + episode_match[2];
                                             }
-                                            if (list_match[7] === 'G') {
-                                                size = Number(list_match[5])*1000;
+                                            if (list_match[6] === 'G') {
+                                                size = Number(list_match[4])*1000;
                                             } else {
-                                                size = Number(list_match[5]);
+                                                size = Number(list_match[4]);
                                             }
                                             var sIndex = -1;
                                             for (var j = 0, len = list.length; j < len; j++) {
@@ -1591,24 +1594,24 @@ module.exports = {
                                             if (sIndex === -1) {
                                                 for (var j = 0, len = list.length; j < len; j++) {
                                                     if (list[j]['season'] > season) {
-                                                        list.splice(j, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                        list.splice(j, 0, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                                         break;
                                                     }
                                                 }
                                                 if (j === len) {
-                                                    list.splice(len, 0, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                    list.splice(len, 0, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                                 }
                                             } else {
                                                 if (list[j].size <= 2000 && size <= 2000) {
                                                     if (list[j].size < size) {
-                                                        list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                        list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                                     }
                                                 } else if (list[j].size > 2000 && size > 2000) {
                                                     if (list[j].size > size) {
-                                                        list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                        list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                                     }
                                                 } else if (size <= 2000) {
-                                                    list.splice(j, 1, {magnet: list_match[1], name: list_match[3], season: season, size: size});
+                                                    list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                                 }
                                             }
                                         }
@@ -1632,15 +1635,21 @@ module.exports = {
                                     } else {
                                         ret_obj['magnet'] = list[index-1].magnet;
                                     }
-                                    mongo.orig("update", "storage", {owner: 'eztv', url: encodeURIComponent(url)}, {$set: {url: encodeURIComponent('https://eztv.ag/search/' + show_name[1])}}, function(err, item){
-                                        if (err) {
-                                            util.handleError(err, next, res);
-                                        }
-                                        console.log(item);
+                                    if (is_more) {
+                                        mongo.orig("update", "storage", {owner: 'eztv', url: encodeURIComponent(url)}, {$set: {url: encodeURIComponent('https://eztv.ag/search/' + show_name[1])}}, function(err, item){
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            console.log(item);
+                                            setTimeout(function(){
+                                                callback(null, ret_obj, is_end, list.length);
+                                            }, 0);
+                                        });
+                                    } else {
                                         setTimeout(function(){
                                             callback(null, ret_obj, is_end, list.length);
                                         }, 0);
-                                    });
+                                    }
                                 });
                             }, 60000, false, false, 'https://eztv.ag/');
                         }
