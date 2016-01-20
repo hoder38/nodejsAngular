@@ -18,7 +18,7 @@ var kubo_type = [['動作片', '喜劇片', '愛情片', '科幻片', '恐怖片
 //type要補到deltag裡
 
 module.exports = {
-    getSingleList: function(type, url, callback) {
+    getSingleList: function(type, url, callback, post) {
         switch (type) {
             case 'kubo':
             api.xuiteDownload(url, '', function(err, raw_data) {
@@ -282,30 +282,62 @@ module.exports = {
             }, 60000, false, false, 'https://yts.ag/');
             break;
             case 'cartoonmad':
-            api.xuiteDownload(url, '', function(err, raw_data) {
-                if (err) {
-                    err.hoerror = 2;
-                    util.handleError(err, callback, callback);
-                }
-                var comic_data = raw_data.match(/<span class="covertxt">.*/);
-                var raw_list = comic_data[0].match(/<a href=.*?.jpg/g);
-                var list = [];
-                var list_match = false;
-                var tags = [];
-                var data = null;
-                for (var i in raw_list) {
-                    list_match = raw_list[i].match(/(\d+).*?title="([^"]+)".*?src="(.*)$/);
-                    if (list_match) {
-                        data = {id: list_match[1], name: list_match[2], thumb: list_match[3]};
-                        tags = ['漫畫', 'comic'];
-                        data['tags'] = tags;
-                        list.push(data);
+            if (post) {
+                api.madComicSearch(url, post, function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
                     }
-                }
-                setTimeout(function(){
-                    callback(null, list);
-                }, 0);
-            }, 60000, false, false, 'http://www.cartoonmad.com/', true);
+                    var comic_data = raw_data.match(/<span class="covertxt">.*/);
+                    if (comic_data) {
+                        var raw_list = comic_data[0].match(/<a href=.*?.jpg/g);
+                        if (!raw_list) {
+                            util.handleError({hoerror: 2, message: 'unknown comic type'}, callback, callback);
+                        }
+                        var list = [];
+                        var list_match = false;
+                        var tags = [];
+                        var data = null;
+                        for (var i in raw_list) {
+                            list_match = raw_list[i].match(/(\d+).*?title="([^"]+)".*?src="(.*)$/);
+                            if (list_match) {
+                                data = {id: list_match[1], name: list_match[2], thumb: list_match[3]};
+                                tags = ['漫畫', 'comic'];
+                                data['tags'] = tags;
+                                list.push(data);
+                            }
+                        }
+                    }
+                    setTimeout(function(){
+                        callback(null, list);
+                    }, 0);
+                });
+            } else {
+                api.xuiteDownload(url, '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    var comic_data = raw_data.match(/<span class="covertxt">.*/);
+                    var raw_list = comic_data[0].match(/<a href=.*?.jpg/g);
+                    var list = [];
+                    var list_match = false;
+                    var tags = [];
+                    var data = null;
+                    for (var i in raw_list) {
+                        list_match = raw_list[i].match(/(\d+).*?title="([^"]+)".*?src="(.*)$/);
+                        if (list_match) {
+                            data = {id: list_match[1], name: list_match[2], thumb: list_match[3]};
+                            tags = ['漫畫', 'comic'];
+                            data['tags'] = tags;
+                            list.push(data);
+                        }
+                    }
+                    setTimeout(function(){
+                        callback(null, list);
+                    }, 0);
+                }, 60000, false, false, 'http://www.cartoonmad.com/', true);
+            }
             break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
@@ -493,6 +525,56 @@ module.exports = {
                     callback(null, name, info_tag, 'yify', thumb, url);
                 }, 0);
             }, 60000, false, false, 'https://yts.ag/');
+            break;
+            case 'cartoonmad':
+            var url = 'http://www.cartoonmad.com/comic/' + id + '.html';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var pattern = new RegExp('<a href=\\/comic\\/' + id + '\\.html>([^<]+)');
+                var name = raw_data.match(pattern);
+                if (!name) {
+                    util.handleError({hoerror: 2, message: 'unknown comic name'}, callback, callback);
+                }
+                name = name[1];
+                console.log(name);
+                var thumb = raw_data.match(/class="cover"><\/div><img src="([^"]+)"/);
+                if (!name) {
+                    util.handleError({hoerror: 2, message: 'unknown comic thumb'}, callback, callback);
+                }
+                thumb = thumb[1];
+                var info_tag = ['cartoonmad', '漫畫', 'comic', '圖片集', 'image book', '圖片', 'image'];
+                var info_list = [];
+                var info_match = raw_data.match(/漫畫分類： <a href="[^"]+">(.*)系列/);
+                if (info_match) {
+                    if (info_tag.indexOf(info_match[1]) === -1) {
+                        info_tag.push(info_match[1]);
+                    }
+                }
+                info_match = raw_data.match(/原創作者： ([^<]+)/);
+                if (info_match) {
+                    info_list = info_match[1].split(/\s+/);
+                    for (var i in info_list) {
+                        if (info_tag.indexOf(info_list[i]) === -1) {
+                            info_tag.push(info_list[i]);
+                        }
+                    }
+                }
+                info_match = raw_data.match(/漫畫標籤： ([^<]+)/);
+                if (info_match) {
+                    info_list = info_match[1].split(/\s+/);
+                    for (var i in info_list) {
+                        if (info_tag.indexOf(info_list[i]) === -1) {
+                            info_tag.push(info_list[i]);
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, name, info_tag, 'cartoonmad', thumb, url);
+                }, 0);
+            }, 60000, false, false, 'http://www.cartoonmad.com/', true);
             break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
@@ -1216,7 +1298,7 @@ module.exports = {
             if (index < 1) {
                 util.handleError({hoerror: 2, message: 'index must > 1'}, callback, callback);
             }
-            var sub_index = (+index)*10%10;
+            var sub_index = (+index)*1000%1000;
             if (sub_index === 0) {
                 sub_index++;
             }
@@ -1311,7 +1393,7 @@ module.exports = {
                     }
                     var ret_obj = {id: 'dym_' + obj.ids[sub_index-1]};
                     if (obj.ids.length > 1) {
-                        index = (index*10 + sub_index)/10;
+                        index = (index*1000 + sub_index)/1000;
                         ret_obj.sub = obj.ids.length;
                     }
                     ret_obj.index = index;
@@ -1740,7 +1822,7 @@ module.exports = {
                     var ret_obj = {id: rid, title: list[index-1].name};
                     if (list[index-1].ids.length > 1) {
                         ret_obj.sub = list[index-1].ids.length;
-                        index = (index*10 + sub_index)/10;
+                        index = (index*1000 + sub_index)/1000;
                     }
                     ret_obj.index = index;
                     ret_obj.showId = index;
@@ -1954,7 +2036,7 @@ module.exports = {
                             }
                             var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
                             if (is_sub) {
-                                ret.index = ret.showId = (index*10 + sub_index)/10;
+                                ret.index = ret.showId = (index*1000 + sub_index)/1000;
                             }
                             return {ret: ret, total: list.length};
                         }
@@ -2064,12 +2146,13 @@ module.exports = {
                     if (!img_url) {
                         util.handleError({hoerror: 2, message: 'comic url unknown'}, callback, callback);
                     }
+                    img_url = img_url[1].match(/^(.*?)[^\/]+$/);
                     var title = '第' + info[1] + '卷';
                     if (info[2] === '2') {
                         title = '第' + info[1] + '話';
                     }
-                    var ret = {title: title, img_url: img_url[1], sub: Number(info[3])};
-                    ret.index = ret.showId = (index*10 + sub_index)/10;
+                    var ret = {title: title, pre_url: img_url[1], sub: Number(info[3])};
+                    ret.index = ret.showId = (index*1000 + sub_index)/1000;
                     setTimeout(function(){
                         callback(null, ret, is_end, raw_list.length);
                     }, 0);

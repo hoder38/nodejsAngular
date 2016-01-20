@@ -20,6 +20,8 @@ type_arr.vlog = type_arr.video;
 
 var genre_list = ['action', 'adventure', 'animation', 'biography', 'comedy', 'crime', 'documentary', 'drama', 'family', 'fantasy', 'film-noir', 'history', 'horror', 'music', 'musical', 'mystery', 'romance', 'sci-fi', 'sport', 'thriller', 'war', 'western'];
 var genre_list_ch = ['動作', '冒險', '動畫', '傳記', '喜劇', '犯罪', '記錄', '劇情', '家庭', '奇幻', '黑色電影', '歷史', '恐怖', '音樂', '音樂劇', '神祕', '浪漫', '科幻', '運動', '驚悚', '戰爭', '西部'];
+
+var anime_list = ['格鬥', '魔法', '偵探', '競技', '恐怖', '戰國', '魔幻', '冒險', '校園', '搞笑', '少女', '少男', '科幻', '港產', '其他'];
 var sub_arr = ['srt', 'ass', 'ssa'];
 var util = require("../util/utility.js");
 module.exports = {
@@ -171,13 +173,15 @@ module.exports = {
     mediaTag: function(type) {
         'use strict';
         var mTag = util.clone(type_arr[type]);
-        if (type === 'video' || type === 'vlog' || type === 'image' || type === 'zipbook' || type === 'doc'|| type === 'rawdoc') {
-            for (var i in genre_list) {
+        if (type === 'video' || type === 'vlog' || type === 'doc'|| type === 'rawdoc' || type === 'image' || type === 'zipbook') {
+            for (var i in genre_list_ch) {
                 if (mTag.opt.indexOf(genre_list_ch[i]) === -1) {
                     mTag.opt.push(genre_list_ch[i]);
                 }
-                if (mTag.opt.indexOf(genre_list[i]) === -1) {
-                    mTag.opt.push(genre_list[i]);
+            }
+            for (var i in anime_list) {
+                if (mTag.opt.indexOf(anime_list[i]) === -1) {
+                    mTag.opt.push(anime_list[i]);
                 }
             }
         }
@@ -222,10 +226,16 @@ module.exports = {
             for (var i in genre_list) {
                 option.push(genre_list_ch[i]);
             }
+        } else if (lang === 'anime') {
+            for (var i in anime_list) {
+                option.push(anime_list[i]);
+            }
         } else {
             for (var i in genre_list) {
                 option.push(genre_list_ch[i]);
-                option.push(genre_list[i]);
+            }
+            for (var i in anime_list) {
+                option.push(anime_list[i]);
             }
         }
         return option;

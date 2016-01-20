@@ -1,7 +1,8 @@
 var crypto = require('crypto'),
     path = require('path'),
     MobileDetect = require('mobile-detect'),
-    fs = require("fs");
+    fs = require("fs"),
+    iconv = require("iconv-lite");
 var mongo = require("../models/mongo-tool.js"),
     charsetDetector = require("node-icu-charset-detector"),
     ass2vtt = require('ass-to-vtt');
@@ -235,10 +236,24 @@ module.exports = {
         try {
             return buffer.toString(charset);
         } catch (x) {
-            var Iconv = require("iconv").Iconv;
-            var charsetConverter = new Iconv(charset, "utf8");
-            return charsetConverter.convert(buffer).toString();
+            return iconv.decode(buffer, charset);
         }
+    },
+    big5_encode: function(str) {
+        var buf = null;
+        var rtn = "";
+        for (var j = 0 ; j < str.length; j++) {
+            if (str[j].match(/^[\x00-\x7F]$/)) {
+                rtn += encodeURIComponent(str[j]);
+            } else {
+                buf = iconv.encode(str[j], 'big5');
+                for(var i=0;i<buf.length;i+=2) {
+                    rtn += '%' + buf[i].toString(16).toUpperCase();
+                    rtn += ((buf[i+1] >= 65 && buf[i+1] <= 90)||(buf[i+1]>=97 && buf[i+1]<=122))? String.fromCharCode(buf[i+1]): '%' + buf[i+1].toString(16).toUpperCase();
+                }
+            }
+        }
+        return rtn;
     },
     deleteFolderRecursive: function(path) {
         var this_obj = this;

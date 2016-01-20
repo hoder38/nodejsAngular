@@ -544,7 +544,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         is_media = 3;
                         console.log('youtube');
                     }
-                    mongo.orig("find", "storage", {url: encodeURIComponent(url)}, {limit: 2}, function(err, items){
+                    mongo.orig("find", "storage", {owner: 'youtube', url: encodeURIComponent(url)}, {limit: 2}, function(err, items){
                         if (err) {
                             util.handleError(err, next, res);
                         }
@@ -648,7 +648,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         }
                     });
                 } else if (url.match(/^(https|http):\/\/www\.123kubo\.com\//)) {
-                    mongo.orig("find", "storage", {url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                    mongo.orig("find", "storage", {owner: 'kubo', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
                         if (err) {
                             util.handleError(err, next, res);
                         }
@@ -668,7 +668,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         });
                     });
                 } else if (url.match(/^(https|http):\/\/yts\.ag\/movie\//)) {
-                    mongo.orig("find", "storage", {url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                    mongo.orig("find", "storage", {owner: 'yify', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
                         if (err) {
                             util.handleError(err, next, res);
                         }
@@ -677,10 +677,30 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         }
                         var yify_id = url.match(/[^\/]+$/);
                         if (!yify_id) {
-                            util.handleError({hoerror: 2, message: "kubo url invalid"}, next, res);
+                            util.handleError({hoerror: 2, message: "yify url invalid"}, next, res);
                         }
                         is_media = 3;
                         externalTool.saveSingle('yify', yify_id[0], function(err, media_name, tag_arr, owner, thumb, url) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
+                        });
+                    });
+                } else if (url.match(/^(https|http):\/\/www\.cartoonmad\.com\/comic\//)) {
+                    mongo.orig("find", "storage", {owner: 'cartoonmad', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (items.length > 0) {
+                            util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                        }
+                        var cartoonmad_id = url.match(/([^\/]+)\.html$/);
+                        if (!cartoonmad_id) {
+                            util.handleError({hoerror: 2, message: "cartoonmad url invalid"}, next, res);
+                        }
+                        is_media = 2;
+                        externalTool.saveSingle('cartoonmad', cartoonmad_id[1], function(err, media_name, tag_arr, owner, thumb, url) {
                             if (err) {
                                 util.handleError(err, next, res);
                             }
@@ -768,7 +788,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     is_media = 3;
                     console.log('youtube');
                 }
-                mongo.orig("find", "storage", {url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                mongo.orig("find", "storage", {owner: 'youtube', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
                     if (err) {
                         util.handleError(err, next, res);
                     }
@@ -869,7 +889,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     }
                 });
             } else if (url.match(/^(https|http):\/\/www\.123kubo\.com\//)) {
-                mongo.orig("find", "storage", {url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                mongo.orig("find", "storage", {owner: 'kubo', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
                     if (err) {
                         util.handleError(err, next, res);
                     }
@@ -889,7 +909,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     });
                 });
             } else if (url.match(/^(https|http):\/\/yts\.ag\/movie\//)) {
-                mongo.orig("find", "storage", {url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                mongo.orig("find", "storage", {owner: 'yify', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
                     if (err) {
                         util.handleError(err, next, res);
                     }
@@ -902,6 +922,26 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     }
                     is_media = 3;
                     externalTool.saveSingle('yify', yify_id[0], function(err, media_name, tag_arr, owner, thumb, url) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
+                    });
+                });
+            } else if (url.match(/^(https|http):\/\/www\.cartoonmad\.com\/comic\//)) {
+                mongo.orig("find", "storage", {owner: 'cartoonmad', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (items.length > 0) {
+                        util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                    }
+                    var cartoonmad_id = url.match(/([^\/]+)\.html$/);
+                    if (!cartoonmad_id) {
+                        util.handleError({hoerror: 2, message: "cartoonmad url invalid"}, next, res);
+                    }
+                    is_media = 2;
+                    externalTool.saveSingle('cartoonmad', cartoonmad_id[1], function(err, media_name, tag_arr, owner, thumb, url) {
                         if (err) {
                             util.handleError(err, next, res);
                         }

@@ -535,17 +535,27 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
             }
         }
         function madQuery() {
-            //var query = tagTool.getYifyQuery(parentList.cur, sortName, index);
-            var query = 'http://www.cartoonmad.com/comic01.html';
+            var query = tagTool.getMadQuery(parentList.cur, sortName, index);
             if (query) {
-                externalTool.getSingleList('cartoonmad', query, function(err, list) {
-                    if (err) {
-                        util.handleError(err, next, res);
-                    }
-                    itemList = getMadItem(list);
-                    retPageToken = nextIndex;
-                    res.json({itemList: itemList, pageToken: retPageToken});
-                });
+                if (query.post) {
+                    externalTool.getSingleList('cartoonmad', query.url, function(err, list) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        itemList = getMadItem(list);
+                        retPageToken = nextIndex;
+                        res.json({itemList: itemList, pageToken: retPageToken});
+                    }, query.post);
+                } else {
+                    externalTool.getSingleList('cartoonmad', query, function(err, list) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        itemList = getMadItem(list);
+                        retPageToken = nextIndex;
+                        res.json({itemList: itemList, pageToken: retPageToken});
+                    });
+                }
             } else {
                 res.json({itemList: itemList});
             }

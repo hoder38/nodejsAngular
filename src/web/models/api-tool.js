@@ -149,7 +149,7 @@ function getFormDataForPost(fields, files) {
     return params;
 }
 
-function postData(fields, files, options, headers, callback, filePath) {
+function postData(fields, files, options, headers, callback, filePath, not_utf8) {
     var headerparams = {}, post_options = {};
     if (files) {
         headerparams = getFormDataForPost(fields, files);
@@ -165,6 +165,16 @@ function postData(fields, files, options, headers, callback, filePath) {
         };
     } else {
         var post_data = querystring.stringify(fields);
+        if (not_utf8) {
+            post_data = '';
+            for (var i in fields) {
+                if (post_data) {
+                    post_data = post_data + '&' + i + '=' + util.big5_encode(fields[i]);
+                } else {
+                    post_data = post_data + i + '=' + util.big5_encode(fields[i]);
+                }
+            }
+        }
         headerparams = {postdata: [post_data]};
         post_options = {
             host: options.host,
@@ -177,7 +187,9 @@ function postData(fields, files, options, headers, callback, filePath) {
     }
     var request = http.request(post_options, function(response) {
         response.body = '';
-        response.setEncoding(options.encoding);
+        if (!not_utf8) {
+            response.setEncoding(options.encoding);
+        }
 
         if (filePath) {
             if (response.statusCode === 200) {
@@ -215,9 +227,16 @@ function postData(fields, files, options, headers, callback, filePath) {
             });
         } else {
             response.on('data', function(chunk){
-                response.body += chunk;
+                if (not_utf8) {
+                    response.body = Buffer.concat([new Buffer(response.body, 'binary'), new Buffer(chunk, 'binary')]);
+                } else {
+                    response.body += chunk;
+                }
             });
             response.on('end', function() {
+                if (not_utf8) {
+                    response.body = util.bufferToString(response.body);
+                }
                 setTimeout(function(){
                     callback(null, response);
                 }, 0);
@@ -429,7 +448,7 @@ module.exports = {
                         } else {
                             res.on('data', function(chunk){
                                 if (not_utf8) {
-                                    res.body = Buffer.concat([new Buffer(res.body), new Buffer(chunk)]);
+                                    res.body = Buffer.concat([new Buffer(res.body, 'binary'), new Buffer(chunk, 'binary')]);
                                 } else {
                                     //is_200 = true;
                                     res.body += chunk;
@@ -830,6 +849,25 @@ module.exports = {
                 callback(null, result);
             }, 0);
         });
+    },
+    madComicSearch: function(url, post, callback) {
+        var urlParse = urlMod.parse(url);
+        // An object of options to indicate where to post to
+        var options = {
+            host: urlParse.hostname,
+            port: 80,
+            path: urlParse.path,
+            method: 'POST',
+            encoding : null
+        };
+        postData(post, null, options, {}, function(err, res) {
+            if (err) {
+                util.handleError(err, callback, callback);
+            }
+            setTimeout(function(){
+                callback(null, res.body);
+            }, 0);
+        }, null, true);
     },
     setApiQueue: function(name, param) {
         if (api_ing >= config_glb.api_limit) {

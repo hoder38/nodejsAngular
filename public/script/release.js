@@ -3448,8 +3448,8 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                             this_obj.$parent[type].iframeOffset = null;
                             this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id + '/doc';
                         } else if (item.thumb) {
-                            if (this_obj.$parent[type].playlist && this_obj.$parent[type].playlist.obj.img_url) {
-                                this_obj.$parent[type].src = this_obj.$parent[type].playlist.obj.img_url;
+                            if (this_obj.$parent[type].playlist && this_obj.$parent[type].playlist.obj.pre_url) {
+                                this_obj.$parent[type].src = this_obj.$parent[type].playlist.obj.pre_url + padLeft(Math.round(this_obj.$parent[type].playlist.obj.index*1000)%1000, 3) + '.jpg';
                                 this_obj.$parent[type].itemName = ':' + this_obj.$parent[type].playlist.obj.title;
                                 this_obj.$parent[type].showId = this_obj.$parent[type].playlist.obj.showId;
                                 this_obj.$parent[type].presentId = this_obj.$parent[type].playlist.obj.index;
@@ -4560,7 +4560,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     }
                 }
             } else {
-                this_obj.feedback.run = true;
+                $scope.feedback.run = true;
                 showFeedback(response);
             }
         }
@@ -4863,6 +4863,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 url =  'http://www.123kubo.com/vod-read-id-' + this.toolList.item.id.substr(4) + '.html';
             } else if (this.toolList.item.id.substr(0, 4) === 'yif_') {
                 url =  'https://yts.ag/movie/' + this.toolList.item.id.substr(4);
+            } else if (this.toolList.item.id.substr(0, 4) === 'mad_') {
+                url =  'http://www.cartoonmad.com/comic/' + this.toolList.item.id.substr(4) + '.html';
             } else {
                 addAlert('not external video');
                 return false;
@@ -4879,6 +4881,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 url =  'http://www.123kubo.com/vod-read-id-' + id.substr(4) + '.html';
             } else if (id.substr(0, 4) === 'yif_') {
                 url =  'https://yts.ag/movie/' + id.substr(4);
+            } else if (id.substr(0, 4) === 'mad_') {
+                url =  'http://www.cartoonmad.com/comic/' + id.substr(4) + '.html';
             } else {
                 addAlert('not external video');
                 return false;
@@ -5210,10 +5214,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 if (record !== 1) {
                     time = record;
                 }
-            } else if (type === 'image' && this[type].playlist) {
-                if (!end) {
-                    time = this[type].presentId;
-                }
             } else {
                 if (callback) {
                     setTimeout(function(){
@@ -5348,8 +5348,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }
             } else {
                 if (this[type].playlist.obj.sub) {
-                    newIndex = (+this[type].playlist.obj.index)*10;
-                    if (newIndex%10 === 0) {
+                    newIndex = Math.round(this[type].playlist.obj.index*1000);
+                    if (newIndex%1000 === 0) {
                         newIndex++;
                     }
                     if (direction === 'previous') {
@@ -5357,12 +5357,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     } else {
                         newIndex++;
                     }
-                    if (newIndex%10 === 0) {
-                        newIndex = newIndex/10 - 1;
-                    } else if (newIndex%10 > this[type].playlist.obj.sub) {
-                        newIndex = Math.floor(newIndex/10) + 1;
+                    if (newIndex%1000 === 0) {
+                        newIndex = newIndex/1000 - 1;
+                    } else if (newIndex%1000 > this[type].playlist.obj.sub) {
+                        newIndex = Math.floor(newIndex/1000) + 1;
                     } else {
-                        newIndex = newIndex/10;
+                        newIndex = newIndex/1000;
                     }
                 } else {
                     newIndex = Math.floor(+this[type].playlist.obj.index);
@@ -5576,55 +5576,102 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.imgMove = function(number) {
         //playlist 跟local分開
         if (this.image.playlist) {
+            var this_obj = this;
             if (number === 0) {
-                var subIndex = (this.image.showId*10)%10;
+                var subIndex = Math.round(this.image.showId*1000)%1000;
                 var sIndex = Math.floor(this.image.showId);
                 if (subIndex >= 1 && subIndex <= this.image.playlist.obj.sub) {
                     this.image.presentId = this.image.showId;
-                    //record
+                    recordExternalImg();
                 } else {
-                    if (newIndex < 1 && sIndex > 1) {
+                    if (subIndex < 1 && sIndex > 1) {
                         //settime
                         sIndex--;
-                        newIndex = this.image.playlist.obj.sub;
-                        this.image.presentId = this.image.showId = (sIndex*10 + newIndex)/10;
-                    } else if (newIndex > this.image.playlist.obj.sub && pIndex < this.image.maxId) {
+                        subIndex = 1;
+                        this.image.presentId = this.image.showId = (sIndex*1000 + subIndex)/1000;
+                    } else if (subIndex > this.image.playlist.obj.sub && pIndex < this.image.maxId) {
                         //settime
                         sIndex++;
-                        newIndex = 1;
-                        this.image.presentId = this.image.showId = (sIndex*10 + newIndex)/10;
+                        subIndex = 1;
+                        this.image.presentId = this.image.showId = (sIndex*1000 + subIndex)/1000;
                     } else {
                         this.image.showId = this.image.presentId;
                         return false;
                     }
+                    recordExternalImg('new');
                 }
             } else {
-                var subIndex = (this.image.presentId*10)%10;
+                var subIndex = Math.round(this.image.presentId*1000)%1000;
                 var pIndex = Math.floor(this.image.presentId);
                 var newIndex = subIndex + number;
                 if (newIndex >= 1 && newIndex <= this.image.playlist.obj.sub) {
-                    this.image.presentId = (pIndex*10 + newIndex)/10;
+                    this.image.presentId = (pIndex*1000 + newIndex)/1000;
                     this.image.showId = this.image.presentId;
-                    //record
+                    recordExternalImg();
                 } else {
                     if (newIndex < 1 && pIndex > 1) {
                         //settime
                         pIndex--;
-                        newIndex = this.image.playlist.obj.sub;
-                        this.image.showId = this.image.presentId = (pIndex*10 + newIndex)/10;
+                        newIndex = 1;
+                        this.image.showId = this.image.presentId = (pIndex*1000 + newIndex)/1000;
                     } else if (newIndex > this.image.playlist.obj.sub && pIndex < this.image.maxId) {
                         //settime
                         pIndex++;
                         newIndex = 1;
-                        this.image.showId = this.image.presentId = (pIndex*10 + newIndex)/10;
+                        this.image.showId = this.image.presentId = (pIndex*1000 + newIndex)/1000;
                     } else {
                         this.image.showId = this.image.presentId;
                         return false;
                     }
+                    recordExternalImg('new');
                 }
             }
-            /*this.image.playlist.obj.img_url = this.image.playlist.obj.img_url.replace(/\d\d\d\.jpg$/, '00' + newIndex + '.jpg');
-            this.image.src = this.image.playlist.obj.img_url;*/
+
+            function recordExternalImg(type) {
+                if (type === 'new') {
+                    var mediaApi = $resource('/api/media/setTime/' + this_obj.image.id + '/image/' + this_obj.image.presentId, {}, {
+                        'setTime': { method:'GET' }
+                    });
+                    mediaApi.setTime({}, function (result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        } else {
+                            this_obj.image.playlist = result.playlist;
+                            this_obj.image.showId = this_obj.image.playlist.obj.showId;
+                            this_obj.image.presentId = this_obj.image.playlist.obj.index;
+                            this_obj.image.itemName = ':' + this_obj.image.playlist.obj.title;
+                            this_obj.image.src = this_obj.image.playlist.obj.pre_url + padLeft(Math.round(this_obj.image.playlist.obj.index*1000)%1000, 3) + '.jpg';
+                            this_obj.image.maxId = this_obj.image.playlist.total;
+                        }
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
+                } else {
+                    this_obj.image.src = this_obj.image.playlist.obj.pre_url + padLeft(Math.round(this_obj.image.presentId*1000)%1000, 3) + '.jpg';
+                    var mediaApi = $resource('/api/media/record/' + this_obj.image.id + '/' + this_obj.image.presentId, {}, {
+                        'record': { method:'GET' }
+                    });
+                    mediaApi.record({}, function (result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        }
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
+                }
+            }
         } else {
             if (number === 0) {
                 this.image.showId = Math.floor(this.image.showId);
@@ -5650,8 +5697,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
 
     $scope.nextImage = function() {
         if (this.image.playlist) {
-            var pIndex = +this.image.presentId*10;
-            if (Math.floor(pIndex/10) === this.image.maxId && pIndex%10 === this.image.playlist.obj.sub) {
+            var pIndex = Math.round(this.image.presentId*1000);
+            if (Math.floor(pIndex/1000) === this.image.maxId && pIndex%1000 === this.image.playlist.obj.sub) {
                 this.mediaMove(1, 'image');
             } else {
                 this.imgMove(1);
@@ -5668,8 +5715,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
 
     $scope.prevImage = function() {
         if (this.image.playlist) {
-            var pIndex = +this.image.presentId*10;
-            if (Math.floor(pIndex/10) === 1 && pIndex%10 === 1) {
+            var pIndex = Math.round(this.image.presentId*1000);
+            if (Math.floor(pIndex/1000) === 1 && pIndex%1000 === 1) {
                 this.mediaMove(-1, 'image');
             } else {
                 this.imgMove(-1);
@@ -5866,8 +5913,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                         this_obj[type].iframeOffset = null;
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                     } else if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
-                                        if (this_obj[type].playlist && this_obj[type].playlist.obj.img_url) {
-                                            this_obj[type].src = this_obj[type].playlist.obj.img_url;
+                                        if (this_obj[type].playlist && this_obj[type].playlist.obj.pre_url) {
+                                            this_obj[type].src = this_obj[type].playlist.obj.pre_url + padLeft(Math.round(this_obj[type].playlist.obj.index*1000)%1000, 3) + '.jpg';
                                             this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
                                             this_obj[type].showId = this_obj[type].playlist.obj.showId;
                                             this_obj[type].presentId = this_obj[type].playlist.obj.index;
@@ -6139,8 +6186,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                         this_obj[type].iframeOffset = null;
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                     } else if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
-                                        if (this_obj[type].playlist && this_obj[type].playlist.obj.img_url) {
-                                            this_obj[type].src = this_obj[type].playlist.obj.img_url;
+                                        if (this_obj[type].playlist && this_obj[type].playlist.obj.pre_url) {
+                                            this_obj[type].src = this_obj[type].playlist.obj.pre_url + padLeft(Math.round(this_obj[type].playlist.obj.index*1000)%1000, 3) + '.jpg';
                                             this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
                                             this_obj[type].showId = this_obj[type].playlist.obj.showId;
                                             this_obj[type].presentId = this_obj[type].playlist.obj.index;
@@ -6371,8 +6418,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             this_obj[type].iframeOffset = null;
                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                         } else if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
-                            if (this_obj[type].playlist && this_obj[type].playlist.obj.img_url) {
-                                this_obj[type].src = this_obj[type].playlist.obj.img_url;
+                            if (this_obj[type].playlist && this_obj[type].playlist.obj.pre_url) {
+                                this_obj[type].src = this_obj[type].playlist.obj.pre_url + padLeft(Math.round(this_obj[type].playlist.obj.index*1000)%1000, 3) + '.jpg';
                                 this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
                                 this_obj[type].showId = this_obj[type].playlist.obj.showId;
                                 this_obj[type].presentId = this_obj[type].playlist.obj.index;
@@ -10326,6 +10373,13 @@ function clone(obj) {
 
 function randomFloor(min,max) {
     return Math.floor(Math.random()*(max-min+1)+min);
+}
+
+function padLeft(str,lenght){
+    if(str.length >= lenght)
+        return str;
+    else
+        return padLeft("0" +str,lenght);
 }/*
  * angular-ui-bootstrap
  * http://angular-ui.github.io/bootstrap/
