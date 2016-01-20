@@ -504,8 +504,6 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
         nextIndex = nextIndex.toString();
         var itemList = [];
         var retPageToken = '';
-        madQuery();
-        return;
         var query = tagTool.getKuboQuery(parentList.cur, sortName, index);
         if (query) {
             externalTool.getSingleList('kubo', query, function(err, list) {
@@ -528,10 +526,10 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                     }
                     itemList = getYifyItem(list);
                     retPageToken = nextIndex;
-                    youtubeQuery();
+                    madQuery();
                 });
             } else {
-                youtubeQuery();
+                madQuery();
             }
         }
         function madQuery() {
@@ -544,7 +542,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                         }
                         itemList = getMadItem(list);
                         retPageToken = nextIndex;
-                        res.json({itemList: itemList, pageToken: retPageToken});
+                        youtubeQuery();
                     }, query.post);
                 } else {
                     externalTool.getSingleList('cartoonmad', query, function(err, list) {
@@ -553,11 +551,11 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                         }
                         itemList = getMadItem(list);
                         retPageToken = nextIndex;
-                        res.json({itemList: itemList, pageToken: retPageToken});
+                        youtubeQuery();
                     });
                 }
             } else {
-                res.json({itemList: itemList});
+                youtubeQuery();
             }
         }
         function youtubeQuery() {
