@@ -15,8 +15,10 @@ var genre_list_ch = mime.getOptionTag('cht');
 var googleApi = require("../models/api-tool-google.js");
 
 var kubo_type = [['動作片', '喜劇片', '愛情片', '科幻片', '恐怖片', '劇情片', '戰爭片', '動畫片', '微電影'], ['台灣劇', '港劇', '大陸劇', '歐美劇', '韓劇', '日劇', '新/馬/泰/其他劇', '布袋戲', '綜藝', '美食旅遊', '訪談節目', '男女交友', '選秀競賽', '典禮晚會', '新聞時事', '投資理財', '歌劇戲曲'], ['動漫', '電影動畫片']];
-//type要補到deltag裡
 
+var OpenCC = require('opencc');
+var opencc = new OpenCC('s2t.json');
+//type要補到deltag裡
 module.exports = {
     getSingleList: function(type, url, callback, post) {
         switch (type) {
@@ -360,14 +362,14 @@ module.exports = {
                         for (var i in raw_list) {
                             info_match = raw_list[i].match(/a href="\/video\/(av\d+).*?title="([^"]+)">.*?"([^"]+)/);
                             if (info_match) {
-                                data = {id: info_match[1], name: info_match[2], thumb: info_match[3], date: bDate};
+                                data = {id: info_match[1], name: opencc.convertSync(info_match[2]), thumb: info_match[3], date: bDate};
                                 info_match = raw_list[i].match(/<span number="(\d+)/);
                                 if (info_match) {
                                     data['count'] = Number(info_match[1]);
                                 } else {
                                     data['count'] = 0;
                                 }
-                                tags = ['animation', '動畫'];
+                                tags = ['movie', '電影'];
                                 data['tags'] = tags;
                                 list.push(data);
                             }
@@ -392,7 +394,7 @@ module.exports = {
                     var data = null;
                     var tags = [];
                     for (var i in json_data['result']['list']) {
-                        data = {id: json_data['result']['list'][i]['season_id'], name: json_data['result']['list'][i]['title'], thumb: json_data['result']['list'][i]['cover'], date: json_data['result']['list'][i]['pub_time'], count: 0};
+                        data = {id: json_data['result']['list'][i]['season_id'], name: opencc.convertSync(json_data['result']['list'][i]['title']), thumb: json_data['result']['list'][i]['cover'], date: json_data['result']['list'][i]['pub_time'], count: 0};
                         tags = ['animation', '動畫'];
                         data['tags'] = tags;
                         list.push(data);
@@ -420,7 +422,7 @@ module.exports = {
                             info_match = raw_list[i].match(/<a href="[^\d]+(\d+)\/"[^>]+>(.*?)<\/a>/);
                             if (info_match) {
                                 info_item = info_match[2].replace(/<[^<]+>/g,'');
-                                data = {id: info_match[1], name: info_item, count: 0};
+                                data = {id: info_match[1], name: opencc.convertSync(info_item), count: 0};
                                 info_match = raw_list[i].match(/img src="([^"]+)/);
                                 if (info_match) {
                                     data['thumb'] = info_match[1];
@@ -449,7 +451,7 @@ module.exports = {
                                     data = {id: info_match[1], date: bDate};
                                     info_match = raw_list[i].match(/<img src="([^"]+)".*?title="([^"]+)/);
                                     if (info_match) {
-                                        data['name'] = info_match[2];
+                                        data['name'] = opencc.convertSync(info_match[2]);
                                         data['thumb'] = info_match[1];
                                         info_match = raw_list[i].match(/((\d+)(\.\d+)?(万)?|--)$/);
                                         if (info_match && info_match[2]) {
@@ -729,7 +731,6 @@ module.exports = {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                //console.log(raw_data);
                 var info_match = raw_data.match(/class="bangumi-preview".*?"([^"]+)" alt="([^"]+)/);
                 var name = '';
                 var thumb = '';
@@ -750,6 +751,7 @@ module.exports = {
                         if (info_tag.indexOf(info_match[1]) === -1) {
                             info_tag.push(info_match[1]);
                         }
+                        info_match[2] = opencc.convertSync(info_match[2]);
                         if (info_tag.indexOf(info_match[2]) === -1) {
                             info_tag.push(info_match[2]);
                         }
@@ -761,6 +763,7 @@ module.exports = {
                             for (var i in info_list) {
                                 info_item = info_list[i].match(/[^<>]+$/);
                                 if (info_item) {
+                                    info_item[0] = info_item[0];
                                     if (info_tag.indexOf(info_item[0]) === -1) {
                                         info_tag.push(info_item[0]);
                                     }
@@ -775,6 +778,7 @@ module.exports = {
                             for (var i in info_list) {
                                 info_item = info_list[i].match(/[^<>]+$/);
                                 if (info_item) {
+                                    info_item[0] = opencc.convertSync(info_item[0]);
                                     if (info_tag.indexOf(info_item[0]) === -1) {
                                         info_tag.push(info_item[0]);
                                     }
@@ -816,6 +820,7 @@ module.exports = {
                         for (var i in info_match) {
                             info_item = info_match[i].match(/[^"]+$/);
                             if (info_item) {
+                                info_item[0] = opencc.convertSync(info_item[0]);
                                 if (info_tag.indexOf(info_item[0]) === -1) {
                                     info_tag.push(info_item[0]);
                                 }
@@ -824,7 +829,7 @@ module.exports = {
                     }
                 }
                 setTimeout(function(){
-                    callback(null, name, info_tag, 'bilibili', thumb, url);
+                    callback(null, opencc.convertSync(name), info_tag, 'bilibili', thumb, url);
                 }, 0);
             }, 60000, false, false, 'http://www.bilibili.com/', true);
             break;
@@ -1256,7 +1261,6 @@ module.exports = {
                             }, 0);
                         }
                     } else {
-                        //console.log(raw_data);
                         var raw_list = raw_data.match(/(.*)data\-original(.*)/g);
                         var list = [];
                         var list_match = false;
@@ -1273,8 +1277,6 @@ module.exports = {
                                 list.push({name: list_match[3], url: list_match[1], thumb: list_match[2]});
                             }
                         }
-                        //console.log(list);
-                        //console.log(list.length);
                         if (list.length < 1) {
                             page++;
                             if (page < kubo_item[kuboIndex].page+1) {
@@ -1739,7 +1741,6 @@ module.exports = {
                             }
                         }
                     }
-                    console.log(list);
                     if (!list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
@@ -1974,7 +1975,6 @@ module.exports = {
                                             if (err) {
                                                 util.handleError(err, next, res);
                                             }
-                                            console.log(item);
                                             setTimeout(function(){
                                                 callback(null, ret_obj, is_end, list.length);
                                             }, 0);
@@ -2022,7 +2022,6 @@ module.exports = {
                     var idType = 0;
                     for (var i in flv_url) {
                         list_match = flv_url[i].match(/(168player568|type\d\d?\=)[^\&]+/g);
-                        //console.log(list_match);
                         if (list_match) {
                             idType = 0;
                             for (var j in list_match) {
@@ -2055,8 +2054,6 @@ module.exports = {
                             }
                         }
                     }
-                    //console.log(list);
-                    //console.log(list.length);
                     if (!list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
