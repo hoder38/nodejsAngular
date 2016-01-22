@@ -524,7 +524,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                     if (err) {
                         util.handleError(err, next, res);
                     }
-                    itemList = getBiliItem(list);
+                    itemList = itemList.concat(getBiliItem(list));
                     retPageToken = nextIndex;
                     madQuery();
                 });
@@ -539,7 +539,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                     if (err) {
                         util.handleError(err, next, res);
                     }
-                    itemList = getYifyItem(list);
+                    itemList = itemList.concat(getYifyItem(list));
                     retPageToken = nextIndex;
                     biliQuery();
                 });
@@ -555,7 +555,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                         if (err) {
                             util.handleError(err, next, res);
                         }
-                        itemList = getMadItem(list);
+                        itemList = itemList.concat(getMadItem(list));
                         retPageToken = nextIndex;
                         youtubeQuery();
                     }, query.post);
@@ -564,7 +564,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                         if (err) {
                             util.handleError(err, next, res);
                         }
-                        itemList = getMadItem(list);
+                        itemList = itemList.concat(getMadItem(list));
                         retPageToken = nextIndex;
                         youtubeQuery();
                     });
