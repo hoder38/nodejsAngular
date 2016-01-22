@@ -32,7 +32,8 @@ var crypto = require('crypto'),
     urlMod = require('url'),
     fs = require("fs"),
     http = require('http'),
-    https = require('https');
+    https = require('https'),
+    zlib = require('zlib');
 
 function signature(data, method) {
     data['api_key'] = api_key;
@@ -427,7 +428,7 @@ module.exports = {
                         }
                         is_move = true;
                         setTimeout(function(){
-                            this_obj.xuiteDownload(res.headers.location, filePath, callback, threshold, is_check, is_file, referer);
+                            this_obj.xuiteDownload(res.headers.location, filePath, callback, threshold, is_check, is_file, referer, not_utf8);
                         }, 0);
                         req.abort();
                     } else if (res.statusCode === 400) {
@@ -458,11 +459,27 @@ module.exports = {
                                 this_obj.getApiQueue();
                                 req.abort();
                                 if (not_utf8) {
-                                    res.body = util.bufferToString(res.body);
+                                    if (res.headers['content-encoding'] === 'gzip') {
+                                        zlib.gunzip(res.body, function(err, decoded) {
+                                            if (err) {
+                                                util.handleError(err, callback, callback);
+                                            }
+                                            res.body = decoded.toString();
+                                            setTimeout(function(){
+                                                callback(null, res.body);
+                                            }, 0);
+                                        });
+                                    } else {
+                                        res.body = util.bufferToString(res.body);
+                                        setTimeout(function(){
+                                            callback(null, res.body);
+                                        }, 0);
+                                    }
+                                } else {
+                                    setTimeout(function(){
+                                        callback(null, res.body);
+                                    }, 0);
                                 }
-                                setTimeout(function(){
-                                    callback(null, res.body);
-                                }, 0);
                             });
                         }
                     }

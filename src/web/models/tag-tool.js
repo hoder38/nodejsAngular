@@ -2,7 +2,7 @@ var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 var mime = require('../util/mime.js');
 
-var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'youtube video', 'youtube playlist', 'youtube music', 'youtube music playlist', 'playlist unactive', 'kubo movie', 'kubo tv series', 'kubo tv show', 'kubo animation', 'yify movie', 'cartoonmad comic'];
+var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'youtube video', 'youtube playlist', 'youtube music', 'youtube music playlist', 'playlist unactive', 'kubo movie', 'kubo tv series', 'kubo tv show', 'kubo animation', 'yify movie', 'cartoonmad comic', 'bilibili animation', 'bilibili movie'];
 
 //var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'country', 'tw': '國家'}, {'name': 'year', 'tw': '年份'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'publisher', 'tw': '出版社'}, {'name': 'language', 'tw': '語言'}];
 var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'country', 'tw': '國家'}, {'name': 'year', 'tw': '年份'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'author', 'tw': '作者'}, {'name': 'album', 'tw': '專輯'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'actor', 'tw': '演員'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}];
@@ -19,6 +19,10 @@ var yify_type_cht = mime.getOptionTag('cht');
 var mad_type = mime.getOptionTag('anime');
 
 var mad_index = ['01', '02', '03', '04', '10', '07', '08', '09', '16', '17', '13', '14', '18', '21', '22'];
+
+var bili_type = ['大陸', '日本', '歐美', '香港', '台灣', '韓國', '法國', '泰國', '西班牙', '俄羅斯', '德國', '海外', '完結'];
+
+var bili_index = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15, 16];
 
 var queryLimit = 20;
 
@@ -205,13 +209,13 @@ module.exports = function(collection) {
                 setSingleArray: function(value) {
                     var normal = normalize(value);
                     var defau = isDefaultTag(normal);
-                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10 || defau.index === 11 || defau.index === 13 || defau.index === 14 || defau.index === 15 || defau.index === 16 || defau.index === 17 || defau.index === 18 || defau.index === 20 || defau.index === 21) {
+                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10 || defau.index === 11 || defau.index === 13 || defau.index === 14 || defau.index === 15 || defau.index === 16 || defau.index === 17 || defau.index === 18 || defau.index === 19 || defau.index === 20 || defau.index === 30 || defau.index === 31) {
                         return true;
                     } else {
                         for (var i = 0; i < search[name].index; i++) {
                             normal = search[name].tags[i];
                             defau = isDefaultTag(normal);
-                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10 && defau.index !== 11 &&defau.index !== 13 && defau.index !== 14 && defau.index !== 15 && defau.index !== 16 && defau.index !== 17 && defau.index !== 18 && defau.index !== 20 && defau.index !== 21) {
+                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10 && defau.index !== 11 &&defau.index !== 13 && defau.index !== 14 && defau.index !== 15 && defau.index !== 16 && defau.index !== 17 && defau.index !== 18 && defau.index !== 19 && defau.index !== 20 && defau.index !== 30 && defau.index !== 31) {
                                 search[name].tags = search[name].tags.slice(0, i);
                                 search[name].exactly = search[name].exactly.slice(0, i);
                                 search[name].index = search[name].tags.length;
@@ -564,9 +568,9 @@ module.exports = function(collection) {
                 }
             } else if (!index) {
                 var defau = isDefaultTag(normalize(tagName));
-                if (collection === 'stock' && defau.index === 21) {
+                if (collection === 'stock' && defau.index === 31) {
                     name = tagName;
-                } else if (collection === 'storage' && defau.index === 21) {
+                } else if (collection === 'storage' && defau.index === 31) {
                     name = tagName;
                 } else {
                     name = util.isValidString(tagName, 'name');
@@ -643,9 +647,9 @@ module.exports = function(collection) {
                 var name = false,
                     Pindex = util.isValidString(index, 'parentIndex');
                 var defau = isDefaultTag(normalize(tagName));
-                if (collection === 'stock' && defau.index === 21) {
+                if (collection === 'stock' && defau.index === 31) {
                     name = tagName;
-                } else if (collection === 'storage' && defau.index === 21) {
+                } else if (collection === 'storage' && defau.index === 31) {
                     name = tagName;
                 } else {
                     name = util.isValidString(tagName, 'name');
@@ -1288,7 +1292,7 @@ module.exports = function(collection) {
                 //yv
                 } else if (index.index === 8) {
                     query.type = Math.floor(query.type/10)*10 + 1;
-                } else if (index.index === 20) {
+                } else if (index.index === 30) {
                     index = isDefaultTag(search_arr[i]);
                     if (index[1] === 'ou') {
                         id_arr.push(index[2]);
@@ -1353,6 +1357,10 @@ module.exports = function(collection) {
                         if (Number(search_arr[i]) < 2100 && Number(search_arr[i]) > 1800) {
                             year = Number(search_arr[i]);
                             searchWord = null;
+                            country = '';
+                        } else {
+                            searchWord = denormalize(search_arr[i]);
+                            year = 0;
                             country = '';
                         }
                     } else if (kubo_country.indexOf(search_arr[i]) !== -1) {
@@ -1484,6 +1492,141 @@ module.exports = function(collection) {
             } else {
                 return false;
             }
+        },
+        getBiliQuery: function(search_arr, sortName, page) {
+            var url = 'http://www.bilibili.com/api_proxy?app=bangumi&pagesize=20&action=site_season_index';
+            var order = 0;
+            var mOrder = 'default';
+            var sOrder = null;
+            if (sortName === 'count') {
+                order = 0;
+                mOrder = 'hot';
+                sOrder = 'click';
+            } else if (sortName === 'mtime') {
+                order = 2;
+                mOrder = 'default';
+            }
+            var s_country = -1;
+            var s_year = 0;
+            var query_term = null;
+            var search = 0;
+            for (var i in search_arr) {
+                index = isDefaultTag(normalize(search_arr[i]));
+                if (!index || index.index === 0 || index.index === 6) {
+                    if (search_arr[i].match(/^\d\d\d\d$/)) {
+                        if (Number(search_arr[i]) < 2100 && Number(search_arr[i]) > 1800) {
+                            s_year = Number(search_arr[i]);
+                            query_term = null;
+                            s_country = -1;
+                        } else {
+                            query_term = denormalize(search_arr[i]);
+                            s_year = 0;
+                            s_country = -1;
+                        }
+                    } else if (bili_type.indexOf(normalize(search_arr[i])) !== -1) {
+                        s_year = 0;
+                        s_country = bili_type.indexOf(normalize(search_arr[i]));
+                        query_term = null;
+                    } else {
+                        s_year = 0;
+                        query_term = denormalize(search_arr[i]);
+                        s_country = -1;
+                    }
+                } else if (index.index === 19) {
+                    search = 1;
+                } else if (index.index === 20) {
+                    search = 2;
+                }
+            }
+            if (search) {
+                if (query_term) {
+                    var s_type = 'bangumi';
+                    var s_append = '';
+                    if (search === 2) {
+                        s_type = 'video';
+                        s_append = '&tids_1=23&duration=4';
+                        if (sOrder) {
+                            s_append = s_append + '&order=' + sOrder;
+                        }
+                    }
+                    url = 'http://search.bilibili.com/ajax_api/' + s_type + '?keyword=' + encodeURIComponent(query_term) + s_append;
+                    if (page > 1) {
+                        url = url + '&page=' + page;
+                    }
+                } else {
+                    if (search === 2) {
+                        var ch_type = 0;
+                        var ch_page = 0;
+                        if (s_country !== -1 && s_country !== 12) {
+                            switch(s_country) {
+                                case 0:
+                                case 3:
+                                case 4:
+                                ch_type = 147;
+                                break;
+                                case 1:
+                                ch_type = 146;
+                                break;
+                                case 2:
+                                ch_type = 145;
+                                break;
+                                default:
+                                ch_type = 83;
+                                break;
+                            }
+                            ch_page = page;
+                        } else {
+                            if (page%4 === 1) {
+                                ch_type = 147;
+                                ch_page = Math.round((page+3)/4);
+                            } else if (page%4 === 2) {
+                                ch_type = 146;
+                                ch_page = Math.round((page+2)/4);
+                            } else if (page%4 === 3) {
+                                ch_type = 145;
+                                ch_page = Math.round((page+1)/4);
+                            } else {
+                                ch_type = 83;
+                                ch_page = Math.round(page/4);
+                            }
+                        }
+                        var d = new Date();
+                        var y = d.getFullYear();
+                        var m = d.getMonth() + 1;
+                        var day = d.getDate();
+                        var pd = new Date(new Date(d).setMonth(d.getMonth()-3));
+                        var py = pd.getFullYear();
+                        var pm = pd.getMonth() + 1;
+                        var pday = pd.getDate() + 1;
+                        url = 'http://www.bilibili.com/list/' + mOrder + '-' + ch_type + '-'+ ch_page + '-'+ py + '-' + pm + '-' + pday + '~' + y + '-' + m + '-' + day + '.html';
+                    } else {
+                        if (s_country === 12) {
+                            var d = new Date();
+                            var y = d.getFullYear();
+                            var m = d.getMonth() + 1;
+                            var day = d.getDate();
+                            var pd = new Date(new Date(d).setMonth(d.getMonth()-3));
+                            var py = pd.getFullYear();
+                            var pm = pd.getMonth() + 1;
+                            var pday = pd.getDate() + 1;
+                            url = 'http://www.bilibili.com/list/' + mOrder + '-32-'+ page + '-'+ py + '-' + pm + '-' + pday + '~' + y + '-' + m + '-' + day + '.html';
+                        } else {
+                            url = url + '&page=' + page;
+                            url = url + '&indexType=' + order;
+                            if (s_country !== -1) {
+                                url = url + '&seasonArea=' + bili_index[s_country];
+                            }
+                            if (s_year) {
+                                url = url + '&startYear=' + s_year;
+                            }
+                        }
+                    }
+                }
+                console.log(url);
+                return url;
+            } else {
+                return false;
+            }
         }
     };
 };
@@ -1517,9 +1660,9 @@ var getStorageQuerySql = function(user, tagList, exactly) {
         for (var i in tagList) {
             var normal = normalize(tagList[i]);
             var index = isDefaultTag(normal);
-            if (index.index === 20) {
+            if (index.index === 30) {
                 continue;
-            } else if (index.index === 21) {
+            } else if (index.index === 31) {
                 if (index[1] === '') {
                     skip = Number(index.index[2]);
                 }
@@ -1557,7 +1700,7 @@ var getStorageQuerySql = function(user, tagList, exactly) {
                     console.log({recycle: {$ne: 0}, utime: {$lt: time}});
                     return {nosql: {recycle: {$ne: 0}, utime: {$lt: time}}};
                 }
-            } else if (index.index === 4 || index.index === 6 || index.index === 8 || index.index === 9 || index.index === 10 || index.index === 11 || index.index === 13 || index.index === 14 || index.index === 15 || index.index === 16 || index.index === 17 || index.index === 18) {
+            } else if (index.index === 4 || index.index === 6 || index.index === 8 || index.index === 9 || index.index === 10 || index.index === 11 || index.index === 13 || index.index === 14 || index.index === 15 || index.index === 16 || index.index === 17 || index.index === 18 || index.index === 19 || index.index === 20) {
             } else if (index.index === 5) {
                 delete nosql['first'];
                 is_first = false;
@@ -1624,7 +1767,7 @@ function getStockQuerySql(user, tagList, exactly) {
             if (index.index === 6) {
                 nosql['important'] = 1;
                 is_important = true;
-            } else if (index.index === 21) {
+            } else if (index.index === 31) {
                 if (index.index[1] === '') {
                     skip = Number(index.index[1]);
                 } else if (index.index[1] === 'profit') {
@@ -1688,7 +1831,7 @@ function getPasswordQuerySql(user, tagList, exactly) {
             if (index.index === 6) {
                 nosql['important'] = 1;
                 is_important = true;
-            } else if (index.index === 21) {
+            } else if (index.index === 31) {
                 if (index.index[1] === '') {
                     skip = Number(index.index[1]);
                 }
@@ -1850,12 +1993,12 @@ function isDefaultTag(tag) {
     } else {
         ret = tag.match(youtube_id_pattern);
         if (ret) {
-            ret.index = 20;
+            ret.index = 30;
             return ret;
         }
         ret = tag.match(/^(profit|safety|manag|)>(-?\d+)$/)
         if (ret) {
-            ret.index = 21;
+            ret.index = 31;
             return ret;
         }
     }

@@ -459,7 +459,7 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
             var name = false;
-            if (tagTool.isDefaultTag(req.params.name).index === 21) {
+            if (tagTool.isDefaultTag(req.params.name).index === 31) {
                 name = req.params.name;
             } else {
                 name = util.isValidString(req.params.name, 'name');
@@ -517,6 +517,21 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
         } else {
             yifyQuery();
         }
+        function biliQuery() {
+            var query = tagTool.getBiliQuery(parentList.cur, sortName, index);
+            if (query) {
+                externalTool.getSingleList('bilibili', query, function(err, list) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    itemList = getBiliItem(list);
+                    retPageToken = nextIndex;
+                    madQuery();
+                });
+            } else {
+                madQuery();
+            }
+        }
         function yifyQuery() {
             var query = tagTool.getYifyQuery(parentList.cur, sortName, index);
             if (query) {
@@ -526,10 +541,10 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                     }
                     itemList = getYifyItem(list);
                     retPageToken = nextIndex;
-                    madQuery();
+                    biliQuery();
                 });
             } else {
-                madQuery();
+                biliQuery();
             }
         }
         function madQuery() {
@@ -688,7 +703,7 @@ app.get('/api/stock/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/:p
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
             var name = false;
-            if (stockTagTool.isDefaultTag(req.params.name).index === 21) {
+            if (stockTagTool.isDefaultTag(req.params.name).index === 31) {
                 name = req.params.name;
             } else {
                 name = util.isValidString(req.params.name, 'name');
@@ -1478,7 +1493,7 @@ function newBookmarkItem(name, user, session, bpath, bexactly, callback) {
                     }
                 } else if (is_d.index === 0) {
                     data['adultonly'] = 1;
-                } else if (is_d.index === 20) {
+                } else if (is_d.index === 30) {
                     is_d = tagTool.isDefaultTag(bpath[i]);
                     if (is_d[1] === 'ch') {
                         channel = is_d[2];
@@ -1942,7 +1957,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.id.match(/^(you|ypl|kub|yif|mad)_(.*)$/);
+        var id = req.params.id.match(/^(you|ypl|kub|yif|mad|bbl)_(.*)$/);
         var playlist = 0;
         var playlistId = null;
         var obj = req.params.obj;
@@ -1958,6 +1973,9 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                 playlistId = id[2];
             } else if (id[1] === 'mad') {
                 playlist = 5;
+                playlistId = id[2];
+            } else if (id[1] === 'bbl') {
+                playlist = 6;
                 playlistId = id[2];
             }
             id = util.isValidString(req.params.id, 'name');
@@ -2070,6 +2088,13 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                 } else if (playlist === 5) {
                                     playurl = 'http://www.cartoomad.com/comic/' + playlistId + '.html';
                                     playtype = 'cartoonmad';
+                                } else if (playlist === 6) {
+                                    if (playlistId.match(/^av/)) {
+                                        playurl = 'http://www.bilibili.com/video/' + playlistId + '/';
+                                    } else {
+                                        playurl = 'http://www.bilibili.com/bangumi/i/' + playlistId + '/';
+                                    }
+                                    playtype = 'bilibili';
                                 }
                                 externalTool.getSingleId(playtype, playurl, 1, function(err, obj, is_end, total) {
                                     if (err) {
@@ -2202,6 +2227,13 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                 } else if (playlist === 5) {
                                     playurl = 'http://www.cartoomad.com/comic/' + playlistId + '.html';
                                     playtype = 'cartoonmad';
+                                } else if (playlist === 6) {
+                                    if (playlistId.match(/^av/)) {
+                                        playurl = 'http://www.bilibili.com/video/' + playlistId + '/';
+                                    } else {
+                                        playurl = 'http://www.bilibili.com/bangumi/i/' + playlistId + '/';
+                                    }
+                                    playtype = 'bilibili';
                                 }
                                 externalTool.getSingleId(playtype, playurl, items[0].recordTime, function(err, obj, is_end, total) {
                                     if (err) {
@@ -2738,7 +2770,7 @@ app.get('/api/password/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
             var name = false;
-            if (pwTagTool.isDefaultTag(req.params.name).index === 21) {
+            if (pwTagTool.isDefaultTag(req.params.name).index === 31) {
                 name = req.params.name;
             } else {
                 name = util.isValidString(req.params.name, 'name');
@@ -3299,7 +3331,7 @@ app.get('/views/homepage', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    var msg = "hello<br/> 壓縮檔加上.book或是cbr、cbz檔可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/>no local: 不顯示本地搜尋結果<br/>youtube video: 顯示youtube vidoe搜尋結果<br/>youtube playlist: 顯示youtube playlist<br/>youtube music: 顯示youtube vidoe搜尋結果(music)<br/>youtube music playlist: 顯示youtube playlist搜尋結果(music)<br/><br/>增加bookmark物件：<br/>在儲存bookmark或訂閱youtube channel時產生，<br/>方便整理完的bookmark給其它人參考<br/><br/>指令不算在單項搜尋裡<br/>預設只會搜尋到有first item的檔案<br/>方便尋找，可以縮小範圍後再下all item顯示全部<br/><br/>播放器 快捷鍵:<br/>空白鍵: 播放/暫停<br/>c: 字幕 開/關<br/>f: 校準字幕，固定目前字幕，左右鍵變成移動0.5秒，再按一次 f 鍵發送校正<br/>左: 後退15秒<br/>右: 前進15秒<br/>上: 音量變大<br/>下: 音量變小<br/>影片跟音樂點擊 [選項] 有可開啟選項模式<br/>播放模式: 循環播放, 倒敘播放, 單首播放, 單首循環, 隨機播放(只有music)<br/><br/>URL上傳支援:<br/>Youtube (with字幕)<br/>Youtube music: url結尾加上 :music 會下載成mp3格式(限制20分鐘以下的影片)<br/>Magnet (bit torrent url)";
+    var msg = "hello<br/> 壓縮檔加上.book或是cbr、cbz檔可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/>no local: 不顯示本地搜尋結果<br/>youtube (music) video: 顯示youtube vidoe搜尋結果<br/>youtube playlist: 顯示youtube playlist<br/>youtube music: 顯示youtube video搜尋結果<br/>youtube music playlist: 顯示youtube (music) playlist搜尋結果(可支援多字詞搜尋)<br/>kubo movie: 顯示kubo123電影搜尋結果<br/>kubo tv series: 顯示kubo123電視劇搜尋結果<br/>kubo tv show: 顯示kubo123電視秀搜尋結果<br/>kubo animation: 顯示kubo123動畫搜尋結果(可支援國家、年份、字詞搜尋)<br/>yify movie: 顯示yify電影搜尋結果(可支援劇情分類、字詞搜尋)<br/>cartoonmad comic: 顯示cartoonmad漫畫搜尋結果(可支援劇情分類、字詞搜尋)<br/>bilibili movie: 顯示bilibili電影搜尋結果<br/>bilibili animation: 顯示bilibili動畫搜尋結果(可支援國家、年份、字詞搜尋)<br/><br/>增加bookmark物件：<br/>在儲存bookmark或訂閱youtube channel時產生，<br/>方便整理完的bookmark給其它人參考<br/><br/>指令不算在單項搜尋裡<br/>預設只會搜尋到有first item的檔案<br/>方便尋找，可以縮小範圍後再下all item顯示全部<br/><br/>播放器 快捷鍵:<br/>空白鍵: 播放/暫停<br/>c: 字幕 開/關<br/>f: 校準字幕，固定目前字幕，左右鍵變成移動0.5秒，再按一次 f 鍵發送校正<br/>左: 後退15秒<br/>右: 前進15秒<br/>上: 音量變大<br/>下: 音量變小<br/>影片跟音樂點擊 [選項] 有可開啟選項模式<br/>播放模式: 循環播放, 倒敘播放, 單首播放, 單首循環, 隨機播放(只有music)<br/><br/>URL上傳支援:<br/>Youtube<br/>Youtube music: url結尾加上 :music 會儲存成音樂<br/>Magnet (bit torrent url)<br/>Kubo123<br/>YIFY<br/>CartoonMad<br/>Bilibili";
     var adult_msg = "<br/><br/>18+指令: <br/><br/>18+: 只顯示十八禁的檔案"
     if (util.checkAdmin(2, req.user)) {
         msg += adult_msg;
@@ -3437,11 +3469,20 @@ function getYifyItem(items) {
 function getMadItem(items) {
     var itemList = [];
     var data = null;
-    var yd = null;
     for (var i in items) {
-        yd = new Date(items[i].date);
         items[i].tags.push('first item');
         data = {name: items[i].name, id: 'mad_' + items[i].id, tags: items[i].tags, recycle: 0, isOwn: false, utime: 0, thumb: items[i].thumb, noDb: true, status: 2, count: 0};
+        itemList.push(data);
+    }
+    return itemList;
+}
+
+function getBiliItem(items) {
+    var itemList = [];
+    var data = null;
+    for (var i in items) {
+        items[i].tags.push('first item');
+        data = {name: items[i].name, id: 'bbl_' + items[i].id, tags: items[i].tags, recycle: 0, isOwn: false, utime: items[i].date, thumb: items[i].thumb, noDb: true, status: 3, count: items[i].count};
         itemList.push(data);
     }
     return itemList;

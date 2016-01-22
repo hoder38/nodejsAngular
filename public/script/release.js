@@ -2151,7 +2151,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
-    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, origin: false, save2local: false, title: '', item: null};
+    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, save2local: false, title: '', item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -2922,7 +2922,37 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     addAlert('search name is not vaild!!!');
                 }
             } else {
-                addAlert('Please inputs search name!!!');
+                var id = null;
+                if (this.toolSearchSub) {
+                    id = this.toolList.item.id;
+                } else if (this.videoSearchSub && this.video.id) {
+                    if (this.video.playlist) {
+                        id = this.video.playlist.obj.id;
+                    } else {
+                        id = this.video.id;
+                    }
+                } else {
+                    addAlert('Please inputs search name!!!');
+                    return false;
+                }
+                var externalApi = $resource(this.main_url + '/api/external/getSubtitle/' + id, {}, {
+                    'getSingle': { method:'GET', withCredentials: true }
+                });
+                externalApi.getSingle({}, function (result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    } else {
+                        addAlert('subtitle get');
+                    }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
             }
         }
     }
@@ -3697,7 +3727,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.delMedia = false;
             this.$parent.toolList.vlogMedia = false;
             this.$parent.toolList.subscription = false;
-            this.$parent.toolList.origin = false;
             this.$parent.toolList.save2local = false;
             confirm_str = item;
         } else {
@@ -3736,15 +3765,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             } else {
                 this.$parent.toolList.delMedia = false;
                 this.$parent.toolList.vlogMedia = false;
-            }
-            if (item.thumb) {
-                if (item.status === 3) {
-                    this.$parent.toolList.origin = true;
-                } else {
-                    this.$parent.toolList.origin = false;
-                }
-            } else {
-                this.$parent.toolList.origin = false;
             }
             if (item.cid) {
                 this.$parent.toolList.subscription = true;
@@ -4865,6 +4885,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 url =  'https://yts.ag/movie/' + this.toolList.item.id.substr(4);
             } else if (this.toolList.item.id.substr(0, 4) === 'mad_') {
                 url =  'http://www.cartoonmad.com/comic/' + this.toolList.item.id.substr(4) + '.html';
+            } else if (this.toolList.item.id.substr(0, 4) === 'bbl_') {
+                if (this.toolList.item.id.substr(4).match(/^av/)) {
+                    url =  'http://www.bilibili.com/video/' + this.toolList.item.id.substr(4) + '/';
+                } else {
+                    url =  'http://www.bilibili.com/bangumi/i/' + this.toolList.item.id.substr(4) + '/';
+                }
             } else {
                 addAlert('not external video');
                 return false;
@@ -4883,6 +4909,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 url =  'https://yts.ag/movie/' + id.substr(4);
             } else if (id.substr(0, 4) === 'mad_') {
                 url =  'http://www.cartoonmad.com/comic/' + id.substr(4) + '.html';
+            } else if (id.substr(0, 4) === 'bbl_') {
+                if (id.substr(4).match(/^av/)) {
+                    url =  'http://www.bilibili.com/video/' + id.substr(4) + '/';
+                } else {
+                    url =  'http://www.bilibili.com/bangumi/i/' + id.substr(4) + '/';
+                }
             } else {
                 addAlert('not external video');
                 return false;
@@ -5729,43 +5761,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 this.imgMove(-1);
             }
         }
-    }
-
-    $scope.originSubtitle = function(type) {
-        var id = null;
-        if (type === 'video') {
-            if (this.video.id) {
-                id = this.video.id;
-            } else {
-                addAlert('select a video');
-                return false;
-            }
-        } else {
-            if (this.toolList.item) {
-                id = this.toolList.item.id;
-            } else {
-                addAlert('select a item');
-                return false;
-            }
-        }
-        var externalApi = $resource(this.main_url + '/api/external/getSubtitle/' + id, {}, {
-            'getSingle': { method:'GET', withCredentials: true }
-        });
-        externalApi.getSingle({}, function (result) {
-            if (result.loginOK) {
-                $window.location.href = $location.path();
-            } else {
-                addAlert('subtitle get');
-            }
-        }, function(errorResult) {
-            if (errorResult.status === 400) {
-                addAlert(errorResult.data);
-            } else if (errorResult.status === 403) {
-                addAlert('unknown API!!!');
-            } else if (errorResult.status === 401) {
-                $window.location.href = $location.path();
-            }
-        });
     }
 
     $scope.mediaMove = function(number, type, ended) {
@@ -6623,14 +6618,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 }, function () {
                 });
             } else if (newVal === 3) {
-                $scope.originSubtitle('video');
-            } else if (newVal === 4) {
                 $scope.mediaToggle('video');
                 openModal("確定要儲存到網站?").then(function () {
                     $scope.save2local(false, $scope.video.id);
                 }, function () {
                 });
-            } else if (newVal === 5) {
+            } else if (newVal === 4) {
                 $scope.subscription($scope.video.list[$scope.video.index].cid, $scope.video.list[$scope.video.index].ctitle, 'video');
             }
             $scope.video.option = 0;

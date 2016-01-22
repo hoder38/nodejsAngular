@@ -244,37 +244,40 @@ module.exports = {
             }, 60000, false, false, 'http://www.123kubo.com/');
             break;
             case 'yify':
-            api.xuiteDownload(url, '', function(err, json_data) {
+            api.xuiteDownload(url, '', function(err, raw_data) {
                 if (err) {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                if (json_data['status'] !== 'ok' || !json_data['data'] || !json_data['data']['movies']) {
+                var json_data = JSON.parse(raw_data);
+                if (json_data['status'] !== 'ok' || !json_data['data']) {
                     util.handleError({hoerror: 2, message: 'yify api fail'}, callback, callback);
                 }
                 var list = [];
                 var data = null;
                 var tags = [];
                 var genre_item = null;
-                for (var i in json_data['data']['movies']) {
-                    data = {name: json_data['data']['movies'][i]['title'], id: json_data['data']['movies'][i]['id'], thumb: json_data['data']['movies'][i]['small_cover_image'], date: json_data['data']['movies'][i]['year'] + '-01-01', rating: json_data['data']['movies'][i]['rating'], };
-                    tags = ['movie', '電影'];
-                    if (tags.indexOf(json_data['data']['movies'][i]['year'].toString()) === -1) {
-                        tags.push(json_data['data']['movies'][i]['year'].toString());
-                    }
-                    for (var j in json_data['data']['movies'][i]['genres']) {
-                        genre_item = tagTool.normalizeTag(json_data['data']['movies'][i]['genres'][j]);
-                        if (genre_list.indexOf(genre_item) !== -1) {
-                            if (tags.indexOf(genre_item) === -1) {
-                                tags.push(genre_item);
-                            }
-                            if (tags.indexOf(genre_list_ch[genre_list.indexOf(genre_item)]) === -1) {
-                                tags.push(genre_list_ch[genre_list.indexOf(genre_item)]);
+                if (json_data['data']['movies']) {
+                    for (var i in json_data['data']['movies']) {
+                        data = {name: json_data['data']['movies'][i]['title'], id: json_data['data']['movies'][i]['id'], thumb: json_data['data']['movies'][i]['small_cover_image'], date: json_data['data']['movies'][i]['year'] + '-01-01', rating: json_data['data']['movies'][i]['rating'], };
+                        tags = ['movie', '電影'];
+                        if (tags.indexOf(json_data['data']['movies'][i]['year'].toString()) === -1) {
+                            tags.push(json_data['data']['movies'][i]['year'].toString());
+                        }
+                        for (var j in json_data['data']['movies'][i]['genres']) {
+                            genre_item = tagTool.normalizeTag(json_data['data']['movies'][i]['genres'][j]);
+                            if (genre_list.indexOf(genre_item) !== -1) {
+                                if (tags.indexOf(genre_item) === -1) {
+                                    tags.push(genre_item);
+                                }
+                                if (tags.indexOf(genre_list_ch[genre_list.indexOf(genre_item)]) === -1) {
+                                    tags.push(genre_list_ch[genre_list.indexOf(genre_item)]);
+                                }
                             }
                         }
+                        data['tags'] = tags;
+                        list.push(data);
                     }
-                    data['tags'] = tags;
-                    list.push(data);
                 }
                 setTimeout(function(){
                     callback(null, list);
@@ -337,6 +340,143 @@ module.exports = {
                         callback(null, list);
                     }, 0);
                 }, 60000, false, false, 'http://www.cartoonmad.com/', true);
+            }
+            break;
+            case 'bilibili':
+            if (url.match(/(https|http):\/\/www\.bilibili\.com\/list\//)) {
+                api.xuiteDownload(url, '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    var list = [];
+                    var data = null;
+                    var tags = [];
+                    var info_match = false;
+                    var raw_list = raw_data.match(/class="l-item">[\s\S]+?<span number="\d+/g);
+                    if (raw_list) {
+                        var bDate = new Date('1970-01-01');
+                        bDate = bDate.getTime()/1000;
+                        for (var i in raw_list) {
+                            info_match = raw_list[i].match(/a href="\/video\/(av\d+).*?title="([^"]+)">.*?"([^"]+)/);
+                            if (info_match) {
+                                data = {id: info_match[1], name: info_match[2], thumb: info_match[3], date: bDate};
+                                info_match = raw_list[i].match(/<span number="(\d+)/);
+                                if (info_match) {
+                                    data['count'] = Number(info_match[1]);
+                                } else {
+                                    data['count'] = 0;
+                                }
+                                tags = ['animation', '動畫'];
+                                data['tags'] = tags;
+                                list.push(data);
+                            }
+                        }
+                    }
+                    setTimeout(function(){
+                        callback(null, list);
+                    }, 0);
+                }, 60000, false, false, 'http://www.bilibili.com/');
+            } else if (url.match(/(https|http):\/\/www\.bilibili\.com\//)) {
+                api.xuiteDownload(url, '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    var json_data = JSON.parse(raw_data);
+                    if (!json_data || json_data['message'] !== 'success' || !json_data['result'] || !json_data['result']['list']) {
+                        console.log(raw_data);
+                        util.handleError({hoerror: 2, message: 'bilibili api fail'}, callback, callback);
+                    }
+                    var list = [];
+                    var data = null;
+                    var tags = [];
+                    for (var i in json_data['result']['list']) {
+                        data = {id: json_data['result']['list'][i]['season_id'], name: json_data['result']['list'][i]['title'], thumb: json_data['result']['list'][i]['cover'], date: json_data['result']['list'][i]['pub_time'], count: 0};
+                        tags = ['animation', '動畫'];
+                        data['tags'] = tags;
+                        list.push(data);
+                    }
+                    setTimeout(function(){
+                        callback(null, list);
+                    }, 0);
+                }, 60000, false, false, 'http://www.bilibili.com/');
+            } else {
+                api.xuiteDownload(url, '', function(err, json_data_r) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    var json_data = JSON.parse(json_data_r);
+                    var raw_data = json_data['html'];
+                    var raw_list = raw_data.match(/class="list">[\s\S]+?<span class="year">\(\d\d\d\d\)/g);
+                    var list = [];
+                    var data = null;
+                    var tags = [];
+                    var info_match = false;
+                    var info_item = null;
+                    if (raw_list) {
+                        for (var i in raw_list) {
+                            info_match = raw_list[i].match(/<a href="[^\d]+(\d+)\/"[^>]+>(.*?)<\/a>/);
+                            if (info_match) {
+                                info_item = info_match[2].replace(/<[^<]+>/g,'');
+                                data = {id: info_match[1], name: info_item, count: 0};
+                                info_match = raw_list[i].match(/img src="([^"]+)/);
+                                if (info_match) {
+                                    data['thumb'] = info_match[1];
+                                    info_match = raw_list[i].match(/class="year">\((\d\d\d\d)/);
+                                    if (info_match) {
+                                        info_item = new Date(info_match[1] + '-01-01');
+                                        data['date'] = info_item.getTime()/1000;
+                                        tags = ['animation', '動畫'];
+                                        if (tags.indexOf(info_match[1]) === -1) {
+                                            tags.push(info_match[1]);
+                                        }
+                                        data['tags'] = tags;
+                                        list.push(data);
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        raw_list = raw_data.match(/class="img">[\s\S]+?<i class="icon-playtime"><\/i>[\s\S]+?(\d+(\.\d+)?万?|--)/g);
+                        if (raw_list) {
+                            var bDate = new Date('1970-01-01');
+                            bDate = bDate.getTime()/1000;
+                            for (var i in raw_list) {
+                                info_match = raw_list[i].match(/<a href="[^"]+?(av\d+)/);
+                                if (info_match) {
+                                    data = {id: info_match[1], date: bDate};
+                                    info_match = raw_list[i].match(/<img src="([^"]+)".*?title="([^"]+)/);
+                                    if (info_match) {
+                                        data['name'] = info_match[2];
+                                        data['thumb'] = info_match[1];
+                                        info_match = raw_list[i].match(/((\d+)(\.\d+)?(万)?|--)$/);
+                                        if (info_match && info_match[2]) {
+                                            info_item = info_match[2];
+                                            if (info_match[3]) {
+                                                info_item = info_item + info_match[3];
+                                            }
+                                            info_item = Number(info_item);
+                                            if (info_match[4]) {
+                                                info_item = Math.round(info_item * 10000);
+                                            }
+                                            data['count'] = info_item;
+                                        } else {
+                                            data['count'] = 0;
+                                        }
+                                        tags = ['movie', '電影'];
+                                        data['tags'] = tags;
+                                        list.push(data);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    setTimeout(function(){
+                        callback(null, list);
+                    }, 0);
+                }, 60000, false, false, 'http://www.bilibili.com/');
             }
             break;
             default:
@@ -499,6 +639,7 @@ module.exports = {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
+                var json_data = JSON.parse(raw_data);
                 if (json_data['status'] !== 'ok' || !json_data['data']['movie']) {
                     util.handleError({hoerror: 2, message: 'yify api fail'}, callback, callback);
                 }
@@ -575,6 +716,117 @@ module.exports = {
                     callback(null, name, info_tag, 'cartoonmad', thumb, url);
                 }, 0);
             }, 60000, false, false, 'http://www.cartoonmad.com/', true);
+            break;
+            case 'bilibili':
+            var url = null;
+            if (id.match(/^av/)) {
+                url = 'http://www.bilibili.com/video/' + id + '/';
+            } else {
+                url = 'http://www.bilibili.com/bangumi/i/' + id + '/';
+            }
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                //console.log(raw_data);
+                var info_match = raw_data.match(/class="bangumi-preview".*?"([^"]+)" alt="([^"]+)/);
+                var name = '';
+                var thumb = '';
+                var info_list = false;
+                var info_item = false;
+                var info_tag = ['bilibili', '影片', 'video'];
+                if (info_match) {
+                    name = info_match[2] + ' ' + id;
+                    thumb = info_match[1];
+                    if (info_tag.indexOf('動畫') === -1) {
+                        info_tag.push('動畫');
+                    }
+                    if (info_tag.indexOf('animation') === -1) {
+                        info_tag.push('animation');
+                    }
+                    info_match = raw_data.match(/info-detail-item-date">.*?(\d\d\d\d)年.*?"info-detail-item".*?<em>([^<]+)/);
+                    if (info_match) {
+                        if (info_tag.indexOf(info_match[1]) === -1) {
+                            info_tag.push(info_match[1]);
+                        }
+                        if (info_tag.indexOf(info_match[2]) === -1) {
+                            info_tag.push(info_match[2]);
+                        }
+                    }
+                    info_match = raw_data.match(/class="info-row info-cv".*/);
+                    if (info_match) {
+                        info_list = info_match[0].match(/class="separator">\/<\/span>[^<]+/g);
+                        if (info_list) {
+                            for (var i in info_list) {
+                                info_item = info_list[i].match(/[^<>]+$/);
+                                if (info_item) {
+                                    if (info_tag.indexOf(info_item[0]) === -1) {
+                                        info_tag.push(info_item[0]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    info_match = raw_data.match(/class="info-row info-style".*/);
+                    if (info_match) {
+                        info_list = info_match[0].match(/class="info-style-item">[^<]+/g);
+                        if (info_list) {
+                            for (var i in info_list) {
+                                info_item = info_list[i].match(/[^<>]+$/);
+                                if (info_item) {
+                                    if (info_tag.indexOf(info_item[0]) === -1) {
+                                        info_tag.push(info_item[0]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    var info_match = raw_data.match(/class="v-title"><h1 title="([^"]+)/);
+                    if (!info_match) {
+                        util.handleError({hoerror: 2, message: 'bilibili info unknown'}, callback, callback);
+                    }
+                    name = info_match[1];
+                    info_match = raw_data.match(/<img src="([^"]+)/);
+                    if (!info_match) {
+                        util.handleError({hoerror: 2, message: 'bilibili info unknown'}, callback, callback);
+                    }
+                    thumb = info_match[1];
+                    info_match = raw_data.match(/动画<\/a><\/span>/);
+                    if (info_match) {
+                        if (info_tag.indexOf('動畫') === -1) {
+                            info_tag.push('動畫');
+                        }
+                        if (info_tag.indexOf('animation') === -1) {
+                            info_tag.push('animation');
+                        }
+                    }
+                    info_match = raw_data.match(/电影<\/a><\/span>/);
+                    if (info_match) {
+                        if (info_tag.indexOf('電影') === -1) {
+                            info_tag.push('電影');
+                        }
+                        if (info_tag.indexOf('movie') === -1) {
+                            info_tag.push('movie');
+                        }
+                    }
+                    info_match = raw_data.match(/"tag-val".*?title="[^"]+/g);
+                    if (info_match) {
+                        for (var i in info_match) {
+                            info_item = info_match[i].match(/[^"]+$/);
+                            if (info_item) {
+                                if (info_tag.indexOf(info_item[0]) === -1) {
+                                    info_tag.push(info_item[0]);
+                                }
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, name, info_tag, 'bilibili', thumb, url);
+                }, 0);
+            }, 60000, false, false, 'http://www.bilibili.com/', true);
             break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
@@ -2065,11 +2317,12 @@ module.exports = {
             }
             break;
             case 'yify':
-            api.xuiteDownload(url, '', function(err, json_data) {
+            api.xuiteDownload(url, '', function(err, raw_data) {
                 if (err) {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
+                var json_data = JSON.parse(raw_data);
                 if (json_data['status'] !== 'ok' || !json_data['data']['movie']) {
                     util.handleError({hoerror: 2, message: 'yify api fail'}, callback, callback);
                 }
@@ -2159,7 +2412,59 @@ module.exports = {
                 }, 60000, false, false, 'http://www.cartoonmad.com/', true);
             }, 60000, false, false, 'http://www.cartoonmad.com/', true);
             break;
-            default:
+            case 'bilibili':
+            var bili_id = url.match(/(av)?\d+/);
+            if (!bili_id) {
+                util.handleError({hoerror: 2, message: 'bilibili id invalid'}, callback, callback);
+            }
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = false;
+                var list = [];
+                var list_match = false;
+                if (bili_id[1]) {
+                    var pattern = new RegExp("<option value='\\/video\\/" + bili_id[0] + "\\/index_\\d+\\.html'>[^<]+", 'g');
+                    raw_list = raw_data.match(pattern);
+                    if (!raw_list) {
+                        index = 1;
+                        list.push({id: 'bil_' + bili_id[0], name: 'bil'});
+                    } else {
+                        pattern = new RegExp('^' + "<option value='\\/video\\/(" + bili_id[0] + ")\\/index_(\\d+)\\.html'>([^<]+)" + '$');
+                        for (var i in raw_list) {
+                            list_match = raw_list[i].match(pattern);
+                            if (list_match) {
+                                list.push({id: 'bil_' + list_match[1] + '_' + list_match[2], name: list_match[3]});
+                            }
+                        }
+                    }
+                } else {
+                    raw_list = raw_data.match(/class="e-item[\s\S]+?a href="\/video\/[^>]+/g);
+                    if (!raw_list) {
+                        util.handleError({hoerror: 2, message: 'empty list'}, callback, callback);
+                    }
+                    for (var i in raw_list) {
+                        list_match = raw_list[i].match(/a href="\/video\/(av\d+)\/(index_(\d+)\.html)?.*?title="([^"]+)/);
+                        if (list_match) {
+                            if (list_match[3]) {
+                                list.splice(0, 0, {id: 'bil_' + list_match[1] + '_' + list_match[3], name: list_match[4]});
+                            } else {
+                                list.splice(0, 0, {id: 'bil_' + list_match[1], name: list_match[4]});
+                            }
+                        }
+                    }
+                }
+                if (!list[index-1]) {
+                    util.handleError({hoerror: 2, message: 'index invaild'}, callback, callback);
+                }
+                setTimeout(function(){
+                    callback(null, {index: index, showId: index, id: list[index-1].id, title: list[index-1].name}, is_end, list.length);
+                }, 0);
+            }, 60000, false, false, 'http://www.bilibili.com/', true);
+            break;
+        default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
             break;
         }

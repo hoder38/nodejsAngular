@@ -707,6 +707,26 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
                         });
                     });
+                } else if (url.match(/^(https|http):\/\/www\.bilibili\.com\//)) {
+                    mongo.orig("find", "storage", {owner: 'bilibili', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (items.length > 0) {
+                            util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                        }
+                        var bili_id = url.match(/([^\/]+)\/$/);
+                        if (!bili_id) {
+                            util.handleError({hoerror: 2, message: "bilibili url invalid"}, next, res);
+                        }
+                        is_media = 3;
+                        externalTool.saveSingle('bilibili', bili_id[1], function(err, media_name, tag_arr, owner, thumb, url) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
+                        });
+                    });
                 } else {
                     api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                         if (err) {
@@ -942,6 +962,26 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     }
                     is_media = 2;
                     externalTool.saveSingle('cartoonmad', cartoonmad_id[1], function(err, media_name, tag_arr, owner, thumb, url) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
+                    });
+                });
+            } else if (url.match(/^(https|http):\/\/www\.bilibili\.com\//)) {
+                mongo.orig("find", "storage", {owner: 'bilibili', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (items.length > 0) {
+                        util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                    }
+                    var bili_id = url.match(/([^\/]+)\/$/);
+                    if (!bili_id) {
+                        util.handleError({hoerror: 2, message: "bilibili url invalid"}, next, res);
+                    }
+                    is_media = 3;
+                    externalTool.saveSingle('bilibili', bili_id[1], function(err, media_name, tag_arr, owner, thumb, url) {
                         if (err) {
                             util.handleError(err, next, res);
                         }
@@ -1467,7 +1507,12 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
         if (id[1] === 'dym') {
             url = 'http://www.dailymotion.com/embed/video/' + id[2];
         } else if (id[1] === 'bil') {
-            url = 'http://www.bilibili.com/video/' + id[2];
+            var idsub = id[2].match(/^([^_]+)_(\d)$/);
+            if (idsub) {
+                url = 'http://www.bilibili.com/video/' + idsub[1] + '/index_' + idsub[2] + '.html';
+            } else {
+                url = 'http://www.bilibili.com/video/' + id[2] + '/';
+            }
         } else if (id[1] === 'soh') {
             var idsub = id[2].match(/^([^_]+)_([^_]+)_(\d)$/);
             subIndex = Number(idsub[3]);
@@ -1561,30 +1606,63 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                 var ret_obj = {title: info.title, video: []};
                 var audio_size = 0;
                 if (id[1] === 'you') {
-                    for (var i in info.formats) {
-                        if (info.formats[i].format_note === 'DASH audio') {
-                            if (!audio_size) {
-                                audio_size = info.formats[i].filesize;
-                                ret_obj['audio'] = info.formats[i].url;
-                            } else if (audio_size > info.formats[i].filesize) {
-                                audio_size = info.formats[i].filesize;
-                                ret_obj['audio'] = info.formats[i].url;
+                    if (info.formats) {
+                        for (var i in info.formats) {
+                            if (info.formats[i].format_note === 'DASH audio') {
+                                if (!audio_size) {
+                                    audio_size = info.formats[i].filesize;
+                                    ret_obj['audio'] = info.formats[i].url;
+                                } else if (audio_size > info.formats[i].filesize) {
+                                    audio_size = info.formats[i].filesize;
+                                    ret_obj['audio'] = info.formats[i].url;
+                                }
+                            } else if (info.formats[i].format_note !== 'DASH video' && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
+                                ret_obj['video'].splice(0, 0, info.formats[i].url);
                             }
-                        } else if (info.formats[i].format_note !== 'DASH video' && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
-                            ret_obj['video'].splice(0, 0, info.formats[i].url);
+                        }
+                    } else {
+                        for (var i in info) {
+                            if (info[i].format_note === 'DASH audio') {
+                                if (!audio_size) {
+                                    audio_size = info[i].filesize;
+                                    ret_obj['audio'] = info[i].url;
+                                } else if (audio_size > info[i].filesize) {
+                                    audio_size = info[i].filesize;
+                                    ret_obj['audio'] = info[i].url;
+                                }
+                            } else if (info[i].format_note !== 'DASH video' && (info[i].ext === 'mp4' || info[i].ext === 'webm')) {
+                                ret_obj['video'].splice(0, 0, info[i].url);
+                            }
                         }
                     }
                 } else if (id[1] === 'dym') {
-                    for (var i in info.formats) {
-                        if (info.formats[i].format_id.match(/^\d+$/) && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
-                            ret_obj['video'].splice(0, 0, info.formats[i].url);
+                    if (info.formats) {
+                        for (var i in info.formats) {
+                            if (info.formats[i].format_id.match(/^\d+$/) && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
+                                ret_obj['video'].splice(0, 0, info.formats[i].url);
+                            }
+                        }
+                    } else {
+                        for (var i in info) {
+                            if (info[i].format_id.match(/^\d+$/) && (info[i].ext === 'mp4' || info[i].ext === 'webm')) {
+                                ret_obj['video'].splice(0, 0, info[i].url);
+                            }
                         }
                     }
                 /*} else if (id[1] === 'bil') {
-                    for (var i in info.formats) {
-                        if (info.formats[i].format_id === '0') {
-                            ret_obj['video'].push(info.formats[i].url);
-                            break;
+                    if (info.formats) {
+                        for (var i in info.formats) {
+                            if (info.formats[i].format_id === '0') {
+                                ret_obj['video'].push(info.formats[i].url);
+                                break;
+                            }
+                        }
+                    } else {
+                        for (var i in info) {
+                            if (info[i].format_id === '0') {
+                                ret_obj['video'].push(info[i].url);
+                                break;
+                            }
                         }
                     }*/
                 }
