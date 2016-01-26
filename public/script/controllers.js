@@ -675,6 +675,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         $scope.torrentSub = false;
         $scope.videoSub = false;
         this.clearQueue();
+        addAlert('subtitle upload success');
     };
     miscUploader.onErrorItem = function(fileItem, response, status, headers) {
         //console.info('onErrorItem', fileItem, response, status, headers);
@@ -3242,6 +3243,27 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             case 'password':
                                 $scope.$broadcast('password', JSON.stringify(wsmsg.data));
                                 break;
+                            case 'sub':
+                                if ($scope.video.sub && $scope.video.sub.match(wsmsg.data)) {
+                                    var urlmatch = $scope.video.sub.match(/(.*)\/(0+)$/);
+                                    removeCue();
+                                    if (urlmatch) {
+                                        var fresh = urlmatch[2] + '0';
+                                        $scope.video.sub = urlmatch[1] + '/' + fresh;
+                                    } else {
+                                        $scope.video.sub = $scope.video.sub + '/0';
+                                    }
+                                } else if ($scope.torrent.sub && $scope.torrent.sub.match(wsmsg.data)) {
+                                    removeCue('torrent');
+                                    var urlmatch = $scope.torrent.sub.match(/(.*)\/(0+)$/);
+                                    if (urlmatch) {
+                                        var fresh = urlmatch[2] + '0';
+                                        $scope.torrent.sub = urlmatch[1] + '/' + fresh;
+                                    } else {
+                                        $scope.torrent.sub = $scope.torrent.sub + '/0';
+                                    }
+                                }
+                                break;
                             /*case 'torrent':
                                 if (wsmsg.data.id === $scope.torrent.id && wsmsg.data.index === $scope.torrent.index) {
                                     $scope.torrentCheck();
@@ -3591,9 +3613,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     } else {
                         torrentStart = torrent.currentTime;
                     }
-                    var urlmatch = src_obj.src.match(/(.*)\/(\d+)$/);
+                    var urlmatch = src_obj.src.match(/(.*)\/(0+)$/);
                     if (urlmatch) {
-                        var fresh = Number(urlmatch[2]) + 1;
+                        var fresh = urlmatch[2] + '0';
                         src_obj.src = urlmatch[1] + '/' + fresh;
                     } else {
                         src_obj.src = src_obj.src + '/0';

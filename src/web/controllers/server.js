@@ -3167,7 +3167,7 @@ app.get('/api/getUser', function(req, res, next){
     });
 });
 
-app.get('/subtitle/:uid/:index(\\d+|v)?', function(req, res, next){
+app.get('/subtitle/:uid/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle');
         console.log(new Date());

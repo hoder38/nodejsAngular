@@ -281,6 +281,7 @@ app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
                     if (err) {
                         util.handleError(err, next, res);
                     }
+                    sendWs({type: 'sub', data: id}, 0, 0);
                     res.json({apiOK: true});
                 });
             });
@@ -1330,7 +1331,7 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, nex
         }
         var filePath = null;
         var adjust = Number(req.params.adjust);
-        function fixSub() {
+        function fixSub(uid) {
             if (!fs.existsSync(filePath + '.vtt')) {
                 util.handleError({hoerror: 2, message: "do not have subtitle!!!"}, next, res);
             }
@@ -1417,6 +1418,7 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, nex
                         console.log(filePath + '.vtt');
                         util.handleError(err, next, res);
                     }
+                    sendWs({type: 'sub', data: id}, 0, 0);
                     res.json({apiOK: true});
                 });
             });
@@ -1450,7 +1452,7 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, nex
                 util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
             filePath = util.getFileLocation(ex_type, id);
-            fixSub();
+            fixSub(id);
         } else {
             id = util.isValidString(req.params.uid, 'uid');
             if (id === false) {
@@ -1485,7 +1487,7 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, nex
                 if (items[0].status === 9) {
                     filePath = filePath + '/' + fileIndex;
                 }
-                fixSub();
+                fixSub(id);
             });
         }
     });
@@ -1773,6 +1775,7 @@ app.get('/api/external/getSubtitle/:uid', function(req, res, next) {
             if (err) {
                 util.handleError(err, next, res);
             }
+            sendWs({type: 'sub', data: id_valid}, 0, 0);
             res.json({apiOK: true});
         });
     });
@@ -1944,6 +1947,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
+                                    sendWs({type: 'sub', data: id}, 0, 0);
                                     res.json({apiOK: true});
                                 });
                             });
@@ -1952,6 +1956,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                                 if (err) {
                                     util.handleError(err, next, res);
                                 }
+                                sendWs({type: 'sub', data: id}, 0, 0);
                                 res.json({apiOK: true});
                             });
                         }
@@ -1973,6 +1978,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                                 if (err) {
                                     util.handleError(err, next, res);
                                 }
+                                sendWs({type: 'sub', data: id}, 0, 0);
                                 res.json({apiOK: true});
                             });
                         } else {
@@ -1985,6 +1991,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                                         if (err) {
                                             util.handleError(err, next, res);
                                         }
+                                        sendWs({type: 'sub', data: id}, 0, 0);
                                         res.json({apiOK: true});
                                     });
                                 } else {
@@ -1998,6 +2005,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                                                     if (err) {
                                                         util.handleError(err, next, res);
                                                     }
+                                                    sendWs({type: 'sub', data: id}, 0, 0);
                                                     res.json({apiOK: true});
                                                 });
                                             } else {
@@ -2010,6 +2018,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                                                         if (err) {
                                                                 util.handleError(err, next, res);
                                                             }
+                                                            sendWs({type: 'sub', data: id}, 0, 0);
                                                             res.json({apiOK: true});
                                                         });
                                                     } else {
@@ -2023,6 +2032,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                                                                         if (err) {
                                                                             util.handleError(err, next, res);
                                                                         }
+                                                                        sendWs({type: 'sub', data: id}, 0, 0);
                                                                         res.json({apiOK: true});
                                                                     });
                                                                 } else {
@@ -2047,6 +2057,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                                                         if (err) {
                                                             util.handleError(err, next, res);
                                                         }
+                                                        sendWs({type: 'sub', data: id}, 0, 0);
                                                         res.json({apiOK: true});
                                                     });
                                                 } else {
@@ -2071,6 +2082,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                                 if (err) {
                                     util.handleError(err, next, res);
                                 }
+                                sendWs({type: 'sub', data: id}, 0, 0);
                                 res.json({apiOK: true});
                             });
                         } else {
@@ -2383,6 +2395,9 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
             }, null, false, false);
         }
         function SUB2VTT(choose_subtitle, subPath, is_file, callback) {
+            if (!choose_subtitle) {
+                util.handleError({hoerror: 2, message: "donot have sub!!!"}, next, callback);
+            }
             var ext = mime.isSub(choose_subtitle);
             if (!ext) {
                 util.handleError({hoerror: 2, message: "is not sub!!!"}, next, callback);
@@ -3283,6 +3298,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                                                                 if (err) {
                                                                     util.handleError(err);
                                                                 } else {
+                                                                    sendWs({type: 'sub', data: id}, 0, 0);
                                                                     console.log('sub end');
                                                                 }
                                                             });
@@ -3384,6 +3400,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                                                                 if (err) {
                                                                     util.handleError(err);
                                                                 } else {
+                                                                    sendWs({type: 'sub', data: id}, 0, 0);
                                                                     console.log('sub end');
                                                                 }
                                                             });
@@ -3533,7 +3550,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
     }
 }
 
-app.get('/torrent/:index(\\d+|v)/:uid/:fresh(\\d+)?', function (req, res, next) {
+app.get('/torrent/:index(\\d+|v)/:uid/:fresh(0+)?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("torrent");
         console.log(new Date());
@@ -3735,7 +3752,7 @@ app.get('/video/:uid', function (req, res, next) {
     });
 });
 
-app.get('/subtitle/:uid/:index(\\d+|v)?', function(req, res, next){
+app.get('/subtitle/:uid/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle');
         console.log(new Date());
