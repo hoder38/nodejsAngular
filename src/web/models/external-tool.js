@@ -2168,10 +2168,12 @@ module.exports = {
                         }
                         function youkuSource() {
                             var flv_list = raw_multi_list.match(/"bj".*?\}/);
+                            console.log(flv_list[0]);
                             if (!flv_list) {
                                 return false;
                             }
                             var raw_list = flv_list[0].match(/\[[^\[\]]+\]/g);
+                            console.log(raw_list);
                             if (!raw_list) {
                                 return false;
                             }
@@ -2183,6 +2185,7 @@ module.exports = {
                                     list.push({name: list_match[1], id: 'yuk_' + list_match[2]});
                                 }
                             }
+                            console.log(list);
                             if (!list[index-1]) {
                                 return false;
                             }
@@ -2438,12 +2441,12 @@ module.exports = {
                         }
                     }
                 } else {
-                    raw_list = raw_data.match(/class="e-item[\s\S]+?a href="\/video\/[^>]+/g);
+                    raw_list = raw_data.match(/class="e-item("|-l")[\s\S]+?a href="\/video\/[^>]+/g);
                     if (!raw_list) {
                         util.handleError({hoerror: 2, message: 'empty list'}, callback, callback);
                     }
                     for (var i in raw_list) {
-                        list_match = raw_list[i].match(/a href="\/video\/(av\d+)\/(index_(\d+)\.html)?.*?title="([^"]+)/);
+                        list_match = raw_list[i].match(/a href="\/video\/(av\d+)\/(index_(\d+)\.html)?.*?title="([^"]*)/);
                         if (list_match) {
                             if (list_match[3]) {
                                 list.splice(0, 0, {id: 'bil_' + list_match[1] + '_' + list_match[3], name: list_match[4]});
