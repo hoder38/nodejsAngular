@@ -2168,7 +2168,6 @@ module.exports = {
                         }
                         function youkuSource() {
                             var flv_list = raw_multi_list.match(/"bj".*?\}/);
-                            console.log(flv_list[0]);
                             if (!flv_list) {
                                 return false;
                             }
