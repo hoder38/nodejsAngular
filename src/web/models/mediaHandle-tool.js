@@ -16,18 +16,24 @@ var child_process = require('child_process'),
     mkdirp = require('mkdirp'),
     fs = require("fs");
 
+//var transTime = 3300000;
+var transTime = 300000;
 module.exports = function(sendWs) {
     return {
         handleMediaUpload: function(mediaType, filePath, fileID, fileName, fileSize, user, callback, vlog_act) {
             var this_obj = this;
             if (mediaType) {
+                var uploadPath = filePath;
+                if (mediaType['realPath']) {
+                    uploadPath = filePath + '/real/' + mediaType['realPath'];
+                }
                 if (mediaType['type'] === 'vlog' || (mediaType['type'] === 'video' && vlog_act)) {
                     api.xuiteApi("xuite.webhd.prepare.cloudbox.postFile", {full_path: '/AnNoPiHo/' + fileID.toString() + "." + mediaType['ext'], size: fileSize}, function(err, result) {
                         if (err) {
                             util.handleError(err, callback, errerMedia, fileID, callback);
                         }
                         console.log(result);
-                        api.xuiteUpload(result.url, {auth_key: result.auth_key, checksum: result.checksum, api_otp: result.otp}, filePath, fileSize, function(err, uploadResult) {
+                        api.xuiteUpload(result.url, {auth_key: result.auth_key, checksum: result.checksum, api_otp: result.otp}, uploadPath, fileSize, function(err, uploadResult) {
                             if (err) {
                                 util.handleError(err, callback, errerMedia, fileID, callback);
                             }
@@ -167,7 +173,7 @@ module.exports = function(sendWs) {
                     if (mediaType['type'] === 'rawdoc') {
                         mediaType['ext'] = 'txt';
                     }
-                    var data = {type: 'media', name: fileID.toString() + "." + mediaType['ext'], filePath: filePath};
+                    var data = {type: 'media', name: fileID.toString() + "." + mediaType['ext'], filePath: uploadPath};
                     if (mediaType['split']) {
                         data['filePath'] = filePath + '_doc/split/' + mediaType['split'] + '.pdf';
                     }
@@ -206,14 +212,24 @@ module.exports = function(sendWs) {
                 }
             }
         },
-        completeMedia: function (fileID, status, callback, number) {
+        completeMedia: function (fileID, status, callback, rmPath, number) {
             var data = {status: status};
             if (number && number > 1) {
                 data['present'] = number;
             }
+            if (rmPath) {
+                data['status'] = 9;
+            }
             mongo.orig("update", "storage", { _id: fileID }, {$unset: {mediaType: ""}, $set: data}, function(err, item){
                 if(err) {
                     util.handleError(err, callback, callback);
+                }
+                if (rmPath) {
+                    fs.unlink(rmPath, function(err) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                    });
                 }
                 setTimeout(function(){
                     callback(null);
@@ -222,6 +238,12 @@ module.exports = function(sendWs) {
         },
         handleMedia: function (mediaType, filePath, fileID, fileName, key, user, callback, vlog_act) {
             var this_obj = this;
+            var savePath = filePath;
+            var rmPath = null;
+            if (mediaType['realPath']) {
+                savePath = filePath + '/' + mediaType['fileIndex'] + '_complete';
+                rmPath = filePath + '/real/' + mediaType['realPath'];
+            }
             if (mediaType['type'] === 'image' || mediaType['type'] === 'zipbook') {
                 if (mediaType['thumbnail']) {
                     googleApi.googleDownload(mediaType['thumbnail'], filePath + ".jpg", function(err) {
@@ -272,100 +294,159 @@ module.exports = function(sendWs) {
                     console.log(mediaType);
                     util.handleError({hoerror: 2, message: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback);
                 }
-                api.xuiteDownloadMedia(1000, mediaType['time'], key, filePath, 1, mediaType['hd'], function(err, hd, video_url) {
+                api.xuiteDownloadMedia(1000, transTime, key, savePath, 1, mediaType['hd'], function(err, hd, video_url) {
                     if(err) {
                         util.handleError(err, callback, errerMedia, fileID, callback);
                     }
-                    if (hd === 1) {
+                    if (hd === 1 || hd === 720 || hd === 1080) {
                         mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.hd": 2, status: 3}}, function(err, item){
                             if(err) {
                                 util.handleError(err, callback, errerMedia, fileID, callback);
                             }
-                            api.xuiteDownload(video_url, filePath, function(err) {
+                            api.xuiteDownload(video_url, savePath + '_t', function(err) {
                                 if (err) {
                                     util.handleError(err, callback, errerMedia, fileID, callback);
                                 }
-                                api.xuiteDeleteFile(key, function(err) {
+                                fs.unlink(savePath, function(err) {
                                     if (err) {
                                         util.handleError(err, callback, errerMedia, fileID, callback);
                                     }
-                                    tagTool.addTag(fileID, 'hd', user, callback, function(err, result) {
+                                    fs.rename(savePath + '_t', savePath, function(err) {
                                         if (err) {
                                             util.handleError(err, callback, errerMedia, fileID, callback);
                                         }
-                                        tagTool.addTag(fileID, '720p', user, callback, function(err, result) {
+                                        api.xuiteDeleteFile(key, function(err) {
                                             if (err) {
                                                 util.handleError(err, callback, errerMedia, fileID, callback);
                                             }
-                                            this_obj.completeMedia(fileID, 3, function(err) {
+                                            tagTool.addTag(fileID, 'hd', user, callback, function(err, result) {
                                                 if (err) {
-                                                    util.handleError(err, callback, callback);
-                                                } else {
-                                                    this_obj.editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
-                                                        if(err) {
-                                                            util.handleError(err, callback, callback);
-                                                        }
-                                                        setTimeout(function(){
-                                                            callback(null);
-                                                        }, 0);
-                                                    });
+                                                    util.handleError(err, callback, errerMedia, fileID, callback);
                                                 }
+                                                tagTool.addTag(fileID, '720p', user, callback, function(err, result) {
+                                                    if (err) {
+                                                        util.handleError(err, callback, errerMedia, fileID, callback);
+                                                    }
+                                                    this_obj.completeMedia(fileID, 3, function(err) {
+                                                        if (err) {
+                                                            util.handleError(err, callback, callback);
+                                                        } else {
+                                                            if (mediaType['realPath']) {
+                                                                var newName = {};
+                                                                newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                                                mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
+                                                                    if(err) {
+                                                                        util.handleError(err, callback, callback);
+                                                                    }
+                                                                    setTimeout(function(){
+                                                                        callback(null);
+                                                                    }, 0);
+                                                                });
+                                                            } else {
+                                                                this_obj.editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
+                                                                    if(err) {
+                                                                        util.handleError(err, callback, callback);
+                                                                    }
+                                                                    setTimeout(function(){
+                                                                        callback(null);
+                                                                    }, 0);
+                                                                });
+                                                            }
+                                                        }
+                                                    }, rmPath);
+                                                });
                                             });
                                         });
                                     });
                                 });
-                            }, mediaType['time']);
+                            }, transTime);
                         });
                     } else if (hd === 2) {
-                        api.xuiteDownload(video_url, filePath, function(err) {
+                        api.xuiteDownload(video_url, savePath + '_t', function(err) {
                             if (err) {
                                 util.handleError(err, callback, errerMedia, fileID, callback);
                             }
-                            api.xuiteDeleteFile(key, function(err) {
+                            fs.unlink(savePath, function(err) {
                                 if (err) {
                                     util.handleError(err, callback, errerMedia, fileID, callback);
                                 }
-                                tagTool.addTag(fileID, 'hd', user, callback, function(err, result) {
+                                fs.rename(savePath + '_t', savePath, function(err) {
                                     if (err) {
                                         util.handleError(err, callback, errerMedia, fileID, callback);
                                     }
-                                    tagTool.addTag(fileID, '720p', user, callback, function(err, result) {
+                                    api.xuiteDeleteFile(key, function(err) {
                                         if (err) {
                                             util.handleError(err, callback, errerMedia, fileID, callback);
                                         }
-                                        this_obj.completeMedia(fileID, 3, function(err) {
+                                        tagTool.addTag(fileID, 'hd', user, callback, function(err, result) {
                                             if (err) {
-                                                util.handleError(err, callback, callback);
-                                            } else {
-                                                this_obj.editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
-                                                    if(err) {
-                                                        util.handleError(err, callback, callback);
-                                                    }
-                                                    setTimeout(function(){
-                                                        callback(null);
-                                                    }, 0);
-                                                });
+                                                util.handleError(err, callback, errerMedia, fileID, callback);
                                             }
+                                            tagTool.addTag(fileID, '720p', user, callback, function(err, result) {
+                                                if (err) {
+                                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                                }
+                                                this_obj.completeMedia(fileID, 3, function(err) {
+                                                    if (err) {
+                                                        util.handleError(err, callback, callback);
+                                                    } else {
+                                                        if (mediaType['realPath']) {
+                                                            var newName = {};
+                                                            newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                                            mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
+                                                                if(err) {
+                                                                    util.handleError(err, callback, callback);
+                                                                }
+                                                                setTimeout(function(){
+                                                                    callback(null);
+                                                                }, 0);
+                                                            });
+                                                        } else {
+                                                            this_obj.editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
+                                                                if(err) {
+                                                                    util.handleError(err, callback, callback);
+                                                                }
+                                                                setTimeout(function(){
+                                                                    callback(null);
+                                                                }, 0);
+                                                            });
+                                                        }
+                                                    }
+                                                }, rmPath);
+                                            });
                                         });
                                     });
                                 });
                             });
-                        }, mediaType['time']);
+                        }, transTime);
                     } else {
                         this_obj.completeMedia(fileID, 3, function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             } else {
-                                this_obj.editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
-                                    if(err) {
-                                        util.handleError(err, callback, callback);
-                                    }
-                                    setTimeout(function(){
-                                        callback(null);
-                                    }, 0);
-                                });
+                                if (mediaType['realPath']) {
+                                    var newName = {};
+                                        newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                        mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
+                                            if(err) {
+                                                util.handleError(err, callback, callback);
+                                            }
+                                            setTimeout(function(){
+                                                callback(null);
+                                            }, 0);
+                                        });
+                                } else {
+                                    this_obj.editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
+                                        if(err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        setTimeout(function(){
+                                            callback(null);
+                                        }, 0);
+                                    });
+                                }
                             }
-                        });
+                        }, rmPath);
                     }
                 });
             } else if (mediaType['type'] === 'video') {
@@ -374,7 +455,7 @@ module.exports = function(sendWs) {
                     util.handleError({hoerror: 2, message: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback);
                 }
                 if (mediaType['thumbnail']) {
-                    googleApi.googleDownloadMedia(mediaType['time'], mediaType['thumbnail'], key, filePath, mediaType['hd'], function(err) {
+                    googleApi.googleDownloadMedia(transTime, mediaType['thumbnail'], key, savePath, mediaType['hd'], function(err) {
                         if(err) {
                             util.handleError(err, callback, errerMedia, fileID, callback);
                         }
@@ -387,16 +468,30 @@ module.exports = function(sendWs) {
                                 if (err) {
                                     util.handleError(err, callback, callback);
                                 } else {
-                                    this_obj.editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
-                                        if(err) {
-                                            util.handleError(err, callback, callback);
-                                        }
-                                        setTimeout(function(){
-                                            callback(null);
-                                        }, 0);
-                                    });
+                                    if (mediaType['realPath']) {
+                                        var newName = {};
+                                        newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                        console.log(newName);
+                                        mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
+                                            if(err) {
+                                                util.handleError(err, callback, callback);
+                                            }
+                                            setTimeout(function(){
+                                                callback(null);
+                                            }, 0);
+                                        });
+                                    } else {
+                                        this_obj.editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
+                                            if(err) {
+                                                util.handleError(err, callback, callback);
+                                            }
+                                            setTimeout(function(){
+                                                callback(null);
+                                            }, 0);
+                                        });
+                                    }
                                 }
-                            });
+                            }, rmPath);
                         });
                     });
                 } else {
@@ -413,7 +508,7 @@ module.exports = function(sendWs) {
                         if (filedata['videoMediaMetadata'])  {
                             is_ok = true;
                         }
-                        googleApi.googleDownloadMedia(mediaType['time'], filedata['alternateLink'], key, filePath, mediaType['hd'], function(err) {
+                        googleApi.googleDownloadMedia(transTime, filedata['alternateLink'], key, savePath, mediaType['hd'], function(err) {
                             if(err) {
                                 util.handleError(err, callback, errerMedia, fileID, callback);
                             }
@@ -425,16 +520,30 @@ module.exports = function(sendWs) {
                                     if (err) {
                                         util.handleError(err, callback, callback);
                                     } else {
-                                        this_obj.editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
-                                            if(err) {
-                                                util.handleError(err, callback, callback);
-                                            }
-                                            setTimeout(function(){
-                                                callback(null);
-                                            }, 0);
-                                        });
+                                        if (mediaType['realPath']) {
+                                            var newName = {};
+                                            newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                            console.log(newName);
+                                            mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
+                                                if(err) {
+                                                    util.handleError(err, callback, callback);
+                                                }
+                                                setTimeout(function(){
+                                                    callback(null);
+                                                }, 0);
+                                            });
+                                        } else {
+                                            this_obj.editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
+                                                if(err) {
+                                                    util.handleError(err, callback, callback);
+                                                }
+                                                setTimeout(function(){
+                                                    callback(null);
+                                                }, 0);
+                                            });
+                                        }
                                     }
-                                });
+                                }, rmPath);
                             });
                         }, is_ok);
                     });
@@ -1383,6 +1492,7 @@ module.exports = function(sendWs) {
                                     }
                                     if (DBdata['time']) {
                                         if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
+                                            mediaType['time'] = DBdata['time'];
                                             if (mediaType['time'] < 20 * 60 * 1000) {
                                             } else if (mediaType['time'] < 40 * 60 * 1000) {
                                                 mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 2));
@@ -1407,19 +1517,85 @@ module.exports = function(sendWs) {
                     callback(null, mediaType, mediaTag, DBdata);
                 }, 0);
             }
+        },
+        checkMedia: function(callback){
+            var this_obj = this;
+            mongo.orig("find", "storage", {'mediaType.timeout': {$exists: true}}, function(err, items){
+                if(err) {
+                    util.handleError(err, next, callback, null);
+                }
+                console.log(items);
+                if (items.length > 0) {
+                    var filePath = null;
+                    var dbStats = null;
+                    var dbName = null;
+                    for (var i in items) {
+                        filePath = util.getFileLocation(items[i].owner, items[i]._id);
+                        if(items[i].mediaType.key) {
+                            this_obj.handleMedia(items[i].mediaType, filePath, items[i]._id, items[i].name, items[i].mediaType.key, {_id: items[i].owner, perm: 1}, function (err) {
+                                sendWs({type: 'file', data: items[i]._id}, items[i].adultonly);
+                                if (err) {
+                                    util.handleError(err);
+                                }
+                                console.log('transcode done');
+                                console.log(new Date());
+                            });
+                        } else {
+                            if (items[i].mediaType['realPath']) {
+                                if (fs.existsSync(filePath + '/' + items[i].mediaType['fileIndex'] + '_complete')) {
+                                    dbStats = fs.statSync(filePath + '/real/' + items[i].mediaType['realPath']);
+                                    dbName = path.basename(items[i].mediaType['realPath']);
+                                    this_obj.handleMediaUpload(items[i].mediaType, filePath, items[i]._id, dbName, dbStats['size'], {_id: items[i].owner, perm: 1}, function (err) {
+                                        sendWs({type: 'file', data: items[i]._id}, items[i].adultonly);
+                                        if (err) {
+                                            util.handleError(err);
+                                        }
+                                        console.log('transcode done');
+                                        console.log(new Date());
+                                    });
+                                }
+                            } else {
+                                this_obj.handleMediaUpload(items[i].mediaType, filePath, items[i]._id, items[i].name, items[i].size, {_id: items[i].owner, perm: 1}, function (err) {
+                                    sendWs({type: 'file', data: items[i]._id}, items[i].adultonly);
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    console.log('transcode done');
+                                    console.log(new Date());
+                                });
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null);
+                }, 0);
+            });
         }
     };
 };
 function errerMedia(errMedia, fileID, callback) {
-    mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.err": errMedia}}, function(err, item){
-        if(err) {
-            util.handleError(err, callback, callback);
-        }
-        console.log(item);
-        setTimeout(function(){
-            callback(err);
-        }, 0);
-    });
+    if (errMedia.hoerror === 2 && errMedia.message === 'timeout') {
+        mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.timeout": true}}, function(err, item){
+            if(err) {
+                util.handleError(err, callback, callback);
+            }
+            console.log(item);
+            setTimeout(function(){
+                callback(err);
+            }, 0);
+        });
+    } else {
+        mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.err": errMedia}}, function(err, item){
+            if(err) {
+                util.handleError(err, callback, callback);
+            }
+            console.log(item);
+            setTimeout(function(){
+                callback(err);
+            }, 0);
+        });
+    }
 }
 function SMPdf(filePath, progress, dir, callback) {
     var match = progress.match(/^(\d+)-(\d+)$/);

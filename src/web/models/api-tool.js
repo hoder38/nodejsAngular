@@ -269,7 +269,7 @@ module.exports = {
             }
             var options = {
                 host: "my.xuite.net",
-                path: "/service/account/token.php?grant_type=refresh_token&client_id=" + api_key + "&client_secret=" + api_secret + "&refresh_token=" + tokens[0]["refresh_token"] + "&redirect_uri=http://anomopi.com/refresh",
+                path: "/service/account/token.php?grant_type=refresh_token&client_id=" + api_key + "&client_secret=" + api_secret + "&refresh_token=" + tokens[0]["refresh_token"] + "&redirect_uri=" + config_type.google_redirect,
                 port: 443,
                 method: 'GET',
                 headers: {
@@ -279,6 +279,7 @@ module.exports = {
             // Set up the request
             var req = https.request(options, function(res) {
                 res.setEncoding('utf8');
+                console.log(res.headers);
                 new_token = urlMod.parse(res.headers.location, true).query;
                 mongo.orig("update", "accessToken", {api: "xuite"}, {$set: new_token}, function(err,token){
                     if(err) {
@@ -699,45 +700,65 @@ module.exports = {
                                 if (err) {
                                     util.handleError(err, callback, callback);
                                 }
-                                this_obj.xuiteDownload(video_url, filePath, function(err) {
+                                this_obj.xuiteDownload(video_url, filePath + '_t', function(err) {
                                     if (err) {
                                         util.handleError(err, callback, callback);
                                     }
-                                    if (is_hd === 0) {
-                                        this_obj.xuiteDeleteFile(key, function(err) {
+                                    fs.unlink(filePath, function(err) {
+                                        if (err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        fs.rename(filePath + '_t', filePath, function(err) {
                                             if (err) {
-                                                util.handleError(err, callback, callback, null);
+                                                util.handleError(err, callback, callback);
                                             }
-                                            setTimeout(function(){
-                                                callback(null, 0, '');
-                                            }, 0);
+                                            if (is_hd === 0) {
+                                                this_obj.xuiteDeleteFile(key, function(err) {
+                                                    if (err) {
+                                                        util.handleError(err, callback, callback, null);
+                                                    }
+                                                    setTimeout(function(){
+                                                        callback(null, 0, '');
+                                                    }, 0);
+                                                });
+                                            } else {
+                                                setTimeout(function(){
+                                                    callback(null, is_hd, video_url.slice(0, video_url.length -1) + 'h');
+                                                }, 0);
+                                            }
                                         });
-                                    } else {
-                                        setTimeout(function(){
-                                            callback(null, is_hd, video_url.slice(0, video_url.length -1) + 'h');
-                                        }, 0);
-                                    }
+                                    });
                                 });
                             });
                         } else {
-                            this_obj.xuiteDownload(video_url, filePath, function(err) {
+                            this_obj.xuiteDownload(video_url, filePath + '_t', function(err) {
                                 if (err) {
                                     util.handleError(err, callback, callback, null);
                                 }
-                                if (is_hd === 0) {
-                                    this_obj.xuiteDeleteFile(key, function(err) {
+                                fs.unlink(filePath, function(err) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    fs.rename(filePath + '_t', filePath, function(err) {
                                         if (err) {
-                                            util.handleError(err, callback, callback, null);
+                                            util.handleError(err, callback, callback);
                                         }
-                                        setTimeout(function(){
-                                            callback(null);
-                                        }, 0);
+                                        if (is_hd === 0) {
+                                            this_obj.xuiteDeleteFile(key, function(err) {
+                                                if (err) {
+                                                    util.handleError(err, callback, callback, null);
+                                                }
+                                                setTimeout(function(){
+                                                    callback(null);
+                                                }, 0);
+                                            });
+                                        } else {
+                                            setTimeout(function(){
+                                                callback(null, video_url, is_hd);
+                                            }, 0);
+                                        }
                                     });
-                                } else {
-                                    setTimeout(function(){
-                                        callback(null, video_url, is_hd);
-                                    }, 0);
-                                }
+                                });
                             });
                         }
                     });
@@ -746,9 +767,9 @@ module.exports = {
                     console.log(time);
                     var timeout = 600000;
                     var real_threshold = threshold;
-                    if (is_hd) {
+                    /*if (is_hd) {
                         real_threshold = 2*threshold;
-                    }
+                    }*/
                     if (real_threshold > 600000) {
                         timeout = real_threshold;
                     }

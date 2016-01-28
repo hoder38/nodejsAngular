@@ -31,6 +31,7 @@ module.exports = {
     autoUpload: false,
     updateStock: false,
     updateExternal: false,
+    checkMedia: true,
     api_limit: 5,
     torrent_limit: 5
 };

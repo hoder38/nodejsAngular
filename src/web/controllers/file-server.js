@@ -45,6 +45,11 @@ var stock_batch_list = [];
 
 var drive_batch = 100;
 
+//var media_interval = 7200000;
+var media_interval = 900000;
+
+var media_time = 0;
+
 var torrent_pool = [];
 
 var external_pool = [];
@@ -217,7 +222,7 @@ app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
                     if (req.params.index) {
                         if (req.params.index === 'v') {
                             for (var i in items[0]['playList']) {
-                                if (items[0]['playList'][i].match(/\.mp4$/i) || items[0]['playList'][i].match(/\.mkv$/i)) {
+                                if (mime.isVideo(items[0]['playList'][i])) {
                                     fileIndex = i;
                                     break;
                                 }
@@ -353,7 +358,28 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                     if (err) {
                         util.handleError(err, next, res);
                     }
-                    save2DB(mediaType, mediaTag, DBdata);
+                    if (mediaType.type === 'video') {
+                        var is_preview = true;
+                        var cProcess = avconv(['-i', filePath]);
+                        cProcess.once('exit', function(exitCode, signal, metadata2) {
+                            if (metadata2 && metadata2.input && metadata2.input.stream) {
+                                for (var i in metadata2.input.stream[0]) {
+                                    console.log(metadata2.input.stream[0][i].type);
+                                    console.log(metadata2.input.stream[0][i].codec);
+                                    if (metadata2.input.stream[0][i].type === 'video' && metadata2.input.stream[0][i].codec !== 'h264') {
+                                        is_preview = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (is_preview) {
+                                DBdata['status'] = 3;
+                            }
+                            save2DB(mediaType, mediaTag, DBdata);
+                        });
+                    } else {
+                        save2DB(mediaType, mediaTag, DBdata);
+                    }
                 });
                 function save2DB(mediaType, mediaTag, DBdata) {
                     var normal = tagTool.normalizeTag(name);
@@ -1471,7 +1497,7 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, nex
                 if (req.params.index) {
                     if (req.params.index === 'v') {
                         for (var i in items[0]['playList']) {
-                            if (items[0]['playList'][i].match(/\.mp4$/i) || items[0]['playList'][i].match(/\.mkv$/i)) {
+                            if (mime.isVideo(items[0]['playList'][i])) {
                                 fileIndex = i;
                                 break;
                             }
@@ -1480,7 +1506,7 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, nex
                         fileIndex = Number(req.params.index);
                     }
                 }
-                if (items[0].status === 9 && !items[0]['playList'][fileIndex].match(/\.mp4$/i) && !items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
+                if (items[0].status === 9 && !mime.isVideo(items[0]['playList'][fileIndex])) {
                     util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
                 }
                 filePath = util.getFileLocation(items[0].owner, items[0]._id);
@@ -1571,7 +1597,7 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                 res.json(ret_obj);
             }, 60000, false, false, 'http://888blb1.flvapi.com/');
         } else if (id[1] === 'kdr') {
-            var kubo_url = 'http://jaiwen.com/jx/gg58/xml.php?url=gg_' + url + '_gq';
+            var kubo_url = 'http://jaiwen.com/jx/gg58/xml.php?url=gg_' + url + '_cq';
             api.xuiteDownload(kubo_url, '', function(err, raw_data) {
                 if (err) {
                     err.hoerror = 2;
@@ -1596,7 +1622,7 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                     util.handleError({hoerror: 2, message: "video index invaild!!!"}, next, res);
                 }
                 if (list[subIndex-1].match(/&itag=35&/)) {
-                    kubo_url = 'http://jaiwen.com/jx/gg58/xml.php?url=gg_' + url + '_cq';
+                    kubo_url = 'http://jaiwen.com/jx/gg58/xml.php?url=gg_' + url + '_gq';
                     api.xuiteDownload(kubo_url, '', function(err, raw_data) {
                         if (err) {
                             err.hoerror = 2;
@@ -1890,7 +1916,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                 if (req.params.index) {
                     if (req.params.index === 'v') {
                         for (var i in items[0]['playList']) {
-                            if (items[0]['playList'][i].match(/\.mp4$/i) || items[0]['playList'][i].match(/\.mkv$/i)) {
+                            if (mime.isVideo(items[0]['playList'][i])) {
                                 fileIndex = i;
                                 break;
                             }
@@ -1899,7 +1925,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                         fileIndex = Number(req.params.index);
                     }
                 }
-                if (items[0].status === 9 && !items[0]['playList'][fileIndex].match(/\.mp4$/i) && !items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
+                if (items[0].status === 9 && !mime.isVideo(items[0]['playList'][fileIndex])) {
                     util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
                 }
                 filePath = util.getFileLocation(items[0].owner, items[0]._id);
@@ -2919,7 +2945,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res,
                 }
                 if (req.params.index === 'v') {
                     for (var i in items[0]['playList']) {
-                        if (items[0]['playList'][i].match(/\.mp4$/i) || items[0]['playList'][i].match(/\.mkv$/i)) {
+                        if (mime.isVideo(items[0]['playList'][i])) {
                             fileIndex = i;
                             break;
                         }
@@ -2953,7 +2979,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res,
                         queueTorrent('add', req.user, decodeURIComponent(items[0]['magnet']), fileIndex, items[0]._id, items[0].owner);
                     //}
                 } else {
-                    if (items[0]['playList'][fileIndex].match(/\.mp4$/i) || items[0]['playList'][fileIndex].match(/\.mkv$/i)) {
+                    if (mime.isVideo(items[0]['playList'][fileIndex])) {
                         //if (util.checkAdmin(1, req.user)) {
                             res.json({start: true});
                             queueTorrent('add', req.user, decodeURIComponent(items[0]['magnet']), fileIndex, items[0]._id, items[0].owner);
@@ -3221,259 +3247,349 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                     console.log(fileIndex);
                     console.log(file.name);
                     console.log(file.length);
-                    if (file.name.match(/\.mp4$/i)) {
-                        console.log('torrent real start');
-                        if (fs.existsSync(bufferPath)) {
-                            console.log(fs.statSync(bufferPath).size);
-                            if (fs.statSync(bufferPath).size >= file.length) {
-                                torrentComplete(1);
-                            } else {
-                                console.log(fs.statSync(bufferPath).size);
-                                console.log(bufferPath);
-                                var fileStream = file.createReadStream({start: fs.statSync(bufferPath).size});
-                                fileStream.pipe(fs.createWriteStream(bufferPath, {flags: 'a'}));
-                                fileStream.on('end', function() {
-                                    torrentComplete(1);
-                                });
-                            }
-                        } else {
-                            console.log(bufferPath);
-                            oth.computeHash(fileIndex, engine, function(err, hash_ret) {
-                                if (err) {
-                                    sendWs({type: user.username, data: 'buffer fail: ' + err.message}, 0);
-                                    util.handleError(err);
-                                    torrentComplete(10);
-                                } else {
-                                    console.log(hash_ret);
-                                    //預設可撥
-                                    var is_preview = true;
-                                    var cProcess = avconv(['-i', realPath + '/' + file.path]);
-                                    cProcess.once('exit', function(exitCode, signal, metadata2) {
-                                        if (metadata2 && metadata2.input && metadata2.input.stream) {
-                                            for (var i in metadata2.input.stream[0]) {
-                                                console.log(metadata2.input.stream[0][i].type);
-                                                console.log(metadata2.input.stream[0][i].codec);
-                                                if (metadata2.input.stream[0][i].type === 'video' && metadata2.input.stream[0][i].codec !== 'h264') {
-                                                    is_preview = false;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if (!is_preview) {
-                                            sendWs({type: user.username, data: 'buffer fail: video codec is not h264'}, 0);
-                                            util.handleError({hoerror: 2, message: 'video codec is not h264'});
+                    var videoInfo = mime.isVideo(file.name);
+                    if (!videoInfo) {
+                        sendWs({type: user.username, data: 'not video'}, 0);
+                        util.handleError({hoerror: 2, message: 'not video'});
+                        torrentComplete(10);
+                    } else {
+                        if (videoInfo.ext === 'mkv') {
+                            console.log('torrent real start');
+                            var tempPath = bufferPath + '_temp';
+                            var time = 0;
+                            var mkvBuffering = false;
+                            if (fs.existsSync(tempPath)) {
+                                console.log(fs.statSync(tempPath).size);
+                                mongo.orig("find", "storage", { _id: id, mediaType: {$exists: true}}, {limit: 1}, function(err, items){
+                                    if (err) {
+                                        sendWs({type: user.username, data: err.message}, 0);
+                                        util.handleError(err);
+                                        torrentComplete(10);
+                                    } else {
+                                        if (items.length < 1) {
+                                            sendWs({type: user.username, data: 'cannot find mediaType'}, 0);
+                                            util.handleError({hoerror: 2, message: 'cannot find mediaType'});
                                             torrentComplete(10);
                                         } else {
-                                            var OpenSubtitles = new openSubtitle('hoder agent v0.1');
-                                            OpenSubtitles.search({
-                                                extensions: 'srt',
-                                                //sublanguageid: 'chi',
-                                                hash: hash_ret.movieHash,
-                                                filesize: hash_ret.fileSize
-                                            }).then(function (subtitles) {
-                                                var sub_url = null;
-                                                console.log(subtitles);
-                                                if (subtitles.ze) {
-                                                    sub_url = subtitles.ze.url;
-                                                } else if (subtitles.zt) {
-                                                    sub_url = subtitles.zt.url;
-                                                } else if (subtitles.zh) {
-                                                    sub_url = subtitles.zh.url;
-                                                }
-                                                if (sub_url) {
-                                                    if (fs.existsSync(bufferPath + '.srt')) {
-                                                        fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
-                                                    }
-                                                    if (fs.existsSync(bufferPath + '.ass')) {
-                                                        fs.renameSync(bufferPath + '.ass', bufferPath + '.ass1');
-                                                    }
-                                                    if (fs.existsSync(bufferPath + '.ssa')) {
-                                                        fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
-                                                    }
-                                                    api.xuiteDownload(sub_url, bufferPath + '.srt', function(err) {
-                                                        if (err) {
-                                                            util.handleError(err);
-                                                        } else {
-                                                            util.SRT2VTT(bufferPath, 'srt', function(err) {
-                                                                if (err) {
-                                                                    util.handleError(err);
-                                                                } else {
-                                                                    sendWs({type: 'sub', data: id}, 0, 0);
-                                                                    console.log('sub end');
-                                                                }
-                                                            });
-                                                        }
-                                                    }, null, false);
-                                                }
-                                            }).catch(function (err) {
-                                                util.handleError(err);
-                                            });
-                                            var fileStream = file.createReadStream();
-                                            fileStream.pipe(fs.createWriteStream(bufferPath));
-                                            fileStream.on('end', function() {
-                                                torrentComplete(1);
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    } else if (file.name.match(/\.mkv$/i)) {
-                        console.log('torrent real start');
-                        var tempPath = bufferPath + '_temp';
-                        var time = 0;
-                        var mkvBuffering = false;
-                        if (fs.existsSync(tempPath)) {
-                            fs.unlink(tempPath, function (err) {
-                                if (err) {
-                                    sendWs({type: user.username, data: 'buffer fail: ' + err.message}, 0);
-                                    util.handleError(err);
-                                    torrentComplete(10);
-                                } else {
-                                    var aProcess = avconv(['-i', '-', '-strict', 'experimental', '-c:a', 'aac', '-c:v', 'copy', '-movflags', 'frag_keyframe+empty_moov', '-f', 'mp4', tempPath]);
-                                    file.createReadStream().pipe(aProcess);
-                                    aProcess.on('message', function(data) {
-                                        mkv2buffer(data);
-                                    });
-                                    aProcess.once('exit', function(exitCode, signal, metadata1) {
-                                        torrentComplete(2, tempPath);
-                                    });
-                                }
-                            });
-                        } else {
-                            oth.computeHash(fileIndex, engine, function(err, hash_ret) {
-                                if (err) {
-                                    sendWs({type: user.username, data: 'buffer fail: ' + err.message}, 0);
-                                    util.handleError(err);
-                                    torrentComplete(10);
-                                } else {
-                                    console.log(hash_ret);
-                                    //預設可撥
-                                    var is_preview = true;
-                                    var cProcess = avconv(['-i', realPath + '/' + file.path]);
-                                    cProcess.once('exit', function(exitCode, signal, metadata2) {
-                                        if (metadata2 && metadata2.input && metadata2.input.stream) {
-                                            for (var i in metadata2.input.stream[0]) {
-                                                console.log(metadata2.input.stream[0][i].type);
-                                                console.log(metadata2.input.stream[0][i].codec);
-                                                if (metadata2.input.stream[0][i].type === 'video' && metadata2.input.stream[0][i].codec !== 'h264') {
-                                                    is_preview = false;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if (!is_preview) {
-                                            sendWs({type: user.username, data: 'buffer fail: video codec is not h264'}, 0);
-                                            util.handleError({hoerror: 2, message: 'video codec is not h264'});
-                                            torrentComplete(10);
-                                        } else {
-                                            var OpenSubtitles = new openSubtitle('hoder agent v0.1');
-                                            OpenSubtitles.search({
-                                                extensions: 'srt',
-                                                hash: hash_ret.movieHash,
-                                                filesize: hash_ret.fileSize
-                                            }).then(function (subtitles) {
-                                                var sub_url = null;
-                                                console.log(subtitles);
-                                                if (subtitles.ze) {
-                                                    sub_url = subtitles.ze.url;
-                                                } else if (subtitles.zt) {
-                                                    sub_url = subtitles.zt.url;
-                                                } else if (subtitles.zh) {
-                                                    sub_url = subtitles.zh.url;
-                                                }
-                                                if (sub_url) {
-                                                    if (fs.existsSync(bufferPath + '.srt')) {
-                                                        fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
-                                                    }
-                                                    if (fs.existsSync(bufferPath + '.ass')) {
-                                                        fs.renameSync(bufferPath + '.ass', bufferPath + '.ass1');
-                                                    }
-                                                    if (fs.existsSync(bufferPath + '.ssa')) {
-                                                        fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
-                                                    }
-                                                    api.xuiteDownload(sub_url, bufferPath + '.srt', function(err) {
-                                                        if (err) {
-                                                            util.handleError(err);
-                                                        } else {
-                                                            util.SRT2VTT(bufferPath, 'srt', function(err) {
-                                                                if (err) {
-                                                                    util.handleError(err);
-                                                                } else {
-                                                                    sendWs({type: 'sub', data: id}, 0, 0);
-                                                                    console.log('sub end');
-                                                                }
-                                                            });
-                                                        }
-                                                    }, null, false);
-                                                }
-                                            }).catch(function (err) {
-                                                util.handleError(err);
-                                            });
-                                            var aProcess = avconv(['-i', '-', '-strict', 'experimental', '-c:a', 'aac', '-c:v', 'copy', '-movflags', 'frag_keyframe+empty_moov', '-f', 'mp4', tempPath]);
-                                            file.createReadStream().pipe(aProcess);
-                                            aProcess.on('message', function(data) {
-                                                mkv2buffer(data);
-                                            });
-                                            aProcess.once('exit', function(exitCode, signal, metadata1) {
-                                                torrentComplete(2, tempPath);
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                        function mkv2buffer(data, end) {
-                            if (!mkvBuffering) {
-                                var parseTime = data.match(/ time=(\d+\.\d+) /);
-                                if (parseTime) {
-                                    var currentTime = Number(parseTime[1]);
-                                    console.log(currentTime);
-                                    if (currentTime > time + 300) {
-                                        time = currentTime;
-                                        console.log('start copy');
-                                        var splicePath = null;
-                                        for (var i = 0; i < 10; i++) {
-                                            splicePath = bufferPath + '_' + i;
-                                            if (!fs.existsSync(splicePath)) {
-                                                break;
-                                            }
-                                        }
-                                        if (i >= 10) {
-                                            return;
-                                        }
-                                        mkvBuffering = true;
-                                        var tProcess = avconv(['-i', tempPath, '-c', 'copy', '-f', 'mp4', splicePath]);
-                                        tProcess.once('exit', function(exitCode, signal, metadata1) {
-                                            fs.rename(splicePath, bufferPath, function(err) {
-                                                mkvBuffering = false;
+                                            fs.unlink(tempPath, function (err) {
                                                 if (err) {
+                                                    sendWs({type: user.username, data: 'buffer fail: ' + err.message}, 0);
                                                     util.handleError(err);
-                                                    torrentComplete(3, tempPath);
-                                                }
-                                                //如果比compplete慢 砍掉自己
-                                                if (fs.existsSync(bufferPath + '_complete')) {
-                                                    fs.unlink(bufferPath, function(err) {
-                                                        if (err) {
-                                                            util.handleError(err);
-                                                        }
+                                                    torrentComplete(10);
+                                                } else {
+                                                    var aProcess = avconv(['-i', '-', '-strict', 'experimental', '-c:a', 'aac', '-c:v', 'copy', '-movflags', 'frag_keyframe+empty_moov', '-f', 'mp4', tempPath]);
+                                                    file.createReadStream().pipe(aProcess);
+                                                    aProcess.on('message', function(data) {
+                                                        mkv2buffer(data);
+                                                    });
+                                                    aProcess.once('exit', function(exitCode, signal, metadata1) {
+                                                        torrentComplete(2, tempPath, items[0].mediaType);
                                                     });
                                                 }
                                             });
+                                        }
+                                    }
+                                });
+                            } else if (fs.existsSync(bufferPath)) {
+                                console.log(fs.statSync(bufferPath).size);
+                                mongo.orig("find", "storage", { _id: id, mediaType: {$exists: true}}, {limit: 1}, function(err, items){
+                                    if (err) {
+                                        sendWs({type: user.username, data: err.message}, 0);
+                                        util.handleError(err);
+                                        torrentComplete(10);
+                                    } else {
+                                        if (items.length < 1) {
+                                            sendWs({type: user.username, data: 'cannot find mediaType'}, 0);
+                                            util.handleError({hoerror: 2, message: 'cannot find mediaType'});
+                                            torrentComplete(10);
+                                        } else {
+                                            if (fs.statSync(bufferPath).size >= file.length) {
+                                                torrentComplete(1, null, items[0].mediaType);
+                                            } else {
+                                                console.log(fs.statSync(bufferPath).size);
+                                                console.log(bufferPath);
+                                                var fileStream = file.createReadStream({start: fs.statSync(bufferPath).size});
+                                                fileStream.pipe(fs.createWriteStream(bufferPath, {flags: 'a'}));
+                                                fileStream.on('end', function() {
+                                                    torrentComplete(1, null, items[0].mediaType);
+                                                });
+                                            }
+                                        }
+                                    }
+                                });
+                            } else {
+                                mongo.orig("find", "storage", { _id: id, mediaType: {$exists: true}}, {limit: 1}, function(err, items){
+                                    if(err) {
+                                        sendWs({type: user.username, data: err.message}, 0);
+                                        util.handleError(err);
+                                        torrentComplete(10);
+                                    }
+                                    if (items.length > 0) {
+                                        sendWs({type: user.username, data: 'single playlist only one download'}, 0);
+                                        util.handleError({hoerror: 2, message: 'single playlist only one download'});
+                                        torrentComplete(4);
+                                    } else {
+                                        var mediaType = mime.mediaType(file.name);
+                                        mediaType['fileIndex'] = fileIndex;
+                                        mediaType['realPath'] = file.path;
+                                        mongo.orig("update", "storage", { _id: id }, {$set: {mediaType: mediaType}}, function(err, item2){
+                                            if(err) {
+                                                sendWs({type: user.username, data: err.message}, 0);
+                                                util.handleError(err);
+                                                torrentComplete(10);
+                                            } else {
+                                                console.log(bufferPath);
+                                                oth.computeHash(fileIndex, engine, function(err, hash_ret) {
+                                                    if (err) {
+                                                        sendWs({type: user.username, data: 'buffer fail: ' + err.message}, 0);
+                                                        util.handleError(err);
+                                                        torrentComplete(10);
+                                                    } else {
+                                                        console.log(hash_ret);
+                                                        //預設可撥
+                                                        var is_preview = true;
+                                                        var cProcess = avconv(['-i', realPath + '/' + file.path]);
+                                                        cProcess.once('exit', function(exitCode, signal, metadata2) {
+                                                            if (metadata2 && metadata2.input && metadata2.input.stream) {
+                                                                for (var i in metadata2.input.stream[0]) {
+                                                                    console.log(metadata2.input.stream[0][i].type);
+                                                                    console.log(metadata2.input.stream[0][i].codec);
+                                                                    if (metadata2.input.stream[0][i].type === 'video' && metadata2.input.stream[0][i].codec !== 'h264') {
+                                                                        is_preview = false;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+                                                            var OpenSubtitles = new openSubtitle('hoder agent v0.1');
+                                                            OpenSubtitles.search({
+                                                                extensions: 'srt',
+                                                                hash: hash_ret.movieHash,
+                                                                filesize: hash_ret.fileSize
+                                                            }).then(function (subtitles) {
+                                                                var sub_url = null;
+                                                                console.log(subtitles);
+                                                                if (subtitles.ze) {
+                                                                    sub_url = subtitles.ze.url;
+                                                                } else if (subtitles.zt) {
+                                                                    sub_url = subtitles.zt.url;
+                                                                } else if (subtitles.zh) {
+                                                                    sub_url = subtitles.zh.url;
+                                                                }
+                                                                if (sub_url) {
+                                                                    if (fs.existsSync(bufferPath + '.srt')) {
+                                                                        fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
+                                                                    }
+                                                                    if (fs.existsSync(bufferPath + '.ass')) {
+                                                                        fs.renameSync(bufferPath + '.ass', bufferPath + '.ass1');
+                                                                    }
+                                                                    if (fs.existsSync(bufferPath + '.ssa')) {
+                                                                        fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
+                                                                    }
+                                                                    api.xuiteDownload(sub_url, bufferPath + '.srt', function(err) {
+                                                                        if (err) {
+                                                                            util.handleError(err);
+                                                                        } else {
+                                                                            util.SRT2VTT(bufferPath, 'srt', function(err) {
+                                                                                if (err) {
+                                                                                    util.handleError(err);
+                                                                                } else {
+                                                                                    sendWs({type: 'sub', data: id}, 0, 0);
+                                                                                    console.log('sub end');
+                                                                                }
+                                                                            });
+                                                                        }
+                                                                    }, null, false);
+                                                                }
+                                                            }).catch(function (err) {
+                                                                util.handleError(err);
+                                                            });
+                                                            if (!is_preview) {
+                                                                var fileStream = file.createReadStream();
+                                                                fileStream.pipe(fs.createWriteStream(bufferPath));
+                                                                fileStream.on('end', function() {
+                                                                    torrentComplete(1, null, mediaType);
+                                                                });
+                                                            } else {
+                                                                var aProcess = avconv(['-i', '-', '-strict', 'experimental', '-c:a', 'aac', '-c:v', 'copy', '-movflags', 'frag_keyframe+empty_moov', '-f', 'mp4', tempPath]);
+                                                                file.createReadStream().pipe(aProcess);
+                                                                aProcess.on('message', function(data) {
+                                                                    mkv2buffer(data);
+                                                                });
+                                                                aProcess.once('exit', function(exitCode, signal, metadata1) {
+                                                                    torrentComplete(2, tempPath, mediaType);
+                                                                });
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
                                         });
+                                    }
+                                });
+                            }
+                            function mkv2buffer(data, end) {
+                                if (!mkvBuffering) {
+                                    var parseTime = data.match(/ time=(\d+\.\d+) /);
+                                    if (parseTime) {
+                                        var currentTime = Number(parseTime[1]);
+                                        console.log(currentTime);
+                                        if (currentTime > time + 300) {
+                                            time = currentTime;
+                                            console.log('start copy');
+                                            var splicePath = null;
+                                            for (var i = 0; i < 10; i++) {
+                                                splicePath = bufferPath + '_' + i;
+                                                if (!fs.existsSync(splicePath)) {
+                                                    break;
+                                                }
+                                            }
+                                            if (i >= 10) {
+                                                return;
+                                            }
+                                            mkvBuffering = true;
+                                            var tProcess = avconv(['-i', tempPath, '-c', 'copy', '-f', 'mp4', splicePath]);
+                                            tProcess.once('exit', function(exitCode, signal, metadata1) {
+                                                fs.rename(splicePath, bufferPath, function(err) {
+                                                    mkvBuffering = false;
+                                                    if (err) {
+                                                        util.handleError(err);
+                                                        torrentComplete(3, tempPath);
+                                                    }
+                                                    //如果比compplete慢 砍掉自己
+                                                    if (fs.existsSync(bufferPath + '_complete')) {
+                                                        fs.unlink(bufferPath, function(err) {
+                                                            if (err) {
+                                                                util.handleError(err);
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            });
+                                        }
                                     }
                                 }
                             }
+                        } else {
+                            console.log('torrent real start');
+                            //sendWs({type: user.username, data: 'not previewable need transcode'}, 0);
+                            if (fs.existsSync(bufferPath)) {
+                                console.log(fs.statSync(bufferPath).size);
+                                mongo.orig("find", "storage", { _id: id, mediaType: {$exists: true}}, {limit: 1}, function(err, items){
+                                    if (err) {
+                                        sendWs({type: user.username, data: err.message}, 0);
+                                        util.handleError(err);
+                                        torrentComplete(10);
+                                    } else {
+                                        if (items.length < 1) {
+                                            sendWs({type: user.username, data: 'cannot find mediaType'}, 0);
+                                            util.handleError({hoerror: 2, message: 'cannot find mediaType'});
+                                            torrentComplete(10);
+                                        } else {
+                                            if (fs.statSync(bufferPath).size >= file.length) {
+                                                torrentComplete(1, null, items[0].mediaType);
+                                            } else {
+                                                console.log(fs.statSync(bufferPath).size);
+                                                console.log(bufferPath);
+                                                var fileStream = file.createReadStream({start: fs.statSync(bufferPath).size});
+                                                fileStream.pipe(fs.createWriteStream(bufferPath, {flags: 'a'}));
+                                                fileStream.on('end', function() {
+                                                    torrentComplete(1, null, items[0].mediaType);
+                                                });
+                                            }
+                                        }
+                                    }
+                                });
+                            } else {
+                                mongo.orig("find", "storage", { _id: id, mediaType: {$exists: true}}, {limit: 1}, function(err, items){
+                                    if(err) {
+                                        sendWs({type: user.username, data: err.message}, 0);
+                                        util.handleError(err);
+                                        torrentComplete(10);
+                                    }
+                                    if (items.length > 0) {
+                                        sendWs({type: user.username, data: 'single playlist only one download'}, 0);
+                                        util.handleError({hoerror: 2, message: 'single playlist only one download'});
+                                        torrentComplete(4);
+                                    } else {
+                                        var mediaType = mime.mediaType(file.name);
+                                        mediaType['fileIndex'] = fileIndex;
+                                        mediaType['realPath'] = file.path;
+                                        mongo.orig("update", "storage", { _id: id }, {$set: {mediaType: mediaType}}, function(err, item2){
+                                            if(err) {
+                                                sendWs({type: user.username, data: err.message}, 0);
+                                                util.handleError(err);
+                                                torrentComplete(10);
+                                            } else {
+                                                console.log(bufferPath);
+                                                oth.computeHash(fileIndex, engine, function(err, hash_ret) {
+                                                    if (err) {
+                                                        sendWs({type: user.username, data: 'buffer fail: ' + err.message}, 0);
+                                                        util.handleError(err);
+                                                        torrentComplete(10);
+                                                    } else {
+                                                        console.log(hash_ret);
+                                                        var OpenSubtitles = new openSubtitle('hoder agent v0.1');
+                                                        OpenSubtitles.search({
+                                                            extensions: 'srt',
+                                                            //sublanguageid: 'chi',
+                                                            hash: hash_ret.movieHash,
+                                                            filesize: hash_ret.fileSize
+                                                        }).then(function (subtitles) {
+                                                            var sub_url = null;
+                                                            console.log(subtitles);
+                                                            if (subtitles.ze) {
+                                                                sub_url = subtitles.ze.url;
+                                                            } else if (subtitles.zt) {
+                                                                sub_url = subtitles.zt.url;
+                                                            } else if (subtitles.zh) {
+                                                                sub_url = subtitles.zh.url;
+                                                            }
+                                                            if (sub_url) {
+                                                                if (fs.existsSync(bufferPath + '.srt')) {
+                                                                    fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
+                                                                }
+                                                                if (fs.existsSync(bufferPath + '.ass')) {
+                                                                    fs.renameSync(bufferPath + '.ass', bufferPath + '.ass1');
+                                                                }
+                                                                if (fs.existsSync(bufferPath + '.ssa')) {
+                                                                    fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
+                                                                }
+                                                                api.xuiteDownload(sub_url, bufferPath + '.srt', function(err) {
+                                                                    if (err) {
+                                                                        util.handleError(err);
+                                                                    } else {
+                                                                        util.SRT2VTT(bufferPath, 'srt', function(err) {
+                                                                            if (err) {
+                                                                                util.handleError(err);
+                                                                            } else {
+                                                                                sendWs({type: 'sub', data: id}, 0, 0);
+                                                                                console.log('sub end');
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                }, null, false);
+                                                            }
+                                                        }).catch(function (err) {
+                                                            util.handleError(err);
+                                                        });
+                                                        var fileStream = file.createReadStream();
+                                                        fileStream.pipe(fs.createWriteStream(bufferPath));
+                                                        fileStream.on('end', function() {
+                                                            torrentComplete(1, null, mediaType);
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            }
                         }
-                    } else {
-                        sendWs({type: user.username, data: 'not previewable'}, 0);
-                        util.handleError({hoerror: 2, message: 'not previewable'});
-                        torrentComplete(10);
                     }
                 }
             }
         });
-        function torrentComplete(exitCode, exitPath) {
+        function torrentComplete(exitCode, exitPath, mediaType) {
             console.log('torrentComplete');
             var comPath = bufferPath + '_complete';
             if (exitCode === 1) {
@@ -3483,6 +3599,35 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                     }
                     //sendWs({type: 'torrent', data: {id: items[0]._id, index: fileIndex}}, 0, 0);
                     engine_del();
+                    //上傳drive
+                    var dbName = path.basename(mediaType['realPath']);
+                    var dbPath = realPath + '/' + mediaType['realPath'];
+                    mediaHandleTool.handleTag(dbPath, {}, dbName, '', 0, function(err, mediaTypeNew, mediaTag, DBdata) {
+                        if (err) {
+                            util.handleError(err);
+                        } else {
+                            mediaTypeNew['fileIndex'] = mediaType['fileIndex'];
+                            mediaTypeNew['realPath'] = mediaType['realPath'];
+                            DBdata['status'] = 9;
+                            DBdata['mediaType'] = mediaTypeNew;
+                            console.log(DBdata);
+                            mongo.orig("update", "storage", { _id: id }, {$set: DBdata}, function(err, item2){
+                                if(err) {
+                                    util.handleError(err);
+                                } else {
+                                    var dbStats = fs.statSync(dbPath);
+                                    mediaHandleTool.handleMediaUpload(mediaTypeNew, filePath, id, dbName, dbStats['size'], user, function(err) {
+                                        //sendWs({type: 'file', data: id}, item[0].adultonly);
+                                        if(err) {
+                                            util.handleError(err);
+                                        }
+                                        console.log('transcode done');
+                                        console.log(new Date());
+                                    });
+                                }
+                            });
+                        }
+                    });
                 });
             } else if (exitCode === 2) {
                 console.log('complete copy');
@@ -3511,6 +3656,35 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                                     util.handleError(err);
                                 }
                                 engine_del();
+                                //上傳drive
+                                var dbName = path.basename(mediaType['realPath']);
+                                var dbPath = realPath + '/' + mediaTypeNew['realPath'];
+                                mediaHandleTool.handleTag(dbPath, {}, dbName, '', 0, function(err, mediaTypeNew, mediaTag, DBdata) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    } else {
+                                        mediaTypeNew['fileIndex'] = mediaType['fileIndex'];
+                                        mediaTypeNew['realPath'] = mediaType['realPath'];
+                                        DBdata['status'] = 9;
+                                        DBdata['mediaType'] = mediaTypeNew;
+                                        console.log(DBdata);
+                                        mongo.orig("update", "storage", { _id: id }, {$set: DBdata}, function(err, item2){
+                                            if(err) {
+                                                util.handleError(err);
+                                            } else {
+                                                var dbStats = fs.statSync(dbPath);
+                                                mediaHandleTool.handleMediaUpload(mediaTypeNew, filePath, id, dbName, dbStats['size'], user, function(err) {
+                                                    //sendWs({type: 'file', data: id}, item[0].adultonly);
+                                                    if(err) {
+                                                        util.handleError(err);
+                                                    }
+                                                    console.log('transcode done');
+                                                    console.log(new Date());
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
                             });
                         });
                     });
@@ -3523,10 +3697,23 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                     if (err) {
                         util.handleError(err);
                     }
+                    mongo.orig("update", "storage", { _id: id }, {$unset: {mediaType: ""}}, function(err, item) {
+                        if(err) {
+                            util.handleError(err);
+                        }
+                        engine_del();
+                    });
+                });
+            } else if (exitCode === 4) {
+                //不刪mediatype
+                engine_del();
+            } else {
+                mongo.orig("update", "storage", { _id: id }, {$unset: {mediaType: ""}}, function(err, item){
+                    if(err) {
+                        util.handleError(err);
+                    }
                     engine_del();
                 });
-            } else {
-                engine_del();
             }
             function engine_del() {
                 for (var i in torrent_pool) {
@@ -3629,7 +3816,7 @@ app.get('/torrent/:index(\\d+|v)/:uid/:fresh(0+)?', function (req, res, next) {
                 }
                 if (req.params.index === 'v') {
                     for (var i in items[0]['playList']) {
-                        if (items[0]['playList'][i].match(/\.mp4$/i) || items[0]['playList'][i].match(/\.mkv$/i)) {
+                        if (mime.isVideo(items[0]['playList'][i])) {
                             fileIndex = i;
                             break;
                         }
@@ -3826,7 +4013,7 @@ app.get('/subtitle/:uid/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
                     if (req.params.index) {
                         if (req.params.index === 'v') {
                             for (var i in items[0]['playList']) {
-                                if (items[0]['playList'][i].match(/\.mp4$/i) || items[0]['playList'][i].match(/\.mkv$/i)) {
+                                if (mime.isVideo(items[0]['playList'][i])) {
                                     fileIndex = i;
                                     break;
                                 }
@@ -4159,45 +4346,58 @@ app.get('/api/handleMedia/:uid/:action(act|vlog|del)', function(req, res, next) 
             }
             console.log(items);
             switch(req.params.action) {
-                case 'vlog':
-                    if (!items[0].mediaType) {
-                        util.handleError({hoerror: 2, message: "this file is not media!!!"}, next, res);
-                    }
-                    var filePath = util.getFileLocation(items[0].owner, items[0]._id);
-                    res.json({apiOK: true});
-                    mediaHandleTool.handleMediaUpload(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].size, req.user, function (err) {
-                        sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
-                        util.handleError(err);
-                        console.log('transcode done');
-                        console.log(new Date());
-                    }, true);
                 case 'act':
                     if (!items[0].mediaType) {
                         util.handleError({hoerror: 2, message: "this file is not media!!!"}, next, res);
                     }
                     var filePath = util.getFileLocation(items[0].owner, items[0]._id);
-                    res.json({apiOK: true});
                     if(items[0].mediaType.key) {
+                        res.json({apiOK: true});
                         mediaHandleTool.handleMedia(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].mediaType.key, req.user, function (err) {
                             sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
-                            util.handleError(err);
+                            if (err) {
+                                util.handleError(err);
+                            }
                             console.log('transcode done');
                             console.log(new Date());
                         });
                     } else {
-                        mediaHandleTool.handleMediaUpload(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].size, req.user, function (err) {
-                            sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
-                            util.handleError(err);
-                            console.log('transcode done');
-                            console.log(new Date());
-                        });
+                        if (items[0].mediaType['realPath']) {
+                            if (fs.existsSync(filePath + '/' + items[0].mediaType['fileIndex'] + '_complete')) {
+                                res.json({apiOK: true});
+                                var dbStats = fs.statSync(filePath + '/real/' + items[0].mediaType['realPath']);
+                                var dbName = path.basename(items[0].mediaType['realPath']);
+                                mediaHandleTool.handleMediaUpload(items[0].mediaType, filePath, items[0]._id, dbName, dbStats['size'], req.user, function (err) {
+                                    sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    console.log('transcode done');
+                                    console.log(new Date());
+                                });
+                            } else {
+                                util.handleError({hoerror: 2, message: "need complete first"}, next, res);
+                            }
+                        } else {
+                            res.json({apiOK: true});
+                            mediaHandleTool.handleMediaUpload(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].size, req.user, function (err) {
+                                sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                if (err) {
+                                    util.handleError(err);
+                                }
+                                console.log('transcode done');
+                                console.log(new Date());
+                            });
+                        }
                     }
                     break;
                 case 'del':
                     res.json({apiOK: true});
                     mediaHandleTool.completeMedia(items[0]._id, 0, function (err) {
                         sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
-                        util.handleError(err);
+                        if (err) {
+                            util.handleError(err);
+                        }
                         console.log('delete media done');
                     });
                     break;
@@ -4448,7 +4648,7 @@ if (config_glb.updateExternal) {
                 loopUpdateExternal();
             }
         }, external_interval);
-    }, 120000);
+    }, 180000);
 }
 
 if (config_glb.updateStock) {
@@ -4462,7 +4662,21 @@ if (config_glb.updateStock) {
                 loopUpdateStock();
             }
         }, stock_interval);
-    }, 180000);
+    }, 240000);
+}
+
+if (config_glb.checkMedia) {
+    setTimeout(function() {
+        loopHandleMedia();
+        setInterval(function(){
+            console.log('loop checkMedia');
+            console.log(media_time);
+            var now_time = new Date().getTime();
+            if (media_time === 1 || (now_time - media_time) > media_interval) {
+                loopHandleMedia();
+            }
+        }, media_interval);
+    }, 120000);
 }
 
 function checkLogin(req, res, next, callback) {
@@ -4531,7 +4745,24 @@ function getFeedback(item, callback, user) {
     });
 }
 
-function loopUpdateExternal(error, countdown) {
+function loopHandleMedia() {
+    console.log('loopCheckMedia');
+    console.log(new Date());
+    media_time = new Date().getTime();
+    mediaHandleTool.checkMedia(function(err) {
+        if (err) {
+            util.handleError(err);
+            media_time = 1;
+            console.log('loopCheckMedia end');
+        } else {
+            media_time = 1;
+            console.log('loopCheckMedia end');
+            console.log(new Date());
+        }
+    });
+}
+
+function loopUpdateExternal() {
     console.log('loopUpdateExternal');
     console.log(new Date());
     external_time = new Date().getTime();
@@ -4559,7 +4790,7 @@ function loopUpdateExternal(error, countdown) {
     });
 }
 
-function loopUpdateStock(error, countdown) {
+function loopUpdateStock() {
     console.log('loopUpdateStock');
     console.log(new Date());
     stock_time = new Date().getTime();
@@ -4661,7 +4892,7 @@ function updateStock(type, callback) {
     }, config_type.updateStockMode);
 }
 
-function loopDrive(error, countdown) {
+function loopDrive() {
     console.log('loopDrive');
     console.log(new Date());
     drive_time.time = new Date().getTime();

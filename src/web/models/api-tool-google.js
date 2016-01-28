@@ -971,11 +971,11 @@ var exports = module.exports = {
     },
     googleDownloadMedia: function(threshold, alternate, key, filePath, hd, callback, is_ok) {
         var this_obj = this;
-        if (hd === 1080) {
+        /*if (hd === 1080) {
             threshold = 3*threshold;
         } else if (hd === 720) {
             threshold = 2*threshold;
-        }
+        }*/
         var img_threshold = threshold;
         if (is_ok) {
             img_threshold = 60000;
@@ -984,79 +984,77 @@ var exports = module.exports = {
             if (err && !is_ok) {
                 util.handleError(err, callback, callback);
             }
-            this_obj.googleDownload(alternate, filePath + "_a.htm", function(err) {
+            youtubedl.getInfo('https://drive.google.com/open?id=' + key, [], function(err, info) {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                var cmdline = 'grep ^,.\\\"fmt_stream_map\\\", ' + filePath + "_a.htm";
-                var media_code = 0;
-                if (hd === 1080) {
-                    media_code = 37;
-                } else if(hd === 720) {
-                    media_code = 22;
-                } else {
-                    media_code = 18;
-                }
-                child_process.exec(cmdline, function (err, output) {
-                    var pattern = media_code + '\\|(https\:\/\/[^,"]+)';
-                    var media_location;
-                    if (err) {
-                        util.handleError(err);
-                        alternate = alternate.replace(/\/a\/g2\.nctu\.edu\.tw\//,'/');
-                        this_obj.googleDownload(alternate, filePath + "_a.htm", function(err) {
-                            if (err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            child_process.exec(cmdline, function (err, output) {
-                                if (err) {
-                                    util.handleError(err, callback, callback);
+                var media_location = null;
+                var currentHeight = 0;
+                if (info.formats) {
+                    for (var i in info.formats) {
+                        if (info.formats[i].format_note !== 'DASH video' && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
+                            if (hd === 1080 && info.formats[i].height >= 1080) {
+                                if (info.formats[i].height > currentHeight) {
+                                    media_location = info.formats[i].url;
+                                    currentHeight = info.formats[i].height;
                                 }
-                                media_location = output.match(pattern);
-                                if (!media_location) {
-                                    console.log(output);
-                                    util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
+                            } else if (hd === 720 && info.formats[i].height >= 720) {
+                                if (info.formats[i].height > currentHeight) {
+                                    media_location = info.formats[i].url;
+                                    currentHeight = info.formats[i].height;
                                 }
-                                media_location = media_location[1];
-                                media_location = deUnicode(media_location);
-                                this_obj.googleDownload(media_location, filePath, function(err) {
-                                    if (err) {
-                                        util.handleError(err, callback, callback);
-                                    }
-                                    setTimeout(function(){
-                                        callback(null);
-                                    }, 0);
-                                }, threshold);
-                            });
-                        }, threshold);
-                    } else {
-                        media_location = output.match(pattern);
-                        if (!media_location) {
-                            console.log(output);
-                            if (media_code === 18) {
-                                media_code = 43;
-                                pattern = media_code + '\\|(https\:\/\/[^,"]+)';
-                                media_location = output.match(pattern);
-                                if (!media_location) {
-                                    util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
+                            } else if (hd !== 1080 && hd !== 720){
+                                if (info.formats[i].height > currentHeight) {
+                                    media_location = info.formats[i].url;
+                                    currentHeight = info.formats[i].height;
                                 }
-                            } else {
-                                util.handleError({hoerror: 2, message: 'google media location unknown!!!'}, callback, callback);
                             }
                         }
-                        media_location = media_location[1];
-                        media_location = deUnicode(media_location);
-                        this_obj.googleDownload(media_location, filePath, function(err) {
+                    }
+                } else {
+                    for (var i in info) {
+                        if (info[i].format_note !== 'DASH video' && (info[i].ext === 'mp4' || info[i].ext === 'webm')) {
+                            if (hd === 1080 && info[i].height >= 1080) {
+                                if (info[i].height > currentHeight) {
+                                    media_location = info[i].url;
+                                    currentHeight = info[i].height;
+                                }
+                            } else if (hd === 720 && info[i].height >= 720) {
+                                if (info[i].height > currentHeight) {
+                                    media_location = info[i].url;
+                                    currentHeight = info[i].height;
+                                }
+                            } else if (hd !== 1080 && hd !== 720) {
+                                if (info[i].height > currentHeight) {
+                                    media_location = info[i].url;
+                                    currentHeight = info[i].height;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!media_location) {
+                    util.handleError({hoerror: 2, message: 'timeout'}, callback, callback);
+                }
+                this_obj.googleDownload(media_location, filePath + '_t', function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    fs.unlink(filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        fs.rename(filePath + '_t', filePath, function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
-                            } else {
-                                setTimeout(function(){
-                                    callback(null);
-                                }, 0);
                             }
-                        }, threshold);
-                    }
-                });
-            }, threshold);
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                }, threshold);
+            });
         }, img_threshold);
     },
     setApiQueue: function(name, param) {

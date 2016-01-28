@@ -50,7 +50,7 @@ module.exports = {
         if (video_arr.indexOf(extName) !== -1) {
             return {type: 'video', ext: extName};
         } else {
-            if (video_arr.indexOf(extName) !== -1) {
+            if (video_vlog_arr.indexOf(extName) !== -1) {
                 return {type: 'vlog', ext: extName};
             } else {
                 return false;
