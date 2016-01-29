@@ -297,7 +297,7 @@ module.exports = {
             req.end();
         });
     },
-    xuiteDownload: function(url, filePath, callback, threshold, is_check, is_file, referer, not_utf8) {
+    xuiteDownload: function(url, filePath, callback, threshold, is_check, is_file, referer, not_utf8, fake_ip) {
         if (!this.setApiQueue('xuiteDownload', [url, filePath, callback, threshold])) {
             return false;
         }
@@ -331,6 +331,10 @@ module.exports = {
         }
         if (referer) {
             options.headers['Referer'] = referer;
+        }
+        if (fake_ip) {
+            options.headers['X-Forwarded-For'] = fake_ip;
+            options.headers['Client-IP'] = fake_ip;
         }
         if (!is_file) {
             options.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36';

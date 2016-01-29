@@ -1534,7 +1534,7 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
         if (id[1] === 'dym') {
             url = 'http://www.dailymotion.com/embed/video/' + id[2];
         } else if (id[1] === 'bil') {
-            var idsub = id[2].match(/^([^_]+)_(\d)$/);
+            var idsub = id[2].match(/^([^_]+)_(\d+)$/);
             if (idsub) {
                 url = 'http://www.bilibili.com/video/' + idsub[1] + '/index_' + idsub[2] + '.html';
             } else {
@@ -1658,110 +1658,70 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                     res.json(ret_obj);
                 }
             }, 60000, false, false, 'http://forum.123kubo.com/jx/gdplayer/ck.php?url=' + url);
+        } else if (id[1] === 'bil') {
+            externalTool.bilibiliVideoUrl(url, function(err, title, videoUrl) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, next, res);
+                }
+                var ret_obj = {title: title, video: [videoUrl]};
+                res.json(ret_obj);
+            });
         } else {
             youtubedl.getInfo(url, [], function(err, info) {
-                if (err && id[1] === 'bil') {
-                    var kubo_url = 'http://888blb1.flvapi.com/video.php?url=gq_' + new Buffer(url).toString('base64') + '_a';
-                    api.xuiteDownload(kubo_url, '', function(err, raw_data) {
-                        if (err) {
-                            err.hoerror = 2;
-                            util.handleError(err, next, res);
-                        }
-                        var video_list = raw_data.match(/\!\[CDATA\[[^\]]+/g);
-                        if (!video_list) {
-                            util.handleError({hoerror: 2, message: id[1] + " video invaild!!!"}, next, res);
-                        }
-                        var list_match = false;
-                        var list = [];
-                        for (var i in video_list) {
-                            list_match = video_list[i].match(/^\!\[CDATA\[([^\]]+)$/);
-                            if (list_match) {
-                                list.push(list_match[1]);
-                            }
-                        }
-                        if (list.length < 1) {
-                            util.handleError({hoerror: 2, message: id[1] + " video invaild!!!"}, next, res);
-                        }
-                        if (!list[subIndex-1]) {
-                            util.handleError({hoerror: 2, message: id[1] + " video index invaild!!!"}, next, res);
-                        }
-                        var ret_obj = {title: id[1], video: [list[subIndex-1]]};
-                        if (list.length > 1) {
-                            ret_obj['sub'] = list.length;
-                        }
-                        res.json(ret_obj);
-                    }, 60000, false, false, 'http://888blb1.flvapi.com/');
-                } else {
-                    if (err) {
-                        err.hoerror = 2;
-                        util.handleError(err, next, res);
-                    }
-                    var ret_obj = {title: info.title, video: []};
-                    var audio_size = 0;
-                    if (id[1] === 'you') {
-                        if (info.formats) {
-                            for (var i in info.formats) {
-                                if (info.formats[i].format_note === 'DASH audio') {
-                                    if (!audio_size) {
-                                        audio_size = info.formats[i].filesize;
-                                        ret_obj['audio'] = info.formats[i].url;
-                                    } else if (audio_size > info.formats[i].filesize) {
-                                        audio_size = info.formats[i].filesize;
-                                        ret_obj['audio'] = info.formats[i].url;
-                                    }
-                                } else if (info.formats[i].format_note !== 'DASH video' && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
-                                    ret_obj['video'].splice(0, 0, info.formats[i].url);
-                                }
-                            }
-                        } else {
-                            for (var i in info) {
-                                if (info[i].format_note === 'DASH audio') {
-                                    if (!audio_size) {
-                                        audio_size = info[i].filesize;
-                                        ret_obj['audio'] = info[i].url;
-                                    } else if (audio_size > info[i].filesize) {
-                                        audio_size = info[i].filesize;
-                                        ret_obj['audio'] = info[i].url;
-                                    }
-                                } else if (info[i].format_note !== 'DASH video' && (info[i].ext === 'mp4' || info[i].ext === 'webm')) {
-                                    ret_obj['video'].splice(0, 0, info[i].url);
-                                }
-                            }
-                        }
-                    } else if (id[1] === 'dym') {
-                        console.log(info);
-                        if (info.formats) {
-                            for (var i in info.formats) {
-                                if (info.formats[i].format_id.match(/^(http-)?\d+$/) && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
-                                    ret_obj['video'].splice(0, 0, info.formats[i].url);
-                                }
-                            }
-                        } else {
-                            for (var i in info) {
-                                if (info[i].format_id.match(/^(http-)?\d+$/) && (info[i].ext === 'mp4' || info[i].ext === 'webm')) {
-                                    ret_obj['video'].splice(0, 0, info[i].url);
-                                }
-                            }
-                        }
-                    } else if (id[1] === 'bil') {
-                        if (info.formats) {
-                            for (var i in info.formats) {
-                                if (info.formats[i].format_id === '0') {
-                                    ret_obj['video'].push(info.formats[i].url);
-                                    break;
-                                }
-                            }
-                        } else {
-                            for (var i in info) {
-                                if (info[i].format_id === '0') {
-                                    ret_obj['video'].push(info[i].url);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    res.json(ret_obj);
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, next, res);
                 }
+                var ret_obj = {title: info.title, video: []};
+                var audio_size = 0;
+                if (id[1] === 'you') {
+                    if (info.formats) {
+                        for (var i in info.formats) {
+                            if (info.formats[i].format_note === 'DASH audio') {
+                                if (!audio_size) {
+                                    audio_size = info.formats[i].filesize;
+                                    ret_obj['audio'] = info.formats[i].url;
+                                } else if (audio_size > info.formats[i].filesize) {
+                                    audio_size = info.formats[i].filesize;
+                                    ret_obj['audio'] = info.formats[i].url;
+                                }
+                            } else if (info.formats[i].format_note !== 'DASH video' && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
+                                ret_obj['video'].splice(0, 0, info.formats[i].url);
+                            }
+                        }
+                    } else {
+                        for (var i in info) {
+                            if (info[i].format_note === 'DASH audio') {
+                                if (!audio_size) {
+                                    audio_size = info[i].filesize;
+                                    ret_obj['audio'] = info[i].url;
+                                } else if (audio_size > info[i].filesize) {
+                                    audio_size = info[i].filesize;
+                                    ret_obj['audio'] = info[i].url;
+                                }
+                            } else if (info[i].format_note !== 'DASH video' && (info[i].ext === 'mp4' || info[i].ext === 'webm')) {
+                                ret_obj['video'].splice(0, 0, info[i].url);
+                            }
+                        }
+                    }
+                } else if (id[1] === 'dym') {
+                    console.log(info);
+                    if (info.formats) {
+                        for (var i in info.formats) {
+                            if (info.formats[i].format_id.match(/^(http-)?\d+$/) && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
+                                ret_obj['video'].splice(0, 0, info.formats[i].url);
+                            }
+                        }
+                    } else {
+                        for (var i in info) {
+                            if (info[i].format_id.match(/^(http-)?\d+$/) && (info[i].ext === 'mp4' || info[i].ext === 'webm')) {
+                                ret_obj['video'].splice(0, 0, info[i].url);
+                            }
+                        }
+                    }
+                }
+                res.json(ret_obj);
             });
         }
     });

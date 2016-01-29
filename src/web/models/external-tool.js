@@ -251,7 +251,13 @@ module.exports = {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                var json_data = JSON.parse(raw_data);
+                var json_data = null;
+                try {
+                    json_data = JSON.parse(raw_data);
+                } catch (x) {
+                    console.log(raw_data);
+                    util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                }
                 if (json_data['status'] !== 'ok' || !json_data['data']) {
                     util.handleError({hoerror: 2, message: 'yify api fail'}, callback, callback);
                 }
@@ -385,7 +391,13 @@ module.exports = {
                         err.hoerror = 2;
                         util.handleError(err, callback, callback);
                     }
-                    var json_data = JSON.parse(raw_data);
+                    var json_data = null;
+                    try {
+                        json_data = JSON.parse(raw_data);
+                    } catch (x) {
+                        console.log(raw_data);
+                        util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                    }
                     if (!json_data || json_data['message'] !== 'success' || !json_data['result'] || !json_data['result']['list']) {
                         console.log(raw_data);
                         util.handleError({hoerror: 2, message: 'bilibili api fail'}, callback, callback);
@@ -409,7 +421,13 @@ module.exports = {
                         err.hoerror = 2;
                         util.handleError(err, callback, callback);
                     }
-                    var json_data = JSON.parse(json_data_r);
+                    var json_data = null;
+                    try {
+                        json_data = JSON.parse(json_data_r);
+                    } catch (x) {
+                        console.log(json_data_r);
+                        util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                    }
                     var raw_data = json_data['html'];
                     var raw_list = raw_data.match(/class="list">[\s\S]+?<span class="year">\(\d\d\d\d\)/g);
                     var list = [];
@@ -641,7 +659,13 @@ module.exports = {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                var json_data = JSON.parse(raw_data);
+                var json_data = null;
+                try {
+                    json_data = JSON.parse(raw_data);
+                } catch (x) {
+                    console.log(raw_data);
+                    util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                }
                 if (json_data['status'] !== 'ok' || !json_data['data']['movie']) {
                     util.handleError({hoerror: 2, message: 'yify api fail'}, callback, callback);
                 }
@@ -2321,7 +2345,13 @@ module.exports = {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                var json_data = JSON.parse(raw_data);
+                var json_data = null;
+                try {
+                    json_data = JSON.parse(raw_data);
+                } catch (x) {
+                    console.log(raw_data);
+                    util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                }
                 if (json_data['status'] !== 'ok' || !json_data['data']['movie']) {
                     util.handleError({hoerror: 2, message: 'yify api fail'}, callback, callback);
                 }
@@ -2500,5 +2530,60 @@ module.exports = {
                 callback(null, ret_obj, false, total, vId_arr, nPageToken, pPageToken, pageToken, is_new);
             }, 0);
         });
+    },
+    bilibiliVideoUrl: function(url, callback) {
+        var id = url.match(/(\d+)\/(index_(\d+)\.html)?$/);
+        if (!id) {
+            util.handleError({hoerror: 2, message: 'bilibili id invalid'}, callback, callback);
+        }
+        var page = 0;
+        if (id[2]) {
+            page = Number(id[3]);
+            page--;
+        }
+        id = id[1];
+        var infoUrl = 'http://api.bilibili.com/view?type=json&appkey=95acd7f6cc3392f3&id=' + id + '&page=1&batch=true';
+        api.xuiteDownload(infoUrl, '', function(err, raw_data) {
+            if (err) {
+                err.hoerror = 2;
+                util.handleError(err, callback, callback);
+            }
+            var json_data = null;
+            try {
+                json_data = JSON.parse(raw_data);
+            } catch (x) {
+                console.log(raw_data);
+                util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+            }
+            if (!json_data.list) {
+                util.handleError({hoerror: 2, message: 'cannot get list'}, callback, callback);
+            }
+            var cid = json_data.list[page].cid;
+            if (!cid) {
+                util.handleError({hoerror: 2, message: 'cannot get cid'}, callback, callback);
+            }
+            var title = json_data.list[page].part;
+            var playUrl = 'http://interface.bilibili.com/playurl?platform=bilihelper&otype=json&appkey=95acd7f6cc3392f3&cid=' + cid + '&quality=4&type=mp4';
+            api.xuiteDownload(playUrl, '', function(err, raw_data_1) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var json_data_1 = null;
+                try {
+                    json_data_1 = JSON.parse(raw_data_1);
+                } catch (x) {
+                    console.log(raw_data_1);
+                    util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                }
+                if (!json_data_1.durl || !json_data_1.durl[0] || !json_data_1.durl[0].url) {
+                    console.log(json_data_1);
+                    util.handleError({hoerror: 2, message: 'cannot find videoUrl'}, callback, callback);
+                }
+                setTimeout(function(){
+                    callback(null, title, json_data_1.durl[0].url);
+                }, 0);
+            }, 60000, false, false, 'http://interface.bilibili.com/', false, '220.181.111.228');
+        }, 60000, false, false, 'http://api.bilibili.com/');
     }
 };
