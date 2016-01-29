@@ -1674,8 +1674,7 @@ var getStorageQuerySql = function(user, tagList, exactly) {
                 }
             } else if (index.index === 1) {
                 if (util.checkAdmin(1, user)) {
-                    //var time = Math.round(new Date().getTime() / 1000) - handleTime;
-                    var time = Math.round(new Date().getTime() / 1000);
+                    var time = Math.round(new Date().getTime() / 1000) - handleTime;
                     console.log({mediaType: {$exists: true}, utime: {$lt: time}});
                     return {nosql: {mediaType: {$exists: true}, utime: {$lt: time}}};
                 }

@@ -2151,7 +2151,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
-    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, save2local: false, title: '', item: null};
+    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, save2local: false, recover: false, delMedia: false, title: '', item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -3691,7 +3691,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         if (!item) {
             item = this.toolList.item;
         }
-        if (action == 'act'|| action == 'vlog' || action == 'del') {
+        if (action == 'act' || action == 'del') {
             var handleMedia = $resource(this.main_url + '/api/handleMedia/' + item.id + '/' + action, {}, {
                 'handlemedia': { method:'GET', withCredentials: true }
             });
@@ -3726,7 +3726,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.upload = false;
             this.$parent.toolList.searchSub = false;
             this.$parent.toolList.delMedia = false;
-            this.$parent.toolList.vlogMedia = false;
             this.$parent.toolList.subscription = false;
             this.$parent.toolList.save2local = false;
             confirm_str = item;
@@ -3762,10 +3761,8 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             }
             if (item.media) {
                 this.$parent.toolList.delMedia = true;
-                this.$parent.toolList.vlogMedia = true;
             } else {
                 this.$parent.toolList.delMedia = false;
-                this.$parent.toolList.vlogMedia = false;
             }
             if (item.cid) {
                 this.$parent.toolList.subscription = true;
@@ -5156,7 +5153,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             }
             console.log(result);
             if (result.start) {
-                addAlert('video start buffering');
+                addAlert('video start buffering, Mp4 and Mkv may preview');
             } else {
                 this_obj.size = result.ret_size;
                 if (result.newBuffer) {

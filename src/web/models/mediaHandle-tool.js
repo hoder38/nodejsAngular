@@ -16,8 +16,7 @@ var child_process = require('child_process'),
     mkdirp = require('mkdirp'),
     fs = require("fs");
 
-//var transTime = 3300000;
-var transTime = 300000;
+var transTime = 3300000;
 module.exports = function(sendWs) {
     return {
         handleMediaUpload: function(mediaType, filePath, fileID, fileName, fileSize, user, callback, vlog_act) {
@@ -471,7 +470,6 @@ module.exports = function(sendWs) {
                                     if (mediaType['realPath']) {
                                         var newName = {};
                                         newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
-                                        console.log(newName);
                                         mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
                                             if(err) {
                                                 util.handleError(err, callback, callback);
@@ -523,7 +521,6 @@ module.exports = function(sendWs) {
                                         if (mediaType['realPath']) {
                                             var newName = {};
                                             newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
-                                            console.log(newName);
                                             mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
                                                 if(err) {
                                                     util.handleError(err, callback, callback);

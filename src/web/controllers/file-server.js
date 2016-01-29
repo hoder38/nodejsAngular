@@ -45,8 +45,7 @@ var stock_batch_list = [];
 
 var drive_batch = 100;
 
-//var media_interval = 7200000;
-var media_interval = 900000;
+var media_interval = 7200000;
 
 var media_time = 0;
 
@@ -3332,6 +3331,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                                         var mediaType = mime.mediaType(file.name);
                                         mediaType['fileIndex'] = fileIndex;
                                         mediaType['realPath'] = file.path;
+                                        console.log(mediaType);
                                         mongo.orig("update", "storage", { _id: id }, {$set: {mediaType: mediaType}}, function(err, item2){
                                             if(err) {
                                                 sendWs({type: user.username, data: err.message}, 0);
@@ -3658,7 +3658,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                                 engine_del();
                                 //上傳drive
                                 var dbName = path.basename(mediaType['realPath']);
-                                var dbPath = realPath + '/' + mediaTypeNew['realPath'];
+                                var dbPath = realPath + '/' + mediaType['realPath'];
                                 mediaHandleTool.handleTag(dbPath, {}, dbName, '', 0, function(err, mediaTypeNew, mediaTag, DBdata) {
                                     if (err) {
                                         util.handleError(err);

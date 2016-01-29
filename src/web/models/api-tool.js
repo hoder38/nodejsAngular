@@ -279,7 +279,6 @@ module.exports = {
             // Set up the request
             var req = https.request(options, function(res) {
                 res.setEncoding('utf8');
-                console.log(res.headers);
                 new_token = urlMod.parse(res.headers.location, true).query;
                 mongo.orig("update", "accessToken", {api: "xuite"}, {$set: new_token}, function(err,token){
                     if(err) {
