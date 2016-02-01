@@ -2182,11 +2182,22 @@ module.exports = {
                                             list.push({name: list_match[1], id: 'bil_' + list_match[2]});
                                         }
                                     }
-                                    if (!list[index-1]) {
-                                        return false;
+                                    if (list.length > 0) {
+                                        if (!list[index-1]) {
+                                            return false;
+                                        }
+                                        var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
+                                        return {ret: ret, total: list.length};
+                                    } else {
+                                        for (var i in raw_list) {
+                                            list_match = raw_list[i].match(/^\["([^"]+)","FunCnd1_([^"]+)"/);
+                                            if (list_match) {
+                                                list.push({name: list_match[1], id: 'fc1_' + list_match[2]});
+                                            }
+                                            var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id, is_magnet: true, complete: false};
+                                            return {ret: ret, total: list.length};
+                                        }
                                     }
-                                    var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
-                                    return {ret: ret, total: list.length};
                                 }
                             }
                         }

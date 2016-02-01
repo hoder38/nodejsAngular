@@ -131,7 +131,7 @@ app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
             util.handleError({hoerror: 2, message: "not valid subtitle!!!"}, next, res);
         }
         var filePath = null;
-        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud|fc1)_/);
         if (id) {
             var ex_type = 'youtube';
             if (id[1] === 'dym') {
@@ -154,6 +154,8 @@ app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
                 ex_type = 'youku';
             } else if (id[1] === 'tud') {
                 ex_type = 'tudou';
+            } else if (id[1] === 'fc1') {
+                ex_type = 'funcnd1';
             }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
@@ -1448,7 +1450,7 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, nex
                 });
             });
         }
-        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud|fc1)_/);
         if (id) {
             var ex_type = 'youtube';
             if (id[1] === 'dym') {
@@ -1471,6 +1473,8 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, nex
                 ex_type = 'youku';
             } else if (id[1] === 'tud') {
                 ex_type = 'tudou';
+            } else if (id[1] === 'fc1') {
+                ex_type = 'funcnd1';
             }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
@@ -1826,7 +1830,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
             }
         }
         var filePath = null;
-        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud|fc1)_/);
         if (id) {
             var ex_type = 'youtube';
             if (id[1] === 'dym') {
@@ -1849,6 +1853,8 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                 ex_type = 'youku';
             } else if (id[1] === 'tud') {
                 ex_type = 'tudou';
+            } else if (id[1] === 'fc1') {
+                ex_type = 'funcnd1';
             }
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
@@ -2810,13 +2816,17 @@ app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res,
             fileIndex = Number(req.params.index);
         }
         var bufferSize = Number(req.params.size);
-        var id = req.params.uid.match(/^dri_/);
+        var id = req.params.uid.match(/^(dri|fc1)_/);
         if (id) {
+            var id_type = id[1];
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
                 util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
             var filePath = util.getFileLocation('drive', id);
+            if (id_type === 'fc1') {
+                filePath = util.getFileLocation('funcnd1', id);
+            }
             var bufferPath = filePath + '/' + fileIndex;
             var comPath = bufferPath + '_complete';
             var errPath = bufferPath + '_error';
@@ -2882,9 +2892,64 @@ app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res,
                             });
                         }
                     } else {
-                        console.log('drive id invalid');
-                        console.log(req.params.uid);
-                        sendWs({type: req.user.username, data: 'buffer fail: drive id invalid'}, 0);
+                        var fc1_id = req.params.uid.match(/^fc1_(.*)$/);
+                        if (fc1_id) {
+                            console.log(bufferPath);
+                            if (!fs.existsSync(filePath)) {
+                                mkdirp(filePath, function(err) {
+                                    if(err) {
+                                        util.handleError(err);
+                                        sendWs({type: req.user.username, data: 'buffer fail: ' + err.message}, 0);
+                                    } else {
+                                        startBuffer2();
+                                    }
+                                });
+                            } else {
+                                startBuffer2();
+                            }
+                            function startBuffer2() {
+                                var url = 'http://www.123kubo.com/happymonkey/GetPlayInfo.php?url=FunCnd1_' + fc1_id[1];
+                                api.xuiteDownload(url, '', function(err, data) {
+                                    if(err) {
+                                        util.handleError(err);
+                                        sendWs({type: req.user.username, data: 'buffer fail: ' + err.message}, 0);
+                                    } else {
+                                        data = decodeURIComponent(data);
+                                        data = data.substr(7);
+                                        var arr = data.split('?');
+                                        var arr2 = arr[0].split('/');
+                                        var d = [];
+                                        for(var i = 0;i<arr2.length;i++){
+                                            if(arr2[i] !== '.') {
+                                                d.push(encodeURIComponent(arr2[i]));
+                                            }
+                                        }
+                                        var videoUrl = 'http://' + d.join('/') + '?' + arr[1];
+                                        console.log(videoUrl);
+                                        api.xuiteDownload(videoUrl, bufferPath, function(err) {
+                                            if(err) {
+                                                util.handleError(err);
+                                                sendWs({type: req.user.username, data: 'buffer fail: ' + err.message}, 0);
+                                            } else {
+                                                console.log('finished downloading!');
+                                                fs.rename(bufferPath, comPath, function(err) {
+                                                    if (err) {
+                                                        util.handleError(err);
+                                                        sendWs({type: req.user.username, data: 'buffer fail: ' + err.message}, 0);
+                                                    }
+                                                    external_pool.splice(external_pool.indexOf(id), 1);
+                                                    console.log(external_pool);
+                                                });
+                                            }
+                                        }, 60000, true, true, 'http://www.123kubo.com/happymonkey/?url=FunCnd1_' + fc1_id[1]);
+                                    }
+                                }, 60000, false, false, 'http://www.123kubo.com/happymonkey/?url=FunCnd1_' + fc1_id[1]);
+                            }
+                        } else {
+                            console.log('drive id invalid');
+                            console.log(req.params.uid);
+                            sendWs({type: req.user.username, data: 'buffer fail: drive id invalid'}, 0);
+                        }
                     }
                 } else {
                     console.log('already buffering');
@@ -3707,13 +3772,17 @@ app.get('/torrent/:index(\\d+|v)/:uid/:fresh(0+)?', function (req, res, next) {
         if (req.params.index.match(/^\d+$/)) {
             fileIndex = Number(req.params.index);
         }
-        var id = req.params.uid.match(/^dri_/);
+        var id = req.params.uid.match(/^(dri|fc1)_/);
         if (id) {
+            var id_type = id[1];
             id = util.isValidString(req.params.uid, 'name');
             if (id === false) {
                 util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
             var filePath = util.getFileLocation('drive', id);
+            if (id_type === 'fc1') {
+                filePath = util.getFileLocation('funcnd1', id);
+            }
             var bufferPath = filePath + '/' + fileIndex;
             var comPath = bufferPath + '_complete';
             var errPath = bufferPath + '_error';
@@ -3905,7 +3974,7 @@ app.get('/subtitle/:uid/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud)_/);
+        var id = req.params.uid.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud|fc1)_/);
         if (id) {
             var id_valid = util.isValidString(req.params.uid, 'name');
             if (id_valid === false) {
@@ -3932,6 +4001,8 @@ app.get('/subtitle/:uid/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
                 filePath = util.getFileLocation('youku', id_valid);
             } else if (id[1] === 'tud') {
                 filePath = util.getFileLocation('tudou', id_valid);
+            } else if (id[1] === 'fc1') {
+                filePath = util.getFileLocation('funcnd1', id_valid);
             } else {
                 filePath = util.getFileLocation('youtube', id_valid);
             }
