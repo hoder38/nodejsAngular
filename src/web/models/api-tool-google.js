@@ -215,6 +215,9 @@ function sendAPI(method, data, callback) {
             case 'backup':
                 parent = {id: backup_folder};
                 break;
+            case 'auto':
+                parent = {id: data['parent']};
+                break;
             default:
                 exports.getApiQueue();
                 util.handleError({hoerror: 2, message: 'upload type unknown!!!'}, callback, callback);

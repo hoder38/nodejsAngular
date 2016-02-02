@@ -15,8 +15,11 @@ var genre_list_ch = mime.getOptionTag('cht');
 var googleApi = require("../models/api-tool-google.js");
 
 var kubo_type = [['動作片', '喜劇片', '愛情片', '科幻片', '恐怖片', '劇情片', '戰爭片', '動畫片', '微電影'], ['台灣劇', '港劇', '大陸劇', '歐美劇', '韓劇', '日劇', '新/馬/泰/其他劇', '布袋戲', '綜藝', '美食旅遊', '訪談節目', '男女交友', '選秀競賽', '典禮晚會', '新聞時事', '投資理財', '歌劇戲曲'], ['動漫', '電影動畫片']];
-
-var OpenCC = require('opencc');
+var monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+var OpenCC = require('opencc'),
+    fs = require("fs"),
+    mkdirp = require('mkdirp'),
+    path = require('path');
 var opencc = new OpenCC('s2t.json');
 //type要補到deltag裡
 module.exports = {
@@ -498,6 +501,100 @@ module.exports = {
                     }, 0);
                 }, 60000, false, false, 'http://www.bilibili.com/');
             }
+            break;
+            case 'bls':
+            url = 'http://www.bls.gov/bls/newsrels.htm#latest-releases';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
+                var docDate = (date.getMonth()+1)+'/'+date.getDate()+'/'+date.getFullYear();
+                var docDate = '/' + date.getFullYear();
+                if (date.getDate() < 10) {
+                    docDate = '/0' + date.getDate() + docDate;
+                } else {
+                    docDate = '/' + date.getDate() + docDate;
+                }
+                if (date.getMonth()+1 < 10) {
+                    docDate = '0'+ (date.getMonth()+1) + docDate;
+                } else {
+                    docDate = (date.getMonth()+1) + docDate;
+                }
+                console.log(docDate);
+                var raw_list = raw_data.match(/<h2 id="latest-releases">LATEST RELEASES<\/h2>[\s\S]+?<\/ul>/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find bls latest'}, callback, callback);
+                }
+                raw_list = raw_list[0].match(/href="[^"]+">[^<]+<\/a> \d\d\/\d\d\/\d\d\d\d/g);
+                var list = [];
+                var list_match = false;
+                if (raw_list) {
+                    for (var i in raw_list) {
+                        list_match = raw_list[i].match(/^href="([^"]+)">([^<]+)<\/a> (\d\d\/\d\d\/\d\d\d\d)$/);
+                        if (list_match) {
+                            if (!list_match[1].match(/^(http|https):\/\//)) {
+                                if (list_match[1].match(/^\//)) {
+                                    list_match[1] = 'http://www.bls.gov' + list_match[1];
+                                } else {
+                                    list_match[1] = 'http://www.bls.gov/' + list_match[1];
+                                }
+                            }
+                            if (docDate === list_match[3]) {
+                                list.push({url: list_match[1], name: list_match[2], date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()});
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'cen':
+            url = 'http://www.census.gov/economic-indicators/';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/<h3>[\s\S]+?<strong>Next Release:/g);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find census latest'}, callback, callback);
+                }
+                var list = [];
+                var list_match = false;
+                var data = null;
+                var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
+                var docDate = monthNames[date.getMonth()]+' '+date.getDate()+', '+date.getFullYear();
+                console.log(docDate);
+                for (var i in raw_list) {
+                    list_match = raw_list[i].match(/<a href="([^"]+)" title="Download: (.*?) in PDF">/);
+                    if (list_match) {
+                        if (!list_match[1].match(/^(http|https):\/\//)) {
+                            if (list_match[1].match(/^\//)) {
+                                list_match[1] = 'http://www.census.gov' + list_match[2];
+                            } else {
+                                list_match[1] = 'http://www.census.gov/' + list_match[2];
+                            }
+                        }
+                        data = {url: list_match[1], name: list_match[2]};
+                        list_match = raw_list[i].match(/<span class="release_date">([a-zA-Z]+ \d\d?, \d\d\d\d)/);
+                        if (list_match) {
+                            if (docDate === list_match[1]) {
+                                data['date'] = (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear();
+                                list.push(data);
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
             break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
@@ -2596,5 +2693,134 @@ module.exports = {
                 }, 0);
             }, 60000, false, false, 'http://interface.bilibili.com/', false, '220.181.111.228');
         }, 60000, false, false, 'http://api.bilibili.com/');
+    },
+    save2Drive: function(type, obj, parent, callback) {
+        switch (type) {
+            case 'bls':
+            console.log(obj);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/.*?The PDF version of the news release/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                }
+                var list_match = raw_list[0].match(/"([^"]+)/);
+                if (!list_match) {
+                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                }
+                if (!list_match[1].match(/^(http|https):\/\//)) {
+                    if (list_match[1].match(/^\//)) {
+                        list_match[1] = 'http://www.bls.gov' + list_match[1];
+                    } else {
+                        list_match[1] = 'http://www.bls.gov/' + list_match[1];
+                    }
+                }
+                console.log(list_match[1]);
+                var utime = Math.round(new Date().getTime() / 1000);
+                var filePath = util.getFileLocation(type, utime);
+                console.log(filePath);
+                var folderPath = path.dirname(filePath);
+                var ext = path.extname(list_match[1]);
+                var driveName = obj.name + ' ' + obj.date + ext;
+                console.log(driveName);
+                if (!fs.existsSync(folderPath)) {
+                    mkdirp(folderPath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        api.xuiteDownload(list_match[1], filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(metadata);
+                                console.log('done');
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
+                    });
+                } else {
+                    api.xuiteDownload(list_match[1], filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                }
+            }, 60000, false, false);
+            break;
+            case 'cen':
+            console.log(obj);
+            var utime = Math.round(new Date().getTime() / 1000);
+            var filePath = util.getFileLocation(type, utime);
+            console.log(filePath);
+            var folderPath = path.dirname(filePath);
+            var ext = path.extname(obj.url);
+            var driveName = obj.name + ' ' + obj.date + ext;
+            console.log(driveName);
+            if (!fs.existsSync(folderPath)) {
+                mkdirp(folderPath, function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    api.xuiteDownload(obj.url, filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                });
+            } else {
+                api.xuiteDownload(obj.url, filePath, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                    googleApi.googleApi('upload', data, function(err, metadata) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(metadata);
+                        console.log('done');
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    });
+                });
+            }
+            break;
+            default:
+            util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
+            break;
+        }
     }
 };

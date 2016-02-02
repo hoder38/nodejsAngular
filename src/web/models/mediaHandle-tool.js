@@ -1526,11 +1526,12 @@ module.exports = function(sendWs) {
                     var filePath = null;
                     var dbStats = null;
                     var dbName = null;
-                    for (var i in items) {
-                        filePath = util.getFileLocation(items[i].owner, items[i]._id);
-                        if(items[i].mediaType.key) {
-                            this_obj.handleMedia(items[i].mediaType, filePath, items[i]._id, items[i].name, items[i].mediaType.key, {_id: items[i].owner, perm: 1}, function (err) {
-                                sendWs({type: 'file', data: items[i]._id}, items[i].adultonly);
+                    recur_check(0);
+                    function recur_check(index) {
+                        filePath = util.getFileLocation(items[index].owner, items[index]._id);
+                        if(items[index].mediaType.key) {
+                            this_obj.handleMedia(items[index].mediaType, filePath, items[index]._id, items[index].name, items[index].mediaType.key, {_id: items[index].owner, perm: 1}, function (err) {
+                                sendWs({type: 'file', data: items[index]._id}, items[index].adultonly);
                                 if (err) {
                                     util.handleError(err);
                                 }
@@ -1538,12 +1539,12 @@ module.exports = function(sendWs) {
                                 console.log(new Date());
                             });
                         } else {
-                            if (items[i].mediaType['realPath']) {
-                                if (fs.existsSync(filePath + '/' + items[i].mediaType['fileIndex'] + '_complete')) {
-                                    dbStats = fs.statSync(filePath + '/real/' + items[i].mediaType['realPath']);
-                                    dbName = path.basename(items[i].mediaType['realPath']);
-                                    this_obj.handleMediaUpload(items[i].mediaType, filePath, items[i]._id, dbName, dbStats['size'], {_id: items[i].owner, perm: 1}, function (err) {
-                                        sendWs({type: 'file', data: items[i]._id}, items[i].adultonly);
+                            if (items[index].mediaType['realPath']) {
+                                if (fs.existsSync(filePath + '/' + items[index].mediaType['fileIndex'] + '_complete')) {
+                                    dbStats = fs.statSync(filePath + '/real/' + items[index].mediaType['realPath']);
+                                    dbName = path.basename(items[index].mediaType['realPath']);
+                                    this_obj.handleMediaUpload(items[index].mediaType, filePath, items[index]._id, dbName, dbStats['size'], {_id: items[index].owner, perm: 1}, function (err) {
+                                        sendWs({type: 'file', data: items[index]._id}, items[index].adultonly);
                                         if (err) {
                                             util.handleError(err);
                                         }
@@ -1552,8 +1553,8 @@ module.exports = function(sendWs) {
                                     });
                                 }
                             } else {
-                                this_obj.handleMediaUpload(items[i].mediaType, filePath, items[i]._id, items[i].name, items[i].size, {_id: items[i].owner, perm: 1}, function (err) {
-                                    sendWs({type: 'file', data: items[i]._id}, items[i].adultonly);
+                                this_obj.handleMediaUpload(items[index].mediaType, filePath, items[index]._id, items[index].name, items[index].size, {_id: items[index].owner, perm: 1}, function (err) {
+                                    sendWs({type: 'file', data: items[index]._id}, items[index].adultonly);
                                     if (err) {
                                         util.handleError(err);
                                     }
@@ -1562,11 +1563,18 @@ module.exports = function(sendWs) {
                                 });
                             }
                         }
+                        index++;
+                        if (index < items.length) {
+                            setTimeout(function(){
+                                recur_check(index);
+                            }, 30000);
+                        } else {
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        }
                     }
                 }
-                setTimeout(function(){
-                    callback(null);
-                }, 0);
             });
         }
     };

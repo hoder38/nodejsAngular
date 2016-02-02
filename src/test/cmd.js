@@ -135,18 +135,98 @@ function userDrive(drive_batch, userlist, index, callback) {
     var dirpath = [];
     var is_root = true;
     var uploaded = null;
+    var downloaded = null;
     var file_count = 0;
     getDriveList(function(err) {
         if (err) {
             util.handleError(err, callback, callback);
         }
-        index++;
-        if (index < userlist.length) {
-            userDrive(drive_batch, userlist, index, callback);
+        if (util.checkAdmin(1, userlist[index])) {
+            var downloaded_data = {folderId: userlist[index].auto, name: 'downloaded'};
+            googleApi.googleApi('list folder', downloaded_data, function(err, downloadedList) {
+                if (err) {
+                    util.handleError(err, callback, callback);
+                }
+                if (downloadedList.length < 1) {
+                    util.handleError({hoerror: 2, message: "do not have downloaded folder!!!"}, callback, callback);
+                }
+                downloaded = downloadedList[0].id;
+                var downloadTime = new Date();
+                console.log(downloadTime.getHours());
+                function download_ext_doc(tIndex) {
+                    externalTool.getSingleList(doc_type[tIndex], '', function(err, doclist) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(doclist);
+                        recur_download(0);
+                        function recur_download(dIndex) {
+                            if (dIndex < doclist.length) {
+                                externalTool.save2Drive(doc_type[tIndex], doclist[dIndex], downloaded, function(err) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    dIndex++;
+                                    if (dIndex < doclist.length) {
+                                        recur_download(dIndex);
+                                    } else {
+                                        tIndex++;
+                                        if (tIndex < doc_type.length) {
+                                            download_ext_doc(tIndex);
+                                        } else {
+                                            index++;
+                                            if (index < userlist.length) {
+                                                userDrive(drive_batch, userlist, index, callback);
+                                            } else {
+                                                setTimeout(function(){
+                                                    callback(null);
+                                                }, 0);
+                                            }
+                                        }
+                                    }
+                                });
+                            } else {
+                                tIndex++;
+                                if (tIndex < doc_type.length) {
+                                    download_ext_doc(tIndex);
+                                } else {
+                                    index++;
+                                    if (index < userlist.length) {
+                                        userDrive(drive_batch, userlist, index, callback);
+                                    } else {
+                                        setTimeout(function(){
+                                            callback(null);
+                                        }, 0);
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                if (downloadTime.getHours() === 0) {
+                    //donwload doc
+                    var doc_type = ['bls', 'cen'];
+                    download_ext_doc(0);
+                } else {
+                    index++;
+                    if (index < userlist.length) {
+                        userDrive(drive_batch, userlist, index, callback);
+                    } else {
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    }
+                }
+            });
         } else {
-            setTimeout(function(){
-                callback(null);
-            }, 0);
+            index++;
+            if (index < userlist.length) {
+                userDrive(drive_batch, userlist, index, callback);
+            } else {
+                setTimeout(function(){
+                    callback(null);
+                }, 0);
+            }
         }
     });
     function getDriveList(next) {
@@ -188,7 +268,7 @@ function userDrive(drive_batch, userlist, index, callback) {
                                     if (is_root) {
                                         var templist = [];
                                         for (var i in folder_metadataList) {
-                                            if (folder_metadataList[i].title !== 'uploaded') {
+                                            if (folder_metadataList[i].title !== 'uploaded' && folder_metadataList[i].title !== 'downloaded') {
                                                 templist.push(folder_metadataList[i]);
                                             }
                                         }
@@ -234,7 +314,7 @@ function userDrive(drive_batch, userlist, index, callback) {
                                         if (is_root) {
                                             var templist = [];
                                             for (var i in folder_metadataList) {
-                                                if (folder_metadataList[i].title !== 'uploaded') {
+                                                if (folder_metadataList[i].title !== 'uploaded' && folder_metadataList[i].title !== 'downloaded') {
                                                     templist.push(folder_metadataList[i]);
                                                 }
                                             }
@@ -263,7 +343,7 @@ function userDrive(drive_batch, userlist, index, callback) {
                         if (is_root) {
                             var templist = [];
                             for (var i in folder_metadataList) {
-                                if (folder_metadataList[i].title !== 'uploaded') {
+                                if (folder_metadataList[i].title !== 'uploaded' && folder_metadataList[i].title !== 'downloaded') {
                                     templist.push(folder_metadataList[i]);
                                 }
                             }
