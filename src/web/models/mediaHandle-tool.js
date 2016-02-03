@@ -608,7 +608,7 @@ module.exports = function(sendWs) {
                                                         if (err) {
                                                             util.handleError(err, callback, errerMedia, fileID, callback);
                                                         }
-                                                        this_obj.completeMedia(fileID, 5, callback, number);
+                                                        this_obj.completeMedia(fileID, 5, callback, null, number);
                                                     });
                                                 } else {
                                                     this_obj.handleMediaUpload(mediaType, filePath, fileID, fileName, 0, user, callback);
@@ -622,7 +622,7 @@ module.exports = function(sendWs) {
                                         if (err) {
                                             util.handleError(err, callback, errerMedia, fileID, callback);
                                         }
-                                        this_obj.completeMedia(fileID, 5, callback, number);
+                                        this_obj.completeMedia(fileID, 5, callback, null, number);
                                     });
                                 }
                             });
@@ -648,7 +648,7 @@ module.exports = function(sendWs) {
                                                 if (err) {
                                                     util.handleError(err, callback, errerMedia, fileID, callback);
                                                 }
-                                                this_obj.completeMedia(fileID, 5, callback, number);
+                                                this_obj.completeMedia(fileID, 5, callback, null, number);
                                             });
                                         } else {
                                             this_obj.handleMediaUpload(mediaType, filePath, fileID, fileName, 0, user, callback);
@@ -663,7 +663,7 @@ module.exports = function(sendWs) {
                             if (err) {
                                 util.handleError(err, callback, errerMedia, fileID, callback);
                             }
-                            this_obj.completeMedia(fileID, 5, callback, number);
+                            this_obj.completeMedia(fileID, 5, callback, null, number);
                         });
                     }
                 }
@@ -678,7 +678,7 @@ module.exports = function(sendWs) {
                             if (err) {
                                 util.handleError(err, callback, errerMedia, fileID, callback);
                             }
-                            this_obj.completeMedia(fileID, 6, callback, number);
+                            this_obj.completeMedia(fileID, 6, callback, null, number);
                         });
                     });
                 } else {
@@ -699,7 +699,7 @@ module.exports = function(sendWs) {
                                 if (err) {
                                     util.handleError(err, callback, errerMedia, fileID, callback);
                                 }
-                                this_obj.completeMedia(fileID, 6, callback, number);
+                                this_obj.completeMedia(fileID, 6, callback, null, number);
                             });
                         });
                     });
