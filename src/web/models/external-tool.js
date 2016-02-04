@@ -1065,6 +1065,65 @@ module.exports = {
                 }, 60000, false, false);
             }, 60000, false, false);
             break;
+            case 'sea':
+            url = 'http://www.seaj.or.jp/english/statistics/page_en.php?CMD=1';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/<td class="lft">Book-to-Bill Ratio\(Express Report\).*/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find sea latest'}, callback, callback);
+                }
+                var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
+                var docDate = date.getFullYear() + '-';
+                if (date.getMonth() + 1 < 10) {
+                    docDate = docDate + '0' + (date.getMonth() + 1) + '-';
+                } else {
+                    docDate = docDate + (date.getMonth() + 1) + '-';
+                }
+                if (date.getDate() < 10) {
+                    docDate = docDate + '0' + date.getDate();
+                } else {
+                    docDate = docDate + date.getDate();
+                }
+                console.log(docDate);
+                var list = [];
+                var list_match = false;
+                var item_match = false;
+                var data = null;
+                list_match = raw_list[0].match(/<td class="lft">.+?\d\d\d\d-\d\d-\d\d/g);
+                if (!list_match) {
+                    util.handleError({hoerror: 2, message: 'cannot find sea latest'}, callback, callback);
+                }
+                for (var i in list_match) {
+                    item_match = list_match[i].match(/\d\d\d\d-\d\d-\d\d$/);
+                    if (item_match) {
+                        if (docDate === item_match[0]) {
+                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
+                            item_match = list_match[i].match(/class="lft">([^<]+)<br>([^<]+)/);
+                            if (item_match) {
+                                data['name'] = item_match[1] + ' ' + item_match[2];
+                                item_match = list_match[i].match(/href="([^"]+)/);
+                                if (item_match) {
+                                    if (!item_match[1].match(/^(http|https):\/\//)) {
+                                        item_match[1] = path.join('www.seaj.or.jp/english/statistics', item_match[1]);
+                                        item_match[1] = 'http://' + item_match[1];
+                                    }
+                                    data['url'] = item_match[1];
+                                    list.push(data);
+                                }
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
+            break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
             break;
@@ -3778,6 +3837,55 @@ module.exports = {
                         });
                     }
                 }, 60000, false, false);
+            }
+            break;
+            case 'sea':
+            console.log(obj);
+            var utime = Math.round(new Date().getTime() / 1000);
+            var filePath = util.getFileLocation(type, utime);
+            console.log(filePath);
+            var folderPath = path.dirname(filePath);
+            var driveName = obj.name + ' ' + obj.date + '.pdf';
+            console.log(driveName);
+            if (!fs.existsSync(folderPath)) {
+                mkdirp(folderPath, function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    api.xuiteDownload(obj.url, filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    }, 60000, false);
+                });
+            } else {
+                api.xuiteDownload(obj.url, filePath, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                    googleApi.googleApi('upload', data, function(err, metadata) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(metadata);
+                        console.log('done');
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    });
+                }, 60000, false);
             }
             break;
             default:

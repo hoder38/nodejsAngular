@@ -152,9 +152,10 @@ function userDrive(drive_batch, userlist, index, callback) {
                 }
                 downloaded = downloadedList[0].id;
                 var downloadTime = new Date();
-                var doc_type = ['bls', 'cen', 'bea', 'ism', 'cbo', 'sem', 'oec', 'dol', 'rea', 'sca', 'fed'];
+                var doc_type_0 = ['bls', 'cen', 'bea', 'ism', 'cbo', 'sem', 'oec', 'dol', 'rea', 'sca', 'fed'];
+                var doc_type_1 = ['sea'];
                 console.log(downloadTime.getHours());
-                function download_ext_doc(tIndex) {
+                function download_ext_doc(tIndex, doc_type) {
                     externalTool.getSingleList(doc_type[tIndex], '', function(err, doclist) {
                         if (err) {
                             util.handleError(err, callback, callback);
@@ -204,10 +205,11 @@ function userDrive(drive_batch, userlist, index, callback) {
                         }
                     });
                 }
-                if (downloadTime.getHours() === 0) {
-                    //donwload doc
-                    download_ext_doc(0);
-                } else {
+                /*if (downloadTime.getHours() === 0) {
+                    download_ext_doc(0, doc_type_0);
+                } else if (downloadTime.getHours() === 11) {*/
+                    download_ext_doc(0, doc_type_1);
+                /*} else {
                     index++;
                     if (index < userlist.length) {
                         userDrive(drive_batch, userlist, index, callback);
@@ -216,7 +218,7 @@ function userDrive(drive_batch, userlist, index, callback) {
                             callback(null);
                         }, 0);
                     }
-                }
+                }*/
             });
         } else {
             index++;

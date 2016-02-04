@@ -5003,8 +5003,9 @@ function autoDoc(userlist, index, callback) {
         downloaded = downloadedList[0].id;
         var downloadTime = new Date();
         console.log(downloadTime.getHours());
-        var doc_type = ['bls', 'cen', 'bea', 'ism', 'cbo', 'sem', 'oec', 'dol', 'rea', 'sca', 'fed'];
-        function download_ext_doc(tIndex) {
+        var doc_type_0 = ['bls', 'cen', 'bea', 'ism', 'cbo', 'sem', 'oec', 'dol', 'rea', 'sca', 'fed'];
+        var doc_type_1 = ['sea'];
+        function download_ext_doc(tIndex, doc_type) {
             externalTool.getSingleList(doc_type[tIndex], '', function(err, doclist) {
                 if (err) {
                     util.handleError(err, callback, callback);
@@ -5055,7 +5056,9 @@ function autoDoc(userlist, index, callback) {
             });
         }
         if (downloadTime.getHours() === 0) {
-            download_ext_doc(0);
+            download_ext_doc(0, doc_type_0);
+        } else if (downloadTime.getHours() === 11) {
+            download_ext_doc(0, doc_type_1);
         } else {
             index++;
             if (index < userlist.length) {
