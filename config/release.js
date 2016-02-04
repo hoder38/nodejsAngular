@@ -29,6 +29,7 @@ module.exports = {
     nas_prefix: "/mnt/release/storage",
     hint: true,
     autoUpload: true,
+    autoDownload: true,
     updateStock: true,
     updateExternal: true,
     checkMedia: true,

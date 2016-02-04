@@ -152,6 +152,7 @@ function userDrive(drive_batch, userlist, index, callback) {
                 }
                 downloaded = downloadedList[0].id;
                 var downloadTime = new Date();
+                var doc_type = ['bls', 'cen', 'bea', 'ism', 'cbo', 'sem', 'oec', 'dol', 'rea', 'sca', 'fed'];
                 console.log(downloadTime.getHours());
                 function download_ext_doc(tIndex) {
                     externalTool.getSingleList(doc_type[tIndex], '', function(err, doclist) {
@@ -205,7 +206,6 @@ function userDrive(drive_batch, userlist, index, callback) {
                 }
                 if (downloadTime.getHours() === 0) {
                     //donwload doc
-                    var doc_type = ['bls', 'cen'];
                     download_ext_doc(0);
                 } else {
                     index++;
@@ -493,7 +493,7 @@ rl.on('line', function(line){
         default:
         console.log('help:');
         console.log('stock updateType [single index]');
-        console.log('drive batchNumber [single username]');
+        console.log('drive batchNumber [single username] (include download)');
         console.log('external type [clear]');
         console.log('complete [add]');
     }

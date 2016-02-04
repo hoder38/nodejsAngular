@@ -31,6 +31,10 @@ var external_interval = 604800000;
 
 var external_time = 0;
 
+var doc_interval = 3600000;
+
+var doc_time = 0;
+
 var drive_interval = 3600000;
 
 var drive_size = 500 * 1024 * 1024;
@@ -4652,6 +4656,20 @@ wsServer.on('connection', function(ws) {
 
 server.listen(config_glb.file_port, config_glb.file_ip);
 
+if (config_glb.autoDownload) {
+    setTimeout(function() {
+        loopDoc();
+        setInterval(function(){
+            console.log('loop Doc');
+            console.log(doc_time);
+            var now_time = new Date().getTime();
+            if (doc_time === 1 || (now_time - doc_time) > doc_interval) {
+                loopDoc();
+            }
+        }, doc_interval);
+    }, 120000);
+}
+
 if (config_glb.autoUpload) {
     setTimeout(function() {
         loopDrive();
@@ -4679,7 +4697,7 @@ if (config_glb.updateExternal) {
                 loopUpdateExternal();
             }
         }, external_interval);
-    }, 180000);
+    }, 240000);
 }
 
 if (config_glb.updateStock) {
@@ -4693,7 +4711,7 @@ if (config_glb.updateStock) {
                 loopUpdateStock();
             }
         }, stock_interval);
-    }, 240000);
+    }, 300000);
 }
 
 if (config_glb.checkMedia) {
@@ -4707,7 +4725,7 @@ if (config_glb.checkMedia) {
                 loopHandleMedia();
             }
         }, media_interval);
-    }, 120000);
+    }, 180000);
 }
 
 function checkLogin(req, res, next, callback) {
@@ -4928,21 +4946,12 @@ function loopDrive() {
     console.log(new Date());
     drive_time.time = new Date().getTime();
     drive_time.size = 0;
-    /*if (error) {
-        util.handleError(error);
-    }
-    if (!countdown) {
-        countdown = 60000;
-    }
-    console.log(countdown);
-    setTimeout(function() {*/
     mongo.orig("find", "user", {auto: {$exists: true}}, function(err, userlist){
         if(err) {
             util.handleError(err);
             drive_time.time = 1;
             drive_time.size = 0;
             console.log('loopDrive end');
-            //loopDrive(null, drive_interval);
         } else {
             userDrive(userlist, 0, function(err) {
                 if(err) {
@@ -4954,7 +4963,110 @@ function loopDrive() {
             });
         }
     });
-    //}, countdown);
+}
+
+function loopDoc() {
+    console.log('loopDoc');
+    console.log(new Date());
+    doc_time = new Date().getTime();
+    mongo.orig("find", "user", {auto: {$exists: true}, perm: 1}, function(err, userlist){
+        if(err) {
+            util.handleError(err);
+            doc_time = 1;
+            console.log('loopDoc end');
+        } else {
+            autoDoc(userlist, 0, function(err) {
+                if(err) {
+                    util.handleError(err);
+                }
+                doc_time = 1;
+                console.log('loopDoc end');
+            });
+        }
+    });
+}
+
+function autoDoc(userlist, index, callback) {
+    doc_time = new Date().getTime();
+    console.log('autoDoc');
+    console.log(new Date());
+    console.log(userlist[index].username);
+    var downloaded = null;
+    var downloaded_data = {folderId: userlist[index].auto, name: 'downloaded'};
+    googleApi.googleApi('list folder', downloaded_data, function(err, downloadedList) {
+        if (err) {
+            util.handleError(err, callback, callback);
+        }
+        if (downloadedList.length < 1) {
+            util.handleError({hoerror: 2, message: "do not have downloaded folder!!!"}, callback, callback);
+        }
+        downloaded = downloadedList[0].id;
+        var downloadTime = new Date();
+        console.log(downloadTime.getHours());
+        var doc_type = ['bls', 'cen', 'bea', 'ism', 'cbo', 'sem', 'oec', 'dol', 'rea', 'sca', 'fed'];
+        function download_ext_doc(tIndex) {
+            externalTool.getSingleList(doc_type[tIndex], '', function(err, doclist) {
+                if (err) {
+                    util.handleError(err, callback, callback);
+                }
+                console.log(doclist);
+                recur_download(0);
+                function recur_download(dIndex) {
+                    if (dIndex < doclist.length) {
+                        externalTool.save2Drive(doc_type[tIndex], doclist[dIndex], downloaded, function(err) {
+                            if (err) {
+                                util.handleError(err);
+                            }
+                            dIndex++;
+                            if (dIndex < doclist.length) {
+                                recur_download(dIndex);
+                            } else {
+                                tIndex++;
+                                if (tIndex < doc_type.length) {
+                                    download_ext_doc(tIndex);
+                                } else {
+                                    index++;
+                                    if (index < userlist.length) {
+                                        autoDoc(userlist, index, callback);
+                                    } else {
+                                        setTimeout(function(){
+                                            callback(null);
+                                        }, 0);
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        tIndex++;
+                        if (tIndex < doc_type.length) {
+                            download_ext_doc(tIndex);
+                        } else {
+                            index++;
+                            if (index < userlist.length) {
+                                autoDoc(userlist, index, callback);
+                            } else {
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        if (downloadTime.getHours() === 0) {
+            download_ext_doc(0);
+        } else {
+            index++;
+            if (index < userlist.length) {
+                autoDoc(userlist, index, callback);
+            } else {
+                setTimeout(function(){
+                    callback(null);
+                }, 0);
+            }
+        }
+    });
 }
 
 function userDrive(userlist, index, callback) {
@@ -4967,98 +5079,18 @@ function userDrive(userlist, index, callback) {
     var dirpath = [];
     var is_root = true;
     var uploaded = null;
-    var downloaded = null;
     var file_count = 0;
     getDriveList(function(err) {
         if (err) {
             util.handleError(err, callback, callback);
         }
-        if (util.checkAdmin(1, userlist[index])) {
-            var downloaded_data = {folderId: userlist[index].auto, name: 'downloaded'};
-            googleApi.googleApi('list folder', downloaded_data, function(err, downloadedList) {
-                if (err) {
-                    util.handleError(err, callback, callback);
-                }
-                if (downloadedList.length < 1) {
-                    util.handleError({hoerror: 2, message: "do not have downloaded folder!!!"}, callback, callback);
-                }
-                downloaded = downloadedList[0].id;
-                var downloadTime = new Date();
-                console.log(downloadTime.getHours());
-                function download_ext_doc(tIndex) {
-                    externalTool.getSingleList(doc_type[tIndex], '', function(err, doclist) {
-                        if (err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        console.log(doclist);
-                        recur_download(0);
-                        function recur_download(dIndex) {
-                            if (dIndex < doclist.length) {
-                                externalTool.save2Drive(doc_type[tIndex], doclist[dIndex], downloaded, function(err) {
-                                    if (err) {
-                                        util.handleError(err);
-                                    }
-                                    dIndex++;
-                                    if (dIndex < doclist.length) {
-                                        recur_download(dIndex);
-                                    } else {
-                                        tIndex++;
-                                        if (tIndex < doc_type.length) {
-                                            download_ext_doc(tIndex);
-                                        } else {
-                                            index++;
-                                            if (index < userlist.length) {
-                                                userDrive(userlist, index, callback);
-                                            } else {
-                                                setTimeout(function(){
-                                                    callback(null);
-                                                }, 0);
-                                            }
-                                        }
-                                    }
-                                });
-                            } else {
-                                tIndex++;
-                                if (tIndex < doc_type.length) {
-                                    download_ext_doc(tIndex);
-                                } else {
-                                    index++;
-                                    if (index < userlist.length) {
-                                        userDrive(userlist, index, callback);
-                                    } else {
-                                        setTimeout(function(){
-                                            callback(null);
-                                        }, 0);
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-                if (downloadTime.getHours() === 0) {
-                    //donwload doc
-                    var doc_type = ['bls', 'cen'];
-                    download_ext_doc(0);
-                } else {
-                    index++;
-                    if (index < userlist.length) {
-                        userDrive(userlist, index, callback);
-                    } else {
-                        setTimeout(function(){
-                            callback(null);
-                        }, 0);
-                    }
-                }
-            });
+        index++;
+        if (index < userlist.length) {
+            userDrive(userlist, index, callback);
         } else {
-            index++;
-            if (index < userlist.length) {
-                userDrive(userlist, index, callback);
-            } else {
-                setTimeout(function(){
-                    callback(null);
-                }, 0);
-            }
+            setTimeout(function(){
+                callback(null);
+            }, 0);
         }
     });
     function getDriveList(next) {

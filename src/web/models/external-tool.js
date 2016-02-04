@@ -16,6 +16,7 @@ var googleApi = require("../models/api-tool-google.js");
 
 var kubo_type = [['動作片', '喜劇片', '愛情片', '科幻片', '恐怖片', '劇情片', '戰爭片', '動畫片', '微電影'], ['台灣劇', '港劇', '大陸劇', '歐美劇', '韓劇', '日劇', '新/馬/泰/其他劇', '布袋戲', '綜藝', '美食旅遊', '訪談節目', '男女交友', '選秀競賽', '典禮晚會', '新聞時事', '投資理財', '歌劇戲曲'], ['動漫', '電影動畫片']];
 var monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+var monthNameShorts = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var OpenCC = require('opencc'),
     fs = require("fs"),
     mkdirp = require('mkdirp'),
@@ -511,7 +512,6 @@ module.exports = {
                 }
                 var date = new Date();
                 date = new Date(new Date(date).setDate(date.getDate()-1));
-                var docDate = (date.getMonth()+1)+'/'+date.getDate()+'/'+date.getFullYear();
                 var docDate = '/' + date.getFullYear();
                 if (date.getDate() < 10) {
                     docDate = '/0' + date.getDate() + docDate;
@@ -543,7 +543,7 @@ module.exports = {
                                 }
                             }
                             if (docDate === list_match[3]) {
-                                list.push({url: list_match[1], name: list_match[2], date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()});
+                                list.push({url: list_match[1], name: util.toValidName(list_match[2]), date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()});
                             }
                         }
                     }
@@ -576,12 +576,12 @@ module.exports = {
                     if (list_match) {
                         if (!list_match[1].match(/^(http|https):\/\//)) {
                             if (list_match[1].match(/^\//)) {
-                                list_match[1] = 'http://www.census.gov' + list_match[2];
+                                list_match[1] = 'http://www.census.gov' + list_match[1];
                             } else {
-                                list_match[1] = 'http://www.census.gov/' + list_match[2];
+                                list_match[1] = 'http://www.census.gov/' + list_match[1];
                             }
                         }
-                        data = {url: list_match[1], name: list_match[2]};
+                        data = {url: list_match[1], name: util.toValidName(list_match[2])};
                         list_match = raw_list[i].match(/<span class="release_date">([a-zA-Z]+ \d\d?, \d\d\d\d)/);
                         if (list_match) {
                             if (docDate === list_match[1]) {
@@ -594,6 +594,475 @@ module.exports = {
                 setTimeout(function(){
                     callback(null, list);
                 }, 0);
+            }, 60000, false, false);
+            break;
+            case 'bea':
+            url = 'http://www.bea.gov/';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/class="first"[\s\S]+?class="releaseFooter"/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find bea latest'}, callback, callback);
+                }
+                var list = [];
+                var list_match = false;
+                var data = null;
+                var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
+                var docDate = (date.getMonth()+1) + '/' + date.getDate() + '/' + date.getFullYear();
+                console.log(docDate);
+                list_match = raw_list[0].match(/class="first" href="([^"]+)/);
+                if (list_match) {
+                    if (!list_match[1].match(/^(http|https):\/\//)) {
+                        if (list_match[1].match(/^\//)) {
+                            list_match[1] = 'http://www.bea.gov' + list_match[1];
+                        } else {
+                            list_match[1] = 'http://www.bea.gov/' + list_match[1];
+                        }
+                    }
+                    data = {url: list_match[1]};
+                    list_match = raw_list[0].match(/<li>([^<]+)/);
+                    if (list_match) {
+                        data['name'] = util.toValidName(list_match[1]);
+                        list_match = raw_list[0].match(/class="date"><span>(\d\d?\/\d\d?\/\d\d\d\d)/);
+                        if (list_match) {
+                            if (list_match[1] === docDate) {
+                                data['date'] = (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear();
+                                list.push(data);
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'ism':
+            url = 'https://www.instituteforsupplymanagement.org/ISMReport/PastRob.cfm';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/<h4>Manufacturing<\/h4>[\s\S]+?<\/li>/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find bea latest'}, callback, callback);
+                }
+                var list = [];
+                var list_match = false;
+                var data = null;
+                var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
+                var docDate = monthNames[date.getMonth()]+' '+date.getDate()+', '+date.getFullYear();
+                console.log(docDate);
+                list_match = raw_list[0].match(/href="([^"]+)">[a-zA-Z]+ Report<\/a> \(released ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
+                if (list_match) {
+                    if (!list_match[1].match(/^(http|https):\/\//)) {
+                        if (list_match[1].match(/^\//)) {
+                            list_match[1] = 'https://www.instituteforsupplymanagement.org' + list_match[1];
+                        } else {
+                            list_match[1] = 'https://www.instituteforsupplymanagement.org/' + list_match[1];
+                        }
+                    }
+                    data = {url: list_match[1], name: util.toValidName('Manufacturing ISM')};
+                    if (docDate === list_match[2]) {
+                        data['date'] = (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear();
+                        list.push(data);
+                    }
+                }
+                raw_list = raw_data.match(/<h4>Non-Manufacturing<\/h4>[\s\S]+?<\/li>/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find ism latest'}, callback, callback);
+                }
+                list_match = raw_list[0].match(/href="([^"]+)">[a-zA-Z]+ Report<\/a> \(released ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
+                if (list_match) {
+                    if (!list_match[1].match(/^(http|https):\/\//)) {
+                        if (list_match[1].match(/^\//)) {
+                            list_match[1] = 'https://www.instituteforsupplymanagement.org' + list_match[1];
+                        } else {
+                            list_match[1] = 'https://www.instituteforsupplymanagement.org/' + list_match[1];
+                        }
+                    }
+                    data = {url: list_match[1], name: util.toValidName('Non-Manufacturing ISM')};
+                    if (docDate === list_match[2]) {
+                        data['date'] = (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear();
+                        list.push(data);
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'cbo':
+            url = 'https://www.conference-board.org/data/consumerconfidence.cfm';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/class="date">(\d\d? [a-zA-Z][a-zA-Z][a-zA-Z]\. \d\d\d\d)/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find cbo latest'}, callback, callback);
+                }
+                var list = [];
+                var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
+                var docDate = date.getDate() + ' ' + monthNameShorts[date.getMonth()]+'. '+date.getFullYear();
+                console.log(docDate);
+                if (raw_list[1] === docDate) {
+                    list.push({url: 'https://www.conference-board.org/data/consumerconfidence.cfm', name: util.toValidName('Consumer Confidence Survey'), date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()});
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'sem':
+            url = 'http://www.semi.org/en/NewsFeeds/SEMIHighlights/index.rss';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/<item>[\s\S]+?<\/item>/g);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find sem latest'}, callback, callback);
+                }
+                var list = [];
+                var list_match = false;
+                var data = null;
+                var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
+                var docDate = date.getDate() + ' ' + monthNameShorts[date.getMonth()] + ' ' + date.getFullYear();
+                if (date.getDate() < 10) {
+                    docDate = '0' + docDate;
+                }
+                console.log(docDate);
+                for (var i in raw_list) {
+                    list_match = raw_list[i].match(/<title>([^<]+)/);
+                    if (list_match) {
+                        data = {name: util.toValidName(list_match[1])};
+                        list_match = raw_list[i].match(/<link>([^<]+)/);
+                        if (list_match) {
+                            if (!list_match[1].match(/^(http|https):\/\//)) {
+                                if (list_match[1].match(/^\//)) {
+                                    list_match[1] = 'http://www.semi.org' + list_match[1];
+                                } else {
+                                    list_match[1] = 'http://www.semi.org/' + list_match[1];
+                                }
+                            }
+                            data['url'] = list_match[1];
+                            list_match = raw_list[i].match(/<pubDate>[a-zA-Z][a-zA-Z][a-zA-Z], (\d\d [a-zA-Z][a-zA-Z][a-zA-Z] \d\d\d\d)/);
+                            if (list_match) {
+                                if (list_match[1] === docDate) {
+                                    data['date'] = (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear();
+                                    list.push(data);
+                                }
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'oec':
+            url = 'http://www.oecd.org/newsroom/';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/<span>Monthly<br>Statistics[\s\S]+?<li class="morebttm more">/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find oec latest'}, callback, callback);
+                }
+                raw_list = raw_list[0].match(/<li class='news-event-item linked[\s\S]+?<\/li>/g);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find oec latest'}, callback, callback);
+                }
+                var list = [];
+                var list_match = false;
+                var data = null;
+                var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
+                var docDate = date.getDate() + ' ' + monthNames[date.getMonth()] + ' ' + date.getFullYear();
+                console.log(docDate);
+                for (var i in raw_list) {
+                    list_match = raw_list[i].match(/class="block-date">(\d\d? [a-zA-Z]+ \d\d\d\d)/);
+                    if (list_match) {
+                        if (list_match[1] === docDate) {
+                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
+                            list_match = raw_list[i].match(/href="([^"]+)">([^<]+)/);
+                            if (list_match) {
+                                if (!list_match[1].match(/^(http|https):\/\//)) {
+                                    if (list_match[1].match(/^\//)) {
+                                        list_match[1] = 'http://www.oecd.org' + list_match[1];
+                                    } else {
+                                        list_match[1] = 'http://www.oecd.org/' + list_match[1];
+                                    }
+                                    data['url'] = list_match[1];
+                                    data['name'] = util.toValidName(list_match[2]);
+                                    list.push(data);
+                                }
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'dol':
+            url = 'http://www.dol.gov/newsroom/releases';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/.+Unemployment Insurance Weekly Claims Report.+/);
+                var list = [];
+                if (raw_list) {
+                    var list_match = false;
+                    var data = null;
+                    var date = new Date();
+                    date = new Date(new Date(date).setDate(date.getDate()-1));
+                    var docDate = monthNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
+                    console.log(docDate);
+                    list_match = raw_list[0].match(/class="date-display-single">[a-zA-Z]+, ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
+                    if (list_match) {
+                        if (list_match[1] === docDate) {
+                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
+                            list_match = raw_list[0].match(/href="([^"]+)">([^<]+)/);
+                            if (list_match) {
+                                if (!list_match[1].match(/^(http|https):\/\//)) {
+                                    if (list_match[1].match(/^\//)) {
+                                        list_match[1] = 'http://www.dol.gov' + list_match[1];
+                                    } else {
+                                        list_match[1] = 'http://www.dol.gov/' + list_match[1];
+                                    }
+                                    data['url'] = list_match[1];
+                                    data['name'] = util.toValidName(list_match[2]);
+                                    list.push(data);
+                                }
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'rea':
+            url = 'http://www.realtor.org/topics/existing-home-sales';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/(\d\d\d\d-\d\d-\d\d)\.xls">View supplemental market data/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find rea latest'}, callback, callback);
+                }
+                var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
+                var docDate = date.getFullYear() + '-';
+                if (date.getMonth()+1 < 10) {
+                    docDate = docDate + '0' + (date.getMonth()+1) + '-';
+                } else {
+                    docDate = docDate + (date.getMonth()+1) + '-';
+                }
+                if (date.getDate() < 10) {
+                    docDate = docDate + '0' + date.getDate();
+                } else {
+                    docDate = docDate + date.getDate();
+                }
+                console.log(docDate);
+                var list = [];
+                if (docDate === raw_list[1]) {
+                    raw_list = raw_data.match(/href="([^"]+)">Read the full news release/);
+                    if (!raw_list) {
+                        util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                    }
+                    if (!raw_list[1].match(/^(http|https):\/\//)) {
+                        if (raw_list[1].match(/^\//)) {
+                            raw_list[1] = 'http://www.realtor.org' + raw_list[1];
+                        } else {
+                            raw_list[1] = 'http://www.realtor.org/' + raw_list[1];
+                        }
+                    }
+                    list.push({url: raw_list[1], name: util.toValidName('Existing-Home Sales'), date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()});
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'sca':
+            url = 'http://press.sca.isr.umich.edu/press/press_release';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/class="list">[\s\S]+?<\/li>/g);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find sca latest'}, callback, callback);
+                }
+                var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
+                var docDate = monthNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
+                console.log(docDate);
+                var list = [];
+                var list_match = false;
+                var data = null;
+                for (var i in raw_list) {
+                    list_match = raw_list[i].match(/href="([^"]+)/);
+                    if (list_match) {
+                        if (!list_match[1].match(/^(http|https):\/\//)) {
+                            if (list_match[1].match(/^\//)) {
+                                list_match[1] = 'http://press.sca.isr.umich.edu' + list_match[1];
+                            } else {
+                                list_match[1] = 'http://press.sca.isr.umich.edu/' + list_match[1];
+                            }
+                        }
+                        data = {url: list_match[1]};
+                        list_match = raw_list[i].match(/\(released ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
+                        if (list_match) {
+                            if (list_match[1] === docDate) {
+                                data['date'] = (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear();
+                                data['name'] = util.toValidName('Michigan Consumer Sentiment Index');
+                                list.push(data);
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'fed':
+            url = 'http://www.federalreserve.gov/feeds/speeches_and_testimony.xml';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/<item [\s\S]+?<\/item>/g);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
+                }
+                var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
+                var docDate = date.getFullYear() + '-';
+                if (date.getMonth() + 1 < 10) {
+                    docDate = docDate + '0' + (date.getMonth() + 1) + '-';
+                } else {
+                    docDate = docDate + (date.getMonth() + 1) + '-';
+                }
+                if (date.getDate() < 10) {
+                    docDate = docDate + '0' + date.getDate();
+                } else {
+                    docDate = docDate + date.getDate();
+                }
+                var list = [];
+                var list_match = false;
+                var data = null;
+                console.log(docDate);
+                for (var i in raw_list) {
+                    list_match = raw_list[i].match(/<dc:date>(\d\d\d\d-\d\d-\d\d)/);
+                    if (list_match) {
+                        if (list_match[1] === docDate) {
+                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
+                            list_match = raw_list[i].match(/<link>([^<]+)/);
+                            if (list_match) {
+                                if (!list_match[1].match(/^(http|https):\/\//)) {
+                                    if (list_match[1].match(/^\//)) {
+                                        list_match[1] = 'http://www.federalreserve.gov' + list_match[1];
+                                    } else {
+                                        list_match[1] = 'http://www.federalreserve.gov/' + list_match[1];
+                                    }
+                                }
+                                data['url'] = list_match[1];
+                                list_match = raw_list[i].match(/<title>([^<]+)/);
+                                if (list_match) {
+                                    data['name'] = util.toValidName(list_match[1]);
+                                    list.push(data);
+                                }
+                            }
+                        }
+                    }
+                }
+                url = 'http://www.federalreserve.gov/releases/g17/Current/default.htm';
+                api.xuiteDownload(url, '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    docDate = monthNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
+                    console.log(docDate);
+                    raw_list = raw_data.match(/class="dates">Release Date:  ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
+                    if (!raw_list) {
+                        util.handleError({hoerror: 2, message: 'cannot find sca latest'}, callback, callback);
+                    }
+                    if (docDate === raw_list[1]) {
+                        data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
+                        raw_list = raw_data.match(/Current Release[\s]*<a href="([^"]+)/i);
+                        if (!raw_list) {
+                            util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
+                        }
+                        if (!raw_list[1].match(/^(http|https):\/\//)) {
+                            if (raw_list[1].match(/^\//)) {
+                                raw_list[1] = 'http://www.federalreserve.gov/releases/g17/Current' + raw_list[1];
+                            } else {
+                                raw_list[1] = 'http://www.federalreserve.gov/releases/g17/Current/' + raw_list[1];
+                            }
+                        }
+                        data['url'] = raw_list[1];
+                        data['name'] = util.toValidName('INDUSTRIAL PRODUCTION AND CAPACITY UTILIZATION');
+                        list.push(data);
+                    }
+                    url = 'http://www.federalreserve.gov/releases/g19/current/default.htm';
+                    api.xuiteDownload(url, '', function(err, raw_data) {
+                        if (err) {
+                            err.hoerror = 2;
+                            util.handleError(err, callback, callback);
+                        }
+                        raw_list = raw_data.match(/">Last update: ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
+                        if (!raw_list) {
+                            util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
+                        }
+                        if (docDate === raw_list[1]) {
+                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
+                            raw_list = raw_data.match(/Current Release[\s]*<a href="([^"]+)/i);
+                            if (!raw_list) {
+                                util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
+                            }
+                            if (!raw_list[1].match(/^(http|https):\/\//)) {
+                                if (raw_list[1].match(/^\//)) {
+                                    raw_list[1] = 'http://www.federalreserve.gov/releases/g19/current' + raw_list[1];
+                                } else {
+                                    raw_list[1] = 'http://www.federalreserve.gov/releases/g19/current/' + raw_list[1];
+                                }
+                            }
+                            data['url'] = raw_list[1];
+                            data['name'] = util.toValidName('Consumer Credit');
+                            list.push(data);
+                        }
+                        setTimeout(function(){
+                            callback(null, list);
+                        }, 0);
+                    }, 60000, false, false);
+                }, 60000, false, false);
             }, 60000, false, false);
             break;
             default:
@@ -2718,7 +3187,6 @@ module.exports = {
                         list_match[1] = 'http://www.bls.gov/' + list_match[1];
                     }
                 }
-                console.log(list_match[1]);
                 var utime = Math.round(new Date().getTime() / 1000);
                 var filePath = util.getFileLocation(type, utime);
                 console.log(filePath);
@@ -2816,6 +3284,500 @@ module.exports = {
                         }, 0);
                     });
                 });
+            }
+            break;
+            case 'bea':
+            console.log(obj);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/<li><a href="([^"]+)">Full Release/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                }
+                if (!raw_list[1].match(/^(http|https):\/\//)) {
+                    if (raw_list[1].match(/^\//)) {
+                        raw_list[1] = 'http://www.bea.gov' + raw_list[1];
+                    } else {
+                        raw_list[1] = 'http://www.bea.gov/' + raw_list[1];
+                    }
+                }
+                var utime = Math.round(new Date().getTime() / 1000);
+                var filePath = util.getFileLocation(type, utime);
+                console.log(filePath);
+                var folderPath = path.dirname(filePath);
+                var ext = path.extname(raw_list[1]);
+                var driveName = obj.name + ' ' + obj.date + ext;
+                console.log(driveName);
+                if (!fs.existsSync(folderPath)) {
+                    mkdirp(folderPath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        api.xuiteDownload(raw_list[1], filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(metadata);
+                                console.log('done');
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
+                    });
+                } else {
+                    api.xuiteDownload(raw_list[1], filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                }
+            }, 60000, false, false);
+            break;
+            case 'ism':
+            console.log(obj);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/href="([^"]+)".*?PDF Download of this month\'s report/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                }
+                if (!raw_list[1].match(/^(http|https):\/\//)) {
+                    if (raw_list[1].match(/^\//)) {
+                        raw_list[1] = 'https://www.instituteforsupplymanagement.org' + raw_list[1];
+                    } else {
+                        raw_list[1] = 'https://www.instituteforsupplymanagement.org/' + raw_list[1];
+                    }
+                }
+                var utime = Math.round(new Date().getTime() / 1000);
+                var filePath = util.getFileLocation(type, utime);
+                console.log(filePath);
+                var folderPath = path.dirname(filePath);
+                var ext = path.extname(raw_list[1]);
+                var driveName = obj.name + ' ' + obj.date + ext;
+                console.log(driveName);
+                if (!fs.existsSync(folderPath)) {
+                    mkdirp(folderPath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        api.xuiteDownload(raw_list[1], filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(metadata);
+                                console.log('done');
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
+                    });
+                } else {
+                    api.xuiteDownload(raw_list[1], filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                }
+            }, 60000, false, false);
+            break;
+            case 'cbo':
+            console.log(obj);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/<h2>([^<]+)/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                }
+                var driveName = obj.name + ' ' + obj.date + '.txt';
+                console.log(driveName);
+                var data = {type: 'auto', name: driveName, body: raw_list[1] + '\n\n\r\r' + obj.url, parent: parent};
+                googleApi.googleApi('upload', data, function(err, metadata) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log(metadata);
+                    console.log('done');
+                    setTimeout(function(){
+                        callback(null);
+                    }, 0);
+                });
+            }, 60000, false, false);
+            break;
+            case 'sem':
+            console.log(obj);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/class="page-header">([^<]+)/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                }
+                var driveName = obj.name + ' ' + obj.date + '.txt';
+                console.log(driveName);
+                var data = {type: 'auto', name: driveName, body: raw_list[1] + '\n\n\r\r' + obj.url, parent: parent};
+                googleApi.googleApi('upload', data, function(err, metadata) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log(metadata);
+                    console.log('done');
+                    setTimeout(function(){
+                        callback(null);
+                    }, 0);
+                });
+            }, 60000, false, false);
+            break;
+            case 'oec':
+            console.log(obj);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/href="([^"]+)">Download the entire news release/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                }
+                if (!raw_list[1].match(/^(http|https):\/\//)) {
+                    if (raw_list[1].match(/^\//)) {
+                        raw_list[1] = 'http://www.oecd.org' + raw_list[1];
+                    } else {
+                        raw_list[1] = 'http://www.oecd.org/' + raw_list[1];
+                    }
+                }
+                var utime = Math.round(new Date().getTime() / 1000);
+                var filePath = util.getFileLocation(type, utime);
+                console.log(filePath);
+                var folderPath = path.dirname(filePath);
+                var ext = path.extname(raw_list[1]);
+                var driveName = obj.name + ' ' + obj.date + ext;
+                console.log(driveName);
+                if (!fs.existsSync(folderPath)) {
+                    mkdirp(folderPath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        api.xuiteDownload(raw_list[1], filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(metadata);
+                                console.log('done');
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
+                    });
+                } else {
+                    api.xuiteDownload(raw_list[1], filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                }
+            }, 60000, false, false);
+            break;
+            case 'dol':
+            console.log(obj);
+            var utime = Math.round(new Date().getTime() / 1000);
+            var filePath = util.getFileLocation(type, utime);
+            console.log(filePath);
+            var folderPath = path.dirname(filePath);
+            var driveName = obj.name + ' ' + obj.date + '.pdf';
+            console.log(driveName);
+            if (!fs.existsSync(folderPath)) {
+                mkdirp(folderPath, function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    api.xuiteDownload(obj.url, filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                });
+            } else {
+                api.xuiteDownload(obj.url, filePath, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                    googleApi.googleApi('upload', data, function(err, metadata) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(metadata);
+                        console.log('done');
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    });
+                });
+            }
+            break;
+            case 'rea':
+            console.log(obj);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/class="page-title">([^<]+)/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                }
+                var driveName = obj.name + ' ' + obj.date + '.txt';
+                console.log(driveName);
+                var data = {type: 'auto', name: driveName, body: raw_list[1] + '\n\n\r\r' + obj.url, parent: parent};
+                googleApi.googleApi('upload', data, function(err, metadata) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log(metadata);
+                    console.log('done');
+                    setTimeout(function(){
+                        callback(null);
+                    }, 0);
+                });
+            }, 60000, false, false);
+            break;
+            case 'sca':
+            console.log(obj);
+            var utime = Math.round(new Date().getTime() / 1000);
+            var filePath = util.getFileLocation(type, utime);
+            console.log(filePath);
+            var folderPath = path.dirname(filePath);
+            var driveName = obj.name + ' ' + obj.date + '.pdf';
+            console.log(driveName);
+            if (!fs.existsSync(folderPath)) {
+                mkdirp(folderPath, function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    api.xuiteDownload(obj.url, filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    }, 60000, false);
+                });
+            } else {
+                api.xuiteDownload(obj.url, filePath, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                    googleApi.googleApi('upload', data, function(err, metadata) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(metadata);
+                        console.log('done');
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    });
+                }, 60000, false);
+            }
+            break;
+            case 'fed':
+            console.log(obj);
+            if (path.extname(obj.url) === '.pdf') {
+                var utime = Math.round(new Date().getTime() / 1000);
+                var filePath = util.getFileLocation(type, utime);
+                console.log(filePath);
+                var folderPath = path.dirname(filePath);
+                var ext = path.extname(obj.url);
+                var driveName = obj.name + ' ' + obj.date + ext;
+                console.log(driveName);
+                if (!fs.existsSync(folderPath)) {
+                    mkdirp(folderPath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        api.xuiteDownload(obj.url, filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(metadata);
+                                console.log('done');
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
+                    });
+                } else {
+                    api.xuiteDownload(obj.url, filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                }
+            } else {
+                api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    var raw_list = raw_data.match(/<li class="stayconnected3"><a href="([^"]+)/);
+                    if (!raw_list) {
+                        util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                    }
+                    if (!raw_list[1].match(/^(http|https):\/\//)) {
+                        if (raw_list[1].match(/^\//)) {
+                            raw_list[1] = 'http://www.federalreserve.gov' + raw_list[1];
+                        } else {
+                            raw_list[1] = 'http://www.federalreserve.gov/' + raw_list[1];
+                        }
+                    }
+                    var utime = Math.round(new Date().getTime() / 1000);
+                    var filePath = util.getFileLocation(type, utime);
+                    console.log(filePath);
+                    var folderPath = path.dirname(filePath);
+                    var ext = path.extname(raw_list[1]);
+                    var driveName = obj.name + ' ' + obj.date + ext;
+                    console.log(driveName);
+                    if (!fs.existsSync(folderPath)) {
+                        mkdirp(folderPath, function(err) {
+                            if(err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            api.xuiteDownload(raw_list[1], filePath, function(err) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                                googleApi.googleApi('upload', data, function(err, metadata) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    console.log(metadata);
+                                    console.log('done');
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                });
+                            });
+                        });
+                    } else {
+                        api.xuiteDownload(raw_list[1], filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(metadata);
+                                console.log('done');
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
+                    }
+                }, 60000, false, false);
             }
             break;
             default:

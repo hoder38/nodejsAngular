@@ -320,6 +320,7 @@ module.exports = {
             requestUse = https;
             options = {
                 host: urlParse.hostname,
+                rejectUnauthorized : false,
                 port: 443,
                 path: urlParse.path,
                 method: 'GET',
