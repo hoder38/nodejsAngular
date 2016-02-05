@@ -1077,7 +1077,7 @@ module.exports = {
                     util.handleError({hoerror: 2, message: 'cannot find sea latest'}, callback, callback);
                 }
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()));
                 var docDate = date.getFullYear() + '-';
                 if (date.getMonth() + 1 < 10) {
                     docDate = docDate + '0' + (date.getMonth() + 1) + '-';
@@ -1140,7 +1140,7 @@ module.exports = {
                     util.handleError({hoerror: 2, message: 'cannot find tri latest'}, callback, callback);
                 }
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-9));
+                date = new Date(new Date(date).setDate(date.getDate()));
                 var docDate = (date.getFullYear()-1911) + '.' + (date.getMonth() + 1) + '.' + date.getDate();
                 console.log(docDate);
                 if (raw_list[0] === docDate) {
