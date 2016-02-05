@@ -1105,7 +1105,7 @@ module.exports = {
                             data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
                             item_match = list_match[i].match(/class="lft">([^<]+)<br>([^<]+)/);
                             if (item_match) {
-                                data['name'] = item_match[1] + ' ' + item_match[2];
+                                data['name'] = util.toValidName(item_match[1] + ' ' + item_match[2]);
                                 item_match = list_match[i].match(/href="([^"]+)/);
                                 if (item_match) {
                                     if (!item_match[1].match(/^(http|https):\/\//)) {
@@ -1123,6 +1123,56 @@ module.exports = {
                     callback(null, list);
                 }, 0);
             }, 60000, false, false);
+            break;
+            case 'tri':
+            url = 'http://www.tri.org.tw/index.html';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/<div class="consumerText">.*/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find tri latest'}, callback, callback);
+                }
+                raw_list = raw_list[0].match(/\d\d\d\.\d\d?\.\d\d?/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find tri latest'}, callback, callback);
+                }
+                var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-9));
+                var docDate = (date.getFullYear()-1911) + '.' + (date.getMonth() + 1) + '.' + date.getDate();
+                console.log(docDate);
+                if (raw_list[0] === docDate) {
+                    url = 'http://www.tri.org.tw/page/consumer.php';
+                    api.xuiteDownload(url, '', function(err, raw_data) {
+                        if (err) {
+                            err.hoerror = 2;
+                            util.handleError(err, callback, callback);
+                        }
+                        var raw_list = raw_data.match(/id="">1<\/td>.*/);
+                        if (!raw_list) {
+                            util.handleError({hoerror: 2, message: 'cannot find tri latest'}, callback, callback);
+                        }
+                        var list = [];
+                        var list_match = false;
+                        list_match = raw_list[0].match(/href="([^"]+)/);
+                        if (list_match) {
+                            if (!list_match[1].match(/^(http|https):\/\//)) {
+                                if (list_match[1].match(/^\//)) {
+                                    list_match[1] = 'http://www.tri.org.tw/page' + list_match[1];
+                                } else {
+                                    list_match[1] = 'http://www.tri.org.tw/page/' + list_match[1];
+                                }
+                                list.push({url: list_match[1], name: util.toValidName('消費者信心指數調查報告'), date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()});
+                            }
+                        }
+                        setTimeout(function(){
+                            callback(null, list);
+                        }, 0);
+                    }, 60000, false, false, null, true);
+                }
+            }, 60000, false, false, null, true);
             break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
@@ -3887,6 +3937,74 @@ module.exports = {
                     });
                 }, 60000, false);
             }
+            break;
+            case 'tri':
+            console.log(obj);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/href="([^"]+)".*下載PDF檔案/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                }
+                console.log(raw_list[1]);
+                if (!raw_list[1].match(/^(http|https):\/\//)) {
+                    if (raw_list[1].match(/^\//)) {
+                        raw_list[1] = 'http://www.tri.org.tw' + raw_list[1];
+                    } else {
+                        raw_list[1] = 'http://www.tri.org.tw/' + raw_list[1];
+                    }
+                }
+                var utime = Math.round(new Date().getTime() / 1000);
+                var filePath = util.getFileLocation(type, utime);
+                console.log(filePath);
+                var folderPath = path.dirname(filePath);
+                var ext = path.extname(raw_list[1]);
+                var driveName = obj.name + ' ' + obj.date + ext;
+                console.log(driveName);
+                if (!fs.existsSync(folderPath)) {
+                    mkdirp(folderPath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        api.xuiteDownload(raw_list[1], filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(metadata);
+                                console.log('done');
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        }, 60000, false);
+                    });
+                } else {
+                    api.xuiteDownload(raw_list[1], filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    }, 60000, false);
+                }
+            }, 60000, false, false, null, true);
             break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);

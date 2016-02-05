@@ -217,6 +217,11 @@ function sendAPI(method, data, callback) {
                 break;
             case 'auto':
                 parent = {id: data['parent']};
+                mimeType = mime.mediaMIME(data['name']);
+                if (!mimeType) {
+                    exports.getApiQueue();
+                    util.handleError({hoerror: 2, message: 'upload mime type unknown!!!'}, callback, callback);
+                }
                 break;
             default:
                 exports.getApiQueue();
