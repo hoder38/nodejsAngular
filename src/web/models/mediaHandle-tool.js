@@ -1528,10 +1528,12 @@ module.exports = function(sendWs) {
                     var dbName = null;
                     recur_check(0);
                     function recur_check(index) {
+                        var mId = items[index]._id;
+                        var mAdult = items[index].adultonly
                         filePath = util.getFileLocation(items[index].owner, items[index]._id);
-                        if(items[index].mediaType.key) {
+                        if (items[index].mediaType.key) {
                             this_obj.handleMedia(items[index].mediaType, filePath, items[index]._id, items[index].name, items[index].mediaType.key, {_id: items[index].owner, perm: 1}, function (err) {
-                                sendWs({type: 'file', data: items[index]._id}, items[index].adultonly);
+                                sendWs({type: 'file', data: mId}, mAdult);
                                 if (err) {
                                     util.handleError(err);
                                 }
@@ -1544,7 +1546,7 @@ module.exports = function(sendWs) {
                                     dbStats = fs.statSync(filePath + '/real/' + items[index].mediaType['realPath']);
                                     dbName = path.basename(items[index].mediaType['realPath']);
                                     this_obj.handleMediaUpload(items[index].mediaType, filePath, items[index]._id, dbName, dbStats['size'], {_id: items[index].owner, perm: 1}, function (err) {
-                                        sendWs({type: 'file', data: items[index]._id}, items[index].adultonly);
+                                        sendWs({type: 'file', data: mId}, mAdult);
                                         if (err) {
                                             util.handleError(err);
                                         }
@@ -1554,7 +1556,7 @@ module.exports = function(sendWs) {
                                 }
                             } else {
                                 this_obj.handleMediaUpload(items[index].mediaType, filePath, items[index]._id, items[index].name, items[index].size, {_id: items[index].owner, perm: 1}, function (err) {
-                                    sendWs({type: 'file', data: items[index]._id}, items[index].adultonly);
+                                    sendWs({type: 'file', data: mId}, mAdult);
                                     if (err) {
                                         util.handleError(err);
                                     }
