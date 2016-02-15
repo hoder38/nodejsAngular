@@ -1741,56 +1741,14 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
                 var iframeOffset = [];
                 var iframeWin = element[0].contentWindow.window;
                 scope.isPdf = false;
-                if (scope.doc.name.match(/\.pdf$/i)) {
-                    scope.isPdf = true;
-                    iframeBody.style.padding = '0px';
-                    iframeBody.style["margin-left"] = 'auto';
-                    iframeBody.style["margin-right"] = 'auto';
-                    var imgNode = {offset: [], node: []};
-                    var textNode = {offset: [], node: []};
-                    var j = 0;
-                    for (var i = 0; i< childnode.length; i++) {
-                        var iframeSpan = childnode[i].getElementsByTagName('span')[0];
-                        if (iframeSpan) {
-                            var iframeImg = iframeSpan.getElementsByTagName('img')[0];
-                            if (iframeImg) {
-                                iframeImg.style.width = 'auto';
-                                iframeImg.style.height = 'auto';
-                                if (imgNode.offset.length === 0){
-                                    imgNode.offset[0] = 0;
-                                    textNode.offset[0] = 0;
-                                    imgNode.offset.push(childnode[i].offsetTop + childnode[i].offsetHeight);
-                                } else {
-                                    j++;
-                                    imgNode.offset.push(imgNode.offset[j] + childnode[i].offsetHeight);
-                                    textNode.offset.push(childnode[i].offsetTop - imgNode.offset[j]);
-                                }
-                                imgNode.node.push(childnode[i]);
-                            } else {
-                                textNode.node.push(childnode[i]);
-                            }
-                        } else {
-                            if (childnode[i].tagName === 'HR' && childnode[i].style.display === 'none') {
-                            } else if (childnode[i].tagName === 'STYLE') {
-                            } else {
-                                textNode.node.push(childnode[i]);
-                            }
-                        }
-                    }
-                    textNode.offset.push(childnode[childnode.length-2].offsetTop + childnode[childnode.length-2].offsetHeight - imgNode.offset[imgNode.offset.length-1]);
-                    scope.$apply(function (){
-                        scope.setDoc(iframeWin, imgNode, textNode);
-                    });
-                } else {
-                    var lastchild = childnode[childnode.length-2];
-                    var iframelength = lastchild.offsetTop + lastchild.offsetHeight;
-                    for (var i = 0; i < iframelength; i+=850) {
-                        iframeOffset.push(i);
-                    }
-                    scope.$apply(function (){
-                        scope.setDoc(iframeWin, iframeOffset);
-                    });
+                var lastchild = childnode[childnode.length-2];
+                var iframelength = lastchild.offsetTop + lastchild.offsetHeight;
+                for (var i = 0; i < iframelength; i+=850) {
+                    iframeOffset.push(i);
                 }
+                scope.$apply(function (){
+                    scope.setDoc(iframeWin, iframeOffset);
+                });
                 element[0].contentWindow.document.onscroll = function() {
                     scope.$apply(function (){
                         scope.numberDoc();
@@ -6586,9 +6544,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             break;
         }
     }
-    $scope.$watch("this.doc.mode", function(newVal, oldVal) {
-        $scope.setDoc();
-    }, true);
     $scope.$watch("this.torrent.option", function(newVal, oldVal) {
         newVal = parseInt(newVal);
         if (newVal) {
@@ -6674,32 +6629,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     }
     $scope.setDoc = function(iframeWindow, iframeOffset, textNode) {
         this.doc.win = typeof iframeWindow !== 'undefined' ? iframeWindow : this.doc.win;
-        if (this.isPdf) {
-            this.doc.imgNode = typeof iframeOffset !== 'undefined' ? iframeOffset : this.doc.imgNode;
-            this.doc.textNode = typeof textNode !== 'undefined' ? textNode : this.doc.textNode;
-            if (!this.doc.mode) {
-                for (var i in this.doc.imgNode.node) {
-                    this.doc.imgNode.node[i].style.display = 'block';
-                }
-                for (var i in this.doc.textNode.node) {
-                    this.doc.textNode.node[i].style.display = 'none';
-                }
-                this.doc.iframeOffset = this.doc.imgNode.offset;
-            } else {
-                for (var i in this.doc.imgNode.node) {
-                    this.doc.imgNode.node[i].style.display = 'none';
-                }
-                for (var i in this.doc.textNode.node) {
-                    this.doc.textNode.node[i].style.display = 'block';
-                }
-                this.doc.iframeOffset = this.doc.textNode.offset;
-            }
+        this.doc.iframeOffset = typeof iframeOffset !== 'undefined' ? iframeOffset : this.doc.iframeOffset;
+        if (this.doc.win) {
             this.doc.win.scrollTo(0, this.doc.iframeOffset[this.doc.presentId-1]);
-        } else {
-            this.doc.iframeOffset = typeof iframeOffset !== 'undefined' ? iframeOffset : this.doc.iframeOffset;
-            if (this.doc.win) {
-                this.doc.win.scrollTo(0, this.doc.iframeOffset[this.doc.presentId-1]);
-            }
         }
         if (this.doc.iframeOffset) {
             this.doc.maxId = this.doc.iframeOffset.length-1;

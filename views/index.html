@@ -428,9 +428,6 @@
                         <div class="panel-body media-trim">
                             <nav>
                                 <ul class="pager nav-trim {{isFull && 'pull-left'||'pull-right'}}">
-                                    <span ng-show="isPdf" tooltip="切換模式"  tooltip-trigger="mouseenter">
-                                        <input type="checkbox" ng-model="doc.mode"/>
-                                    </span>
                                     <span ng-show="doc.maxId && doc.maxId > 1">
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="docMove(-1)">
@@ -444,7 +441,7 @@
                                             </a>
                                         </li>
                                     </span>
-                                    <span ng-hide="doc.maxId">
+                                    <span ng-hide="doc.maxId || doc.maxId === 0">
                                         處理中...<i class="fa fa-refresh fa-spin"></i>
                                     </span>
                                     <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
