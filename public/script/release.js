@@ -5153,7 +5153,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             }
             console.log(result);
             if (result.start) {
-                addAlert('video start buffering, Mp4 and Mkv may preview');
+                addAlert('video start buffering, Mp4 may preview');
             } else {
                 this_obj.size = result.ret_size;
                 if (result.newBuffer) {
@@ -5382,10 +5382,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 } else {
                     if (this[type].playlist.obj_arr) {
                         newIndex = Math.floor(+this[type].playlist.obj.index);
-                        if (direction > this[type].playlist.obj.index) {
-                            newIndex++;
+                        if (direction < 1) {
+                            newIndex = 1;
+                        } else if (direction > this[type].playlist.total+1) {
+                            newIndex = this[type].playlist.total;
                         } else {
-                            newIndex--;
+                            newIndex = direction;
                         }
                     } else {
                         if (direction < 1) {
