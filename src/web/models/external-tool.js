@@ -2872,7 +2872,7 @@ module.exports = {
                                     }
                                 } else {
                                     if (list[j].size <= 2000 && size <= 2000) {
-                                        if (list[j].size < size) {
+                                        if (list[j].size <= size) {
                                             list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
                                         }
                                     } else if (list[j].size > 2000 && size > 2000) {
