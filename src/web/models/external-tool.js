@@ -1077,7 +1077,6 @@ module.exports = {
                     util.handleError({hoerror: 2, message: 'cannot find sea latest'}, callback, callback);
                 }
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()));
                 var docDate = date.getFullYear() + '-';
                 if (date.getMonth() + 1 < 10) {
                     docDate = docDate + '0' + (date.getMonth() + 1) + '-';
@@ -1140,7 +1139,6 @@ module.exports = {
                     util.handleError({hoerror: 2, message: 'cannot find tri latest'}, callback, callback);
                 }
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()));
                 var docDate = (date.getFullYear()-1911) + '.' + (date.getMonth() + 1) + '.' + date.getDate();
                 console.log(docDate);
                 if (raw_list[0] === docDate) {
@@ -1164,8 +1162,8 @@ module.exports = {
                                 } else {
                                     list_match[1] = 'http://www.tri.org.tw/page/' + list_match[1];
                                 }
-                                list.push({url: list_match[1], name: util.toValidName('消費者信心指數調查報告'), date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()});
                             }
+                            list.push({url: list_match[1], name: util.toValidName('消費者信心指數調查報告'), date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()});
                         }
                         setTimeout(function(){
                             callback(null, list);
@@ -1173,6 +1171,454 @@ module.exports = {
                     }, 60000, false, false, null, true);
                 }
             }, 60000, false, false, null, true);
+            break;
+            case 'ndc':
+            url = 'http://index.ndc.gov.tw/n/json/data/news';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var json_data = null;
+                try {
+                    json_data = JSON.parse(raw_data);
+                } catch (x) {
+                    console.log(raw_data);
+                    util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                }
+                var date = new Date();
+                var docDate = date.getFullYear() + '-';
+                if (date.getMonth() + 1 < 10) {
+                    docDate = docDate + '0' + (date.getMonth() + 1) + '-';
+                } else {
+                    docDate = docDate + (date.getMonth() + 1) + '-';
+                }
+                if (date.getDate() < 10) {
+                    docDate = docDate + '0' + date.getDate();
+                } else {
+                    docDate = docDate + date.getDate();
+                }
+                console.log(docDate);
+                var list = [];
+                var list_match = false;
+                var data = null;
+                for (var i in json_data) {
+                    if (json_data[i].date === docDate) {
+                        list_match = json_data[i].content.match(/href="([^"]+)".*title="(\d\d\d\d?年\d\d?月臺灣製造業採購經理人指數\(PMI\)完整報告)/);
+                        if (list_match) {
+                            if (!list_match[1].match(/^(http|https):\/\//)) {
+                                if (list_match[1].match(/^\//)) {
+                                    list_match[1] = 'http://index.ndc.gov.tw' + list_match[1];
+                                } else {
+                                    list_match[1] = 'http://index.ndc.gov.tw/' + list_match[1];
+                                }
+                            }
+                            list_match[1] =  list_match[1].replace(/&amp;/g, '&');
+                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName(list_match[2]), url: list_match[1]};
+                            list.push(data);
+                        }
+                        list_match = json_data[i].content.match(/href="([^"]+)".*title="(\d\d\d\d?年\d\d?月臺灣非製造業經理人指數\(NMI\)完整報告)/);
+                        if (list_match) {
+                            if (!list_match[1].match(/^(http|https):\/\//)) {
+                                if (list_match[1].match(/^\//)) {
+                                    list_match[1] = 'http://index.ndc.gov.tw' + list_match[1];
+                                } else {
+                                    list_match[1] = 'http://index.ndc.gov.tw/' + list_match[1];
+                                }
+                            }
+                            list_match[1] =  list_match[1].replace(/&amp;/g, '&');
+                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName(list_match[2]), url: list_match[1]};
+                            list.push(data);
+                        }
+                        list_match = json_data[i].content.match(/href="([^"]+)".*title="([^"]+)">\d\d\d\d?年\d\d?月份景氣概況新聞稿\.pdf/);
+                        if (list_match) {
+                            if (!list_match[1].match(/^(http|https):\/\//)) {
+                                if (list_match[1].match(/^\//)) {
+                                    list_match[1] = 'http://index.ndc.gov.tw' + list_match[1];
+                                } else {
+                                    list_match[1] = 'http://index.ndc.gov.tw/' + list_match[1];
+                                }
+                            }
+                            list_match[1] =  list_match[1].replace(/&amp;/g, '&');
+                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName(list_match[2]), url: list_match[1]};
+                            list.push(data);
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false, null, false, null, true);
+            break;
+            case 'sta':
+            url = 'http://www.stat.gov.tw/lp.asp?ctNode=489&CtUnit=1818&BaseDSD=29';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/<td><a href="[\s\S]+?>\d\d\d\d\/\d\d?\/\d\d?/ig);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find sta latest'}, callback, callback);
+                }
+                var list = [];
+                var list_match = false;
+                var data = null;
+                var date = new Date();
+                var docDate = date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate();
+                console.log(docDate);
+                for (var i in raw_list) {
+                    list_match = raw_list[i].match(/\d\d\d\d\/\d\d?\/\d\d?$/);
+                    if (list_match) {
+                        if (list_match[0] === docDate) {
+                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
+                            list_match = raw_list[i].match(/href="([^"]+)/);
+                            if (list_match) {
+                                if (!list_match[1].match(/^(http|https):\/\//)) {
+                                    if (list_match[1].match(/^\//)) {
+                                        list_match[1] = 'http://www.stat.gov.tw' + list_match[1];
+                                    } else {
+                                        list_match[1] = 'http://www.stat.gov.tw/' + list_match[1];
+                                    }
+                                }
+                                data['url'] = list_match[1];
+                                data['name'] = util.toValidName('物價指數');
+                                list.push(data);
+                            }
+                        }
+                    }
+                }
+                url = 'http://www.stat.gov.tw/lp.asp?ctNode=497&CtUnit=1818&BaseDSD=29';
+                api.xuiteDownload(url, '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    raw_list = raw_data.match(/<td><a href="[\s\S]+?>\d\d\d\d\/\d\d?\/\d\d?/ig);
+                    if (!raw_list) {
+                        util.handleError({hoerror: 2, message: 'cannot find sta latest'}, callback, callback);
+                    }
+                    for (var i in raw_list) {
+                        list_match = raw_list[i].match(/\d\d\d\d\/\d\d?\/\d\d?$/);
+                        if (list_match) {
+                            if (list_match[0] === docDate) {
+                                data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
+                                list_match = raw_list[i].match(/href="([^"]+)/);
+                                if (list_match) {
+                                    if (!list_match[1].match(/^(http|https):\/\//)) {
+                                        if (list_match[1].match(/^\//)) {
+                                            list_match[1] = 'http://www.stat.gov.tw' + list_match[1];
+                                        } else {
+                                            list_match[1] = 'http://www.stat.gov.tw/' + list_match[1];
+                                        }
+                                    }
+                                    data['url'] = list_match[1];
+                                    data['name'] = util.toValidName('經濟成長率');
+                                    list.push(data);
+                                }
+                            }
+                        }
+                    }
+                    url = 'http://www.stat.gov.tw/lp.asp?ctNode=527&CtUnit=1818&BaseDSD=29&MP=4';
+                    api.xuiteDownload(url, '', function(err, raw_data) {
+                        if (err) {
+                            err.hoerror = 2;
+                            util.handleError(err, callback, callback);
+                        }
+                        raw_list = raw_data.match(/<td><a href="[\s\S]+?>\d\d\d\d\/\d\d?\/\d\d?/ig);
+                        if (!raw_list) {
+                            util.handleError({hoerror: 2, message: 'cannot find sta latest'}, callback, callback);
+                        }
+                        for (var i in raw_list) {
+                            list_match = raw_list[i].match(/\d\d\d\d\/\d\d?\/\d\d?$/);
+                            if (list_match) {
+                                if (list_match[0] === docDate) {
+                                    data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
+                                    list_match = raw_list[i].match(/href="([^"]+)/);
+                                    if (list_match) {
+                                        if (!list_match[1].match(/^(http|https):\/\//)) {
+                                            if (list_match[1].match(/^\//)) {
+                                                list_match[1] = 'http://www.stat.gov.tw' + list_match[1];
+                                            } else {
+                                                list_match[1] = 'http://www.stat.gov.tw/' + list_match[1];
+                                            }
+                                        }
+                                        data['url'] = list_match[1];
+                                        data['name'] = util.toValidName('受僱員工薪資與生產力');
+                                        list.push(data);
+                                    }
+                                }
+                            }
+                        }
+                        url = 'http://www.stat.gov.tw/lp.asp?ctNode=2294&CtUnit=1818&BaseDSD=29&mp=4';
+                        api.xuiteDownload(url, '', function(err, raw_data) {
+                            if (err) {
+                                err.hoerror = 2;
+                                util.handleError(err, callback, callback);
+                            }
+                            raw_list = raw_data.match(/<li><a href="[^"]+"[^>]*>\d\d\d年\d\d?月/g);
+                            if (!raw_list) {
+                                util.handleError({hoerror: 2, message: 'cannot find sta latest'}, callback, callback);
+                            }
+                            var pDate = new Date(new Date(date).setMonth(date.getMonth()-1));
+                            var goed = false;
+                            for (var i in raw_list) {
+                                list_match = raw_list[i].match(/href="([^"]+)"[^>]*>(\d\d\d)年(\d\d?)月$/);
+                                if (list_match) {
+                                    if (Number(list_match[2]) === (pDate.getFullYear() - 1911) && Number(list_match[3]) === (pDate.getMonth() + 1)) {
+                                        goed = true;
+                                        if (!list_match[1].match(/^(http|https):\/\//)) {
+                                            if (list_match[1].match(/^\//)) {
+                                                list_match[1] = 'http://www.stat.gov.tw' + list_match[1];
+                                            } else {
+                                                list_match[1] = 'http://www.stat.gov.tw/' + list_match[1];
+                                            }
+                                        }
+                                        api.xuiteDownload(list_match[1], '', function(err, raw_data) {
+                                            if (err) {
+                                                err.hoerror = 2;
+                                                util.handleError(err, callback, callback);
+                                            }
+                                            raw_list = raw_data.match(/>張貼日期：\d\d\d\d\/\d\d?\/\d\d?/);
+                                            if (!raw_list) {
+                                                util.handleError({hoerror: 2, message: 'cannot find sta latest'}, callback, callback);
+                                            }
+                                            if (raw_list[0] === docDate) {
+                                                list.push({date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName('失業率'), url: list_match[1]});
+                                            }
+                                            setTimeout(function(){
+                                                callback(null, list);
+                                            }, 0);
+                                        }, 60000, false, false, null, true);
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!goed) {
+                                setTimeout(function(){
+                                    callback(null, list);
+                                }, 0);
+                            }
+                        }, 60000, false, false, null, true);
+                    }, 60000, false, false, null, true);
+                }, 60000, false, false, null, true);
+            }, 60000, false, false, null, true);
+            break;
+            case 'mof':
+            url = 'http://www.mof.gov.tw/Pages/List.aspx?nodeid=281';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var list = [];
+                var list_match = false;
+                var data = null;
+                var date = new Date();
+                var docDate = date.getFullYear() + '-';
+                if (date.getMonth() + 1 < 10) {
+                    docDate = docDate + '0' + (date.getMonth() + 1) + '-';
+                } else {
+                    docDate = docDate + (date.getMonth() + 1) + '-';
+                }
+                if (date.getDate() < 10) {
+                    docDate = docDate + '0' + date.getDate();
+                } else {
+                    docDate = docDate + date.getDate();
+                }
+                console.log(docDate);
+                var raw_list = raw_data.match(/href="[^"]+" title="[^"]+">\d\d\d年\d\d?月海關進出口貿易統計速報<[\s\S]+?>\d\d\d\d-\d\d-\d\d/g);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find mof latest'}, callback, callback);
+                }
+                for (var i in raw_list) {
+                    list_match = raw_list[i].match(/\d\d\d\d-\d\d-\d\d$/);
+                    if (list_match) {
+                        if (list_match[0] === docDate) {
+                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
+                            list_match = raw_list[i].match(/href="([^"]+)/);
+                            if (list_match) {
+                                if (!list_match[1].match(/^(http|https):\/\//)) {
+                                    if (list_match[1].match(/^\//)) {
+                                        list_match[1] = 'http://www.mof.gov.tw' + list_match[1];
+                                    } else {
+                                        list_match[1] = 'http://www.mof.gov.tw/' + list_match[1];
+                                    }
+                                }
+                                data['url'] = list_match[1];
+                                data['name'] = util.toValidName('海關進出口貿易統計');
+                                list.push(data);
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'moe':
+            url = 'http://www.stat.gov.tw/lp.asp?ctNode=2299&CtUnit=1818&BaseDSD=29';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var goed = false;
+                var raw_list = raw_data.match(/<li><a href="[^"]+" title="\d\d\d年\d\d?月/g);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find moe latest'}, callback, callback);
+                }
+                var list = [];
+                var list_match = false;
+                var date = new Date();
+                var docDate = date.getFullYear() + '-';
+                if (date.getMonth() + 1 < 10) {
+                    docDate = docDate + '0' + (date.getMonth() + 1) + '-';
+                } else {
+                    docDate = docDate + (date.getMonth() + 1) + '-';
+                }
+                if (date.getDate() < 10) {
+                    docDate = docDate + '0' + date.getDate();
+                } else {
+                    docDate = docDate + date.getDate();
+                }
+                console.log(docDate);
+                var pDate = new Date(new Date(date).setMonth(date.getMonth()-1));
+                for (var i in raw_list) {
+                    list_match = raw_list[i].match(/href="([^"]+)" title="(\d\d\d)年(\d\d?)月$/);
+                    if (list_match) {
+                        if (Number(list_match[2]) === (pDate.getFullYear() - 1911) && Number(list_match[3]) === (pDate.getMonth() + 1)) {
+                            goed = true;
+                            if (!list_match[1].match(/^(http|https):\/\//)) {
+                                if (list_match[1].match(/^\//)) {
+                                    list_match[1] = 'http://www.moea.gov.tw' + list_match[1];
+                                } else {
+                                    list_match[1] = 'http://www.moea.gov.tw/' + list_match[1];
+                                }
+                            }
+                            api.xuiteDownload(list_match[1], '', function(err, raw_data) {
+                                if (err) {
+                                    err.hoerror = 2;
+                                    util.handleError(err, callback, callback);
+                                }
+                                raw_list = raw_data.match(/發布日期：(\d\d\d\d-\d\d-\d\d)/);
+                                if (!raw_list) {
+                                    util.handleError({hoerror: 2, message: 'cannot find moe latest'}, callback, callback);
+                                }
+                                if (raw_list[1] === docDate) {
+                                    list.push({date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName('工業生產'), url: list_match[1]});
+                                }
+                                stage2();
+                            }, 60000, false, false);
+                            break;
+                        }
+                    }
+                }
+                if (!goed) {
+                    stage2();
+                }
+                function stage2() {
+                    url = 'http://www.stat.gov.tw/lp.asp?ctNode=2300&CtUnit=1818&BaseDSD=29';
+                    api.xuiteDownload(url, '', function(err, raw_data) {
+                        if (err) {
+                            err.hoerror = 2;
+                            util.handleError(err, callback, callback);
+                        }
+                        var goed_1 = false;
+                        raw_list = raw_data.match(/<li><a href="[^"]+" title="\d\d\d年\d\d?月/g);
+                        if (!raw_list) {
+                            util.handleError({hoerror: 2, message: 'cannot find moe latest'}, callback, callback);
+                        }
+                        for (var i in raw_list) {
+                            list_match = raw_list[i].match(/href="([^"]+)" title="(\d\d\d)年(\d\d?)月$/);
+                            if (list_match) {
+                                if (Number(list_match[2]) === (pDate.getFullYear() - 1911) && Number(list_match[3]) === (pDate.getMonth() + 1)) {
+                                    goed_1 = true;
+                                    if (!list_match[1].match(/^(http|https):\/\//)) {
+                                        if (list_match[1].match(/^\//)) {
+                                            list_match[1] = 'http://www.moea.gov.tw' + list_match[1];
+                                        } else {
+                                            list_match[1] = 'http://www.moea.gov.tw/' + list_match[1];
+                                        }
+                                    }
+                                    api.xuiteDownload(list_match[1], '', function(err, raw_data) {
+                                        if (err) {
+                                            err.hoerror = 2;
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        raw_list = raw_data.match(/發布日期：(\d\d\d\d-\d\d-\d\d)/);
+                                        if (!raw_list) {
+                                            util.handleError({hoerror: 2, message: 'cannot find moe latest'}, callback, callback);
+                                        }
+                                        if (raw_list[1] === docDate) {
+                                            list.push({date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName('外銷訂單統計'), url: list_match[1]});
+                                        }
+                                        setTimeout(function(){
+                                            callback(null, list);
+                                        }, 0);
+                                    }, 60000, false, false);
+                                    break;
+                                }
+                            }
+                        }
+                        if (!goed_1) {
+                            setTimeout(function(){
+                                callback(null, list);
+                            }, 0);
+                        }
+                    }, 60000, false, false, null, true);
+                }
+            }, 60000, false, false, null, true);
+            break;
+            case 'cbc':
+            url = 'http://www.cbc.gov.tw/rss.asp?ctNodeid=302';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/<title>[\s\S]+?\d\d [a-zA-Z][a-zA-Z][a-zA-Z] \d\d\d\d/g);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find moe latest'}, callback, callback);
+                }
+                var list = [];
+                var list_match = false;
+                var data = null;
+                var date = new Date();
+                var docDate = date.getDate() + ' ' + monthNameShorts[date.getMonth()]+' '+date.getFullYear();
+                if (date.getDate() < 10) {
+                    docDate = '0' + docDate;
+                }
+                console.log(docDate);
+                for (var i in raw_list) {
+                    list_match = raw_list[i].match(/\d\d [a-zA-Z][a-zA-Z][a-zA-Z] \d\d\d\d$/);
+                    if (list_match) {
+                        if (list_match[0] === docDate) {
+                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
+                            list_match = raw_list[i].match(/<title>([^<]+)/);
+                            if (list_match) {
+                                data['name'] = util.toValidName(list_match[1]);
+                                list_match = raw_list[i].match(/<link><\!\[CDATA\[([^\]]+)/);
+                                if (list_match) {
+                                    if (!list_match[1].match(/^(http|https):\/\//)) {
+                                        if (list_match[1].match(/^\//)) {
+                                            list_match[1] = 'http://www.cbc.gov.tw' + list_match[1];
+                                        } else {
+                                            list_match[1] = 'http://www.cbc.gov.tw/' + list_match[1];
+                                        }
+                                    }
+                                    data['url'] = list_match[1];
+                                    list.push(data);
+                                }
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false);
             break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
@@ -3949,7 +4395,6 @@ module.exports = {
                 if (!raw_list) {
                     util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
                 }
-                console.log(raw_list[1]);
                 if (!raw_list[1].match(/^(http|https):\/\//)) {
                     if (raw_list[1].match(/^\//)) {
                         raw_list[1] = 'http://www.tri.org.tw' + raw_list[1];
@@ -3984,7 +4429,7 @@ module.exports = {
                                     callback(null);
                                 }, 0);
                             });
-                        }, 60000, false);
+                        });
                     });
                 } else {
                     api.xuiteDownload(raw_list[1], filePath, function(err) {
@@ -4002,9 +4447,386 @@ module.exports = {
                                 callback(null);
                             }, 0);
                         });
-                    }, 60000, false);
+                    });
                 }
             }, 60000, false, false, null, true);
+            break;
+            case 'ndc':
+            console.log(obj);
+            var utime = Math.round(new Date().getTime() / 1000);
+            var filePath = util.getFileLocation(type, utime);
+            console.log(filePath);
+            var folderPath = path.dirname(filePath);
+            var ext = path.extname(obj.url);
+            var driveName = obj.name + ' ' + obj.date + ext;
+            console.log(driveName);
+            if (!fs.existsSync(folderPath)) {
+                mkdirp(folderPath, function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    api.xuiteDownload(obj.url, filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                });
+            } else {
+                api.xuiteDownload(obj.url, filePath, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                    googleApi.googleApi('upload', data, function(err, metadata) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(metadata);
+                        console.log('done');
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    });
+                });
+            }
+            break;
+            case 'sta':
+            console.log(obj);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/本文及附表電子檔下載.*href="([^"]+)/);
+                if (!raw_list) {
+                    raw_list = raw_data.match(/新聞稿本文.*href="([^"]+)/);
+                    if (!raw_list) {
+                    raw_list = raw_data.match(/href="([^"]+)" title="\d\d\d年\d\d?月新聞稿\.pdf"/);
+                        if (!raw_list) {
+                            util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                        }
+                    }
+                }
+                if (!raw_list[1].match(/^(http|https):\/\//)) {
+                    if (raw_list[1].match(/^\//)) {
+                        raw_list[1] = 'http://www.stat.gov.tw' + raw_list[1];
+                    } else {
+                        raw_list[1] = 'http://www.stat.gov.tw/' + raw_list[1];
+                    }
+                }
+                var utime = Math.round(new Date().getTime() / 1000);
+                var filePath = util.getFileLocation(type, utime);
+                console.log(filePath);
+                var folderPath = path.dirname(filePath);
+                var ext = path.extname(raw_list[1]);
+                var driveName = obj.name + ' ' + obj.date + ext;
+                console.log(driveName);
+                if (!fs.existsSync(folderPath)) {
+                    mkdirp(folderPath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        api.xuiteDownload(raw_list[1], filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(metadata);
+                                console.log('done');
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
+                    });
+                } else {
+                    api.xuiteDownload(raw_list[1], filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                }
+            }, 60000, false, false, null, true);
+            break;
+            case 'mof':
+            console.log(obj);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/新聞稿本文.*href="([^"]+)/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                }
+                if (!raw_list[1].match(/^(http|https):\/\//)) {
+                    if (raw_list[1].match(/^\//)) {
+                        raw_list[1] = 'http://www.mof.gov.tw' + raw_list[1];
+                    } else {
+                        raw_list[1] = 'http://www.mof.gov.tw/' + raw_list[1];
+                    }
+                }
+                var utime = Math.round(new Date().getTime() / 1000);
+                var filePath = util.getFileLocation(type, utime);
+                console.log(filePath);
+                var folderPath = path.dirname(filePath);
+                var ext = path.extname(raw_list[1]);
+                var driveName = obj.name + ' ' + obj.date + ext;
+                console.log(driveName);
+                if (!fs.existsSync(folderPath)) {
+                    mkdirp(folderPath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        api.xuiteDownload(raw_list[1], filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(metadata);
+                                console.log('done');
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
+                    });
+                } else {
+                    api.xuiteDownload(raw_list[1], filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                }
+            }, 60000, false, false, 'http://www.mof.gov.tw/Pages/List.aspx?nodeid=281');
+            break;
+            case 'moe':
+            console.log(obj);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var raw_list = raw_data.match(/title="開啟新聞稿[^\.]*\.pdf檔" href="([^"]+)/);
+                if (!raw_list) {
+                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                }
+                if (!raw_list[1].match(/^(http|https):\/\//)) {
+                    raw_list[1] = path.join('www.moea.gov.tw/MNS/populace/news/', raw_list[1]);
+                    raw_list[1] = 'http://' + raw_list[1];
+                }
+                var utime = Math.round(new Date().getTime() / 1000);
+                var filePath = util.getFileLocation(type, utime);
+                console.log(filePath);
+                var folderPath = path.dirname(filePath);
+                var driveName = obj.name + ' ' + obj.date + '.pdf';
+                console.log(driveName);
+                if (!fs.existsSync(folderPath)) {
+                    mkdirp(folderPath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        api.xuiteDownload(raw_list[1], filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(metadata);
+                                console.log('done');
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
+                    });
+                } else {
+                    api.xuiteDownload(raw_list[1], filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    });
+                }
+            }, 60000, false, false, null, true);
+            break;
+            case 'cbc':
+            console.log(obj);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var driveName = obj.name + ' ' + obj.date + '.txt';
+                console.log(driveName);
+                var data = {type: 'auto', name: driveName, body: obj.name + '\n\n\r\r' + obj.url, parent: parent};
+                googleApi.googleApi('upload', data, function(err, metadata) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log(metadata);
+                    var raw_list = raw_data.match(/.*(XLS|PDF)檔">/ig);
+                    if (raw_list) {
+                        recur_down(0);
+                        function recur_down(dIndex) {
+                            var downUrl = raw_list[dIndex].match(/<a href="([^"]+)".*?alt="([^"]+)/);
+                            if (downUrl) {
+                                if (!downUrl[1].match(/^(http|https):\/\//)) {
+                                    if (downUrl[1].match(/^\//)) {
+                                        downUrl[1] = 'http://www.cbc.gov.tw' + downUrl[1];
+                                    } else {
+                                        downUrl[1] = 'http://www.cbc.gov.tw/' + downUrl[1];
+                                    }
+                                }
+                                var utime = Math.round(new Date().getTime() / 1000);
+                                var filePath = util.getFileLocation(type, utime);
+                                console.log(filePath);
+                                var folderPath = path.dirname(filePath);
+                                var ext = path.extname(downUrl[1]);
+                                var driveName = obj.name + ' ' + obj.date + ' ' + util.toValidName(downUrl[2]) + ext;
+                                console.log(driveName);
+                                if (!fs.existsSync(folderPath)) {
+                                    mkdirp(folderPath, function(err) {
+                                        if(err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        api.xuiteDownload(downUrl[1], filePath, function(err) {
+                                            if (err) {
+                                                util.handleError(err);
+                                                dIndex++;
+                                                if (dIndex < raw_list.length) {
+                                                    recur_down(dIndex);
+                                                } else {
+                                                    console.log('done');
+                                                    setTimeout(function(){
+                                                        callback(null);
+                                                    }, 0);
+                                                }
+                                            } else {
+                                                var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                                                googleApi.googleApi('upload', data, function(err, metadata) {
+                                                    if (err) {
+                                                        util.handleError(err, callback, callback);
+                                                    }
+                                                    dIndex++;
+                                                    if (dIndex < raw_list.length) {
+                                                        recur_down(dIndex);
+                                                    } else {
+                                                        console.log('done');
+                                                        setTimeout(function(){
+                                                            callback(null);
+                                                        }, 0);
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    });
+                                } else {
+                                    api.xuiteDownload(downUrl[1], filePath, function(err) {
+                                        if (err) {
+                                            util.handleError(err);
+                                            dIndex++;
+                                            if (dIndex < raw_list.length) {
+                                                recur_down(dIndex);
+                                            } else {
+                                                console.log('done');
+                                                setTimeout(function(){
+                                                    callback(null);
+                                                }, 0);
+                                            }
+                                        } else {
+                                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                                if (err) {
+                                                    util.handleError(err, callback, callback);
+                                                }
+                                                dIndex++;
+                                                if (dIndex < raw_list.length) {
+                                                    recur_down(dIndex);
+                                                } else {
+                                                    console.log('done');
+                                                    setTimeout(function(){
+                                                        callback(null);
+                                                    }, 0);
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            } else {
+                                dIndex++;
+                                if (dIndex < raw_list.length) {
+                                    recur_down(dIndex);
+                                } else {
+                                    console.log('done');
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                }
+                            }
+                        }
+                    } else {
+                        console.log('done');
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    }
+                });
+            }, 60000, false, false);
             break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);

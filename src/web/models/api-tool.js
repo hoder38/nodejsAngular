@@ -297,7 +297,7 @@ module.exports = {
             req.end();
         });
     },
-    xuiteDownload: function(url, filePath, callback, threshold, is_check, is_file, referer, not_utf8, fake_ip) {
+    xuiteDownload: function(url, filePath, callback, threshold, is_check, is_file, referer, not_utf8, fake_ip, is_post) {
         if (!this.setApiQueue('xuiteDownload', [url, filePath, callback, threshold])) {
             return false;
         }
@@ -329,6 +329,9 @@ module.exports = {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
             };
+        }
+        if (is_post) {
+            options['method'] = 'POST';
         }
         if (referer) {
             options.headers['Referer'] = referer;

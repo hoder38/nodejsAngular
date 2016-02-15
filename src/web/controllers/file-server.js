@@ -5005,7 +5005,7 @@ function autoDoc(userlist, index, callback) {
         console.log(downloadTime.getHours());
         var doc_type_0 = ['bls', 'cen', 'bea', 'ism', 'cbo', 'sem', 'oec', 'dol', 'rea', 'sca', 'fed'];
         var doc_type_1 = ['sea'];
-        var doc_type_2 = ['tri'];
+        var doc_type_2 = ['tri', 'ndc', 'sta', 'mof', 'moe', 'cbc'];
         function download_ext_doc(tIndex, doc_type) {
             externalTool.getSingleList(doc_type[tIndex], '', function(err, doclist) {
                 if (err) {
