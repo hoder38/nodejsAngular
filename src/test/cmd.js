@@ -175,7 +175,7 @@ function userDrive(drive_batch, userlist, index, callback) {
                                     } else {
                                         tIndex++;
                                         if (tIndex < doc_type.length) {
-                                            download_ext_doc(tIndex);
+                                            download_ext_doc(tIndex, doc_type);
                                         } else {
                                             index++;
                                             if (index < userlist.length) {
@@ -191,7 +191,7 @@ function userDrive(drive_batch, userlist, index, callback) {
                             } else {
                                 tIndex++;
                                 if (tIndex < doc_type.length) {
-                                    download_ext_doc(tIndex);
+                                    download_ext_doc(tIndex, doc_type);
                                 } else {
                                     index++;
                                     if (index < userlist.length) {
