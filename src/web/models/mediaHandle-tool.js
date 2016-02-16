@@ -451,16 +451,12 @@ module.exports = function(sendWs) {
                     util.handleError({hoerror: 2, message: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback);
                 }
                 if (mediaType['thumbnail']) {
-                    googleApi.googleDownloadMedia(transTime, mediaType['thumbnail'], key, savePath, mediaType['hd'], function(err) {
+                    googleApi.googleDownloadMedia(transTime, mediaType['thumbnail'], key, savePath, mediaType['hd'], function(err, is_stage) {
                         if(err) {
                             util.handleError(err, callback, errerMedia, fileID, callback);
                         }
-                        var data = {fileId: key};
-                        googleApi.googleApi('delete', data, function(err) {
-                            if (err) {
-                                util.handleError(err, callback, errerMedia, fileID, callback);
-                            }
-                            this_obj.completeMedia(fileID, 3, function(err) {
+                        if (is_stage) {
+                            errerMedia({hoerror: 2, message: 'timeout'}, fileID, function(err) {
                                 if (err) {
                                     util.handleError(err, callback, callback);
                                 } else {
@@ -486,27 +482,9 @@ module.exports = function(sendWs) {
                                         });
                                     }
                                 }
-                            }, rmPath);
-                        });
-                    });
-                } else {
-                    var data = {fileId: key};
-                    googleApi.googleApi('get', data, function(err, filedata) {
-                        if(err) {
-                            util.handleError(err, callback, errerMedia, fileID, callback);
-                        }
-                        if (!filedata['alternateLink']) {
-                            console.log(filedata);
-                            util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
-                        }
-                        var is_ok = false;
-                        if (filedata['videoMediaMetadata'])  {
-                            is_ok = true;
-                        }
-                        googleApi.googleDownloadMedia(transTime, filedata['alternateLink'], key, savePath, mediaType['hd'], function(err) {
-                            if(err) {
-                                util.handleError(err, callback, errerMedia, fileID, callback);
-                            }
+                            }, 1081, rmPath);
+                        } else {
+                            var data = {fileId: key};
                             googleApi.googleApi('delete', data, function(err) {
                                 if (err) {
                                     util.handleError(err, callback, errerMedia, fileID, callback);
@@ -539,6 +517,88 @@ module.exports = function(sendWs) {
                                     }
                                 }, rmPath);
                             });
+                        }
+                    });
+                } else {
+                    var data = {fileId: key};
+                    googleApi.googleApi('get', data, function(err, filedata) {
+                        if(err) {
+                            util.handleError(err, callback, errerMedia, fileID, callback);
+                        }
+                        if (!filedata['alternateLink']) {
+                            console.log(filedata);
+                            util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
+                        }
+                        var is_ok = false;
+                        if (filedata['videoMediaMetadata'])  {
+                            is_ok = true;
+                        }
+                        googleApi.googleDownloadMedia(transTime, filedata['alternateLink'], key, savePath, mediaType['hd'], function(err, is_stage) {
+                            if(err) {
+                                util.handleError(err, callback, errerMedia, fileID, callback);
+                            }
+                            if (is_stage) {
+                                errerMedia({hoerror: 2, message: 'timeout'}, fileID, function(err) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    } else {
+                                        if (mediaType['realPath']) {
+                                            var newName = {};
+                                            newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                            mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
+                                                if(err) {
+                                                    util.handleError(err, callback, callback);
+                                                }
+                                                setTimeout(function(){
+                                                    callback(null);
+                                                }, 0);
+                                            });
+                                        } else {
+                                            this_obj.editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
+                                                if(err) {
+                                                    util.handleError(err, callback, callback);
+                                                }
+                                                setTimeout(function(){
+                                                    callback(null);
+                                                }, 0);
+                                            });
+                                        }
+                                    }
+                                }, 1081, rmPath);
+                            } else {
+                                googleApi.googleApi('delete', data, function(err) {
+                                    if (err) {
+                                        util.handleError(err, callback, errerMedia, fileID, callback);
+                                    }
+                                    this_obj.completeMedia(fileID, 3, function(err) {
+                                        if (err) {
+                                            util.handleError(err, callback, callback);
+                                        } else {
+                                            if (mediaType['realPath']) {
+                                                var newName = {};
+                                                newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                                mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
+                                                    if(err) {
+                                                        util.handleError(err, callback, callback);
+                                                    }
+                                                    setTimeout(function(){
+                                                        callback(null);
+                                                    }, 0);
+                                                });
+                                            } else {
+                                                this_obj.editFile(fileID, mime.changeExt(fileName, 'mp4'), user, callback, function(err, result) {
+                                                    if(err) {
+                                                        util.handleError(err, callback, callback);
+                                                    }
+                                                    setTimeout(function(){
+                                                        callback(null);
+                                                    }, 0);
+                                                });
+                                            }
+                                        }
+                                    }, rmPath);
+                                });
+                            }
                         }, is_ok);
                     });
                 }
@@ -756,7 +816,7 @@ module.exports = function(sendWs) {
                         console.log(filePath);
                         util.handleError(err, next, next);
                     }
-                    streamClose(function(err) {
+                    streamClose(function(err, is_stage) {
                         if (err) {
                             util.handleError(err);
                             index++;
@@ -768,42 +828,53 @@ module.exports = function(sendWs) {
                                 }, 0);
                             }
                         } else {
-                            if (!metadata.userPermission || metadata.userPermission.role !== 'owner') {
-                                var data = {fileId: metadata.id, rmFolderId: folderId, addFolderId: uploaded};
-                                googleApi.googleApi('move parent', data, function(err) {
-                                    if (err) {
-                                        util.handleError(err);
-                                    }
-                                    index++;
-                                    if (index < metadatalist.length) {
-                                        this_obj.singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
-                                    } else {
-                                        setTimeout(function(){
-                                            next(null);
-                                        }, 0);
-                                    }
-                                });
+                            if (is_stage) {
+                                index++;
+                                if (index < metadatalist.length) {
+                                    this_obj.singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
+                                } else {
+                                    setTimeout(function(){
+                                        next(null);
+                                    }, 0);
+                                }
                             } else {
-                                var data = {fileId: metadata.id};
-                                googleApi.googleApi('delete', data, function(err) {
-                                    if (err) {
-                                        util.handleError(err);
-                                    }
-                                    index++;
-                                    if (index < metadatalist.length) {
-                                        this_obj.singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
-                                    } else {
-                                        setTimeout(function(){
-                                            next(null);
-                                        }, 0);
-                                    }
-                                });
+                                if (!metadata.userPermission || metadata.userPermission.role !== 'owner') {
+                                    var data = {fileId: metadata.id, rmFolderId: folderId, addFolderId: uploaded};
+                                    googleApi.googleApi('move parent', data, function(err) {
+                                        if (err) {
+                                            util.handleError(err);
+                                        }
+                                        index++;
+                                        if (index < metadatalist.length) {
+                                            this_obj.singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
+                                        } else {
+                                            setTimeout(function(){
+                                                next(null);
+                                            }, 0);
+                                        }
+                                    });
+                                } else {
+                                    var data = {fileId: metadata.id};
+                                    googleApi.googleApi('delete', data, function(err) {
+                                        if (err) {
+                                            util.handleError(err);
+                                        }
+                                        index++;
+                                        if (index < metadatalist.length) {
+                                            this_obj.singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
+                                        } else {
+                                            setTimeout(function(){
+                                                next(null);
+                                            }, 0);
+                                        }
+                                    });
+                                }
                             }
                         }
                     });
                 });
             } else {
-                streamClose(function(err) {
+                streamClose(function(err, is_stage) {
                     if (err) {
                         util.handleError(err);
                         index++;
@@ -901,28 +972,19 @@ module.exports = function(sendWs) {
                         } else if (metadata.videoMediaMetadata.height >= 720) {
                             hd = 720;
                         }
-                        googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err) {
+                        googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err, is_stage) {
                             if(err) {
                                 if (fs.existsSync(filePath + "_s.jpg")) {
                                     fs.unlink(filePath + "_s.jpg", function (error) {
                                         if (error) {
                                             util.handleError(error, callback, callback);
                                         }
-                                        if (fs.existsSync(filePath + "_a.htm")) {
-                                            fs.unlink(filePath + "_a.htm", function (error) {
+                                        if (fs.existsSync(filePath)) {
+                                            fs.unlink(filePath, function (error) {
                                                 if (error) {
                                                     util.handleError(error, callback, callback);
                                                 }
-                                                if (fs.existsSync(filePath)) {
-                                                    fs.unlink(filePath, function (error) {
-                                                        if (error) {
-                                                            util.handleError(error, callback, callback);
-                                                        }
-                                                        restHandle();
-                                                    });
-                                                } else {
-                                                    restHandle();
-                                                }
+                                                restHandle();
                                             });
                                         } else {
                                             restHandle();
@@ -971,6 +1033,13 @@ module.exports = function(sendWs) {
                                     }
                                     DBdata['tags'] = mediaTag.def;
                                     DBdata[oUser_id] = mediaTag.def;
+                                    if (is_stage) {
+                                        mediaType['hd'] = 1081;
+                                        mediaType['timeout'] = true;
+                                        mediaType['key'] = metadata.id;
+                                        mediaType['time'] = metadata.videoMediaMetadata.durationMillis;
+                                        DBdata['mediaType'] = mediaType;
+                                    }
                                     mongo.orig("insert", "storage", DBdata, function(err, item){
                                         if(err) {
                                             util.handleError(err, callback, callback);
@@ -979,7 +1048,7 @@ module.exports = function(sendWs) {
                                         console.log('save end');
                                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                                         setTimeout(function(){
-                                            callback(null);
+                                            callback(null, is_stage);
                                         }, 0);
                                     });
                                 });
@@ -1492,9 +1561,17 @@ module.exports = function(sendWs) {
         }
     };
 };
-function errerMedia(errMedia, fileID, callback) {
+function errerMedia(errMedia, fileID, callback, hd, rmPath) {
     if (errMedia.hoerror === 2 && errMedia.message === 'timeout') {
-        mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.timeout": true}}, function(err, item){
+        var data = {"mediaType.timeout": true};
+        if (hd) {
+            data['mediaType.hd'] = hd;
+            data['status'] = 3;
+        }
+        if (rmPath) {
+            data['status'] = 9;
+        }
+        mongo.orig("update", "storage", { _id: fileID }, {$set: data}, function(err, item){
             if(err) {
                 util.handleError(err, callback, callback);
             }

@@ -342,9 +342,15 @@ function sendAPI(method, data, callback) {
             if (err && err.code !== 'ECONNRESET') {
                 util.handleError(err, callback, callback, null);
             }
-            setTimeout(function(){
-                callback(null, metadata.items);
-            }, 0);
+            if (metadata) {
+                setTimeout(function(){
+                    callback(null, metadata.items);
+                }, 0);
+            } else {
+                setTimeout(function(){
+                    callback(null, []);
+                }, 0);
+            }
         });
         break;
         case 'move parent':
@@ -1001,17 +1007,17 @@ var exports = module.exports = {
                 if (info.formats) {
                     for (var i in info.formats) {
                         if (info.formats[i].format_note !== 'DASH video' && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
-                            if (hd === 1080 && info.formats[i].height >= 1080) {
+                            if (hd === 1081 && info.formats[i].height >= 1080) {
                                 if (info.formats[i].height > currentHeight) {
                                     media_location = info.formats[i].url;
                                     currentHeight = info.formats[i].height;
                                 }
-                            } else if (hd === 720 && info.formats[i].height >= 720) {
+                            } else if ((hd === 720 || hd === 1080) && info.formats[i].height >= 720) {
                                 if (info.formats[i].height > currentHeight) {
                                     media_location = info.formats[i].url;
                                     currentHeight = info.formats[i].height;
                                 }
-                            } else if (hd !== 1080 && hd !== 720){
+                            } else if (hd !== 1080 && hd !== 720 && hd !== 1081){
                                 if (info.formats[i].height > currentHeight) {
                                     media_location = info.formats[i].url;
                                     currentHeight = info.formats[i].height;
@@ -1022,17 +1028,17 @@ var exports = module.exports = {
                 } else {
                     for (var i in info) {
                         if (info[i].format_note !== 'DASH video' && (info[i].ext === 'mp4' || info[i].ext === 'webm')) {
-                            if (hd === 1080 && info[i].height >= 1080) {
+                            if (hd === 1081 && info[i].height >= 1080) {
                                 if (info[i].height > currentHeight) {
                                     media_location = info[i].url;
                                     currentHeight = info[i].height;
                                 }
-                            } else if (hd === 720 && info[i].height >= 720) {
+                            } else if ((hd === 720 || hd === 1080) && info[i].height >= 720) {
                                 if (info[i].height > currentHeight) {
                                     media_location = info[i].url;
                                     currentHeight = info[i].height;
                                 }
-                            } else if (hd !== 1080 && hd !== 720) {
+                            } else if (hd !== 1080 && hd !== 720 && hd !== 1081) {
                                 if (info[i].height > currentHeight) {
                                     media_location = info[i].url;
                                     currentHeight = info[i].height;
@@ -1056,9 +1062,15 @@ var exports = module.exports = {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
-                            setTimeout(function(){
-                                callback(null);
-                            }, 0);
+                            if (hd === 1080 && currentHeight < 1080) {
+                                setTimeout(function(){
+                                    callback(null, true);
+                                }, 0);
+                            } else {
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            }
                         });
                     });
                 }, threshold);
