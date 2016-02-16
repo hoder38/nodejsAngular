@@ -1050,30 +1050,47 @@ var exports = module.exports = {
                 if (!media_location) {
                     util.handleError({hoerror: 2, message: 'timeout'}, callback, callback);
                 }
-                this_obj.googleDownload(media_location, filePath + '_t', function(err) {
-                    if (err) {
-                        util.handleError(err, callback, callback);
-                    }
-                    fs.unlink(filePath, function(err) {
+                if (fs.existsSync(filePath)) {
+                    this_obj.googleDownload(media_location, filePath + '_t', function(err) {
                         if (err) {
                             util.handleError(err, callback, callback);
                         }
-                        fs.rename(filePath + '_t', filePath, function(err) {
+                        fs.unlink(filePath, function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
-                            if (hd === 1080 && currentHeight < 1080) {
-                                setTimeout(function(){
-                                    callback(null, true);
-                                }, 0);
-                            } else {
-                                setTimeout(function(){
-                                    callback(null);
-                                }, 0);
-                            }
+                            fs.rename(filePath + '_t', filePath, function(err) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                if (hd === 1080 && currentHeight < 1080) {
+                                    setTimeout(function(){
+                                        callback(null, true);
+                                    }, 0);
+                                } else {
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                }
+                            });
                         });
-                    });
-                }, threshold);
+                    }, threshold);
+                } else {
+                    this_obj.googleDownload(media_location, filePath, function(err) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        if (hd === 1080 && currentHeight < 1080) {
+                            setTimeout(function(){
+                                callback(null, true);
+                            }, 0);
+                        } else {
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        }
+                    }, threshold);
+                }
             });
         }, img_threshold);
     },

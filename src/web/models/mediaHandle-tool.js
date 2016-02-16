@@ -816,7 +816,7 @@ module.exports = function(sendWs) {
                         console.log(filePath);
                         util.handleError(err, next, next);
                     }
-                    streamClose(function(err, is_stage) {
+                    streamClose(function(err) {
                         if (err) {
                             util.handleError(err);
                             index++;
@@ -828,53 +828,42 @@ module.exports = function(sendWs) {
                                 }, 0);
                             }
                         } else {
-                            if (is_stage) {
-                                index++;
-                                if (index < metadatalist.length) {
-                                    this_obj.singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
-                                } else {
-                                    setTimeout(function(){
-                                        next(null);
-                                    }, 0);
-                                }
+                            if (!metadata.userPermission || metadata.userPermission.role !== 'owner') {
+                                var data = {fileId: metadata.id, rmFolderId: folderId, addFolderId: uploaded};
+                                googleApi.googleApi('move parent', data, function(err) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    index++;
+                                    if (index < metadatalist.length) {
+                                        this_obj.singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
+                                    } else {
+                                        setTimeout(function(){
+                                            next(null);
+                                        }, 0);
+                                    }
+                                });
                             } else {
-                                if (!metadata.userPermission || metadata.userPermission.role !== 'owner') {
-                                    var data = {fileId: metadata.id, rmFolderId: folderId, addFolderId: uploaded};
-                                    googleApi.googleApi('move parent', data, function(err) {
-                                        if (err) {
-                                            util.handleError(err);
-                                        }
-                                        index++;
-                                        if (index < metadatalist.length) {
-                                            this_obj.singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
-                                        } else {
-                                            setTimeout(function(){
-                                                next(null);
-                                            }, 0);
-                                        }
-                                    });
-                                } else {
-                                    var data = {fileId: metadata.id};
-                                    googleApi.googleApi('delete', data, function(err) {
-                                        if (err) {
-                                            util.handleError(err);
-                                        }
-                                        index++;
-                                        if (index < metadatalist.length) {
-                                            this_obj.singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
-                                        } else {
-                                            setTimeout(function(){
-                                                next(null);
-                                            }, 0);
-                                        }
-                                    });
-                                }
+                                var data = {fileId: metadata.id};
+                                googleApi.googleApi('delete', data, function(err) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    index++;
+                                    if (index < metadatalist.length) {
+                                        this_obj.singleDrive(metadatalist, index, user, folderId, uploaded, dirpath, next);
+                                    } else {
+                                        setTimeout(function(){
+                                            next(null);
+                                        }, 0);
+                                    }
+                                });
                             }
                         }
                     });
                 });
             } else {
-                streamClose(function(err, is_stage) {
+                streamClose(function(err) {
                     if (err) {
                         util.handleError(err);
                         index++;
@@ -968,11 +957,11 @@ module.exports = function(sendWs) {
                     } else {
                         var hd = 0;
                         if (metadata.videoMediaMetadata.height >= 1080) {
-                            hd = 1080;
+                            hd = 1081;
                         } else if (metadata.videoMediaMetadata.height >= 720) {
                             hd = 720;
                         }
-                        googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err, is_stage) {
+                        googleApi.googleDownloadMedia(0, metadata.alternateLink, metadata.id, filePath, hd, function(err) {
                             if(err) {
                                 if (fs.existsSync(filePath + "_s.jpg")) {
                                     fs.unlink(filePath + "_s.jpg", function (error) {
@@ -1033,13 +1022,6 @@ module.exports = function(sendWs) {
                                     }
                                     DBdata['tags'] = mediaTag.def;
                                     DBdata[oUser_id] = mediaTag.def;
-                                    if (is_stage) {
-                                        mediaType['hd'] = 1081;
-                                        mediaType['timeout'] = true;
-                                        mediaType['key'] = metadata.id;
-                                        mediaType['time'] = metadata.videoMediaMetadata.durationMillis;
-                                        DBdata['mediaType'] = mediaType;
-                                    }
                                     mongo.orig("insert", "storage", DBdata, function(err, item){
                                         if(err) {
                                             util.handleError(err, callback, callback);
@@ -1048,7 +1030,7 @@ module.exports = function(sendWs) {
                                         console.log('save end');
                                         sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                                         setTimeout(function(){
-                                            callback(null, is_stage);
+                                            callback(null);
                                         }, 0);
                                     });
                                 });
@@ -1443,6 +1425,7 @@ module.exports = function(sendWs) {
                                         }
                                         if (meta.input.streams) {
                                             if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
+                                                mediaType['time'] = DBdata['time'] = meta.input.duration;
                                                 if (mediaType['time'] < 20 * 60 * 1000) {
                                                 } else if (mediaType['time'] < 40 * 60 * 1000) {
                                                     mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(2, 2));
@@ -1451,7 +1434,6 @@ module.exports = function(sendWs) {
                                                 } else {
                                                     mediaTag.def = mediaTag.def.concat(mediaTag.opt.splice(0, 2));
                                                 }
-                                                DBdata['time'] = meta.input.duration;
                                             }
                                         }
                                         mediaType = false;
