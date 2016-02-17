@@ -219,8 +219,7 @@ function sendAPI(method, data, callback) {
                 parent = {id: data['parent']};
                 mimeType = mime.mediaMIME(data['name']);
                 if (!mimeType) {
-                    exports.getApiQueue();
-                    util.handleError({hoerror: 2, message: 'upload mime type unknown!!!'}, callback, callback);
+                    mimeType = 'text/plain';
                 }
                 break;
             default:
@@ -342,14 +341,46 @@ function sendAPI(method, data, callback) {
             if (err && err.code !== 'ECONNRESET') {
                 util.handleError(err, callback, callback, null);
             }
-            if (metadata) {
+            if (metadata && metadata.items) {
                 setTimeout(function(){
                     callback(null, metadata.items);
                 }, 0);
             } else {
+                console.log('google empty');
+                console.log(metadata);
                 setTimeout(function(){
-                    callback(null, []);
-                }, 0);
+                    drive.files.list({q: "'" + data['folderId'] + "' in parents and trashed = false and mimeType = 'application/vnd.google-apps.folder'" + find_name, maxResults: max}, function(err, metadata) {
+                        if (err && err.code !== 'ECONNRESET') {
+                            util.handleError(err, callback, callback, null);
+                        }
+                        if (metadata && metadata.items) {
+                            setTimeout(function(){
+                                callback(null, metadata.items);
+                            }, 0);
+                        } else {
+                            console.log('google empty');
+                            console.log(metadata);
+                            setTimeout(function(){
+                                drive.files.list({q: "'" + data['folderId'] + "' in parents and trashed = false and mimeType = 'application/vnd.google-apps.folder'" + find_name, maxResults: max}, function(err, metadata) {
+                                    if (err && err.code !== 'ECONNRESET') {
+                                        util.handleError(err, callback, callback, null);
+                                    }
+                                    if (metadata && metadata.items) {
+                                        setTimeout(function(){
+                                            callback(null, metadata.items);
+                                        }, 0);
+                                    } else {
+                                        console.log('google empty');
+                                        console.log(metadata);
+                                        setTimeout(function(){
+                                            callback(null, []);
+                                        }, 0);
+                                    }
+                                });
+                            }, 3000);
+                        }
+                    });
+                }, 3000);
             }
         });
         break;

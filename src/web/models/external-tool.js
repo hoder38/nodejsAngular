@@ -1141,6 +1141,7 @@ module.exports = {
                 var date = new Date();
                 var docDate = (date.getFullYear()-1911) + '.' + (date.getMonth() + 1) + '.' + date.getDate();
                 console.log(docDate);
+                var list = [];
                 if (raw_list[0] === docDate) {
                     url = 'http://www.tri.org.tw/page/consumer.php';
                     api.xuiteDownload(url, '', function(err, raw_data) {
@@ -1152,7 +1153,6 @@ module.exports = {
                         if (!raw_list) {
                             util.handleError({hoerror: 2, message: 'cannot find tri latest'}, callback, callback);
                         }
-                        var list = [];
                         var list_match = false;
                         list_match = raw_list[0].match(/href="([^"]+)/);
                         if (list_match) {
@@ -1169,6 +1169,10 @@ module.exports = {
                             callback(null, list);
                         }, 0);
                     }, 60000, false, false, null, true);
+                } else {
+                    setTimeout(function(){
+                        callback(null, list);
+                    }, 0);
                 }
             }, 60000, false, false, null, true);
             break;
@@ -4012,27 +4016,12 @@ module.exports = {
             break;
             case 'bea':
             console.log(obj);
-            api.xuiteDownload(obj.url, '', function(err, raw_data) {
-                if (err) {
-                    err.hoerror = 2;
-                    util.handleError(err, callback, callback);
-                }
-                var raw_list = raw_data.match(/<li><a href="([^"]+)">Full Release/);
-                if (!raw_list) {
-                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
-                }
-                if (!raw_list[1].match(/^(http|https):\/\//)) {
-                    if (raw_list[1].match(/^\//)) {
-                        raw_list[1] = 'http://www.bea.gov' + raw_list[1];
-                    } else {
-                        raw_list[1] = 'http://www.bea.gov/' + raw_list[1];
-                    }
-                }
+            var ext = path.extname(obj.url);
+            if (ext === '.pdf') {
                 var utime = Math.round(new Date().getTime() / 1000);
                 var filePath = util.getFileLocation(type, utime);
                 console.log(filePath);
                 var folderPath = path.dirname(filePath);
-                var ext = path.extname(raw_list[1]);
                 var driveName = obj.name + ' ' + obj.date + ext;
                 console.log(driveName);
                 if (!fs.existsSync(folderPath)) {
@@ -4040,7 +4029,7 @@ module.exports = {
                         if(err) {
                             util.handleError(err, callback, callback);
                         }
-                        api.xuiteDownload(raw_list[1], filePath, function(err) {
+                        api.xuiteDownload(obj.url, filePath, function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
@@ -4058,7 +4047,7 @@ module.exports = {
                         });
                     });
                 } else {
-                    api.xuiteDownload(raw_list[1], filePath, function(err) {
+                    api.xuiteDownload(obj.url, filePath, function(err) {
                         if (err) {
                             util.handleError(err, callback, callback);
                         }
@@ -4075,7 +4064,72 @@ module.exports = {
                         });
                     });
                 }
-            }, 60000, false, false);
+            } else {
+                api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    var raw_list = raw_data.match(/<li><a href="([^"]+)">Full Release/);
+                    if (!raw_list) {
+                        util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                    }
+                    if (!raw_list[1].match(/^(http|https):\/\//)) {
+                        if (raw_list[1].match(/^\//)) {
+                            raw_list[1] = 'http://www.bea.gov' + raw_list[1];
+                        } else {
+                            raw_list[1] = 'http://www.bea.gov/' + raw_list[1];
+                        }
+                    }
+                    var utime = Math.round(new Date().getTime() / 1000);
+                    var filePath = util.getFileLocation(type, utime);
+                    console.log(filePath);
+                    var folderPath = path.dirname(filePath);
+                    var ext = path.extname(raw_list[1]);
+                    var driveName = obj.name + ' ' + obj.date + ext;
+                    console.log(driveName);
+                    if (!fs.existsSync(folderPath)) {
+                        mkdirp(folderPath, function(err) {
+                            if(err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            api.xuiteDownload(raw_list[1], filePath, function(err) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                                googleApi.googleApi('upload', data, function(err, metadata) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    console.log(metadata);
+                                    console.log('done');
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                });
+                            });
+                        });
+                    } else {
+                        api.xuiteDownload(raw_list[1], filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(metadata);
+                                console.log('done');
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
+                    }
+                }, 60000, false, false);
+            }
             break;
             case 'ism':
             console.log(obj);

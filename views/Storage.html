@@ -231,6 +231,9 @@
             <li ng-show="toolList.download">
                 <a confirmed-click="downloadFile()" ng-confirm-click="Would you sure to download this file?" href="#">download</a>
             </li>
+            <li ng-show="toolList.save2drive">
+                <a confirmed-click="save2drive()" ng-confirm-click="Would you sure to download this file to drive?" href="#">download to drive</a>
+            </li>
             <li ng-show="toolList.edit">
                 <a ng-click="itemNameNew = true; itemNameNewFocus = true;newItemName = toolList.item.name;" href="#">edit</a>
             </li>

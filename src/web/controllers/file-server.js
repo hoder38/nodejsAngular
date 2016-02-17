@@ -2441,6 +2441,62 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
     });
 });
 
+app.get('/api/download2drive/:uid', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('download file 2 drive');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        mongo.orig("find", "user", {_id: req.user._id}, {limit: 1}, function(err, userlist) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (userlist.length < 1) {
+                util.handleError({hoerror: 2, message: "do not find user!!!"}, next, res);
+            }
+            if (!userlist[0].auto) {
+                util.handleError({hoerror: 2, message: "user dont have google drive!!!"}, next, res);
+            }
+            mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                if (items.length < 1) {
+                    util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
+                }
+                var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+                var downloaded = null;
+                var downloaded_data = {folderId: userlist[0].auto, name: 'downloaded'};
+                googleApi.googleApi('list folder', downloaded_data, function(err, downloadedList) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (downloadedList.length < 1) {
+                        util.handleError({hoerror: 2, message: "do not have downloaded folder!!!"}, next, res);
+                    }
+                    downloaded = downloadedList[0].id;
+                    var data = {type: 'auto', name: items[0].name, filePath: filePath, parent: downloaded};
+                    res.json({apiOK: true});
+                    googleApi.googleApi('upload', data, function(err, metadata) {
+                        if (err) {
+                            util.handleError(err);
+                            sendWs({type: req.user.username, data: 'save to drive fail: ' + err.message}, 0);
+                        } else {
+                            console.log(metadata);
+                            console.log('done');
+                            sendWs({type: req.user.username, data: 'save complete'}, 0);
+                        }
+                    });
+                });
+            });
+        });
+    });
+});
+
 app.get('/download/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('download file');
@@ -4744,7 +4800,6 @@ function autoDoc(userlist, index, callback) {
         }
         downloaded = downloadedList[0].id;
         var downloadTime = new Date();
-        console.log(downloadTime.getHours());
         var doc_type_0 = ['bls', 'cen', 'bea', 'ism', 'cbo', 'sem', 'oec', 'dol', 'rea', 'sca', 'fed'];
         var doc_type_1 = ['sea'];
         var doc_type_2 = ['tri', 'ndc', 'sta', 'mof', 'moe', 'cbc'];

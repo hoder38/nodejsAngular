@@ -2109,7 +2109,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
-    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, save2local: false, recover: false, delMedia: false, title: '', item: null};
+    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, save2local: false, save2drive: false, recover: false, delMedia: false, title: '', item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -3635,7 +3635,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         });
     }
 
-    $scope.downloadFile = function (id) {
+    $scope.downloadFile = function (id){
         if (!id) {
             id = this.toolList.item.id;
         }
@@ -3643,6 +3643,33 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             $scope.latest = id;
         }
         $window.location.href = this.main_url + '/download/' + id;
+    }
+
+    $scope.save2drive = function(id) {
+        if (!id) {
+            id = this.toolList.item.id;
+        }
+        if ($scope.bookmarkID) {
+            $scope.latest = id;
+        }
+        var saveApi = $resource(this.main_url + '/api/download2drive/' + id, {}, {
+            'save2drive': { method:'GET', withCredentials: true }
+        });
+        saveApi.save2drive({}, function(result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                addAlert('start saving to drive');
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
     }
 
     $scope.handleMedia = function(action, item) {
@@ -3686,12 +3713,15 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.delMedia = false;
             this.$parent.toolList.subscription = false;
             this.$parent.toolList.save2local = false;
+            this.$parent.toolList.save2drive = false;
             confirm_str = item;
         } else {
             if (item.status === 7 || item.status === 8 || item.status === 9 || item.thumb) {
                 this.$parent.toolList.download = false;
+                this.$parent.toolList.save2drive = false;
             } else {
                 this.$parent.toolList.download = true;
+                this.$parent.toolList.save2drive = true;
             }
             this.$parent.toolList.dir = false;
             if (item.isOwn) {

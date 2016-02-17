@@ -86,9 +86,11 @@ function updateStock(updateType, type, stocklist, index, callback) {
     }, updateType);
 }
 
-function cmdUpdateDrive(drive_batch, sungleUser) {
+function cmdUpdateDrive(drive_batch, sungleUser, docIndex) {
     drive_batch = (typeof drive_batch !== 'undefined' && !isNaN(Number(drive_batch))) ? Number(drive_batch) : 100;
+    docIndex = (typeof docIndex !== 'undefined' && !isNaN(Number(docIndex))) ? Number(docIndex) : -1;
     console.log(drive_batch);
+    console.log(docIndex);
     console.log('cmdUpdateDrive');
     console.log(new Date());
     if (sungleUser) {
@@ -101,7 +103,7 @@ function cmdUpdateDrive(drive_batch, sungleUser) {
             if(err) {
                 util.handleError(err);
             } else {
-                userDrive(drive_batch, userlist, 0, function(err) {
+                userDrive(drive_batch, userlist, 0, docIndex, function(err) {
                     if(err) {
                         util.handleError(err);
                     } else {
@@ -115,7 +117,7 @@ function cmdUpdateDrive(drive_batch, sungleUser) {
             if(err) {
                 util.handleError(err);
             } else {
-                userDrive(drive_batch, userlist, 0, function(err) {
+                userDrive(drive_batch, userlist, 0, docIndex, function(err) {
                     if(err) {
                         util.handleError(err);
                     } else {
@@ -127,7 +129,7 @@ function cmdUpdateDrive(drive_batch, sungleUser) {
     }
 }
 
-function userDrive(drive_batch, userlist, index, callback) {
+function userDrive(drive_batch, userlist, index, docIndex, callback) {
     console.log('userDrive');
     console.log(new Date());
     console.log(userlist[index].username);
@@ -151,11 +153,9 @@ function userDrive(drive_batch, userlist, index, callback) {
                     util.handleError({hoerror: 2, message: "do not have downloaded folder!!!"}, callback, callback);
                 }
                 downloaded = downloadedList[0].id;
-                var downloadTime = new Date();
                 var doc_type_0 = ['bls', 'cen', 'bea', 'ism', 'cbo', 'sem', 'oec', 'dol', 'rea', 'sca', 'fed'];
                 var doc_type_1 = ['sea'];
                 var doc_type_2 = ['tri', 'ndc', 'sta', 'mof', 'moe', 'cbc'];
-                console.log(downloadTime.getHours());
                 function download_ext_doc(tIndex, doc_type) {
                     externalTool.getSingleList(doc_type[tIndex], '', function(err, doclist) {
                         if (err) {
@@ -179,7 +179,7 @@ function userDrive(drive_batch, userlist, index, callback) {
                                         } else {
                                             index++;
                                             if (index < userlist.length) {
-                                                userDrive(drive_batch, userlist, index, callback);
+                                                userDrive(drive_batch, userlist, index, docIndex, callback);
                                             } else {
                                                 setTimeout(function(){
                                                     callback(null);
@@ -195,7 +195,7 @@ function userDrive(drive_batch, userlist, index, callback) {
                                 } else {
                                     index++;
                                     if (index < userlist.length) {
-                                        userDrive(drive_batch, userlist, index, callback);
+                                        userDrive(drive_batch, userlist, index, docIndex, callback);
                                     } else {
                                         setTimeout(function(){
                                             callback(null);
@@ -206,16 +206,16 @@ function userDrive(drive_batch, userlist, index, callback) {
                         }
                     });
                 }
-                if (downloadTime.getHours() === 0) {
+                if (docIndex === 0) {
                     download_ext_doc(0, doc_type_0);
-                } else if (downloadTime.getHours() === 11) {
+                } else if (docIndex === 1) {
                     download_ext_doc(0, doc_type_1);
-                } else if (downloadTime.getHours() === 12) {
+                } else if (docIndex === 2) {
                     download_ext_doc(0, doc_type_2);
                 } else {
                     index++;
                     if (index < userlist.length) {
-                        userDrive(drive_batch, userlist, index, callback);
+                        userDrive(drive_batch, userlist, index, docIndex, callback);
                     } else {
                         setTimeout(function(){
                             callback(null);
@@ -226,7 +226,7 @@ function userDrive(drive_batch, userlist, index, callback) {
         } else {
             index++;
             if (index < userlist.length) {
-                userDrive(drive_batch, userlist, index, callback);
+                userDrive(drive_batch, userlist, index, docIndex, callback);
             } else {
                 setTimeout(function(){
                     callback(null);
@@ -485,7 +485,7 @@ rl.on('line', function(line){
         break;
         case 'drive':
         console.log('drive');
-        cmdUpdateDrive(cmd[1], cmd[2]);
+        cmdUpdateDrive(cmd[1], cmd[2], cmd[3]);
         break;
         case 'external':
         console.log('external');
@@ -498,7 +498,7 @@ rl.on('line', function(line){
         default:
         console.log('help:');
         console.log('stock updateType [single index]');
-        console.log('drive batchNumber [single username] (include download)');
+        console.log('drive batchNumber [single username downloadIndex]');
         console.log('external type [clear]');
         console.log('complete [add]');
     }
