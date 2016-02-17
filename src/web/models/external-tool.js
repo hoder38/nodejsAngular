@@ -2829,6 +2829,7 @@ module.exports = {
                     var episode_match = false;
                     var season = -1;
                     var size = 0;
+                    var ll = 0;
                     for (var i in raw_list) {
                         list_match = raw_list[i].match(/^<a href="(magnet:\?xt=urn:btih:[^"]+)".*?class="magnet" title="(.+?)( Torrent:)? Magnet Link"[\s\S]+?(\d+(\.\d+)?) ([MG])B<\/td>/);
                         if (list_match) {
@@ -2855,32 +2856,31 @@ module.exports = {
                                 }
                                 var sIndex = -1;
                                 for (var j = 0, len = list.length; j < len; j++) {
-                                    if (list[j]['season'] === season) {
+                                    if (list[j][0]['season'] === season) {
                                         sIndex = j;
                                         break;
                                     }
                                 }
                                 if (sIndex === -1) {
                                     for (var j = 0, len = list.length; j < len; j++) {
-                                        if (list[j]['season'] > season) {
-                                            list.splice(j, 0, {magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                        if (list[j][0]['season'] > season) {
+                                            list.splice(j, 0, [{magnet: list_match[1], name: list_match[2], season: season, size: size}]);
                                             break;
                                         }
                                     }
                                     if (j === len) {
-                                        list.splice(len, 0, {magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                        list.splice(len, 0, [{magnet: list_match[1], name: list_match[2], season: season, size: size}]);
                                     }
                                 } else {
-                                    if (list[j].size <= 2000 && size <= 2000) {
-                                        if (list[j].size < size) {
-                                            list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
-                                        }
-                                    } else if (list[j].size > 2000 && size > 2000) {
-                                        if (list[j].size > size) {
-                                            list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                    ll = list[j].length;
+                                    if (list[j][ll-1].size <= 2000 && size <= 2000) {
+                                        list[j].push({magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                    } else if (list[j][ll-1].size > 2000 && size > 2000) {
+                                        if (list[j][ll-1].size > size) {
+                                            list[j][ll-1] = {magnet: list_match[1], name: list_match[2], season: season, size: size};
                                         }
                                     } else if (size <= 2000) {
-                                        list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                        list[j][ll-1] = {magnet: list_match[1], name: list_match[2], season: season, size: size};
                                     }
                                 }
                             }
@@ -2889,25 +2889,86 @@ module.exports = {
                     if (!list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
-                    var ret_obj = {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false};
-                    var encodeTorrent = util.isValidString(list[index-1].magnet, 'url');
-                    if (encodeTorrent === false) {
-                        util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
+                    var choose = -1;
+                    var cSize = 0;
+                    for (var i in list[index-1]) {
+                        if (list[index-1][i].size > cSize) {
+                            choose = i;
+                            cSize = list[index-1][i].size;
+                        }
                     }
-                    var torrentHash = list[index-1].magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
-                    mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
-                        if (err) {
-                            util.handleError(err, callback, callback);
+                    var chooseMag = list[index-1].splice(choose, 1);
+                    chooseMag = chooseMag[0];
+                    var encodeTorrent = false;
+                    var torrentHash = null;
+                    var ret_obj = {index: index, showId: index, is_magnet: true, complete: false};
+                    if (list[index-1].length > 1) {
+                        recur_check(0);
+                    } else {
+                        ret_obj['title'] = chooseMag.name;
+                        encodeTorrent = util.isValidString(chooseMag.magnet, 'url');
+                        if (encodeTorrent === false) {
+                            util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
                         }
-                        if (items.length > 0) {
-                            ret_obj['id'] = items[0]._id;
-                        } else {
-                            ret_obj['magnet'] = list[index-1].magnet;
+                        torrentHash = chooseMag.magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                        mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            if (items.length > 0) {
+                                ret_obj['id'] = items[0]._id;
+                            } else {
+                                ret_obj['magnet'] = chooseMag.magnet;
+                            }
+                            setTimeout(function(){
+                                callback(null, ret_obj, is_end, list.length);
+                            }, 0);
+                        });
+                    }
+                    function recur_check(mIndex) {
+                        encodeTorrent = util.isValidString(list[index-1][mIndex].magnet, 'url');
+                        if (encodeTorrent === false) {
+                            util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
                         }
-                        setTimeout(function(){
-                            callback(null, ret_obj, is_end, list.length);
-                        }, 0);
-                    });
+                        torrentHash = list[index-1][mIndex].magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                        mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            if (items.length > 0) {
+                                ret_obj['id'] = items[0]._id;
+                                ret_obj['title'] = list[index-1][mIndex].name;
+                                setTimeout(function(){
+                                    callback(null, ret_obj, is_end, list.length);
+                                }, 0);
+                            } else {
+                                mIndex++;
+                                if (mIndex < list[index-1].length) {
+                                    recur_check(mIndex);
+                                } else {
+                                    ret_obj['title'] = chooseMag.name;
+                                    encodeTorrent = util.isValidString(chooseMag.magnet, 'url');
+                                    if (encodeTorrent === false) {
+                                        util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
+                                    }
+                                    torrentHash = chooseMag.magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                                    mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                                        if (err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        if (items.length > 0) {
+                                            ret_obj['id'] = items[0]._id;
+                                        } else {
+                                            ret_obj['magnet'] = chooseMag.magnet;
+                                        }
+                                        setTimeout(function(){
+                                            callback(null, ret_obj, is_end, list.length);
+                                        }, 0);
+                                    });
+                                }
+                            }
+                        });
+                    }
                 }, 60000, false, false, 'https://eztv.ag/');
             } else {
                 api.xuiteDownload(url, '', function(err, raw_data) {
@@ -2965,32 +3026,31 @@ module.exports = {
                                         }
                                         var sIndex = -1;
                                         for (var j = 0, len = list.length; j < len; j++) {
-                                            if (list[j]['season'] === season) {
+                                            if (list[j][0]['season'] === season) {
                                                 sIndex = j;
                                                 break;
                                             }
                                         }
                                         if (sIndex === -1) {
                                             for (var j = 0, len = list.length; j < len; j++) {
-                                                if (list[j]['season'] > season) {
-                                                    list.splice(j, 0, {magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                                if (list[j][0]['season'] > season) {
+                                                    list.splice(j, 0, [{magnet: list_match[1], name: list_match[2], season: season, size: size}]);
                                                     break;
                                                 }
                                             }
                                             if (j === len) {
-                                                list.splice(len, 0, {magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                                list.splice(len, 0, [{magnet: list_match[1], name: list_match[2], season: season, size: size}]);
                                             }
                                         } else {
-                                            if (list[j].size <= 2000 && size <= 2000) {
-                                                if (list[j].size < size) {
-                                                    list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
-                                                }
-                                            } else if (list[j].size > 2000 && size > 2000) {
-                                                if (list[j].size > size) {
-                                                    list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                            ll = list[j].length;
+                                            if (list[j][ll-1].size <= 2000 && size <= 2000) {
+                                                list[j].push({magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                            } else if (list[j][ll-1].size > 2000 && size > 2000) {
+                                                if (list[j][ll-1].size > size) {
+                                                    list[j][ll-1] = {magnet: list_match[1], name: list_match[2], season: season, size: size};
                                                 }
                                             } else if (size <= 2000) {
-                                                list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                                list[j][ll-1] = {magnet: list_match[1], name: list_match[2], season: season, size: size};
                                             }
                                         }
                                     }
@@ -2999,26 +3059,86 @@ module.exports = {
                             if (!list[index-1]) {
                                 util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                             }
-                            var ret_obj = {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false};
-                            var encodeTorrent = util.isValidString(list[index-1].magnet, 'url');
-                            if (encodeTorrent === false) {
-                                util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
+                            var choose = -1;
+                            var cSize = 0;
+                            for (var i in list[index-1]) {
+                                if (list[index-1][i].size > cSize) {
+                                    choose = i;
+                                    cSize = list[index-1][i].size;
+                                }
                             }
-                            var torrentHash = list[index-1].magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
-                            mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
-                                if (err) {
-                                    util.handleError(err, callback, callback);
+                            var chooseMag = list[index-1].splice(choose, 1);
+                            chooseMag = chooseMag[0];
+                            var encodeTorrent = false;
+                            var torrentHash = null;
+                            var ret_obj = {index: index, showId: index, is_magnet: true, complete: false};
+                            if (list[index-1].length > 1) {
+                                recur_check(0);
+                            } else {
+                                ret_obj['title'] = chooseMag.name;
+                                encodeTorrent = util.isValidString(chooseMag.magnet, 'url');
+                                if (encodeTorrent === false) {
+                                    util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
                                 }
-                                if (items.length > 0) {
-                                    ret_obj['id'] = items[0]._id;
-                                } else {
-                                    ret_obj['magnet'] = list[index-1].magnet;
+                                torrentHash = chooseMag.magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                                mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    if (items.length > 0) {
+                                        ret_obj['id'] = items[0]._id;
+                                    } else {
+                                        ret_obj['magnet'] = chooseMag.magnet;
+                                    }
+                                    setTimeout(function(){
+                                        callback(null, ret_obj, is_end, list.length);
+                                    }, 0);
+                                });
+                            }
+                            function recur_check(mIndex) {
+                                encodeTorrent = util.isValidString(list[index-1][mIndex].magnet, 'url');
+                                if (encodeTorrent === false) {
+                                    util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
                                 }
-                                //ret_obj['id'] = 'dri_0B2mid6JabOnnSFpYcmtSd3F5aDQ';
-                                setTimeout(function(){
-                                    callback(null, ret_obj, is_end, list.length);
-                                }, 0);
-                            });
+                                torrentHash = list[index-1][mIndex].magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                                mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    if (items.length > 0) {
+                                        ret_obj['id'] = items[0]._id;
+                                        ret_obj['title'] = list[index-1][mIndex].name;
+                                        setTimeout(function(){
+                                            callback(null, ret_obj, is_end, list.length);
+                                        }, 0);
+                                    } else {
+                                        mIndex++;
+                                        if (mIndex < list[index-1].length) {
+                                            recur_check(mIndex);
+                                        } else {
+                                            ret_obj['title'] = chooseMag.name;
+                                            encodeTorrent = util.isValidString(chooseMag.magnet, 'url');
+                                            if (encodeTorrent === false) {
+                                                util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
+                                            }
+                                            torrentHash = chooseMag.magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                                            mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                                                if (err) {
+                                                    util.handleError(err, callback, callback);
+                                                }
+                                                if (items.length > 0) {
+                                                    ret_obj['id'] = items[0]._id;
+                                                } else {
+                                                    ret_obj['magnet'] = chooseMag.magnet;
+                                                }
+                                                setTimeout(function(){
+                                                    callback(null, ret_obj, is_end, list.length);
+                                                }, 0);
+                                            });
+                                        }
+                                    }
+                                });
+                            }
                         } else {
                             var is_more = false;
                             console.log('too much');
@@ -3066,32 +3186,31 @@ module.exports = {
                                             }
                                             var sIndex = -1;
                                             for (var j = 0, len = list.length; j < len; j++) {
-                                                if (list[j]['season'] === season) {
+                                                if (list[j][0]['season'] === season) {
                                                     sIndex = j;
                                                     break;
                                                 }
                                             }
                                             if (sIndex === -1) {
                                                 for (var j = 0, len = list.length; j < len; j++) {
-                                                    if (list[j]['season'] > season) {
-                                                        list.splice(j, 0, {magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                                    if (list[j][0]['season'] > season) {
+                                                        list.splice(j, 0, [{magnet: list_match[1], name: list_match[2], season: season, size: size}]);
                                                         break;
                                                     }
                                                 }
                                                 if (j === len) {
-                                                    list.splice(len, 0, {magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                                    list.splice(len, 0, [{magnet: list_match[1], name: list_match[2], season: season, size: size}]);
                                                 }
                                             } else {
-                                                if (list[j].size <= 2000 && size <= 2000) {
-                                                    if (list[j].size < size) {
-                                                        list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
-                                                    }
-                                                } else if (list[j].size > 2000 && size > 2000) {
-                                                    if (list[j].size > size) {
-                                                        list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                                ll = list[j].length;
+                                                if (list[j][ll-1].size <= 2000 && size <= 2000) {
+                                                    list[j].push({magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                                } else if (list[j][ll-1].size > 2000 && size > 2000) {
+                                                    if (list[j][ll-1].size > size) {
+                                                        list[j][ll-1] = {magnet: list_match[1], name: list_match[2], season: season, size: size};
                                                     }
                                                 } else if (size <= 2000) {
-                                                    list.splice(j, 1, {magnet: list_match[1], name: list_match[2], season: season, size: size});
+                                                    list[j][ll-1] = {magnet: list_match[1], name: list_match[2], season: season, size: size};
                                                 }
                                             }
                                         }
@@ -3100,36 +3219,86 @@ module.exports = {
                                 if (!list[index-1]) {
                                     util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                                 }
-                                var ret_obj = {index: index, showId: index, title: list[index-1].name, is_magnet: true, complete: false};
-                                var encodeTorrent = util.isValidString(list[index-1].magnet, 'url');
-                                if (encodeTorrent === false) {
-                                    util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
+                                var choose = -1;
+                                var cSize = 0;
+                                for (var i in list[index-1]) {
+                                    if (list[index-1][i].size > cSize) {
+                                        choose = i;
+                                        cSize = list[index-1][i].size;
+                                    }
                                 }
-                                var torrentHash = list[index-1].magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
-                                mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
-                                    if (err) {
-                                        util.handleError(err, callback, callback);
+                                var chooseMag = list[index-1].splice(choose, 1);
+                                chooseMag = chooseMag[0];
+                                var encodeTorrent = false;
+                                var torrentHash = null;
+                                var ret_obj = {index: index, showId: index, is_magnet: true, complete: false};
+                                if (list[index-1].length > 1) {
+                                    recur_check(0);
+                                } else {
+                                    ret_obj['title'] = chooseMag.name;
+                                    encodeTorrent = util.isValidString(chooseMag.magnet, 'url');
+                                    if (encodeTorrent === false) {
+                                        util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
                                     }
-                                    if (items.length > 0) {
-                                        ret_obj['id'] = items[0]._id;
-                                    } else {
-                                        ret_obj['magnet'] = list[index-1].magnet;
-                                    }
-                                    if (is_more) {
-                                        mongo.orig("update", "storage", {owner: 'eztv', url: encodeURIComponent(url)}, {$set: {url: encodeURIComponent('https://eztv.ag/search/' + show_name[1])}}, function(err, item){
-                                            if (err) {
-                                                util.handleError(err, next, res);
-                                            }
-                                            setTimeout(function(){
-                                                callback(null, ret_obj, is_end, list.length);
-                                            }, 0);
-                                        });
-                                    } else {
+                                    torrentHash = chooseMag.magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                                    mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                                        if (err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        if (items.length > 0) {
+                                            ret_obj['id'] = items[0]._id;
+                                        } else {
+                                            ret_obj['magnet'] = chooseMag.magnet;
+                                        }
                                         setTimeout(function(){
                                             callback(null, ret_obj, is_end, list.length);
                                         }, 0);
+                                    });
+                                }
+                                function recur_check(mIndex) {
+                                    encodeTorrent = util.isValidString(list[index-1][mIndex].magnet, 'url');
+                                    if (encodeTorrent === false) {
+                                        util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
                                     }
-                                });
+                                    torrentHash = list[index-1][mIndex].magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                                    mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                                        if (err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        if (items.length > 0) {
+                                            ret_obj['id'] = items[0]._id;
+                                            ret_obj['title'] = list[index-1][mIndex].name;
+                                            setTimeout(function(){
+                                                callback(null, ret_obj, is_end, list.length);
+                                            }, 0);
+                                        } else {
+                                            mIndex++;
+                                            if (mIndex < list[index-1].length) {
+                                                recur_check(mIndex);
+                                            } else {
+                                                ret_obj['title'] = chooseMag.name;
+                                                encodeTorrent = util.isValidString(chooseMag.magnet, 'url');
+                                                if (encodeTorrent === false) {
+                                                    util.handleError({hoerror: 2, message: "magnet is not vaild"}, callback, callback);
+                                                }
+                                                torrentHash = chooseMag.magnet.match(/^magnet:[^&]+/)[0].match(/[^:]+$/);
+                                                mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                                                    if (err) {
+                                                        util.handleError(err, callback, callback);
+                                                    }
+                                                    if (items.length > 0) {
+                                                        ret_obj['id'] = items[0]._id;
+                                                    } else {
+                                                        ret_obj['magnet'] = chooseMag.magnet;
+                                                    }
+                                                    setTimeout(function(){
+                                                        callback(null, ret_obj, is_end, list.length);
+                                                    }, 0);
+                                                });
+                                            }
+                                        }
+                                    });
+                                }
                             }, 60000, false, false, 'https://eztv.ag/');
                         }
                     } else {
