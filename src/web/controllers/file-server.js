@@ -4853,11 +4853,11 @@ function autoDoc(userlist, index, callback) {
                 }
             });
         }
-        if (downloadTime.getHours() === 0) {
+        if (downloadTime.getHours() === 6) {
             download_ext_doc(0, doc_type_0);
-        } else if (downloadTime.getHours() === 11) {
+        } else if (downloadTime.getHours() === 17) {
             download_ext_doc(0, doc_type_1);
-        } else if (downloadTime.getHours() === 12) {
+        } else if (downloadTime.getHours() === 18) {
             download_ext_doc(0, doc_type_2);
         } else {
             index++;
