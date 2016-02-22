@@ -711,15 +711,31 @@ module.exports = {
                 }
                 var list = [];
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()-4));
                 var docDate = date.getDate() + ' ' + monthNameShorts[date.getMonth()]+'. '+date.getFullYear();
                 console.log(docDate);
                 if (raw_list[1] === docDate) {
                     list.push({url: 'https://www.conference-board.org/data/consumerconfidence.cfm', name: util.toValidName('Consumer Confidence Survey'), date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()});
                 }
-                setTimeout(function(){
-                    callback(null, list);
-                }, 0);
+                url = 'https://www.conference-board.org/data/bcicountry.cfm?cid=1';
+                api.xuiteDownload(url, '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    docDate = monthNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
+                    console.log(docDate);
+                    raw_list = raw_data.match(/class="date">Released: [a-zA-Z]+, ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
+                    if (!raw_list) {
+                        util.handleError({hoerror: 2, message: 'cannot find cbo latest'}, callback, callback);
+                    }
+                    if (raw_list[1] === docDate) {
+                        list.push({url: 'https://www.conference-board.org/data/bcicountry.cfm?cid=1', name: util.toValidName('US Business Cycle Indicators'), date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()});
+                    }
+                    setTimeout(function(){
+                        callback(null, list);
+                    }, 0);
+                }, 60000, false, false);
             }, 60000, false, false);
             break;
             case 'sem':
@@ -4206,12 +4222,14 @@ module.exports = {
                     util.handleError(err, callback, callback);
                 }
                 var raw_list = raw_data.match(/<h2>([^<]+)/);
-                if (!raw_list) {
-                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                if (raw_list) {
+                    raw_list = raw_list[1];
+                } else {
+                    raw_list = 'US Business Cycle Indicators';
                 }
                 var driveName = obj.name + ' ' + obj.date + '.txt';
                 console.log(driveName);
-                var data = {type: 'auto', name: driveName, body: raw_list[1] + '\n\n\r\r' + obj.url, parent: parent};
+                var data = {type: 'auto', name: driveName, body: raw_list + '\n\n\r\r' + obj.url, parent: parent};
                 googleApi.googleApi('upload', data, function(err, metadata) {
                     if (err) {
                         util.handleError(err, callback, callback);
