@@ -298,7 +298,7 @@ module.exports = {
         });
     },
     xuiteDownload: function(url, filePath, callback, threshold, is_check, is_file, referer, not_utf8, fake_ip, is_post) {
-        if (!this.setApiQueue('xuiteDownload', [url, filePath, callback, threshold])) {
+        if (is_file && !this.setApiQueue('xuiteDownload', [url, filePath, callback, threshold])) {
             return false;
         }
         threshold = typeof threshold !== 'undefined' ? threshold : null;
@@ -413,7 +413,9 @@ module.exports = {
                                     }, 0);
                                 } else {
                                     console.log(options);
-                                    this_obj.getApiQueue();
+                                    if (is_file) {
+                                        this_obj.getApiQueue();
+                                    }
                                     util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                 }
                             } else {
@@ -423,13 +425,17 @@ module.exports = {
                                     }, 0);
                                 } else {
                                     console.log(options);
-                                    this_obj.getApiQueue();
+                                    if (is_file) {
+                                        this_obj.getApiQueue();
+                                    }
                                     util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                 }
                             }
                         }
                     } else if (res.statusCode === 301 || res.statusCode === 302) {
-                        this_obj.getApiQueue();
+                        if (is_file) {
+                            this_obj.getApiQueue();
+                        }
                         if (!res.headers.location) {
                             console.log(res.headers);
                             util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
@@ -442,11 +448,15 @@ module.exports = {
                     } else if (res.statusCode === 400) {
                         console.log(url);
                         console.log(options);
-                        this_obj.getApiQueue();
+                        if (is_file) {
+                            this_obj.getApiQueue();
+                        }
                         util.handleError({hoerror: 2, message: res.statusCode + ': download location cannot be fund'}, callback, callback);
                     } else {
                         console.log(res);
-                        this_obj.getApiQueue();
+                        if (is_file) {
+                            this_obj.getApiQueue();
+                        }
                         util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                     }
                     if (!is_move) {
@@ -464,7 +474,6 @@ module.exports = {
                                 }
                             });
                             res.on('end', function() {
-                                this_obj.getApiQueue();
                                 req.abort();
                                 if (not_utf8) {
                                     if (res.headers['content-encoding'] === 'gzip') {
@@ -504,7 +513,9 @@ module.exports = {
                                 }, 0);
                             } else {
                                 console.log(options);
-                                this_obj.getApiQueue();
+                                if (is_file) {
+                                    this_obj.getApiQueue();
+                                }
                                 util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                             }
                         } else {
@@ -514,11 +525,16 @@ module.exports = {
                                 }, 0);
                             } else {
                                 console.log(options);
-                                this_obj.getApiQueue();
+                                if (is_file) {
+                                    this_obj.getApiQueue();
+                                }
                                 util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                             }
                         }
                     } else if (e.code === 'HPE_INVALID_CONSTANT') {
+                        if (is_file) {
+                            this_obj.getApiQueue();
+                        }
                         util.handleError(e, callback, callback, 400, null);
                     }
                 });
@@ -622,10 +638,10 @@ module.exports = {
                         this_obj.getApiQueue();
                         util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
                     }
+                    this_obj.getApiQueue();
                     setTimeout(function(){
                         callback(null, result.rsp);
                     }, 0);
-                    this_obj.getApiQueue();
                 });
             }
         }

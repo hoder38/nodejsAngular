@@ -675,6 +675,7 @@ var exports = module.exports = {
                                     }
                                 }
                             } else if (e.code === 'HPE_INVALID_CONSTANT'){
+                                this_obj.getApiQueue();
                                 util.handleError(e, callback, callback, 400, null);
                             }
                         });
