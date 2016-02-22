@@ -3367,14 +3367,14 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                                         torrentComplete(10);
                                     } else {
                                         if (fs.statSync(bufferPath).size >= file.length) {
-                                            torrentComplete(1, null, items[0].mediaType);
+                                            torrentComplete(1, null, items[0].mediaType[fileIndex]);
                                         } else {
                                             console.log(fs.statSync(bufferPath).size);
                                             console.log(bufferPath);
                                             var fileStream = file.createReadStream({start: fs.statSync(bufferPath).size});
                                             fileStream.pipe(fs.createWriteStream(bufferPath, {flags: 'a'}));
                                             fileStream.on('end', function() {
-                                                torrentComplete(1, null, items[0].mediaType);
+                                                torrentComplete(1, null, items[0].mediaType[fileIndex]);
                                             });
                                         }
                                     }
@@ -4167,35 +4167,18 @@ app.get('/api/handleMedia/:uid/:action(act|vlog|del)', function(req, res, next) 
                         util.handleError({hoerror: 2, message: "this file is not media!!!"}, next, res);
                     }
                     var filePath = util.getFileLocation(items[0].owner, items[0]._id);
-                    if(items[0].mediaType.key) {
+                    if (items[0].mediaType.type) {
                         res.json({apiOK: true});
-                        mediaHandleTool.handleMedia(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].mediaType.key, req.user, function (err) {
-                            sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
-                            if (err) {
-                                util.handleError(err);
-                            }
-                            console.log('transcode done');
-                            console.log(new Date());
-                        });
-                    } else {
-                        if (items[0].mediaType['realPath']) {
-                            if (fs.existsSync(filePath + '/' + items[0].mediaType['fileIndex'] + '_complete')) {
-                                res.json({apiOK: true});
-                                var dbStats = fs.statSync(filePath + '/real/' + items[0].mediaType['realPath']);
-                                var dbName = path.basename(items[0].mediaType['realPath']);
-                                mediaHandleTool.handleMediaUpload(items[0].mediaType, filePath, items[0]._id, dbName, dbStats['size'], req.user, function (err) {
-                                    sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
-                                    if (err) {
-                                        util.handleError(err);
-                                    }
-                                    console.log('transcode done');
-                                    console.log(new Date());
-                                });
-                            } else {
-                                util.handleError({hoerror: 2, message: "need complete first"}, next, res);
-                            }
+                        if(items[0].mediaType.key) {
+                            mediaHandleTool.handleMedia(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].mediaType.key, req.user, function (err) {
+                                sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                if (err) {
+                                    util.handleError(err);
+                                }
+                                console.log('transcode done');
+                                console.log(new Date());
+                            });
                         } else {
-                            res.json({apiOK: true});
                             mediaHandleTool.handleMediaUpload(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].size, req.user, function (err) {
                                 sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                                 if (err) {
@@ -4205,17 +4188,92 @@ app.get('/api/handleMedia/:uid/:action(act|vlog|del)', function(req, res, next) 
                                 console.log(new Date());
                             });
                         }
+                    } else {
+                        var dbStats = null;
+                        var dbName = null;
+                        var handleItems = [];
+                        for (var i in items[0].mediaType) {
+                            if (fs.existsSync(filePath + '/' + items[0].mediaType[i]['fileIndex'] + '_complete')) {
+                                handleItems.push(items[0].mediaType[i]);
+                            }
+                        }
+                        if (handleItems.length < 1) {
+                            util.handleError({hoerror: 2, message: "need complete first"}, next, res);
+                        }
+                        res.json({apiOK: true});
+                        recur_handle(0);
+                        function recur_handle(index) {
+                            if(handleItems[index].key) {
+                                mediaHandleTool.handleMedia(handleItems[index], filePath, items[0]._id, items[0].name, handleItems[index].key, req.user, function (err) {
+                                    sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    console.log('transcode done');
+                                    console.log(new Date());
+                                });
+                            } else {
+                                dbStats = fs.statSync(filePath + '/real/' + handleItems[index]['realPath']);
+                                dbName = path.basename(handleItems[index]['realPath']);
+                                mediaHandleTool.handleMediaUpload(handleItems[index], filePath, items[0]._id, dbName, dbStats['size'], req.user, function (err) {
+                                    sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    console.log('transcode done');
+                                    console.log(new Date());
+                                });
+                            }
+                            index++;
+                            if (index < handleItems.length) {
+                                setTimeout(function(){
+                                    recur_handle(index);
+                                }, 30000);
+                            }
+                        }
                     }
                     break;
                 case 'del':
-                    res.json({apiOK: true});
-                    mediaHandleTool.completeMedia(items[0]._id, 0, function (err) {
-                        sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
-                        if (err) {
-                            util.handleError(err);
+                    if (items[0].mediaType.type) {
+                        res.json({apiOK: true});
+                        mediaHandleTool.completeMedia(items[0]._id, 0, function (err) {
+                            sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                            if (err) {
+                                util.handleError(err);
+                            }
+                            console.log('delete media done');
+                        });
+                    } else {
+                        var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+                        var rmPath = null;
+                        var handleItems = [];
+                        for (var i in items[0].mediaType) {
+                            if (fs.existsSync(filePath + '/' + items[0].mediaType[i]['fileIndex'] + '_complete')) {
+                                handleItems.push(items[0].mediaType[i]);
+                            }
                         }
-                        console.log('delete media done');
-                    });
+                        if (handleItems.length < 1) {
+                            util.handleError({hoerror: 2, message: "need complete first"}, next, res);
+                        }
+                        res.json({apiOK: true});
+                        recur_del(0);
+                        function recur_del(index) {
+                            rmPath = filePath + '/real/' + handleItems[index]['realPath'];
+                            mediaHandleTool.completeMedia(items[0]._id, 0, function (err) {
+                                sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                if (err) {
+                                    util.handleError(err);
+                                }
+                                console.log('delete media done');
+                            }, rmPath, handleItems[index]['fileIndex']);
+                            index++;
+                            if (index < handleItems.length) {
+                                setTimeout(function(){
+                                    recur_del(index);
+                                }, 30000);
+                            }
+                        }
+                    }
                     break;
                 default:
                     util.handleError({hoerror: 2, message: "unknown action"}, next, res);

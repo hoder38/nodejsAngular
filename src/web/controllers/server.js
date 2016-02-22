@@ -3561,13 +3561,25 @@ function getStorageItem(user, items, mediaHandle) {
                     data.ctitle = items[i].ctitle;
                 }
                 if (!items[i].mediaType.type) {
+                    data['media'] = {};
+                    data['media']['type'] = '';
+                    data['media']['key'] = '';
+                    data['media']['err'] = '';
+                    data['media']['timeout'] = '';
                     for (var j in items[i].mediaType) {
-                        data['media'] = items[i].mediaType[j];
-                        itemList.push(data);
+                        data['media']['type'] = data['media']['type'] + j + '.' + items[i].mediaType[j].type + ' ';
+                        if (items[i].mediaType[j].key) {
+                            data['media']['key'] = data['media']['key'] + j + '.' + items[i].mediaType[j].key + ' ';
+                        }
+                        if (items[i].mediaType[j].err) {
+                            data['media']['err'] = data['media']['err'] + j + '.' + items[i].mediaType[j].err + ' ';
+                        }
+                        if (items[i].mediaType[j].timeout) {
+                            data['media']['timeout'] = data['media']['timeout'] + j + '.' + items[i].mediaType[j].timeout + ' ';
+                        }
                     }
-                } else {
-                    itemList.push(data);
                 }
+                itemList.push(data);
             }
         } else {
             for (var i in items) {
@@ -3597,13 +3609,25 @@ function getStorageItem(user, items, mediaHandle) {
                     data.isOwn = true;
                 }
                 if (!items[i].mediaType.type) {
+                    data['media'] = {};
+                    data['media']['type'] = '';
+                    data['media']['key'] = '';
+                    data['media']['err'] = '';
+                    data['media']['timeout'] = '';
                     for (var j in items[i].mediaType) {
-                        data['media'] = items[i].mediaType[j];
-                        itemList.push(data);
+                        data['media']['type'] = data['media']['type'] + j + '.' + items[i].mediaType[j].type + ' ';
+                        if (items[i].mediaType[j].key) {
+                            data['media']['key'] = data['media']['key'] + j + '.' + items[i].mediaType[j].key + ' ';
+                        }
+                        if (items[i].mediaType[j].err) {
+                            data['media']['err'] = data['media']['err'] + j + '.' + items[i].mediaType[j].err + ' ';
+                        }
+                        if (items[i].mediaType[j].timeout) {
+                            data['media']['timeout'] = data['media']['timeout'] + j + '.' + items[i].mediaType[j].timeout + ' ';
+                        }
                     }
-                } else {
-                    itemList.push(data);
                 }
+                itemList.push(data);
             }
         }
     } else {
