@@ -3560,7 +3560,14 @@ function getStorageItem(user, items, mediaHandle) {
                 if (items[i].ctitle) {
                     data.ctitle = items[i].ctitle;
                 }
-                itemList.push(data);
+                if (!items[i].mediaType.type) {
+                    for (var j in items[i].mediaType) {
+                        data['media'] = items[i].mediaType[j];
+                        itemList.push(data);
+                    }
+                } else {
+                    itemList.push(data);
+                }
             }
         } else {
             for (var i in items) {
@@ -3589,7 +3596,14 @@ function getStorageItem(user, items, mediaHandle) {
                 if (util.isValidString(items[i].owner, 'uid') && user._id.equals(items[i].owner)) {
                     data.isOwn = true;
                 }
-                itemList.push(data);
+                if (!items[i].mediaType.type) {
+                    for (var j in items[i].mediaType) {
+                        data['media'] = items[i].mediaType[j];
+                        itemList.push(data);
+                    }
+                } else {
+                    itemList.push(data);
+                }
             }
         }
     } else {

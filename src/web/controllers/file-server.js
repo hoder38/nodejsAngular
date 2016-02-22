@@ -3381,84 +3381,73 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                                 }
                             });
                         } else {
-                            mongo.orig("find", "storage", { _id: id, mediaType: {$exists: true}}, {limit: 1}, function(err, items){
+                            var mediaType = mime.mediaType(file.name);
+                            mediaType['fileIndex'] = fileIndex;
+                            mediaType['realPath'] = file.path;
+                            var mediaSet = {};
+                            mediaSet['mediaType.' + mediaType['fileIndex']] = mediaType;
+                            mongo.orig("update", "storage", { _id: id }, {$set: mediaSet}, function(err, item2){
                                 if(err) {
                                     sendWs({type: user.username, data: err.message}, 0);
                                     util.handleError(err);
                                     torrentComplete(10);
-                                }
-                                if (items.length > 0) {
-                                    sendWs({type: user.username, data: 'single playlist only one download'}, 0);
-                                    util.handleError({hoerror: 2, message: 'single playlist only one download'});
-                                    torrentComplete(4);
                                 } else {
-                                    var mediaType = mime.mediaType(file.name);
-                                    mediaType['fileIndex'] = fileIndex;
-                                    mediaType['realPath'] = file.path;
-                                    mongo.orig("update", "storage", { _id: id }, {$set: {mediaType: mediaType}}, function(err, item2){
-                                        if(err) {
-                                            sendWs({type: user.username, data: err.message}, 0);
+                                    console.log(bufferPath);
+                                    oth.computeHash(fileIndex, engine, function(err, hash_ret) {
+                                        if (err) {
+                                            sendWs({type: user.username, data: 'buffer fail: ' + err.message}, 0);
                                             util.handleError(err);
                                             torrentComplete(10);
                                         } else {
-                                            console.log(bufferPath);
-                                            oth.computeHash(fileIndex, engine, function(err, hash_ret) {
-                                                if (err) {
-                                                    sendWs({type: user.username, data: 'buffer fail: ' + err.message}, 0);
-                                                    util.handleError(err);
-                                                    torrentComplete(10);
-                                                } else {
-                                                    console.log(hash_ret);
-                                                    var OpenSubtitles = new openSubtitle('hoder agent v0.1');
-                                                    OpenSubtitles.search({
-                                                        extensions: 'srt',
-                                                        //sublanguageid: 'chi',
-                                                        hash: hash_ret.movieHash,
-                                                        filesize: hash_ret.fileSize
-                                                    }).then(function (subtitles) {
-                                                        var sub_url = null;
-                                                        console.log(subtitles);
-                                                        if (subtitles.ze) {
-                                                            sub_url = subtitles.ze.url;
-                                                        } else if (subtitles.zt) {
-                                                            sub_url = subtitles.zt.url;
-                                                        } else if (subtitles.zh) {
-                                                            sub_url = subtitles.zh.url;
-                                                        }
-                                                        if (sub_url) {
-                                                            if (fs.existsSync(bufferPath + '.srt')) {
-                                                                fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
-                                                            }
-                                                            if (fs.existsSync(bufferPath + '.ass')) {
-                                                                fs.renameSync(bufferPath + '.ass', bufferPath + '.ass1');
-                                                            }
-                                                            if (fs.existsSync(bufferPath + '.ssa')) {
-                                                                fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
-                                                            }
-                                                            api.xuiteDownload(sub_url, bufferPath + '.srt', function(err) {
+                                            console.log(hash_ret);
+                                            var OpenSubtitles = new openSubtitle('hoder agent v0.1');
+                                            OpenSubtitles.search({
+                                                extensions: 'srt',
+                                                //sublanguageid: 'chi',
+                                                hash: hash_ret.movieHash,
+                                                filesize: hash_ret.fileSize
+                                            }).then(function (subtitles) {
+                                                var sub_url = null;
+                                                console.log(subtitles);
+                                                if (subtitles.ze) {
+                                                    sub_url = subtitles.ze.url;
+                                                } else if (subtitles.zt) {
+                                                    sub_url = subtitles.zt.url;
+                                                } else if (subtitles.zh) {
+                                                    sub_url = subtitles.zh.url;
+                                                }
+                                                if (sub_url) {
+                                                    if (fs.existsSync(bufferPath + '.srt')) {
+                                                        fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
+                                                    }
+                                                    if (fs.existsSync(bufferPath + '.ass')) {
+                                                        fs.renameSync(bufferPath + '.ass', bufferPath + '.ass1');
+                                                    }
+                                                    if (fs.existsSync(bufferPath + '.ssa')) {
+                                                        fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
+                                                    }
+                                                    api.xuiteDownload(sub_url, bufferPath + '.srt', function(err) {
+                                                        if (err) {
+                                                            util.handleError(err);
+                                                        } else {
+                                                            util.SRT2VTT(bufferPath, 'srt', function(err) {
                                                                 if (err) {
                                                                     util.handleError(err);
                                                                 } else {
-                                                                    util.SRT2VTT(bufferPath, 'srt', function(err) {
-                                                                        if (err) {
-                                                                            util.handleError(err);
-                                                                        } else {
-                                                                            sendWs({type: 'sub', data: id}, 0, 0);
-                                                                            console.log('sub end');
-                                                                        }
-                                                                    });
+                                                                    sendWs({type: 'sub', data: id}, 0, 0);
+                                                                    console.log('sub end');
                                                                 }
-                                                            }, null, false);
+                                                            });
                                                         }
-                                                    }).catch(function (err) {
-                                                        util.handleError(err);
-                                                    });
-                                                    var fileStream = file.createReadStream();
-                                                    fileStream.pipe(fs.createWriteStream(bufferPath));
-                                                    fileStream.on('end', function() {
-                                                        torrentComplete(1, null, mediaType);
-                                                    });
+                                                    }, null, false);
                                                 }
+                                            }).catch(function (err) {
+                                                util.handleError(err);
+                                            });
+                                            var fileStream = file.createReadStream();
+                                            fileStream.pipe(fs.createWriteStream(bufferPath));
+                                            fileStream.on('end', function() {
+                                                torrentComplete(1, null, mediaType);
                                             });
                                         }
                                     });
@@ -3489,7 +3478,8 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner) {
                             mediaTypeNew['fileIndex'] = mediaType['fileIndex'];
                             mediaTypeNew['realPath'] = mediaType['realPath'];
                             DBdata['status'] = 9;
-                            DBdata['mediaType'] = mediaTypeNew;
+                            delete DBdata['mediaType'];
+                            DBdata['mediaType.' + mediaType['fileIndex']] = mediaTypeNew;
                             console.log(DBdata);
                             mongo.orig("update", "storage", { _id: id }, {$set: DBdata}, function(err, item2){
                                 if(err) {

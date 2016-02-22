@@ -1023,7 +1023,7 @@ var exports = module.exports = {
         }*/
         var img_threshold = threshold;
         if (is_ok) {
-            img_threshold = 60000;
+            img_threshold = 600000;
         }
         this.googleDownload("https://drive.google.com/thumbnail?id=" + key, filePath + "_s.jpg", function(err) {
             if (err && !is_ok) {

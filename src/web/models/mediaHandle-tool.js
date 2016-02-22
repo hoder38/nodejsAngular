@@ -22,6 +22,12 @@ module.exports = function(sendWs) {
         handleMediaUpload: function(mediaType, filePath, fileID, fileName, fileSize, user, callback, vlog_act) {
             var this_obj = this;
             if (mediaType) {
+                var rmPath = null;
+                var fInex = null;
+                if (mediaType['realPath']) {
+                    rmPath = filePath + '/real/' + mediaType['realPath'];
+                    fIndex = mediaType['fileIndex'];
+                }
                 var uploadPath = filePath;
                 if (mediaType['realPath']) {
                     uploadPath = filePath + '/real/' + mediaType['realPath'];
@@ -29,17 +35,22 @@ module.exports = function(sendWs) {
                 if (mediaType['type'] === 'vlog' || (mediaType['type'] === 'video' && vlog_act)) {
                     api.xuiteApi("xuite.webhd.prepare.cloudbox.postFile", {full_path: '/AnNoPiHo/' + fileID.toString() + "." + mediaType['ext'], size: fileSize}, function(err, result) {
                         if (err) {
-                            util.handleError(err, callback, errerMedia, fileID, callback);
+                            util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                         }
                         console.log(result);
                         api.xuiteUpload(result.url, {auth_key: result.auth_key, checksum: result.checksum, api_otp: result.otp}, uploadPath, fileSize, function(err, uploadResult) {
                             if (err) {
-                                util.handleError(err, callback, errerMedia, fileID, callback);
+                                util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                             }
                             console.log(uploadResult);
-                            mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.key": uploadResult.key}}, function(err, item){
+                            var mediaSet = {'mediaType.key': uploadResult.key};
+                            if (mediaType['realPath']) {
+                                mediaSet = {};
+                                mediaSet['mediaType.' + mediaType['fileIndex'] + '.key'] = uploadResult.key;
+                            }
+                            mongo.orig("update", "storage", { _id: fileID }, {$set: mediaSet}, function(err, item){
                                 if(err) {
-                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                    util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                 }
                                 this_obj.handleMedia(mediaType, filePath, fileID, fileName, uploadResult.key, user, callback, vlog_act);
                             });
@@ -159,7 +170,12 @@ module.exports = function(sendWs) {
                                     console.log(metadata);
                                     util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
                                 }
-                                mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.key": metadata.id, present: sort_result.length}}, function(err, item){
+                                var mediaSet = {"mediaType.key": metadata.id, present: sort_result.length};
+                                if (mediaType['realPath']) {
+                                    mediaSet = {present: sort_result.length};
+                                    mediaSet['mediaType.' + mediaType['fileIndex'] + '.key'] = metadata.id;
+                                }
+                                mongo.orig("update", "storage", { _id: fileID }, {$set: mediaSet}, function(err, item){
                                     if(err) {
                                         util.handleError(err, callback, errerMedia, fileID, callback);
                                     }
@@ -178,7 +194,7 @@ module.exports = function(sendWs) {
                     }
                     googleApi.googleApi('upload', data, function(err, metadata) {
                         if (err) {
-                            util.handleError(err, callback, errerMedia, fileID, callback);
+                            util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                         }
                         if(metadata.exportLinks && metadata.exportLinks['application/pdf']) {
                             mediaType['thumbnail'] = metadata.exportLinks['application/pdf'];
@@ -187,7 +203,7 @@ module.exports = function(sendWs) {
                                     mediaType['alternate'] = metadata.alternateLink;
                                 } else {
                                     console.log(metadata);
-                                    util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
+                                    util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                 }
                             }
                         } else if (mediaType['type'] === 'video' && metadata.alternateLink) {
@@ -196,11 +212,16 @@ module.exports = function(sendWs) {
                             mediaType['thumbnail'] = metadata.thumbnailLink;
                         } else {
                             console.log(metadata);
-                            util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
+                            util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback, rmPath, fIndex);
                         }
-                        mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.key": metadata.id}}, function(err, item){
+                        var mediaSet = {"mediaType.key": metadata.id};
+                        if (mediaType['realPath']) {
+                            mediaSet = {};
+                            mediaSet['mediaType.' + mediaType['fileIndex'] + '.key'] = metadata.id;
+                        }
+                        mongo.orig("update", "storage", { _id: fileID }, {$set: mediaSet}, function(err, item){
                             if(err) {
-                                util.handleError(err, callback, errerMedia, fileID, callback);
+                                util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                             }
                             this_obj.handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback, vlog_act);
                         });
@@ -208,15 +229,18 @@ module.exports = function(sendWs) {
                 }
             }
         },
-        completeMedia: function (fileID, status, callback, rmPath, number) {
+        completeMedia: function (fileID, status, callback, rmPath, fileIndex, number) {
             var data = {status: status};
             if (number && number > 1) {
                 data['present'] = number;
             }
+            var mediaSet = {mediaType: ""};
             if (rmPath) {
                 data['status'] = 9;
+                mediaSet = {};
+                mediaSet['mediaType.' + fileIndex] = "";
             }
-            mongo.orig("update", "storage", { _id: fileID }, {$unset: {mediaType: ""}, $set: data}, function(err, item){
+            mongo.orig("update", "storage", { _id: fileID }, {$unset: mediaSet, $set: data}, function(err, item){
                 if(err) {
                     util.handleError(err, callback, callback);
                 }
@@ -236,9 +260,11 @@ module.exports = function(sendWs) {
             var this_obj = this;
             var savePath = filePath;
             var rmPath = null;
+            var fIndex = null;
             if (mediaType['realPath']) {
                 savePath = filePath + '/' + mediaType['fileIndex'] + '_complete';
                 rmPath = filePath + '/real/' + mediaType['realPath'];
+                fIndex = mediaType['fileIndex'];
             }
             if (mediaType['type'] === 'image' || mediaType['type'] === 'zipbook') {
                 if (mediaType['thumbnail']) {
@@ -288,40 +314,45 @@ module.exports = function(sendWs) {
             } else if (mediaType['type'] === 'vlog' || (mediaType['type'] === 'video' && vlog_act)) {
                 if (!mediaType.hasOwnProperty('time') && !mediaType.hasOwnProperty('hd')) {
                     console.log(mediaType);
-                    util.handleError({hoerror: 2, message: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback);
+                    util.handleError({hoerror: 2, message: 'video can not be decoded!!!'}, callback, errerMedia, fileID, callback, rmPath, fIndex);
                 }
                 api.xuiteDownloadMedia(1000, transTime, key, savePath, 1, mediaType['hd'], function(err, hd, video_url) {
                     if(err) {
-                        util.handleError(err, callback, errerMedia, fileID, callback);
+                        util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                     }
                     if (hd === 1 || hd === 720 || hd === 1080) {
-                        mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.hd": 2, status: 3}}, function(err, item){
+                        var mediaSet = {"mediaType.hd": 2, status: 3};
+                        if (mediaType['realPath']) {
+                            mediaSet = {status: 3};
+                            mediaSet['mediaType.' + mediaType['fileIndex'] + '.hd'] = 2;
+                        }
+                        mongo.orig("update", "storage", { _id: fileID }, {$set: mediaSet}, function(err, item){
                             if(err) {
-                                util.handleError(err, callback, errerMedia, fileID, callback);
+                                util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                             }
                             api.xuiteDownload(video_url, savePath + '_t', function(err) {
                                 if (err) {
-                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                    util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                 }
                                 fs.unlink(savePath, function(err) {
                                     if (err) {
-                                        util.handleError(err, callback, errerMedia, fileID, callback);
+                                        util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                     }
                                     fs.rename(savePath + '_t', savePath, function(err) {
                                         if (err) {
-                                            util.handleError(err, callback, errerMedia, fileID, callback);
+                                            util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                         }
                                         api.xuiteDeleteFile(key, function(err) {
                                             if (err) {
-                                                util.handleError(err, callback, errerMedia, fileID, callback);
+                                                util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                             }
                                             tagTool.addTag(fileID, 'hd', user, callback, function(err, result) {
                                                 if (err) {
-                                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                                    util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                                 }
                                                 tagTool.addTag(fileID, '720p', user, callback, function(err, result) {
                                                     if (err) {
-                                                        util.handleError(err, callback, errerMedia, fileID, callback);
+                                                        util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                                     }
                                                     this_obj.completeMedia(fileID, 3, function(err) {
                                                         if (err) {
@@ -349,7 +380,7 @@ module.exports = function(sendWs) {
                                                                 });
                                                             }
                                                         }
-                                                    }, rmPath);
+                                                    }, rmPath, fIndex);
                                                 });
                                             });
                                         });
@@ -360,27 +391,27 @@ module.exports = function(sendWs) {
                     } else if (hd === 2) {
                         api.xuiteDownload(video_url, savePath + '_t', function(err) {
                             if (err) {
-                                util.handleError(err, callback, errerMedia, fileID, callback);
+                                util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                             }
                             fs.unlink(savePath, function(err) {
                                 if (err) {
-                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                    util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                 }
                                 fs.rename(savePath + '_t', savePath, function(err) {
                                     if (err) {
-                                        util.handleError(err, callback, errerMedia, fileID, callback);
+                                        util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                     }
                                     api.xuiteDeleteFile(key, function(err) {
                                         if (err) {
-                                            util.handleError(err, callback, errerMedia, fileID, callback);
+                                            util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                         }
                                         tagTool.addTag(fileID, 'hd', user, callback, function(err, result) {
                                             if (err) {
-                                                util.handleError(err, callback, errerMedia, fileID, callback);
+                                                util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                             }
                                             tagTool.addTag(fileID, '720p', user, callback, function(err, result) {
                                                 if (err) {
-                                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                                    util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                                 }
                                                 this_obj.completeMedia(fileID, 3, function(err) {
                                                     if (err) {
@@ -408,7 +439,7 @@ module.exports = function(sendWs) {
                                                             });
                                                         }
                                                     }
-                                                }, rmPath);
+                                                }, rmPath, fIndex);
                                             });
                                         });
                                     });
@@ -442,7 +473,7 @@ module.exports = function(sendWs) {
                                     });
                                 }
                             }
-                        }, rmPath);
+                        }, rmPath, fIndex);
                     }
                 });
             } else if (mediaType['type'] === 'video') {
@@ -453,7 +484,7 @@ module.exports = function(sendWs) {
                 if (mediaType['thumbnail']) {
                     googleApi.googleDownloadMedia(transTime, mediaType['thumbnail'], key, savePath, mediaType['hd'], function(err, is_stage) {
                         if(err) {
-                            util.handleError(err, callback, errerMedia, fileID, callback);
+                            util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                         }
                         if (is_stage) {
                             errerMedia({hoerror: 2, message: 'timeout'}, fileID, function(err) {
@@ -482,12 +513,12 @@ module.exports = function(sendWs) {
                                         });
                                     }
                                 }
-                            }, 1081, rmPath);
+                            }, rmPath, fIndex, 1081);
                         } else {
                             var data = {fileId: key};
                             googleApi.googleApi('delete', data, function(err) {
                                 if (err) {
-                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                    util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                 }
                                 this_obj.completeMedia(fileID, 3, function(err) {
                                     if (err) {
@@ -515,7 +546,7 @@ module.exports = function(sendWs) {
                                             });
                                         }
                                     }
-                                }, rmPath);
+                                }, rmPath, fIndex);
                             });
                         }
                     });
@@ -523,11 +554,11 @@ module.exports = function(sendWs) {
                     var data = {fileId: key};
                     googleApi.googleApi('get', data, function(err, filedata) {
                         if(err) {
-                            util.handleError(err, callback, errerMedia, fileID, callback);
+                            util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                         }
                         if (!filedata['alternateLink']) {
                             console.log(filedata);
-                            util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback);
+                            util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback, rmPath, fIndex);
                         }
                         var is_ok = false;
                         if (filedata['videoMediaMetadata'])  {
@@ -535,7 +566,7 @@ module.exports = function(sendWs) {
                         }
                         googleApi.googleDownloadMedia(transTime, filedata['alternateLink'], key, savePath, mediaType['hd'], function(err, is_stage) {
                             if(err) {
-                                util.handleError(err, callback, errerMedia, fileID, callback);
+                                util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                             }
                             if (is_stage) {
                                 errerMedia({hoerror: 2, message: 'timeout'}, fileID, function(err) {
@@ -564,11 +595,11 @@ module.exports = function(sendWs) {
                                             });
                                         }
                                     }
-                                }, 1081, rmPath);
+                                }, rmPath, fIndex, 1081);
                             } else {
                                 googleApi.googleApi('delete', data, function(err) {
                                     if (err) {
-                                        util.handleError(err, callback, errerMedia, fileID, callback);
+                                        util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                                     }
                                     this_obj.completeMedia(fileID, 3, function(err) {
                                         if (err) {
@@ -596,7 +627,7 @@ module.exports = function(sendWs) {
                                                 });
                                             }
                                         }
-                                    }, rmPath);
+                                    }, rmPath, fIndex);
                                 });
                             }
                         }, is_ok);
@@ -635,7 +666,7 @@ module.exports = function(sendWs) {
                         if (err) {
                             util.handleError(err, callback, errerMedia, fileID, callback);
                         }
-                        this_obj.completeMedia(fileID, 5, callback, null, number);
+                        this_obj.completeMedia(fileID, 5, callback, null, null, number);
                     });
                 }
             } else if (mediaType['type'] === 'present') {
@@ -649,7 +680,7 @@ module.exports = function(sendWs) {
                             if (err) {
                                 util.handleError(err, callback, errerMedia, fileID, callback);
                             }
-                            this_obj.completeMedia(fileID, 6, callback, null, number);
+                            this_obj.completeMedia(fileID, 6, callback, null, null, number);
                         });
                     });
                 } else {
@@ -670,7 +701,7 @@ module.exports = function(sendWs) {
                                 if (err) {
                                     util.handleError(err, callback, errerMedia, fileID, callback);
                                 }
-                                this_obj.completeMedia(fileID, 6, callback, null, number);
+                                this_obj.completeMedia(fileID, 6, callback, null, null, number);
                             });
                         });
                     });
@@ -1479,35 +1510,70 @@ module.exports = function(sendWs) {
         },
         checkMedia: function(callback){
             var this_obj = this;
-            mongo.orig("find", "storage", {'mediaType.timeout': {$exists: true}}, function(err, items){
+            mongo.orig("find", "storage", {mediaType: {$exists: true}}, function(err, items){
                 if(err) {
-                    util.handleError(err, next, callback, null);
+                    util.handleError(err, callback, callback);
                 }
-                console.log(items);
                 if (items.length > 0) {
-                    var filePath = null;
-                    var dbStats = null;
-                    var dbName = null;
-                    recur_check(0);
-                    function recur_check(index) {
-                        var mId = items[index]._id;
-                        var mAdult = items[index].adultonly
-                        filePath = util.getFileLocation(items[index].owner, items[index]._id);
-                        if (items[index].mediaType.key) {
-                            this_obj.handleMedia(items[index].mediaType, filePath, items[index]._id, items[index].name, items[index].mediaType.key, {_id: items[index].owner, perm: 1}, function (err) {
-                                sendWs({type: 'file', data: mId}, mAdult);
-                                if (err) {
-                                    util.handleError(err);
-                                }
-                                console.log('transcode done');
-                                console.log(new Date());
-                            });
+                    var timeoutItems = [];
+                    for (var i in items) {
+                        if (items[i].mediaType.type) {
+                            if (items[i].mediaType.timeout) {
+                                timeoutItems.push({item: items[i], mediaType: items[i].mediaType});
+                            }
                         } else {
-                            if (items[index].mediaType['realPath']) {
-                                if (fs.existsSync(filePath + '/' + items[index].mediaType['fileIndex'] + '_complete')) {
-                                    dbStats = fs.statSync(filePath + '/real/' + items[index].mediaType['realPath']);
-                                    dbName = path.basename(items[index].mediaType['realPath']);
-                                    this_obj.handleMediaUpload(items[index].mediaType, filePath, items[index]._id, dbName, dbStats['size'], {_id: items[index].owner, perm: 1}, function (err) {
+                            var is_empty = true;
+                            for (var j in items[i].mediaType) {
+                                is_empty = false;
+                                if (items[i].mediaType[j].timeout) {
+                                    timeoutItems.push({item: items[i], mediaType: items[i].mediaType[j]});
+                                }
+                            }
+                            if (is_empty) {
+                                mongo.orig("update", "storage", { _id: items[i]._id }, {$unset: {mediaType: ""}}, function(err, item){
+                                    if(err) {
+                                        util.handleError(err);
+                                    }
+                                    console.log('clean playlist mediaType');
+                                });
+                            }
+                        }
+                    }
+                    console.log(timeoutItems);
+                    if (timeoutItems.length > 0) {
+                        var filePath = null;
+                        var dbStats = null;
+                        var dbName = null;
+                        recur_check(0);
+                        function recur_check(index) {
+                            var mId = timeoutItems[index].item._id;
+                            var mAdult = timeoutItems[index].item.adultonly;
+                            filePath = util.getFileLocation(timeoutItems[index].item.owner, timeoutItems[index].item._id);
+                            if (timeoutItems[index].mediaType.key) {
+                                this_obj.handleMedia(timeoutItems[index].mediaType, filePath, timeoutItems[index].item._id, timeoutItems[index].item.name, timeoutItems[index].mediaType.key, {_id: timeoutItems[index].item.owner, perm: 1}, function (err) {
+                                    sendWs({type: 'file', data: mId}, mAdult);
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    console.log('transcode done');
+                                    console.log(new Date());
+                                });
+                            } else {
+                                if (timeoutItems[index].mediaType['realPath']) {
+                                    if (fs.existsSync(filePath + '/' + timeoutItems[index].mediaType['fileIndex'] + '_complete')) {
+                                        dbStats = fs.statSync(filePath + '/real/' + timeoutItems[index].mediaType['realPath']);
+                                        dbName = path.basename(timeoutItems[index].mediaType['realPath']);
+                                        this_obj.handleMediaUpload(timeoutItems[index].mediaType, filePath, timeoutItems[index].item._id, dbName, dbStats['size'], {_id: timeoutItems[index].item.owner, perm: 1}, function (err) {
+                                            sendWs({type: 'file', data: mId}, mAdult);
+                                            if (err) {
+                                                util.handleError(err);
+                                            }
+                                            console.log('transcode done');
+                                            console.log(new Date());
+                                        });
+                                    }
+                                } else {
+                                    this_obj.handleMediaUpload(timeoutItems[index].mediaType, filePath, timeoutItems[index].item._id, timeoutItems[index].item.name, timeoutItems[index].item.size, {_id: timeoutItems[index].item.owner, perm: 1}, function (err) {
                                         sendWs({type: 'file', data: mId}, mAdult);
                                         if (err) {
                                             util.handleError(err);
@@ -1516,42 +1582,47 @@ module.exports = function(sendWs) {
                                         console.log(new Date());
                                     });
                                 }
+                            }
+                            index++;
+                            if (index < timeoutItems.length) {
+                                setTimeout(function(){
+                                    recur_check(index);
+                                }, 30000);
                             } else {
-                                this_obj.handleMediaUpload(items[index].mediaType, filePath, items[index]._id, items[index].name, items[index].size, {_id: items[index].owner, perm: 1}, function (err) {
-                                    sendWs({type: 'file', data: mId}, mAdult);
-                                    if (err) {
-                                        util.handleError(err);
-                                    }
-                                    console.log('transcode done');
-                                    console.log(new Date());
-                                });
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
                             }
                         }
-                        index++;
-                        if (index < items.length) {
-                            setTimeout(function(){
-                                recur_check(index);
-                            }, 30000);
-                        } else {
-                            setTimeout(function(){
-                                callback(null);
-                            }, 0);
-                        }
+                    } else {
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
                     }
+                } else {
+                    setTimeout(function(){
+                        callback(null);
+                    }, 0);
                 }
             });
         }
     };
 };
-function errerMedia(errMedia, fileID, callback, hd, rmPath) {
+function errerMedia(errMedia, fileID, callback, rmPath, fileIndex, hd) {
     if (errMedia.hoerror === 2 && errMedia.message === 'timeout') {
         var data = {"mediaType.timeout": true};
-        if (hd) {
-            data['mediaType.hd'] = hd;
-            data['status'] = 3;
-        }
         if (rmPath) {
+            data = {};
+            data["mediaType." + fileIndex + ".timeout"] = true;
+            if (hd) {
+                data['mediaType.' + fileIndex + '.hd'] = hd;
+            }
             data['status'] = 9;
+        } else {
+            if (hd) {
+                data['mediaType.hd'] = hd;
+                data['status'] = 3;
+            }
         }
         mongo.orig("update", "storage", { _id: fileID }, {$set: data}, function(err, item){
             if(err) {
@@ -1563,7 +1634,12 @@ function errerMedia(errMedia, fileID, callback, hd, rmPath) {
             }, 0);
         });
     } else {
-        mongo.orig("update", "storage", { _id: fileID }, {$set: {"mediaType.err": errMedia}}, function(err, item){
+        var data = {"mediaType.err": errMedia};
+        if (rmPath) {
+            data = {};
+            data["mediaType." + fileIndex +".err"] = errMedia;
+        }
+        mongo.orig("update", "storage", { _id: fileID }, {$set: data}, function(err, item){
             if(err) {
                 util.handleError(err, callback, callback);
             }
