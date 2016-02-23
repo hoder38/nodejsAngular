@@ -711,7 +711,7 @@ module.exports = {
                 }
                 var list = [];
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-4));
+                date = new Date(new Date(date).setDate(date.getDate()-1));
                 var docDate = date.getDate() + ' ' + monthNameShorts[date.getMonth()]+'. '+date.getFullYear();
                 console.log(docDate);
                 if (raw_list[1] === docDate) {
@@ -1606,6 +1606,7 @@ module.exports = {
                 var list_match = false;
                 var data = null;
                 var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
                 var docDate = date.getDate() + ' ' + monthNameShorts[date.getMonth()]+' '+date.getFullYear();
                 if (date.getDate() < 10) {
                     docDate = '0' + docDate;
