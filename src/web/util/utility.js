@@ -321,5 +321,22 @@ module.exports = {
                 });
             }
         });
+    },
+    torrent2Magnet: function(torInfo) {
+        if (!torInfo.infoHash) {
+            console.log('miss infoHash');
+            return false;
+        }
+        var magnet = 'magnet:?xt=urn:btih:' + torInfo.infoHash + '&dn=';
+        if (torInfo.announceList) {
+            for (var i = 0; i < 10; i++) {
+                magnet = magnet + '&tr=' + encodeURIComponent(torInfo.announceList[i]);
+            }
+        } else if (torInfo.announce) {
+            for (var i = 0; i < 10; i++) {
+                magnet = magnet + '&tr=' + encodeURIComponent(torInfo.announce[i]);
+            }
+        }
+        return magnet;
     }
 };

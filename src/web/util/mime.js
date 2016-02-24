@@ -2,6 +2,7 @@
 var ext_filename = /(?:\.([^.]+))?$/;
 var image_arr = ['jpg', 'gif', 'bmp', 'jpeg', 'png'];
 var zip_arr = ['zip', 'rar', '7z', 'cbr', 'cbz'];
+var tor_arr = ['torrent'];
 //vlog
 //var video_arr = ['mp4', 'rm', 'mts', 'm2ts', '3gp2', '3gp', 'mpg', 'asf', 'mpeg', 'avi', 'mov', 'wmv', 'flv', 'rmvb', 'webm', 'm4v', 'f4v', 'mkv'];
 var video_vlog_arr = ['rm', 'rmvb'];
@@ -127,6 +128,19 @@ module.exports = {
             return false;
         }
         if (zip_arr.indexOf(extName) !== -1) {
+            return extName;
+        } else {
+            return false;
+        }
+    },
+    isTorrent: function(name) {
+        var result = name.match(ext_filename), extName = '';
+        if (result && result[1]) {
+            extName = result[1].toLowerCase();
+        } else {
+            return false;
+        }
+        if (tor_arr.indexOf(extName) !== -1) {
             return extName;
         } else {
             return false;

@@ -3019,6 +3019,10 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             }
         }
     };
+    uploader.onErrorItem = function(fileItem, response, status, headers) {
+        //console.info('onErrorItem', fileItem, response, status, headers);
+        addAlert(response);
+    };
 
     $scope.doLogout = function(login_url){
         login_url = typeof login_url !== 'undefined' ? login_url : '';

@@ -97,6 +97,7 @@ var express = require('express'),
     server = https.createServer(credentials, app),
     mkdirp = require('mkdirp'),
     readline = require('readline'),
+    readTorrent = require('read-torrent');
     sessionStore = require("../models/session-tool.js")(express_session);
 
 var torrentStream = require('torrent-stream');
@@ -322,7 +323,96 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                     console.log('save file error!!!');
                     util.handleError(err, next, res);
                 });
-                stream.on('close', streamClose);
+                if (mime.isTorrent(req.files.file.name)) {
+                    stream.on('close', function() {
+                        readTorrent(filePath, function(err, torrent) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            var magnet = util.torrent2Magnet(torrent)
+                            if (magnet) {
+                                console.log(magnet);
+                                var encodeTorrent = util.isValidString(magnet, 'url');
+                                if (encodeTorrent === false) {
+                                    util.handleError({hoerror: 2, message: "magnet is not vaild"}, next, res);
+                                }
+                                var shortTorrent = magnet.match(/^magnet:[^&]+/);
+                                if (shortTorrent) {
+                                    //delete torrent file
+                                    shortTorrent = shortTorrent[0];
+                                    fs.unlink(filePath, function(err) {
+                                        if (err) {
+                                            util.handleError(err, next, res);
+                                        }
+                                        //create folder
+                                        mkdirp(filePath, function(err) {
+                                            if(err) {
+                                                console.log(filePath);
+                                                util.handleError(err, next, res);
+                                            }
+                                            //upload magnet
+                                            var torrentHash = shortTorrent.match(/[^:]+$/);
+                                            mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                                                if (err) {
+                                                    util.handleError(err, next, res);
+                                                }
+                                                if (items.length === 0) {
+                                                    var realPath = filePath + '/real';
+                                                    var engine = torrentStream(magnet, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
+                                                    var playList = [];
+                                                    var tag_arr = ['torrent', 'playlist'];
+                                                    var opt_arr = [];
+                                                    var mediaType = null, mediaTag = null;
+                                                    engine.on('ready', function() {
+                                                        engine.files.forEach(function(file) {
+                                                            //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
+                                                            playList.push(file.path);
+                                                            console.log(file.name);
+                                                            mediaType = mime.mediaType(file.name);
+                                                                if (mediaType) {
+                                                                mediaTag = mime.mediaTag(mediaType['type']);
+                                                                for (var i in mediaTag.def) {
+                                                                    if (tag_arr.indexOf(mediaTag.def[i]) === -1) {
+                                                                        tag_arr.push(mediaTag.def[i]);
+                                                                    }
+                                                                }
+                                                                for (var i in mediaTag.opt) {
+                                                                    if (tag_arr.indexOf(mediaTag.opt[i]) === -1 && opt_arr.indexOf(mediaTag.opt[i]) === -1) {
+                                                                        opt_arr.push(mediaTag.opt[i]);
+                                                                    }
+                                                                }
+                                                            }
+                                                            //}
+                                                        });
+                                                        //insert
+                                                        if (playList.length <= 0) {
+                                                            engine.destroy();
+                                                            util.handleError({hoerror: 2, message: "empty content!!!"}, next, res);
+                                                        }
+                                                        var filename = 'Playlist torrent ';
+                                                        if (engine.torrent.name) {
+                                                            filename = 'Playlist ' + engine.torrent.name;
+                                                        }
+                                                        engine.destroy();
+                                                        streamClose(filename, tag_arr, opt_arr, {magnet: encodeTorrent, playList: playList});
+                                                    });
+                                                } else {
+                                                    util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                                                }
+                                            });
+                                        });
+                                    });
+                                } else {
+                                    util.handleError({hoerror: 2, message: "magnet create fail"}, next, res);
+                                }
+                            } else {
+                                util.handleError({hoerror: 2, message: "magnet create fail"}, next, res);
+                            }
+                        });
+                    });
+                } else {
+                    stream.on('close', streamClose);
+                }
                 stream.pipe(fs.createWriteStream(filePath));
             });
         } else {
@@ -331,15 +421,107 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                 console.log('save file error!!!');
                 util.handleError(err, next, res);
             });
-            stream.on('close', streamClose);
+            if (mime.isTorrent(req.files.file.name)) {
+                stream.on('close', function() {
+                    readTorrent(filePath, function(err, torrent) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        var magnet = util.torrent2Magnet(torrent)
+                        if (magnet) {
+                            console.log(magnet);
+                            var encodeTorrent = util.isValidString(magnet, 'url');
+                            if (encodeTorrent === false) {
+                                util.handleError({hoerror: 2, message: "magnet is not vaild"}, next, res);
+                            }
+                            var shortTorrent = magnet.match(/^magnet:[^&]+/);
+                            if (shortTorrent) {
+                                //delete torrent file
+                                shortTorrent = shortTorrent[0];
+                                fs.unlink(filePath, function(err) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    //create folder
+                                    mkdirp(filePath, function(err) {
+                                        if(err) {
+                                            console.log(filePath);
+                                            util.handleError(err, next, res);
+                                        }
+                                        //upload magnet
+                                        var torrentHash = shortTorrent.match(/[^:]+$/);
+                                        mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            if (items.length === 0) {
+                                                var realPath = filePath + '/real';
+                                                var engine = torrentStream(magnet, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
+                                                var playList = [];
+                                                var tag_arr = ['torrent', 'playlist'];
+                                                var opt_arr = [];
+                                                var mediaType = null, mediaTag = null;
+                                                engine.on('ready', function() {
+                                                    engine.files.forEach(function(file) {
+                                                        //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
+                                                        playList.push(file.path);
+                                                        console.log(file.name);
+                                                        mediaType = mime.mediaType(file.name);
+                                                            if (mediaType) {
+                                                            mediaTag = mime.mediaTag(mediaType['type']);
+                                                            for (var i in mediaTag.def) {
+                                                                if (tag_arr.indexOf(mediaTag.def[i]) === -1) {
+                                                                    tag_arr.push(mediaTag.def[i]);
+                                                                }
+                                                            }
+                                                            for (var i in mediaTag.opt) {
+                                                                if (tag_arr.indexOf(mediaTag.opt[i]) === -1 && opt_arr.indexOf(mediaTag.opt[i]) === -1) {
+                                                                    opt_arr.push(mediaTag.opt[i]);
+                                                                }
+                                                            }
+                                                        }
+                                                        //}
+                                                    });
+                                                    //insert
+                                                    if (playList.length <= 0) {
+                                                        engine.destroy();
+                                                        util.handleError({hoerror: 2, message: "empty content!!!"}, next, res);
+                                                    }
+                                                    var filename = 'Playlist torrent ';
+                                                    if (engine.torrent.name) {
+                                                        filename = 'Playlist ' + engine.torrent.name;
+                                                    }
+                                                    engine.destroy();
+                                                    streamClose(filename, tag_arr, opt_arr, {magnet: encodeTorrent, playList: playList});
+                                                });
+                                            } else {
+                                                util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                                            }
+                                        });
+                                    });
+                                });
+                            } else {
+                                util.handleError({hoerror: 2, message: "magnet create fail"}, next, res);
+                            }
+                        } else {
+                            util.handleError({hoerror: 2, message: "magnet create fail"}, next, res);
+                        }
+                    });
+                });
+            } else {
+                stream.on('close', streamClose);
+            }
             stream.pipe(fs.createWriteStream(filePath));
         }
-        function streamClose(){
+        function streamClose(filename, tag_arr, opt_arr, db_obj){
             fs.unlink(req.files.file.path, function(err) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
                 var name = util.toValidName(req.files.file.name);
+                if (filename) {
+                    name = util.toValidName(filename);
+                }
                 if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
                     name = mime.addPost(name, '1');
                 }
@@ -350,7 +532,11 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                 data['name'] = name;
                 data['owner'] = oUser_id;
                 data['utime'] = utime;
-                data['size'] = req.files.file.size;
+                if (db_obj && db_obj['magnet']) {
+                    data['size'] = 0;
+                } else {
+                    data['size'] = req.files.file.size;
+                }
                 data['count'] = 0;
                 data['first'] = 1;
                 data['recycle'] = 0;
@@ -360,7 +546,11 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                     data['adultonly'] = 0;
                 }
                 data['untag'] = 1;
-                data['status'] = 0;//media type
+                if (db_obj && db_obj['magnet']) {
+                    data['status'] = 9;//media type
+                } else {
+                    data['status'] = 0;//media type
+                }
                 mediaHandleTool.handleTag(filePath, data, name, '', 0, function(err, mediaType, mediaTag, DBdata) {
                     if (err) {
                         util.handleError(err, next, res);
@@ -397,6 +587,50 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                     if (mediaTag.def.indexOf(normal) === -1) {
                         mediaTag.def.push(normal);
                     }
+                    if (tag_arr) {
+                        var is_d = false;
+                        var oIndex = -1;
+                        var option_cht = mime.getOptionTag('cht');
+                        var option_eng = mime.getOptionTag('eng');
+                        for (var i in tag_arr) {
+                            normal = tagTool.normalizeTag(tag_arr[i]);
+                            is_d = tagTool.isDefaultTag(normal);
+                            if (!is_d) {
+                                if (mediaTag.def.indexOf(normal) === -1) {
+                                    mediaTag.def.push(normal);
+                                    oIndex = option_cht.indexOf(normal);
+                                    if (oIndex !== -1) {
+                                        if (mediaTag.def.indexOf(option_eng[oIndex]) === -1) {
+                                            mediaTag.def.push(option_eng[oIndex]);
+                                        }
+                                    } else {
+                                        oIndex = option_eng.indexOf(normal);
+                                        if (oIndex !== -1) {
+                                            if (mediaTag.def.indexOf(option_cht[oIndex]) === -1) {
+                                                mediaTag.def.push(option_cht[oIndex]);
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (is_d.index === 0) {
+                                    DBdata['adultonly'] = 1;
+                                }
+                            }
+                        }
+                    }
+                    if (opt_arr) {
+                        var is_d = false;
+                        for (var i in opt_arr) {
+                            normal = tagTool.normalizeTag(opt_arr[i]);
+                            is_d = tagTool.isDefaultTag(normal);
+                            if (!is_d) {
+                                if (mediaTag.def.indexOf(normal) === -1 && mediaTag.opt.indexOf(normal) === -1) {
+                                    mediaTag.opt.push(normal);
+                                }
+                            }
+                        }
+                    }
                     var tags = tagTool.searchTags(req.session);
                     if (tags) {
                         var parentList = tags.getArray();
@@ -427,6 +661,9 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                     }
                     DBdata['tags'] = mediaTag.def;
                     DBdata[oUser_id] = mediaTag.def;
+                    for (var i in db_obj) {
+                        DBdata[i] = db_obj[i];
+                    }
                     mongo.orig("insert", "storage", DBdata, function(err, item){
                         if(err) {
                             util.handleError(err, next, res);
@@ -523,7 +760,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                 util.handleError(err, next, res);
                             }
                             if (items.length === 0) {
-                                var realPath = folderPath + '/real';
+                                var realPath = filePath + '/real';
                                 var engine = torrentStream(url, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
                                 var playList = [];
                                 var tag_arr = ['torrent', 'playlist'];
@@ -764,13 +1001,100 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 } else {
                     api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                         if (err) {
-                            sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
                             util.handleError(err, next, res);
                         }
                         if (!filename) {
                             filename = path.basename(pathname);
                         }
-                        streamClose(filename, [], []);
+                        console.log(filename);
+                        if (mime.isTorrent(filename)) {
+                            readTorrent(filePath, function(err, torrent) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                var magnet = util.torrent2Magnet(torrent)
+                                if (magnet) {
+                                    console.log(magnet);
+                                    encodeTorrent = util.isValidString(magnet, 'url');
+                                    if (encodeTorrent === false) {
+                                        util.handleError({hoerror: 2, message: "magnet is not vaild"}, next, res);
+                                    }
+                                    shortTorrent = magnet.match(/^magnet:[^&]+/);
+                                    if (shortTorrent) {
+                                        //delete torrent file
+                                        shortTorrent = shortTorrent[0];
+                                        fs.unlink(filePath, function(err) {
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            //create folder
+                                            mkdirp(filePath, function(err) {
+                                                if(err) {
+                                                    console.log(filePath);
+                                                    util.handleError(err, next, res);
+                                                }
+                                                //upload magnet
+                                                var torrentHash = shortTorrent.match(/[^:]+$/);
+                                                mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                                                    if (err) {
+                                                        util.handleError(err, next, res);
+                                                    }
+                                                    if (items.length === 0) {
+                                                        var realPath = filePath + '/real';
+                                                        var engine = torrentStream(magnet, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
+                                                        var playList = [];
+                                                        var tag_arr = ['torrent', 'playlist'];
+                                                        var opt_arr = [];
+                                                        var mediaType = null, mediaTag = null;
+                                                        engine.on('ready', function() {
+                                                            engine.files.forEach(function(file) {
+                                                                //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
+                                                                playList.push(file.path);
+                                                                console.log(file.name);
+                                                                mediaType = mime.mediaType(file.name);
+                                                                    if (mediaType) {
+                                                                    mediaTag = mime.mediaTag(mediaType['type']);
+                                                                    for (var i in mediaTag.def) {
+                                                                        if (tag_arr.indexOf(mediaTag.def[i]) === -1) {
+                                                                            tag_arr.push(mediaTag.def[i]);
+                                                                        }
+                                                                    }
+                                                                    for (var i in mediaTag.opt) {
+                                                                        if (tag_arr.indexOf(mediaTag.opt[i]) === -1 && opt_arr.indexOf(mediaTag.opt[i]) === -1) {
+                                                                            opt_arr.push(mediaTag.opt[i]);
+                                                                        }
+                                                                    }
+                                                                }
+                                                                //}
+                                                            });
+                                                            //insert
+                                                            if (playList.length <= 0) {
+                                                                engine.destroy();
+                                                                util.handleError({hoerror: 2, message: "empty content!!!"}, next, res);
+                                                            }
+                                                            var filename = 'Playlist torrent ';
+                                                            if (engine.torrent.name) {
+                                                                filename = 'Playlist ' + engine.torrent.name;
+                                                            }
+                                                            engine.destroy();
+                                                            streamClose(filename, tag_arr, opt_arr, {magnet: encodeTorrent, playList: playList});
+                                                        });
+                                                    } else {
+                                                        util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                                                    }
+                                                });
+                                            });
+                                        });
+                                    } else {
+                                        util.handleError({hoerror: 2, message: "magnet create fail"}, next, res);
+                                    }
+                                } else {
+                                    util.handleError({hoerror: 2, message: "magnet create fail"}, next, res);
+                                }
+                            });
+                        } else {
+                            streamClose(filename, [], []);
+                        }
                     });
                 }
             });
@@ -787,7 +1111,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             util.handleError(err, next, res);
                         }
                         if (items.length === 0) {
-                            var realPath = folderPath + '/real';
+                            var realPath = filePath + '/real';
                             var engine = torrentStream(url, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
                             var playList = [];
                             var tag_arr = ['torrent', 'playlist'];
@@ -1025,13 +1349,100 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
             } else {
                 api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                     if (err) {
-                        sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
                         util.handleError(err, next, res);
                     }
                     if (!filename) {
                         filename = path.basename(pathname);
                     }
-                    streamClose(filename, []);
+                    console.log(filename);
+                    if (mime.isTorrent(filename)) {
+                        readTorrent(filePath, function(err, torrent) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            var magnet = util.torrent2Magnet(torrent)
+                            if (magnet) {
+                                console.log(magnet);
+                                encodeTorrent = util.isValidString(magnet, 'url');
+                                if (encodeTorrent === false) {
+                                    util.handleError({hoerror: 2, message: "magnet is not vaild"}, next, res);
+                                }
+                                shortTorrent = magnet.match(/^magnet:[^&]+/);
+                                if (shortTorrent) {
+                                    //delete torrent file
+                                    shortTorrent = shortTorrent[0];
+                                    fs.unlink(filePath, function(err) {
+                                        if (err) {
+                                            util.handleError(err, next, res);
+                                        }
+                                        //create folder
+                                        mkdirp(filePath, function(err) {
+                                            if(err) {
+                                                console.log(filePath);
+                                                util.handleError(err, next, res);
+                                            }
+                                            //upload magnet
+                                            var torrentHash = shortTorrent.match(/[^:]+$/);
+                                            mongo.orig("find", "storage", {magnet: {$regex: torrentHash[0], $options: 'i'}}, {limit: 1}, function(err, items){
+                                                if (err) {
+                                                    util.handleError(err, next, res);
+                                                }
+                                                if (items.length === 0) {
+                                                    var realPath = filePath + '/real';
+                                                    var engine = torrentStream(magnet, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
+                                                    var playList = [];
+                                                    var tag_arr = ['torrent', 'playlist'];
+                                                    var opt_arr = [];
+                                                    var mediaType = null, mediaTag = null;
+                                                    engine.on('ready', function() {
+                                                        engine.files.forEach(function(file) {
+                                                            //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
+                                                            playList.push(file.path);
+                                                            console.log(file.name);
+                                                            mediaType = mime.mediaType(file.name);
+                                                                if (mediaType) {
+                                                                mediaTag = mime.mediaTag(mediaType['type']);
+                                                                for (var i in mediaTag.def) {
+                                                                    if (tag_arr.indexOf(mediaTag.def[i]) === -1) {
+                                                                        tag_arr.push(mediaTag.def[i]);
+                                                                    }
+                                                                }
+                                                                for (var i in mediaTag.opt) {
+                                                                    if (tag_arr.indexOf(mediaTag.opt[i]) === -1 && opt_arr.indexOf(mediaTag.opt[i]) === -1) {
+                                                                        opt_arr.push(mediaTag.opt[i]);
+                                                                    }
+                                                                }
+                                                            }
+                                                            //}
+                                                        });
+                                                        //insert
+                                                        if (playList.length <= 0) {
+                                                            engine.destroy();
+                                                            util.handleError({hoerror: 2, message: "empty content!!!"}, next, res);
+                                                        }
+                                                        var filename = 'Playlist torrent ';
+                                                        if (engine.torrent.name) {
+                                                            filename = 'Playlist ' + engine.torrent.name;
+                                                        }
+                                                        engine.destroy();
+                                                        streamClose(filename, tag_arr, opt_arr, {magnet: encodeTorrent, playList: playList});
+                                                    });
+                                                } else {
+                                                    util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                                                }
+                                            });
+                                        });
+                                    });
+                                } else {
+                                    util.handleError({hoerror: 2, message: "magnet create fail"}, next, res);
+                                }
+                            } else {
+                                util.handleError({hoerror: 2, message: "magnet create fail"}, next, res);
+                            }
+                        });
+                    } else {
+                        streamClose(filename, []);
+                    }
                 });
             }
         }
