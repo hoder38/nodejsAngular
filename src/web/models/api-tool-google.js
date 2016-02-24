@@ -674,7 +674,7 @@ var exports = module.exports = {
                                         util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                                     }
                                 }
-                            } else if (e.code === 'HPE_INVALID_CONSTANT'){
+                            } else if (e.code === 'HPE_INVALID_CONSTANT' || e.code === 'EAFNOSUPPORT'){
                                 this_obj.getApiQueue();
                                 util.handleError(e, callback, callback, 400, null);
                             }

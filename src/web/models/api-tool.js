@@ -249,7 +249,7 @@ function postData(fields, files, options, headers, callback, filePath, not_utf8)
     }
     request.on('error', function(e) {
         console.log(post_options);
-        if (e.code === 'HPE_INVALID_CONSTANT' || e.code === 'ECONNREFUSED' || e.code === 'ENOTFOUND' || e.code === 'ETIMEDOUT') {
+        if (e.code === 'HPE_INVALID_CONSTANT' || e.code === 'ECONNREFUSED' || e.code === 'ENOTFOUND' || e.code === 'ETIMEDOUT' || e.code === 'EAFNOSUPPORT') {
             util.handleError(e, callback, callback, 400, null);
         } else {
             util.handleError(e);
@@ -531,7 +531,7 @@ module.exports = {
                                 util.handleError({hoerror: 2, message: "timeout"}, callback, callback);
                             }
                         }
-                    } else if (e.code === 'HPE_INVALID_CONSTANT') {
+                    } else if (e.code === 'HPE_INVALID_CONSTANT' || e.code === 'EAFNOSUPPORT') {
                         if (is_file) {
                             this_obj.getApiQueue();
                         }
