@@ -497,8 +497,8 @@ rl.on('line', function(line){
         break;
         default:
         console.log('help:');
-        console.log('stock updateType [single index]');
-        console.log('drive batchNumber [single username downloadIndex]');
+        console.log('stock updateType (start from 1) [single index]');
+        console.log('drive batchNumber [single username] [downloadIndex]');
         console.log('external type [clear]');
         console.log('complete [add]');
     }

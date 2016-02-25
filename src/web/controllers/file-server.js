@@ -5312,7 +5312,7 @@ function autoDoc(userlist, index, callback) {
                 }
             });
         }
-        if (downloadTime.getHours() === 6) {
+        if (downloadTime.getHours() === 11) {
             download_ext_doc(0, doc_type_0);
         } else if (downloadTime.getHours() === 17) {
             download_ext_doc(0, doc_type_1);
