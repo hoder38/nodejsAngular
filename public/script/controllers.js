@@ -557,7 +557,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
-    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, save2local: false, save2drive: false, recover: false, delMedia: false, title: '', item: null};
+    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, save2local: false, save2drive: false, recover: false, delMedia: false, allDownload: false, title: '', item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -2162,6 +2162,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.subscription = false;
             this.$parent.toolList.save2local = false;
             this.$parent.toolList.save2drive = false;
+            this.$parent.toolList.allDownload = false;
             confirm_str = item;
         } else {
             if (item.status === 7 || item.status === 8 || item.status === 9 || item.thumb) {
@@ -2170,6 +2171,11 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             } else {
                 this.$parent.toolList.download = true;
                 this.$parent.toolList.save2drive = true;
+            }
+            if (item.status === 9) {
+                this.$parent.toolList.allDownload = true;
+            } else {
+                this.$parent.toolList.allDownload = false;
             }
             this.$parent.toolList.dir = false;
             if (item.isOwn) {
@@ -3591,9 +3597,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             if (result.loginOK) {
                 $window.location.href = $location.path();
             }
-            console.log(result);
+            //console.log(result);
             if (result.start) {
-                addAlert('video start buffering, Mp4 may preview');
+                addAlert('File start buffering, Mp4 may preview');
             } else {
                 this_obj.size = result.ret_size;
                 if (result.newBuffer) {
@@ -3611,6 +3617,33 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     }
                 }
                 this_obj.complete = result.complete;
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
+    }
+
+    $scope.downloadAll = function() {
+        if (!this.toolList.item) {
+            return;
+        }
+        var torrentApi = $resource($scope.main_url + '/api/torrent/all/download/' + this.toolList.item.id, {}, {
+            'allDownload': { method:'GET', withCredentials: true }
+        });
+        torrentApi.allDownload({}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            }
+            if (result.complete) {
+                addAlert('download complete!!!');
+            } else {
+                addAlert('starting download');
             }
         }, function(errorResult) {
             if (errorResult.status === 400) {

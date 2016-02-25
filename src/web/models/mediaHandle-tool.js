@@ -244,13 +244,13 @@ module.exports = function(sendWs) {
                 if(err) {
                     util.handleError(err, callback, callback);
                 }
-                if (rmPath) {
+                /*if (rmPath) {
                     fs.unlink(rmPath, function(err) {
                         if (err) {
                             util.handleError(err);
                         }
                     });
-                }
+                }*/
                 setTimeout(function(){
                     callback(null);
                 }, 0);
