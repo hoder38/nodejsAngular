@@ -1285,6 +1285,7 @@ module.exports = {
                 var list_match = false;
                 var data = null;
                 var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
                 var docDate = date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate();
                 console.log(docDate);
                 for (var i in raw_list) {
@@ -1399,11 +1400,11 @@ module.exports = {
                                                 err.hoerror = 2;
                                                 util.handleError(err, callback, callback);
                                             }
-                                            raw_list = raw_data.match(/>張貼日期：\d\d\d\d\/\d\d?\/\d\d?/);
+                                            raw_list = raw_data.match(/>張貼日期：(\d\d\d\d\/\d\d?\/\d\d?)/);
                                             if (!raw_list) {
                                                 util.handleError({hoerror: 2, message: 'cannot find sta latest'}, callback, callback);
                                             }
-                                            if (raw_list[0] === docDate) {
+                                            if (raw_list[1] === docDate) {
                                                 list.push({date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName('失業率'), url: list_match[1]});
                                             }
                                             setTimeout(function(){
