@@ -3695,6 +3695,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res,
 });
 
 function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
+    console.log(torrent_pool.length);
     var shortTorrent = null;
     var realPath = null;
     var bufferPath = null;

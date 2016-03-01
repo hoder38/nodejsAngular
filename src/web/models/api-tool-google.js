@@ -1146,6 +1146,7 @@ var exports = module.exports = {
         }, img_threshold);
     },
     setApiQueue: function(name, param) {
+        console.log(api_ing);
         if (api_ing >= config_glb.api_limit) {
             console.log('reach limit');
             api_pool.push({fun_name: name, fun_param: param});
@@ -1158,6 +1159,7 @@ var exports = module.exports = {
         }
     },
     getApiQueue: function() {
+        console.log(api_ing);
         var this_obj = this;
         if (api_ing > 0) {
             api_ing--;
@@ -1165,6 +1167,7 @@ var exports = module.exports = {
         var item = api_pool.splice(0, 1)[0];
         if (item) {
             console.log('go queue');
+            console.log(api_pool.length);
             console.log(item.fun_name);
             console.log(item.fun_param);
             setTimeout(function(){
