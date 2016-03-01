@@ -238,10 +238,10 @@
                 <a ng-click="itemNameNew = true; itemNameNewFocus = true;newItemName = toolList.item.name;" href="#">edit</a>
             </li>
             <li ng-show="toolList.upload">
-                <a confirmed-click="uploadSub = true;toolSub = true" ng-confirm-click="只保留上一個版本的字幕，完成後請刷新頁面，才會更新字幕" href="#">upload subtitle</a>
+                <a confirmed-click="uploadSub = true;toolSub = true" ng-confirm-click="只保留上一個版本的字幕" href="#">upload subtitle</a>
             </li>
             <li ng-show="toolList.searchSub">
-                <a confirmed-click="searchSub = true;toolSearchSub = true;subNameFocus = true;subName = '';subEpisode = ''" ng-confirm-click="只保留上一個版本的字幕，完成後請刷新頁面，才會更新字幕" href="#">search subtitle</a>
+                <a confirmed-click="searchSub = true;toolSearchSub = true;subNameFocus = true;subName = '';subEpisode = ''" ng-confirm-click="只保留上一個版本的字幕" href="#">search subtitle</a>
             </li>
             <li ng-show="toolList.recover">
                 <a confirmed-click="fileRecover()" ng-confirm-click="Would you sure to recover this file?" href="#">recover</a>
