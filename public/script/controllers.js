@@ -2167,9 +2167,12 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         } else {
             if (item.status === 7 || item.status === 8 || item.status === 9 || item.thumb) {
                 this.$parent.toolList.download = false;
-                this.$parent.toolList.save2drive = false;
             } else {
                 this.$parent.toolList.download = true;
+            }
+            if (item.status === 7 || item.status === 8 || item.thumb) {
+                this.$parent.toolList.save2drive = false;
+            } else {
                 this.$parent.toolList.save2drive = true;
             }
             if (item.status === 9) {

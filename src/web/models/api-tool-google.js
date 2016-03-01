@@ -196,6 +196,25 @@ function sendAPI(method, data, callback) {
             }, 0);
         });
         break;
+        case 'create':
+        if (!data['name'] || !data['parent']) {
+            exports.getApiQueue();
+            util.handleError({hoerror: 2, message: 'upload parameter lost!!!'}, callback, callback);
+        }
+        param['resource'] = {
+            title: data['name'],
+            mimeType: "application/vnd.google-apps.folder",
+            parents: [{id: data['parent']}]
+        };
+        drive.files.insert(param, function(err, metadata) {
+            if (err && err.code !== 'ECONNRESET') {
+                util.handleError(err, callback, callback, null);
+            }
+            setTimeout(function(){
+                callback(null, metadata);
+            }, 0);
+        });
+        break;
         case 'upload':
         if (!data['type'] || !data['name'] || (!data['filePath'] && !data['body'])) {
             exports.getApiQueue();

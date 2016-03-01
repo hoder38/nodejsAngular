@@ -360,7 +360,7 @@ module.exports = function(sendWs) {
                                                         } else {
                                                             if (mediaType['realPath']) {
                                                                 var newName = {};
-                                                                newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                                                newName['playList.' + mediaType['fileIndex']] = mime.changeExt(mediaType['realPath'], 'mp4');
                                                                 mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
                                                                     if(err) {
                                                                         util.handleError(err, callback, callback);
@@ -453,7 +453,7 @@ module.exports = function(sendWs) {
                             } else {
                                 if (mediaType['realPath']) {
                                     var newName = {};
-                                        newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                        newName['playList.' + mediaType['fileIndex']] = mime.changeExt(mediaType['realPath'], 'mp4');
                                         mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
                                             if(err) {
                                                 util.handleError(err, callback, callback);
@@ -493,7 +493,7 @@ module.exports = function(sendWs) {
                                 } else {
                                     if (mediaType['realPath']) {
                                         var newName = {};
-                                        newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                        newName['playList.' + mediaType['fileIndex']] = mime.changeExt(mediaType['realPath'], 'mp4');
                                         mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
                                             if(err) {
                                                 util.handleError(err, callback, callback);
@@ -526,7 +526,7 @@ module.exports = function(sendWs) {
                                     } else {
                                         if (mediaType['realPath']) {
                                             var newName = {};
-                                            newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                            newName['playList.' + mediaType['fileIndex']] = mime.changeExt(mediaType['realPath'], 'mp4');
                                             mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
                                                 if(err) {
                                                     util.handleError(err, callback, callback);
@@ -575,7 +575,7 @@ module.exports = function(sendWs) {
                                     } else {
                                         if (mediaType['realPath']) {
                                             var newName = {};
-                                            newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                            newName['playList.' + mediaType['fileIndex']] = mime.changeExt(mediaType['realPath'], 'mp4');
                                             mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
                                                 if(err) {
                                                     util.handleError(err, callback, callback);
@@ -607,7 +607,7 @@ module.exports = function(sendWs) {
                                         } else {
                                             if (mediaType['realPath']) {
                                                 var newName = {};
-                                                newName['playList.' + mediaType['fileIndex']] = mime.changeExt(fileName, 'mp4');
+                                                newName['playList.' + mediaType['fileIndex']] = mime.changeExt(mediaType['realPath'], 'mp4');
                                                 mongo.orig("update", "storage", { _id: fileID }, {$set: newName}, function(err, item){
                                                     if(err) {
                                                         util.handleError(err, callback, callback);

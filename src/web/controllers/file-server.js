@@ -2879,6 +2879,9 @@ app.get('/api/download2drive/:uid', function(req, res, next){
                 if (items.length < 1) {
                     util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
                 }
+                if (items[0].status === 7 || items[0].status === 8 || items[0].thumb) {
+                    util.handleError({hoerror: 2, message: "file cannot downlad!!!"}, next, res);
+                }
                 var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 var downloaded = null;
                 var downloaded_data = {folderId: userlist[0].auto, name: 'downloaded'};
@@ -2890,18 +2893,175 @@ app.get('/api/download2drive/:uid', function(req, res, next){
                         util.handleError({hoerror: 2, message: "do not have downloaded folder!!!"}, next, res);
                     }
                     downloaded = downloadedList[0].id;
-                    var data = {type: 'auto', name: items[0].name, filePath: filePath, parent: downloaded};
                     res.json({apiOK: true});
-                    googleApi.googleApi('upload', data, function(err, metadata) {
-                        if (err) {
-                            util.handleError(err);
-                            sendWs({type: req.user.username, data: 'save to drive fail: ' + err.message}, 0);
+                    var data = {type: 'auto', name: items[0].name, filePath: filePath, parent: downloaded};
+                    if (items[0].status === 9) {
+                        if (items[0]['playList'].length > 0) {
+                            var comPath = null;
+                            var folderArr = [];
+                            var fileArr = [];
+                            var dirname = null;
+                            var isExist = false;
+                            var tempArr = null;
+                            for (var i in items[0]['playList']) {
+                                comPath = filePath + '/' + i + '_complete';
+                                if (fs.existsSync(comPath)) {
+                                    dirname = path.dirname(items[0]['playList'][i]);
+                                    fileArr.push({name: path.basename(items[0]['playList'][i]), filePath: comPath, parent: dirname});
+                                    for (;dirname !== '.';dirname = path.dirname(dirname)) {
+                                        isExist = false;
+                                        for (var j in folderArr) {
+                                            if (folderArr[j].key === dirname) {
+                                                isExist = true;
+                                                tempArr = folderArr.splice(j, 1);
+                                                folderArr.splice(0, 0, tempArr[0]);
+                                                break;
+                                            }
+                                        }
+                                        if (!isExist) {
+                                            folderArr.splice(0, 0, {key: dirname, name: path.basename(dirname), parent: path.dirname(dirname)});
+                                        }
+                                    }
+                                }
+                            }
+                            console.log(fileArr);
+                            console.log(folderArr);
+                            if (folderArr.length > 0) {
+                                recur_upload(0, 'folder');
+                            } else if (fileArr.length > 0) {
+                                recur_upload(0, 'file');
+                            } else {
+                                sendWs({type: req.user.username, data: 'save complete'}, 0);
+                            }
+                            function recur_upload(index, type) {
+                                if (type === 'folder') {
+                                    if (folderArr[index].parent === '.') {
+                                        googleApi.googleApi('create', {name: folderArr[index].name, parent: downloaded}, function(err, metadata) {
+                                            if (err) {
+                                                util.handleError(err);
+                                                sendWs({type: req.user.username, data: 'save to drive fail: ' + err.message}, 0);
+                                            } else {
+                                                console.log(metadata);
+                                                folderArr[index].id = metadata.id;
+                                            }
+                                            index++;
+                                            if (index < folderArr.length) {
+                                                recur_upload(index, 'folder');
+                                            } else if (fileArr.length > 0) {
+                                                recur_upload(0, 'file');
+                                            } else {
+                                                sendWs({type: req.user.username, data: 'save complete'}, 0);
+                                            }
+                                        });
+                                    } else {
+                                        for (var i in folderArr) {
+                                            if (folderArr[index].parent === folderArr[i].key) {
+                                                break;
+                                            }
+                                        }
+                                        if (folderArr[i].id) {
+                                            googleApi.googleApi('create', {name: folderArr[index].name, parent: folderArr[i].id}, function(err, metadata) {
+                                                if (err) {
+                                                    util.handleError(err);
+                                                    sendWs({type: req.user.username, data: 'save to drive fail: ' + err.message}, 0);
+                                                } else {
+                                                    console.log(metadata);
+                                                    folderArr[index].id = metadata.id;
+                                                }
+                                                index++;
+                                                if (index < folderArr.length) {
+                                                    recur_upload(index, 'folder');
+                                                } else if (fileArr.length > 0) {
+                                                    recur_upload(0, 'file');
+                                                } else {
+                                                    sendWs({type: req.user.username, data: 'save complete'}, 0);
+                                                }
+                                            });
+                                        } else {
+                                            util.handleError({hoerror: 2, message: "do not find parent!!!"});
+                                            sendWs({type: req.user.username, data: 'save to drive fail: do not find parent!!!'}, 0);
+                                            index++;
+                                            if (index < folderArr.length) {
+                                                recur_upload(index, 'folder');
+                                            } else if (fileArr.length > 0) {
+                                                recur_upload(0, 'file');
+                                            } else {
+                                                sendWs({type: req.user.username, data: 'save complete'}, 0);
+                                            }
+                                        }
+                                    }
+                                } else if (type === 'file') {
+                                    if (fileArr[index].parent === '.') {
+                                        data['name'] = fileArr[index].name;
+                                        data['filePath'] = fileArr[index].filePath;
+                                        data['parent'] = downloaded;
+                                        googleApi.googleApi('upload', data, function(err, metadata) {
+                                            if (err) {
+                                                util.handleError(err);
+                                                sendWs({type: req.user.username, data: 'save to drive fail: ' + err.message}, 0);
+                                            } else {
+                                                console.log(metadata);
+                                                console.log('done');
+                                            }
+                                            index++;
+                                            if (index < fileArr.length) {
+                                                recur_upload(index, 'file');
+                                            } else {
+                                                sendWs({type: req.user.username, data: 'save complete'}, 0);
+                                            }
+                                        });
+                                    } else {
+                                        for (var i in folderArr) {
+                                            if (fileArr[index].parent === folderArr[i].key) {
+                                                break;
+                                            }
+                                        }
+                                        if (folderArr[i].id) {
+                                            data['name'] = fileArr[index].name;
+                                            data['filePath'] = fileArr[index].filePath;
+                                            data['parent'] = folderArr[i].id;
+                                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                                if (err) {
+                                                    util.handleError(err);
+                                                    sendWs({type: req.user.username, data: 'save to drive fail: ' + err.message}, 0);
+                                                } else {
+                                                    console.log(metadata);
+                                                }
+                                                index++;
+                                                if (index < fileArr.length) {
+                                                    recur_upload(index, 'file');
+                                                } else {
+                                                    sendWs({type: req.user.username, data: 'save complete'}, 0);
+                                                }
+                                            });
+                                        } else {
+                                            util.handleError({hoerror: 2, message: "do not find parent!!!"});
+                                            sendWs({type: req.user.username, data: 'save to drive fail: do not find parent!!!'}, 0);
+                                            index++;
+                                            if (index < fileArr.length) {
+                                                recur_upload(index, 'file');
+                                            } else {
+                                                sendWs({type: req.user.username, data: 'save complete'}, 0);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         } else {
-                            console.log(metadata);
-                            console.log('done');
                             sendWs({type: req.user.username, data: 'save complete'}, 0);
                         }
-                    });
+                    } else {
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
+                                util.handleError(err);
+                                sendWs({type: req.user.username, data: 'save to drive fail: ' + err.message}, 0);
+                            } else {
+                                console.log(metadata);
+                                console.log('done');
+                                sendWs({type: req.user.username, data: 'save complete'}, 0);
+                            }
+                        });
+                    }
                 });
             });
         });
