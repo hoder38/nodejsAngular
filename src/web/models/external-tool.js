@@ -1285,7 +1285,6 @@ module.exports = {
                 var list_match = false;
                 var data = null;
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
                 var docDate = date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate();
                 console.log(docDate);
                 for (var i in raw_list) {
