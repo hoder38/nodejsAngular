@@ -24,6 +24,8 @@ var genre_list = ['action', 'adventure', 'animation', 'biography', 'comedy', 'cr
 var genre_list_ch = ['動作', '冒險', '動畫', '傳記', '喜劇', '犯罪', '記錄', '劇情', '家庭', '奇幻', '黑色電影', '歷史', '恐怖', '音樂', '音樂劇', '神祕', '浪漫', '科幻', '運動', '驚悚', '戰爭', '西部'];
 
 var anime_list = ['格鬥', '魔法', '偵探', '競技', '恐怖', '戰國', '魔幻', '冒險', '校園', '搞笑', '少女', '少男', '科幻', '港產', '其他'];
+
+var comic_list = ['萌系', '搞笑', '格斗', '科幻', '劇情', '偵探', '競技', '魔法', '神鬼', '校園', '驚栗', '廚藝', '偽娘', '圖片', '冒險', '小說', '港漫', '耽美', '經典', '歐美', '日文', '親情'];
 var sub_arr = ['srt', 'ass', 'ssa'];
 var util = require("../util/utility.js");
 module.exports = {
@@ -244,6 +246,10 @@ module.exports = {
         } else if (lang === 'anime') {
             for (var i in anime_list) {
                 option.push(anime_list[i]);
+            }
+        } else if (lang === 'comic') {
+            for (var i in comic_list) {
+                option.push(comic_list[i]);
             }
         } else {
             for (var i in genre_list) {

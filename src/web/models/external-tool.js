@@ -17,6 +17,7 @@ var googleApi = require("../models/api-tool-google.js");
 var kubo_type = [['動作片', '喜劇片', '愛情片', '科幻片', '恐怖片', '劇情片', '戰爭片', '動畫片', '微電影'], ['台灣劇', '港劇', '大陸劇', '歐美劇', '韓劇', '日劇', '新/馬/泰/其他劇', '布袋戲', '綜藝', '美食旅遊', '訪談節目', '男女交友', '選秀競賽', '典禮晚會', '新聞時事', '投資理財', '歌劇戲曲'], ['動漫', '電影動畫片']];
 var monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 var monthNameShorts = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+var comic99_pre = ['http://99.1112223333.com/dm01/', 'http://99.1112223333.com/dm02/', 'http://99.1112223333.com/dm03/', 'http://99.1112223333.com/dm04/', 'http://99.1112223333.com/dm05/', 'http://99.1112223333.com/dm06/', 'http://99.1112223333.com/dm07/', 'http://99.1112223333.com/dm08/', 'http://99.1112223333.com/dm09/', 'http://99.1112223333.com/dm10/', 'http://99.1112223333.com/dm11/', 'http://99.1112223333.com/dm12/', 'http://99.1112223333.com/dm13/', 'http://173.231.57.238/dm14/', 'http://99.1112223333.com/dm15/', 'http://142.4.34.102/dm16/'];
 var OpenCC = require('opencc'),
     fs = require("fs"),
     mkdirp = require('mkdirp'),
@@ -304,12 +305,13 @@ module.exports = {
                         util.handleError(err, callback, callback);
                     }
                     var comic_data = raw_data.match(/<span class="covertxt">.*/);
+                    var list = [];
                     if (comic_data) {
                         var raw_list = comic_data[0].match(/<a href=.*?.jpg/g);
                         if (!raw_list) {
                             util.handleError({hoerror: 2, message: 'unknown comic type'}, callback, callback);
                         }
-                        var list = [];
+                        list = [];
                         var list_match = false;
                         var tags = [];
                         var data = null;
@@ -353,6 +355,60 @@ module.exports = {
                     }, 0);
                 }, 60000, false, false, 'http://www.cartoonmad.com/', true);
             }
+            break;
+            case 'comic99':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var list = [];
+                var comic_data = raw_data.match(/<ul class="hd-txt TopList_11">[\s\S]+?<\/ul>/);
+                if (comic_data) {
+                    var raw_list = comic_data[0].match(/<a href=[^>]+><[^>]+>/g);
+                    var list_match = false;
+                    var tags = [];
+                    var data = null;
+                    for (var i in raw_list) {
+                        list_match = raw_list[i].match(/href='\/comic\/(\d+)\/' title='([^']+)'.*src='([^']+)'/);
+                        if (list_match) {
+                            data = {id: list_match[1], name: list_match[2], thumb: list_match[3]};
+                            tags = ['漫畫', 'comic'];
+                            data['tags'] = tags;
+                            list.push(data);
+                        }
+                    }
+                } else {
+                    comic_data = raw_data.match(/<div class='cListSlt'>.*/);
+                    if (comic_data[0]) {
+                        var raw_list = comic_data[0].match(/<div class='cListSlt'>.*?<div class='cListh2'>/g);
+                        var list_match = false;
+                        var tags = [];
+                        var data = null;
+                        for (var i in raw_list) {
+                            list_match = raw_list[i].match(/href='\/comic\/(\d+)\/'><img src='([^']+)'/);
+                            if (list_match) {
+                                data = {id: list_match[1], thumb: list_match[2]};
+                                list_match = raw_list[i].match(/<div class='cListTitle'><[^>]+>(.*?)<span class='clw/);
+                                if (list_match) {
+                                    data['name'] = list_match[1].replace(/<[^<]+>/g,'');
+                                    tags = ['漫畫', 'comic'];
+                                    list_match = raw_list[i].match(/<span class='cl1_1'>漫畫類型：<[^>]+>([^<]+)<\/a><\/span><span class='cl1_2'>漫畫作者：([^<]+)/);
+                                    if (list_match) {
+                                        tags.push(list_match[1]);
+                                        tags.push(list_match[2]);
+                                    }
+                                    data['tags'] = tags;
+                                    list.push(data);
+                                }
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, list);
+                }, 0);
+            }, 60000, false, false, 'http://www.99comic.com/');
             break;
             case 'bilibili':
             if (url.match(/(https|http):\/\/www\.bilibili\.com\/list\//)) {
@@ -1834,6 +1890,40 @@ module.exports = {
                     callback(null, name, info_tag, 'yify', thumb, url);
                 }, 0);
             }, 60000, false, false, 'https://yts.ag/');
+            break;
+            case 'comic99':
+            var url = 'http://www.99comic.com/comic/' + id + '/';
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                var name = raw_data.match(/<div class="block"><img alt='([^']+)' src='([^']+)/);
+                if (!name) {
+                    util.handleError({hoerror: 2, message: 'unknown comic name'}, callback, callback);
+                }
+                var thumb = name[2];
+                name = name[1];
+                console.log(name);
+                var info_tag = ['comic99', '漫畫', 'comic', '圖片集', 'image book', '圖片', 'image'];
+                var info_list = [];
+                var info_match = raw_data.match(/漫畫作者：<\/b><[^>]+>([^<]+)/);
+                if (info_match) {
+                    if (info_tag.indexOf(info_match[1]) === -1) {
+                        info_tag.push(info_match[1]);
+                    }
+                }
+                info_match = raw_data.match(/漫畫類型：<\/b><[^>]+>([^<]+)/);
+                if (info_match) {
+                    if (info_tag.indexOf(info_match[1]) === -1) {
+                        info_tag.push(info_match[1]);
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, name, info_tag, 'comic99', thumb, url);
+                }, 0);
+
+            }, 60000, false, false, 'http://www.99comic.com/');
             break;
             case 'cartoonmad':
             var url = 'http://www.cartoonmad.com/comic/' + id + '.html';
@@ -3705,6 +3795,56 @@ module.exports = {
                 });
             }, 60000, false, false, 'https://yts.ag/');
             break;
+            case 'comic99':
+            var c99_id = url.match(/\d+/);
+            if (!c99_id) {
+                util.handleError({hoerror: 2, message: 'comic id invalid'}, callback, callback);
+            }
+            var is_end = false;
+            c99_id = c99_id[0];
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                if (raw_data.match(/<b class="red">完結<\/b>/)) {
+                    is_end = true;
+                }
+                var comic_data = raw_data.match(/<div class='cVolList'>.*/);
+                var raw_list = comic_data[0].match(/href='[^']+'>[^<]+/g);
+                if (!raw_list || !raw_list[raw_list.length - index]) {
+                    util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
+                }
+                var info = raw_list[raw_list.length - index].match(/href='([^']+)'>([^<]+)/);
+                if (!info) {
+                    util.handleError({hoerror: 2, message: 'comic info unknown'}, callback, callback);
+                }
+                var url_s = null;
+                if (!info[1].match(/^(https|http):\/\//)) {
+                    if (info[1].match(/^\//)) {
+                        url_s = 'http://www.99comic.com' + info[1];
+                    } else {
+                        url_s = 'http://www.99comic.com/' + info[1];
+                    }
+                } else {
+                    url_s = info[1];
+                }
+                api.xuiteDownload(url_s, '', function(err, raw_data_s) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    comic_data = raw_data_s.match(/var sFiles="([^"]+)";var sPath="(\d+)/);
+                    var pre_list = comic_data[1].split('|');
+                    var pre = Number(comic_data[2]);
+                    var ret = {title: info[2], pre_url: comic99_pre[pre-1], sub: pre_list.length, pre_obj: pre_list};
+                    ret.index = ret.showId = (index*1000 + sub_index)/1000;
+                    setTimeout(function(){
+                        callback(null, ret, is_end, raw_list.length);
+                    }, 0);
+                }, 60000, false, false, 'http://www.99comic.com/');
+            }, 60000, false, false, 'http://www.99comic.com/');
+            break;
             case 'cartoonmad':
             var mad_id = url.match(/\d+/);
             if (!mad_id) {
@@ -3755,7 +3895,18 @@ module.exports = {
                     if (info[2] === '2') {
                         title = '第' + info[1] + '話';
                     }
-                    var ret = {title: title, pre_url: img_url[1], sub: Number(info[3])};
+                    var sub = Number(info[3]);
+                    var pre_list = [];
+                    for (var i = 1; i <= sub; i++) {
+                        if (i < 10) {
+                            pre_list.push('00' + i + '.jpg');
+                        } else if (i < 100) {
+                            pre_list.push('0' + i + '.jpg');
+                        } else {
+                            pre_list.push(i + '.jpg');
+                        }
+                    }
+                    var ret = {title: title, pre_url: img_url[1], sub: sub, pre_obj: pre_list};
                     ret.index = ret.showId = (index*1000 + sub_index)/1000;
                     setTimeout(function(){
                         callback(null, ret, is_end, raw_list.length);

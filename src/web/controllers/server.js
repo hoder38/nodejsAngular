@@ -557,7 +557,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                         }
                         itemList = itemList.concat(getMadItem(list));
                         retPageToken = nextIndex;
-                        youtubeQuery();
+                        c99Query();
                     }, query.post);
                 } else {
                     externalTool.getSingleList('cartoonmad', query, function(err, list) {
@@ -566,9 +566,24 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                         }
                         itemList = itemList.concat(getMadItem(list));
                         retPageToken = nextIndex;
-                        youtubeQuery();
+                        c99Query();
                     });
                 }
+            } else {
+                c99Query();
+            }
+        }
+        function c99Query() {
+            var query = tagTool.getC99Query(parentList.cur, sortName, index);
+            if (query) {
+                externalTool.getSingleList('comic99', query, function(err, list) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    itemList = itemList.concat(getC99Item(list));
+                    retPageToken = nextIndex;
+                    youtubeQuery();
+                });
             } else {
                 youtubeQuery();
             }
@@ -1824,7 +1839,7 @@ app.get('/api/media/record/:id/:time/:pId?', function(req, res, next){
         if (!req.params.time.match(/^\d+(&\d+|\.\d+)?$/)) {
             util.handleError({hoerror: 2, message: "timestamp is not vaild"}, next, res);
         }
-        var id = req.params.id.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud|mad|fc1)_/);
+        var id = req.params.id.match(/^(you|dym|dri|bil|soh|let|vqq|fun|kdr|yuk|tud|mad|fc1|c99)_/);
         if (id) {
             id = util.isValidString(req.params.id, 'name');
             if (id === false) {
@@ -1957,7 +1972,7 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var id = req.params.id.match(/^(you|ypl|kub|yif|mad|bbl)_(.*)$/);
+        var id = req.params.id.match(/^(you|ypl|kub|yif|mad|bbl|c99)_(.*)$/);
         var playlist = 0;
         var playlistId = null;
         var obj = req.params.obj;
@@ -1976,6 +1991,9 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                 playlistId = id[2];
             } else if (id[1] === 'bbl') {
                 playlist = 6;
+                playlistId = id[2];
+            } else if (id[1] === 'c99') {
+                playlist = 7;
                 playlistId = id[2];
             }
             id = util.isValidString(req.params.id, 'name');
@@ -2095,6 +2113,9 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                         playurl = 'http://www.bilibili.com/bangumi/i/' + playlistId + '/';
                                     }
                                     playtype = 'bilibili';
+                                } else if (playlist === 7) {
+                                    playurl = 'http://www.99comic.com/comic/' + playlistId + '/';
+                                    playtype = 'comic99';
                                 }
                                 externalTool.getSingleId(playtype, playurl, 1, function(err, obj, is_end, total) {
                                     if (err) {
@@ -2234,6 +2255,9 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
                                         playurl = 'http://www.bilibili.com/bangumi/i/' + playlistId + '/';
                                     }
                                     playtype = 'bilibili';
+                                } else if (playlist === 7) {
+                                    playurl = 'http://www.99comic.com/comic/' + playlistId + '/';
+                                    playtype = 'comic99';
                                 }
                                 externalTool.getSingleId(playtype, playurl, items[0].recordTime, function(err, obj, is_end, total) {
                                     if (err) {
@@ -3472,6 +3496,17 @@ function getMadItem(items) {
     for (var i in items) {
         items[i].tags.push('first item');
         data = {name: items[i].name, id: 'mad_' + items[i].id, tags: items[i].tags, recycle: 0, isOwn: false, utime: 0, thumb: items[i].thumb, noDb: true, status: 2, count: 0};
+        itemList.push(data);
+    }
+    return itemList;
+}
+
+function getC99Item(items) {
+    var itemList = [];
+    var data = null;
+    for (var i in items) {
+        items[i].tags.push('first item');
+        data = {name: items[i].name, id: 'c99_' + items[i].id, tags: items[i].tags, recycle: 0, isOwn: false, utime: 0, thumb: items[i].thumb, noDb: true, status: 2, count: 0};
         itemList.push(data);
     }
     return itemList;

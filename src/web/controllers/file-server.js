@@ -978,6 +978,26 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
                         });
                     });
+                } else if (url.match(/^(https|http):\/\/www\.99comic\.com\/comic\//)) {
+                    mongo.orig("find", "storage", {owner: 'comic99', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        if (items.length > 0) {
+                            util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                        }
+                        var comic99_id = url.match(/(\d+)\/$/);
+                        if (!comic99_id) {
+                            util.handleError({hoerror: 2, message: "comic99 url invalid"}, next, res);
+                        }
+                        is_media = 2;
+                        externalTool.saveSingle('comic99', comic99_id[1], function(err, media_name, tag_arr, owner, thumb, url) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
+                        });
+                    });
                 } else if (url.match(/^(https|http):\/\/www\.bilibili\.com\//)) {
                     mongo.orig("find", "storage", {owner: 'bilibili', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
                         if (err) {
@@ -1320,6 +1340,26 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     }
                     is_media = 2;
                     externalTool.saveSingle('cartoonmad', cartoonmad_id[1], function(err, media_name, tag_arr, owner, thumb, url) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
+                    });
+                });
+            } else if (url.match(/^(https|http):\/\/www\.99comic\.com\/comic\//)) {
+                mongo.orig("find", "storage", {owner: 'comic99', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (items.length > 0) {
+                        util.handleError({hoerror: 2, message: "already has one"}, next, res);
+                    }
+                    var comic99_id = url.match(/(\d+)\/$/);
+                    if (!comic99_id) {
+                        util.handleError({hoerror: 2, message: "comic99 url invalid"}, next, res);
+                    }
+                    is_media = 2;
+                    externalTool.saveSingle('comic99', comic99_id[1], function(err, media_name, tag_arr, owner, thumb, url) {
                         if (err) {
                             util.handleError(err, next, res);
                         }

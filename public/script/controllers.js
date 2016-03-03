@@ -1886,7 +1886,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                             this_obj.$parent[type].src = $scope.main_url + '/' + preType + '/' + item.id + '/doc';
                         } else if (item.thumb) {
                             if (this_obj.$parent[type].playlist && this_obj.$parent[type].playlist.obj.pre_url) {
-                                this_obj.$parent[type].src = this_obj.$parent[type].playlist.obj.pre_url + padLeft(Math.round(this_obj.$parent[type].playlist.obj.index*1000)%1000, 3) + '.jpg';
+                                this_obj.$parent[type].src = this_obj.$parent[type].playlist.obj.pre_url + this_obj.$parent[type].playlist.obj.pre_obj[Math.round(this_obj.$parent[type].playlist.obj.index*1000)%1000 - 1];
                                 this_obj.$parent[type].itemName = ':' + this_obj.$parent[type].playlist.obj.title;
                                 this_obj.$parent[type].showId = this_obj.$parent[type].playlist.obj.showId;
                                 this_obj.$parent[type].presentId = this_obj.$parent[type].playlist.obj.index;
@@ -3353,6 +3353,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 url =  'https://yts.ag/movie/' + this.toolList.item.id.substr(4);
             } else if (this.toolList.item.id.substr(0, 4) === 'mad_') {
                 url =  'http://www.cartoonmad.com/comic/' + this.toolList.item.id.substr(4) + '.html';
+            } else if (this.toolList.item.id.substr(0, 4) === 'c99_') {
+                url =  'http://www.99comic.com/comic/' + this.toolList.item.id.substr(4) + '/';
             } else if (this.toolList.item.id.substr(0, 4) === 'bbl_') {
                 if (this.toolList.item.id.substr(4).match(/^av/)) {
                     url =  'http://www.bilibili.com/video/' + this.toolList.item.id.substr(4) + '/';
@@ -3377,6 +3379,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 url =  'https://yts.ag/movie/' + id.substr(4);
             } else if (id.substr(0, 4) === 'mad_') {
                 url =  'http://www.cartoonmad.com/comic/' + id.substr(4) + '.html';
+            } else if (id.substr(0, 4) === 'c99_') {
+                url =  'http://www.99comic.com/comic/' + id.substr(4) + '/';
             } else if (id.substr(0, 4) === 'bbl_') {
                 if (id.substr(4).match(/^av/)) {
                     url =  'http://www.bilibili.com/video/' + id.substr(4) + '/';
@@ -4169,7 +4173,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             this_obj.image.showId = this_obj.image.playlist.obj.showId;
                             this_obj.image.presentId = this_obj.image.playlist.obj.index;
                             this_obj.image.itemName = ':' + this_obj.image.playlist.obj.title;
-                            this_obj.image.src = this_obj.image.playlist.obj.pre_url + padLeft(Math.round(this_obj.image.playlist.obj.index*1000)%1000, 3) + '.jpg';
+                            this_obj.image.src = this_obj.image.playlist.obj.pre_url + this_obj.image.playlist.obj.pre_obj[Math.round(this_obj.image.playlist.obj.index*1000)%1000 -1];
                             this_obj.image.maxId = this_obj.image.playlist.total;
                         }
                     }, function(errorResult) {
@@ -4182,7 +4186,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         }
                     });
                 } else {
-                    this_obj.image.src = this_obj.image.playlist.obj.pre_url + padLeft(Math.round(this_obj.image.presentId*1000)%1000, 3) + '.jpg';
+                    this_obj.image.src = this_obj.image.playlist.obj.pre_url + this_obj.image.playlist.obj.pre_obj[Math.round(this_obj.image.presentId*1000)%1000 -1];
                     var mediaApi = $resource('/api/media/record/' + this_obj.image.id + '/' + this_obj.image.presentId, {}, {
                         'record': { method:'GET' }
                     });
@@ -4406,7 +4410,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                     } else if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
                                         if (this_obj[type].playlist && this_obj[type].playlist.obj.pre_url) {
-                                            this_obj[type].src = this_obj[type].playlist.obj.pre_url + padLeft(Math.round(this_obj[type].playlist.obj.index*1000)%1000, 3) + '.jpg';
+                                            this_obj[type].src = this_obj[type].playlist.obj.pre_url + this_obj[type].playlist.obj.pre_obj[Math.round(this_obj[type].playlist.obj.index*1000)%1000 -1];
                                             this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
                                             this_obj[type].showId = this_obj[type].playlist.obj.showId;
                                             this_obj[type].presentId = this_obj[type].playlist.obj.index;
@@ -4679,7 +4683,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                     } else if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
                                         if (this_obj[type].playlist && this_obj[type].playlist.obj.pre_url) {
-                                            this_obj[type].src = this_obj[type].playlist.obj.pre_url + padLeft(Math.round(this_obj[type].playlist.obj.index*1000)%1000, 3) + '.jpg';
+                                            this_obj[type].src = this_obj[type].playlist.obj.pre_url + this_obj[type].playlist.obj.pre_obj[Math.round(this_obj[type].playlist.obj.index*1000)%1000 -1];
                                             this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
                                             this_obj[type].showId = this_obj[type].playlist.obj.showId;
                                             this_obj[type].presentId = this_obj[type].playlist.obj.index;
@@ -4911,7 +4915,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                         } else if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
                             if (this_obj[type].playlist && this_obj[type].playlist.obj.pre_url) {
-                                this_obj[type].src = this_obj[type].playlist.obj.pre_url + padLeft(Math.round(this_obj[type].playlist.obj.index*1000)%1000, 3) + '.jpg';
+                                this_obj[type].src = this_obj[type].playlist.obj.pre_url + this_obj[type].playlist.obj.pre_obj[Math.round(this_obj[type].playlist.obj.index*1000)%1000 -1];
                                 this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
                                 this_obj[type].showId = this_obj[type].playlist.obj.showId;
                                 this_obj[type].presentId = this_obj[type].playlist.obj.index;

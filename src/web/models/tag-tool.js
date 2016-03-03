@@ -2,7 +2,7 @@ var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 var mime = require('../util/mime.js');
 
-var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'youtube video', 'youtube playlist', 'youtube music', 'youtube music playlist', 'playlist unactive', 'kubo movie', 'kubo tv series', 'kubo tv show', 'kubo animation', 'yify movie', 'cartoonmad comic', 'bilibili animation', 'bilibili movie'];
+var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'youtube video', 'youtube playlist', 'youtube music', 'youtube music playlist', 'playlist unactive', 'kubo movie', 'kubo tv series', 'kubo tv show', 'kubo animation', 'yify movie', 'cartoonmad comic', 'bilibili animation', 'bilibili movie', 'comic99 comic'];
 
 //var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'country', 'tw': '國家'}, {'name': 'year', 'tw': '年份'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'publisher', 'tw': '出版社'}, {'name': 'language', 'tw': '語言'}];
 var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'country', 'tw': '國家'}, {'name': 'year', 'tw': '年份'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'author', 'tw': '作者'}, {'name': 'album', 'tw': '專輯'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'actor', 'tw': '演員'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}];
@@ -19,6 +19,10 @@ var yify_type_cht = mime.getOptionTag('cht');
 var mad_type = mime.getOptionTag('anime');
 
 var mad_index = ['01', '02', '03', '04', '10', '07', '08', '09', '16', '17', '13', '14', '18', '21', '22'];
+
+var c99_type = mime.getOptionTag('comic');
+
+var c99_index = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 24 ,25];
 
 var bili_type = ['大陸', '日本', '歐美', '香港', '台灣', '韓國', '法國', '泰國', '西班牙', '俄羅斯', '德國', '海外', '完結'];
 
@@ -209,13 +213,13 @@ module.exports = function(collection) {
                 setSingleArray: function(value) {
                     var normal = normalize(value);
                     var defau = isDefaultTag(normal);
-                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10 || defau.index === 11 || defau.index === 13 || defau.index === 14 || defau.index === 15 || defau.index === 16 || defau.index === 17 || defau.index === 18 || defau.index === 19 || defau.index === 20 || defau.index === 30 || defau.index === 31) {
+                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10 || defau.index === 11 || defau.index === 13 || defau.index === 14 || defau.index === 15 || defau.index === 16 || defau.index === 17 || defau.index === 18 || defau.index === 19 || defau.index === 20 || defau.index === 21 || defau.index === 30 || defau.index === 31) {
                         return true;
                     } else {
                         for (var i = 0; i < search[name].index; i++) {
                             normal = search[name].tags[i];
                             defau = isDefaultTag(normal);
-                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10 && defau.index !== 11 &&defau.index !== 13 && defau.index !== 14 && defau.index !== 15 && defau.index !== 16 && defau.index !== 17 && defau.index !== 18 && defau.index !== 19 && defau.index !== 20 && defau.index !== 30 && defau.index !== 31) {
+                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10 && defau.index !== 11 &&defau.index !== 13 && defau.index !== 14 && defau.index !== 15 && defau.index !== 16 && defau.index !== 17 && defau.index !== 18 && defau.index !== 19 && defau.index !== 20 && defau.index !== 21 && defau.index !== 30 && defau.index !== 31) {
                                 search[name].tags = search[name].tags.slice(0, i);
                                 search[name].exactly = search[name].exactly.slice(0, i);
                                 search[name].index = search[name].tags.length;
@@ -1460,7 +1464,7 @@ module.exports = function(collection) {
                         query_term = null;
                     } else {
                         query_term = denormalize(search_arr[i]);
-                        comic_type = null;
+                        comic_type = -1;
                     }
                 } else if (index.index === 18) {
                     search = true;
@@ -1489,6 +1493,45 @@ module.exports = function(collection) {
                     console.log(url);
                     return url;
                 }
+            } else {
+                return false;
+            }
+        },
+        getC99Query: function(search_arr, sortName, page) {
+            var url = 'http://www.99comic.com/lists/';
+            var search = false;
+            var comic_type = -1;
+            var query_term = null;
+            for (var i in search_arr) {
+                index = isDefaultTag(normalize(search_arr[i]));
+                if (!index || index.index === 0 || index.index === 6) {
+                    if (c99_type.indexOf(normalize(search_arr[i])) !== -1) {
+                        comic_type = c99_type.indexOf(normalize(search_arr[i]));
+                        query_term = null;
+                    } else {
+                        query_term = denormalize(search_arr[i]);
+                        comic_type = -1;
+                    }
+                } else if (index.index === 21) {
+                    search = true;
+                }
+            }
+            if (search) {
+                if (query_term) {
+                    url = 'http://www.99comic.com/search/s.aspx?search_keyword=' + query_term + '&Submit=%E6%90%9C%E5%B0%8B';
+                    if (page > 1) {
+                        return false;
+                    }
+                } else {
+                    if (comic_type !== -1) {
+                        url = 'http://www.99comic.com/comiclist/' + c99_index[comic_type] + '/';
+                    }
+                    if (page > 1) {
+                        url = url + '2/';
+                    }
+                }
+                console.log(url);
+                return url;
             } else {
                 return false;
             }
@@ -1700,7 +1743,7 @@ var getStorageQuerySql = function(user, tagList, exactly) {
                     console.log({recycle: {$ne: 0}, utime: {$lt: time}});
                     return {nosql: {recycle: {$ne: 0}, utime: {$lt: time}}};
                 }
-            } else if (index.index === 4 || index.index === 6 || index.index === 8 || index.index === 9 || index.index === 10 || index.index === 11 || index.index === 13 || index.index === 14 || index.index === 15 || index.index === 16 || index.index === 17 || index.index === 18 || index.index === 19 || index.index === 20) {
+            } else if (index.index === 4 || index.index === 6 || index.index === 8 || index.index === 9 || index.index === 10 || index.index === 11 || index.index === 13 || index.index === 14 || index.index === 15 || index.index === 16 || index.index === 17 || index.index === 18 || index.index === 19 || index.index === 20 || index.index === 21) {
             } else if (index.index === 5) {
                 delete nosql['first'];
                 is_first = false;
