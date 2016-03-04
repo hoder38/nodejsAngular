@@ -349,7 +349,7 @@ module.exports = function(collection) {
                             }, 0);
                         } else {
                             for (var i in items[0]) {
-                                if (util.isValidString(i, 'uid') || i === 'kubo' || i === 'eztv' || i === 'lovetv' || i === 'youtube' || i === 'yify') {
+                                if (util.isValidString(i, 'uid') || i === 'kubo' || i === 'eztv') {
                                     tagType.tag[i] = tagType.tag.tags;
                                     mongo.orig("update", collection, {_id: id}, {$pull: tagType.tag}, function(err, item2){
                                         if(err) {
@@ -1530,7 +1530,6 @@ module.exports = function(collection) {
                         url = url + '2/';
                     }
                 }
-                console.log(url);
                 return url;
             } else {
                 return false;

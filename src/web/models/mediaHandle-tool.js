@@ -1304,7 +1304,7 @@ module.exports = function(sendWs) {
                 }, 0);
             } else if (status === 8) {
                 setTimeout(function(){
-                    callback(null, false, {def: [], opt: mime.getOptionTag()}, DBdata);
+                    callback(null, false, {def: [], opt: mime.getOptionTag('cht')}, DBdata);
                 }, 0);
             } else if (status === 9) {
                 setTimeout(function(){

@@ -23,9 +23,14 @@ type_arr.vlog = type_arr.video;
 var genre_list = ['action', 'adventure', 'animation', 'biography', 'comedy', 'crime', 'documentary', 'drama', 'family', 'fantasy', 'film-noir', 'history', 'horror', 'music', 'musical', 'mystery', 'romance', 'sci-fi', 'sport', 'thriller', 'war', 'western'];
 var genre_list_ch = ['動作', '冒險', '動畫', '傳記', '喜劇', '犯罪', '記錄', '劇情', '家庭', '奇幻', '黑色電影', '歷史', '恐怖', '音樂', '音樂劇', '神祕', '浪漫', '科幻', '運動', '驚悚', '戰爭', '西部'];
 
-var anime_list = ['格鬥', '魔法', '偵探', '競技', '恐怖', '戰國', '魔幻', '冒險', '校園', '搞笑', '少女', '少男', '科幻', '港產', '其他'];
+var anime_list = ['動作', '奇幻', '犯罪', '運動', '恐怖', '歷史', '神秘', '冒險', '校園', '喜劇', '浪漫', '少男', '科幻', '香港', '其他'];
 
-var comic_list = ['萌系', '搞笑', '格斗', '科幻', '劇情', '偵探', '競技', '魔法', '神鬼', '校園', '驚栗', '廚藝', '偽娘', '圖片', '冒險', '小說', '港漫', '耽美', '經典', '歐美', '日文', '親情'];
+var comic_list = ['萌系', '喜劇', '動作', '科幻', '劇情', '犯罪', '運動', '奇幻', '神秘', '校園', '驚悚', '廚藝', '偽娘', '圖片', '冒險', '小說', '香港', '耽美', '經典', '歐美', '日文', '家庭'];
+
+var trans_list = ['格鬥', '魔法', '偵探', '競技', '戰國', '魔幻', '搞笑', '少女', '港產', '格斗', '神鬼', '驚栗', '港漫', '親情', '臺灣', '美國', '英國', '中國'];
+
+var trans_list_ch = ['動作', '奇幻', '犯罪', '運動', '歷史', '神秘', '喜劇', '浪漫', '香港', '動作', '神秘', '驚悚', '香港', '家庭', '台灣', '歐美', '歐美', '大陸'];
+
 var sub_arr = ['srt', 'ass', 'ssa'];
 var util = require("../util/utility.js");
 module.exports = {
@@ -250,6 +255,14 @@ module.exports = {
         } else if (lang === 'comic') {
             for (var i in comic_list) {
                 option.push(comic_list[i]);
+            }
+        } else if (lang === 'trans') {
+            for (var i in trans_list) {
+                option.push(trans_list[i]);
+            }
+        } else if (lang === 'transed') {
+            for (var i in trans_list_ch) {
+                option.push(trans_list_ch[i]);
             }
         } else {
             for (var i in genre_list) {

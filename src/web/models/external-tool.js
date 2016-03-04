@@ -12,6 +12,10 @@ var genre_list = mime.getOptionTag('eng');
 
 var genre_list_ch = mime.getOptionTag('cht');
 
+var trans_list = mime.getOptionTag('trans');
+
+var trans_list_ed = mime.getOptionTag('transed');
+
 var googleApi = require("../models/api-tool-google.js");
 
 var kubo_type = [['動作片', '喜劇片', '愛情片', '科幻片', '恐怖片', '劇情片', '戰爭片', '動畫片', '微電影'], ['台灣劇', '港劇', '大陸劇', '歐美劇', '韓劇', '日劇', '新/馬/泰/其他劇', '布袋戲', '綜藝', '美食旅遊', '訪談節目', '男女交友', '選秀競賽', '典禮晚會', '新聞時事', '投資理財', '歌劇戲曲'], ['動漫', '電影動畫片']];
@@ -395,7 +399,11 @@ module.exports = {
                                     tags = ['漫畫', 'comic'];
                                     list_match = raw_list[i].match(/<span class='cl1_1'>漫畫類型：<[^>]+>([^<]+)<\/a><\/span><span class='cl1_2'>漫畫作者：([^<]+)/);
                                     if (list_match) {
-                                        tags.push(list_match[1]);
+                                        if (trans_list.indexOf(list_match[1]) !== -1) {
+                                            tags.push(trans_list_ed[trans_list.indexOf(list_match[1])]);
+                                        } else {
+                                            tags.push(list_match[1]);
+                                        }
                                         tags.push(list_match[2]);
                                     }
                                     data['tags'] = tags;
@@ -1845,6 +1853,11 @@ module.exports = {
                         }
                     }
                 }
+                for (var i in info_tag) {
+                    if (trans_list.indexOf(info_tag[i]) !== -1) {
+                        info_tag[i] = trans_list_ed[trans_list.indexOf(info_tag[i])];
+                    }
+                }
                 setTimeout(function(){
                     callback(null, name, info_tag, 'kubo', thumb, url);
                 }, 0);
@@ -1886,6 +1899,11 @@ module.exports = {
                         info_tag.push(json_data['data']['movie']['cast'][i]['name']);
                     }
                 }
+                for (var i in info_tag) {
+                    if (trans_list.indexOf(info_tag[i]) !== -1) {
+                        info_tag[i] = trans_list_ed[trans_list.indexOf(info_tag[i])];
+                    }
+                }
                 setTimeout(function(){
                     callback(null, name, info_tag, 'yify', thumb, url);
                 }, 0);
@@ -1917,6 +1935,11 @@ module.exports = {
                 if (info_match) {
                     if (info_tag.indexOf(info_match[1]) === -1) {
                         info_tag.push(info_match[1]);
+                    }
+                }
+                for (var i in info_tag) {
+                    if (trans_list.indexOf(info_tag[i]) !== -1) {
+                        info_tag[i] = trans_list_ed[trans_list.indexOf(info_tag[i])];
                     }
                 }
                 setTimeout(function(){
@@ -1968,6 +1991,11 @@ module.exports = {
                         if (info_tag.indexOf(info_list[i]) === -1) {
                             info_tag.push(info_list[i]);
                         }
+                    }
+                }
+                for (var i in info_tag) {
+                    if (trans_list.indexOf(info_tag[i]) !== -1) {
+                        info_tag[i] = trans_list_ed[trans_list.indexOf(info_tag[i])];
                     }
                 }
                 setTimeout(function(){
@@ -2082,6 +2110,11 @@ module.exports = {
                                 }
                             }
                         }
+                    }
+                }
+                for (var i in info_tag) {
+                    if (trans_list.indexOf(info_tag[i]) !== -1) {
+                        info_tag[i] = trans_list_ed[trans_list.indexOf(info_tag[i])];
                     }
                 }
                 setTimeout(function(){
