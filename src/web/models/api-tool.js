@@ -879,6 +879,8 @@ module.exports = {
                 if (err.code === 'HPE_INVALID_CONSTANT') {
                     if (fields['report_id'] === 'C') {
                         fields['report_id'] = 'B';
+                    } else if (fields['report_id'] === 'B') {
+                        fields['report_id'] = 'A';
                     }
                     postData(fields, null, options, {}, function(err1) {
                         if (err1) {
