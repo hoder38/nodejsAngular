@@ -452,9 +452,9 @@ module.exports = {
                     asset[y] = [];
                 }
                 if (!asset[y][q] || !no_cover) {
-                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
                     asset[y][q].cash = getParameter(xml, 'ifrs:CashAndCashEquivalents', ai);
-                    asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai);
+                    //asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai);
                     asset[y][q].property = getParameter(xml, 'ifrs:PropertyPlantAndEquipment', ai);
                     asset[y][q].total = getParameter(xml, 'ifrs:Assets', ai);
                     asset[y][q].equityParent = getParameter(xml, 'ifrs:EquityAttributableToOwnersOfParent', ai) + getParameter(xml, 'tifrs-bsci-ci:EquityAttributableToFomerOwnerOfBusinessCombinationUnderCommonControl', ai);
@@ -480,9 +480,9 @@ module.exports = {
                     asset[y] = [];
                 }
                 if (!asset[y][q] || !no_cover) {
-                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
                     asset[y][q].cash = getParameter(xml, 'ifrs:CashAndCashEquivalents', ai);
-                    asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai);
+                    //asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai);
                     asset[y][q].property = getParameter(xml, 'ifrs:PropertyPlantAndEquipment', ai);
                     asset[y][q].equityChild = getParameter(xml, 'ifrs:NoncontrollingInterests', ai);
                     asset[y][q].share = getParameter(xml, 'tifrs-bsci-fh:Capital', ai);
@@ -508,9 +508,9 @@ module.exports = {
                     asset[y] = [];
                 }
                 if (!asset[y][q] || !no_cover) {
-                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
                     asset[y][q].cash = getParameter(xml, 'ifrs:CashAndCashEquivalents', ai);
-                    asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai);
+                    //asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai);
                     asset[y][q].property = getParameter(xml, 'ifrs:PropertyPlantAndEquipment', ai);
                     asset[y][q].share = getParameter(xml, 'tifrs-bsci-basi:Capital', ai);
                     asset[y][q].total = getParameter(xml, 'ifrs:Assets', ai);
@@ -536,9 +536,9 @@ module.exports = {
                     asset[y] = [];
                 }
                 if (!asset[y][q] || !no_cover) {
-                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
                     asset[y][q].cash = getParameter(xml, 'ifrs:CashAndCashEquivalents', ai);
-                    asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai) + getParameter(xml, 'tifrs-bsci-bd:CustomerMarginAccount', ai);;
+                    //asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai) + getParameter(xml, 'tifrs-bsci-bd:CustomerMarginAccount', ai);;
                     asset[y][q].property = getParameter(xml, 'ifrs:PropertyPlantAndEquipment', ai) + getParameter(xml, 'tifrs-bsci-bd:PropertyAndEquipment', ai);
                     asset[y][q].share = getParameter(xml, 'tifrs-bsci-bd:CapitalStock', ai);
                     asset[y][q].total = getParameter(xml, 'ifrs:Assets', ai);
@@ -564,9 +564,9 @@ module.exports = {
                     asset[y] = [];
                 }
                 if (!asset[y][q] || !no_cover) {
-                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
                     asset[y][q].cash = getParameter(xml, 'ifrs:CashAndCashEquivalents', ai);
-                    asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai);
+                    //asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai);
                     asset[y][q].property = getParameter(xml, 'ifrs:PropertyPlantAndEquipment', ai);
                     asset[y][q].share = getParameter(xml, 'tifrs-bsci-mim:Capital', ai);
                     asset[y][q].total = getParameter(xml, 'ifrs:Assets', ai);
@@ -592,9 +592,9 @@ module.exports = {
                     asset[y] = [];
                 }
                 if (!asset[y][q] || !no_cover) {
-                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
                     asset[y][q].cash = getParameter(xml, 'ifrs:CashAndCashEquivalents', ai);
-                    asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai);
+                    //asset[y][q].OCFA = getParameter(xml, 'ifrs:OtherCurrentFinancialAssets', ai);
                     asset[y][q].property = getParameter(xml, 'ifrs:PropertyPlantAndEquipment', ai);
                     asset[y][q].share = getParameter(xml, 'tifrs-bsci-ins:ShareCapital', ai);
                     asset[y][q].total = getParameter(xml, 'ifrs:Assets', ai);
@@ -628,7 +628,7 @@ module.exports = {
                     asset[y] = [];
                 }
                 if (!asset[y][q] || !no_cover) {
-                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
                     asset[y][q].share = getParameter(xml, 'tw-gaap-ci:Capital', ai);
                     asset[y][q].cash = getParameter(xml, 'tw-gaap-ci:CashCashEquivalents', ai);
                     asset[y][q].property = getParameter(xml, 'tw-gaap-ci:FixedAssets', ai);
@@ -655,7 +655,7 @@ module.exports = {
                     asset[y] = [];
                 }
                 if (!asset[y][q] || !no_cover) {
-                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
                     asset[y][q].share = getParameter(xml, 'tw-gaap-fh:Capital', ai);
                     asset[y][q].cash = getParameter(xml, 'tw-gaap-fh:CashCashEquivalents', ai);
                     asset[y][q].property = getParameter(xml, 'tw-gaap-fh:FixAssetsNet', ai);
@@ -682,7 +682,7 @@ module.exports = {
                     asset[y] = [];
                 }
                 if (!asset[y][q] || !no_cover) {
-                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
                     asset[y][q].share = getParameter(xml, 'tw-gaap-basi:Capital', ai);
                     asset[y][q].cash = getParameter(xml, 'tw-gaap-basi:CashCashEquivalents', ai);
                     asset[y][q].property = getParameter(xml, 'tw-gaap-basi:FixedAssets-Net', ai);
@@ -709,7 +709,7 @@ module.exports = {
                     asset[y] = [];
                 }
                 if (!asset[y][q] || !no_cover) {
-                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
                     asset[y][q].share = getParameter(xml, 'tw-gaap-bd:CapitalStock', ai);
                     asset[y][q].cash = getParameter(xml, 'tw-gaap-bd:CashCashEquivalents', ai);
                     asset[y][q].property = getParameter(xml, 'tw-gaap-bd:FixedAssets', ai);
@@ -717,7 +717,7 @@ module.exports = {
                     asset[y][q].equityParent = getParameter(xml, 'tw-gaap-bd:StockholdersEquities', ai) - asset[y][q].equityChild;
                     asset[y][q].total = getParameter(xml, 'tw-gaap-bd:Assets', ai);
                     asset[y][q].longterm = getParameter(xml, 'tw-gaap-bd:FundsLongTermInvestments', ai);
-                    asset[y][q].OCFA = getParameter(xml, 'tw-gaap-bd:CustomerMarginAccount', ai);
+                    //asset[y][q].OCFA = getParameter(xml, 'tw-gaap-bd:CustomerMarginAccount', ai);
                     asset[y][q].receivable = getParameter(xml, 'tw-gaap-bd:MarginLoansReceivable', ai) + getParameter(xml, 'tw-gaap-bd:NotesReceivable', ai) + getParameter(xml, 'tw-gaap-bd:AccountsReceivable', ai) + getParameter(xml, 'tw-gaap-bd:Prepayments', ai) + getParameter(xml, 'tw-gaap-bd:OtherReceivables', ai) + getParameter(xml, 'tw-gaap-bd:SecurityBorrowingCollateralPrice', ai) + getParameter(xml, 'tw-gaap-bd:SecurityBorrowingMargin', ai) + getParameter(xml, 'tw-gaap-bd:RefinancingMargin', ai) + getParameter(xml, 'tw-gaap-bd:RefinancingCollateralReceivable', ai) + getParameter(xml, 'tw-gaap-bd:PrepaidPensionCurrent', ai);
                     asset[y][q].inventories = getParameter(xml, 'tw-gaap-bd:FinancialAssetsMeasuredFairValueProfitLossCurrent', ai) + getParameter(xml, 'tw-gaap-bd:AvailableSaleFinancialAssetsCurrent-BalanceSheet', ai) + getParameter(xml, 'tw-gaap-bd:BondInvestmentsResaleAgreements', ai);
                     asset[y][q].payable = getParameter(xml, 'tw-gaap-bd:CommercialPaperPayable', ai) + getParameter(xml, 'tw-gaap-bd:SecuritiesFinancingRefundableDeposits', ai) + getParameter(xml, 'tw-gaap-bd:DepositsPayableSecuritiesFinancing', ai) + getParameter(xml, 'tw-gaap-bd:SecuritiesLendingRefundableDeposits', ai) + getParameter(xml, 'tw-gaap-bd:AccountsPayable', ai) + getParameter(xml, 'tw-gaap-bd:AmountsReceivedAdvance', ai) + getParameter(xml, 'tw-gaap-bd:ReceiptsCustody', ai) + getParameter(xml, 'tw-gaap-bd:OtherPayable', ai);
@@ -737,7 +737,7 @@ module.exports = {
                     asset[y] = [];
                 }
                 if (!asset[y][q] || !no_cover) {
-                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
                     asset[y][q].share = getParameter(xml, 'tw-gaap-mim:Capital', ai);
                     asset[y][q].cash = getParameter(xml, 'tw-gaap-mim:CashCashEquivalents', ai);
                     asset[y][q].property = getParameter(xml, 'tw-gaap-mim:FixedAssets', ai);
@@ -764,7 +764,7 @@ module.exports = {
                     asset[y] = [];
                 }
                 if (!asset[y][q] || !no_cover) {
-                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, OCFA: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
+                    asset[y][q] = {receivable: 0, payable: 0, cash: 0, inventories: 0, property: 0, current_liabilities: 0, noncurrent_liabilities: 0, equityParent: 0, equityChild: 0, share: 0, total: 0, longterm: 0};
                     asset[y][q].share = getParameter(xml, 'tw-gaap-ins:CommonStock', ai);
                     asset[y][q].cash = getParameter(xml, 'tw-gaap-ins:CashCashEquivalents', ai);
                     asset[y][q].property = getParameter(xml, 'tw-gaap-ins:FixedAssets', ai);
@@ -1246,7 +1246,7 @@ module.exports = {
                         if (assetStatus[i-1] && assetStatus[i-1].length === 0) {
                             delete assetStatus[i-1];
                         }
-                        assetStatus[i][j] = {total: asset[i][j].total, receivable: Math.ceil(asset[i][j].receivable/asset[i][j].total*1000)/10, cash: Math.ceil(asset[i][j].cash/asset[i][j].total*1000)/10, OCFA: Math.ceil(asset[i][j].OCFA/asset[i][j].total*1000)/10, inventories: Math.ceil(asset[i][j].inventories/asset[i][j].total*1000)/10, property: Math.ceil(asset[i][j].property/asset[i][j].total*1000)/10, longterm: Math.ceil(asset[i][j].longterm/asset[i][j].total*1000)/10, other: Math.ceil((asset[i][j].total - asset[i][j].cash - asset[i][j].inventories - asset[i][j].receivable - asset[i][j].OCFA - asset[i][j].property - asset[i][j].longterm)/asset[i][j].total*1000)/10, equityChild: Math.ceil(asset[i][j].equityChild/asset[i][j].total*1000)/10 , equityParent: Math.ceil(asset[i][j].equityParent/asset[i][j].total*1000)/10, noncurrent_liabilities: Math.ceil(asset[i][j].noncurrent_liabilities/asset[i][j].total*1000)/10, current_liabilities_without_payable: Math.ceil((asset[i][j].current_liabilities - asset[i][j].payable)/asset[i][j].total*1000)/10, payable: Math.ceil(asset[i][j].payable/asset[i][j].total*1000)/10};
+                        assetStatus[i][j] = {total: asset[i][j].total, receivable: Math.ceil(asset[i][j].receivable/asset[i][j].total*1000)/10, cash: Math.ceil(asset[i][j].cash/asset[i][j].total*1000)/10, inventories: Math.ceil(asset[i][j].inventories/asset[i][j].total*1000)/10, property: Math.ceil(asset[i][j].property/asset[i][j].total*1000)/10, longterm: Math.ceil(asset[i][j].longterm/asset[i][j].total*1000)/10, other: Math.ceil((asset[i][j].total - asset[i][j].cash - asset[i][j].inventories - asset[i][j].receivable - asset[i][j].property - asset[i][j].longterm)/asset[i][j].total*1000)/10, equityChild: Math.ceil(asset[i][j].equityChild/asset[i][j].total*1000)/10 , equityParent: Math.ceil(asset[i][j].equityParent/asset[i][j].total*1000)/10, noncurrent_liabilities: Math.ceil(asset[i][j].noncurrent_liabilities/asset[i][j].total*1000)/10, current_liabilities_without_payable: Math.ceil((asset[i][j].current_liabilities - asset[i][j].payable)/asset[i][j].total*1000)/10, payable: Math.ceil(asset[i][j].payable/asset[i][j].total*1000)/10};
                     } else {
                         assetStatus[i] = [];
                         delete assetStatus[i-1];
@@ -1328,7 +1328,7 @@ module.exports = {
         for (var i in salesStatus) {
             safetyStatus[i] = [];
             for (var j in salesStatus[i]) {
-                safetyStatus[i][j] = {prMinusProfit: Math.ceil(asset[i][j].payable/asset[i][j].receivable*1000 - 1000 + salesStatus[i][j].quarterProfit*10)/10, prRatio: Math.ceil(asset[i][j].payable/asset[i][j].receivable*1000)/10, shortCash: Math.ceil((asset[i][j].receivable - asset[i][j].payable*2 + asset[i][j].current_liabilities - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100 - cashStatus[i][j].invest * cashStatus[i][j].end / 100)/(asset[i][j].cash + asset[i][j].OCFA)*1000)/10, shortCashWithoutCL: Math.ceil((asset[i][j].receivable - asset[i][j].payable - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100 - cashStatus[i][j].invest * cashStatus[i][j].end / 100)/(asset[i][j].cash + asset[i][j].OCFA)*1000)/10, shortCashWithoutInvest: Math.ceil((asset[i][j].receivable - asset[i][j].payable*2 + asset[i][j].current_liabilities - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100)/(asset[i][j].cash + asset[i][j].OCFA)*1000)/10};
+                safetyStatus[i][j] = {prMinusProfit: Math.ceil(asset[i][j].payable/asset[i][j].receivable*1000 - 1000 + salesStatus[i][j].quarterProfit*10)/10, prRatio: Math.ceil(asset[i][j].payable/asset[i][j].receivable*1000)/10, shortCash: Math.ceil((asset[i][j].receivable - asset[i][j].payable*2 + asset[i][j].current_liabilities - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100 - cashStatus[i][j].invest * cashStatus[i][j].end / 100)/(asset[i][j].cash)/10)*1000, shortCashWithoutCL: Math.ceil((asset[i][j].receivable - asset[i][j].payable - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100 - cashStatus[i][j].invest * cashStatus[i][j].end / 100)/(asset[i][j].cash)*1000)/10, shortCashWithoutInvest: Math.ceil((asset[i][j].receivable - asset[i][j].payable*2 + asset[i][j].current_liabilities - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100)/(asset[i][j].cash)*1000)/10};
             }
         }
         return safetyStatus;
@@ -1652,7 +1652,6 @@ module.exports = {
                         filesize = fs.statSync(xmlPath)['size'];
                         console.log(filesize);
                     }
-
                     if (wait > 150000 || filesize === 350 || err) {
                         if (err) {
                             util.handleError(err);
@@ -3222,9 +3221,9 @@ function trans_tag(item, append) {
         case 'cash':
             tag = '現金資產' + append;
             break;
-        case 'OCFA':
+        /*case 'OCFA':
             tag = '其他流動資產' + append;
-            break;
+            break;*/
         case 'inventories':
             tag = '存貨資產' + append;
             break;

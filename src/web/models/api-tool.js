@@ -876,14 +876,44 @@ module.exports = {
         }
         postData(fields, null, options, {}, function(err) {
             if (err) {
-                util.handleError(err, callback, callback);
+                if (err.code === 'HPE_INVALID_CONSTANT') {
+                    if (fields['report_id'] === 'C') {
+                        fields['report_id'] = 'B';
+                    }
+                    postData(fields, null, options, {}, function(err1) {
+                        if (err1) {
+                            if (err1.code === 'HPE_INVALID_CONSTANT') {
+                                if (fields['report_id'] === 'B') {
+                                    fields['report_id'] = 'A';
+                                }
+                                postData(fields, null, options, {}, function(err2) {
+                                    if (err2) {
+                                        util.handleError(err2, callback, callback);
+                                    }
+                                    setTimeout(function(){
+                                        callback(null, filePath);
+                                    }, 0);
+                                }, filePath);
+                            } else {
+                                util.handleError(err1, callback, callback);
+                            }
+                        } else {
+                            setTimeout(function(){
+                                callback(null, filePath);
+                            }, 0);
+                        }
+                    }, filePath);
+                } else {
+                    util.handleError(err, callback, callback);
+                }
+            } else {
+                //console.log(filePath);
+                //var stats = fs.statSync(filePath);
+                //console.log(stats);
+                setTimeout(function(){
+                    callback(null, filePath);
+                }, 0);
             }
-            //console.log(filePath);
-            //var stats = fs.statSync(filePath);
-            //console.log(stats);
-            setTimeout(function(){
-                callback(null, filePath);
-            }, 0);
         }, filePath);
     },
     getSubHdUrl: function(id, callback) {

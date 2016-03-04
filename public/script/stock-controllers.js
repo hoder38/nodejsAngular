@@ -1138,7 +1138,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                     diff = Math.ceil(this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1][i] * this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1].total / 100 - this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1][i] * this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1].total / 100);
                     if (diff > 0) {
                         diff_percent = Math.ceil(diff / Math.abs(total_diff) * 1000) / 10;
-                        if (i === 'receivable' || i === 'cash' || i === 'OCFA' || i === 'inventories' || i === 'property' || i === 'longterm' || i === 'other') {
+                        if (i === 'receivable' || i === 'cash' || i === 'inventories' || i === 'property' || i === 'longterm' || i === 'other') {
                             this.assetLabels.push(i + ':+' + diff_percent + '%');
                             this.assetData.push(diff);
                         } else {
@@ -1153,7 +1153,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                     diff = Math.ceil(this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1][i] * this.parseResult.assetStatus[assetEndDate.year][assetEndDate.quarter-1].total / 100 - this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1][i] * this.parseResult.assetStatus[assetStartDate.year][assetStartDate.quarter-1].total / 100);
                     if (diff < 0) {
                         diff_percent = Math.ceil(diff / Math.abs(total_diff) * 1000) / 10;
-                        if (i === 'receivable' || i === 'cash' || i === 'OCFA' || i === 'inventories' || i === 'property' || i === 'longterm' || i === 'other') {
+                        if (i === 'receivable' || i === 'cash' || i === 'inventories' || i === 'property' || i === 'longterm' || i === 'other') {
                             this.assetLabels.push(i + ':' + diff_percent + '%');
                             this.assetData.push(diff);
                         } else {
