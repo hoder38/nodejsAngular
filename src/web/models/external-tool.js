@@ -1271,6 +1271,7 @@ module.exports = {
                     util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
                 }
                 var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-1));
                 var docDate = date.getFullYear() + '-';
                 if (date.getMonth() + 1 < 10) {
                     docDate = docDate + '0' + (date.getMonth() + 1) + '-';
