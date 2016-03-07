@@ -97,6 +97,7 @@ var express = require('express'),
     server = https.createServer(credentials, app),
     mkdirp = require('mkdirp'),
     readline = require('readline'),
+    mega = require('mega'),
     readTorrent = require('read-torrent');
     sessionStore = require("../models/session-tool.js")(express_session);
 
@@ -1018,6 +1019,33 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
                         });
                     });
+                } else if (url.match(/^(https|http):\/\/mega\./)) {
+                    var urlMega = url.replace(/(https|http):\/\/mega\.[^\/]+\//, 'https://mega.co.nz/');
+                    mega.file(urlMega).loadAttributes(function(err, fileMega) {
+                        if (err) {
+                            api.xuiteDownload(url, filePath, function(err, pathname, filename) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                if (!filename) {
+                                    filename = path.basename(pathname);
+                                }
+                                console.log(filename);
+                                streamClose(filename, [], []);
+                            });
+                        } else {
+                            console.log(fileMega);
+                            var streamMega = fileMega.download();
+                            filename = 'Mega file';
+                            if (fileMega.name) {
+                                filename = fileMega.name;
+                            }
+                            streamMega.pipe(fs.createWriteStream(filePath));
+                            streamMega.on('end', function() {
+                                streamClose(filename, ['mega upload'], []);
+                            });
+                        }
+                    });
                 } else {
                     api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                         if (err) {
@@ -1385,6 +1413,33 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         }
                         streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
                     });
+                });
+            } else if (url.match(/^(https|http):\/\/mega\./)) {
+                var urlMega = url.replace(/(https|http):\/\/mega\.[^\/]+\//, 'https://mega.co.nz/');
+                mega.file(urlMega).loadAttributes(function(err, fileMega) {
+                    if (err) {
+                        api.xuiteDownload(url, filePath, function(err, pathname, filename) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (!filename) {
+                                filename = path.basename(pathname);
+                            }
+                            console.log(filename);
+                            streamClose(filename, [], []);
+                        });
+                    } else {
+                        console.log(fileMega);
+                        var streamMega = fileMega.download();
+                        filename = 'Mega file';
+                        if (fileMega.name) {
+                            filename = fileMega.name;
+                        }
+                        streamMega.pipe(fs.createWriteStream(filePath));
+                        streamMega.on('end', function() {
+                            streamClose(filename, ['mega upload'], []);
+                        });
+                    }
                 });
             } else {
                 api.xuiteDownload(url, filePath, function(err, pathname, filename) {
@@ -2034,7 +2089,6 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                 if (!video_list) {
                     util.handleError({hoerror: 2, message: id[1] + " video invaild!!!"}, next, res);
                 }
-                console.log(raw_data);
                 var list_match = false;
                 var list = [];
                 for (var i in video_list) {
@@ -2053,7 +2107,6 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                 if (list.length > 1) {
                     ret_obj['sub'] = list.length;
                 }
-                console.log(ret_obj);
                 res.json(ret_obj);
             }, 60000, false, false, 'http://888blb1.flvapi.com/');
         } else if (id[1] === 'kdr') {

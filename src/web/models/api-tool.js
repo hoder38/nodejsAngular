@@ -850,6 +850,8 @@ module.exports = {
             });
         }, 60000, false, false);
     },
+    //http://doc.twse.com.tw/server-java/t57sb01?id=&key=&step=1&co_id=2330&year=103&seamon=&mtype=F&dtype=F04
+    //http://doc.twse.com.tw/server-java/t57sb01?step=9&kind=F&co_id=2330&filename=2013_2330_20140624F04.pdf
     getTwseXml: function(stockCode, year, quarter, filePath, callback) {
         var url = 'http://mops.twse.com.tw/server-java/FileDownLoad';
         var urlParse = urlMod.parse(url);
