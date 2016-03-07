@@ -855,6 +855,7 @@ module.exports = {
     getTwseXml: function(stockCode, year, quarter, filePath, callback) {
         var url = 'http://mops.twse.com.tw/server-java/FileDownLoad';
         var urlParse = urlMod.parse(url);
+        var is_end = false;
 
         // An object of options to indicate where to post to
         var options = {
@@ -892,33 +893,57 @@ module.exports = {
                                 }
                                 postData(fields, null, options, {}, function(err2) {
                                     if (err2) {
-                                        util.handleError(err2, callback, callback);
+                                        if (!is_end) {
+                                            is_end = true;
+                                            util.handleError(err2, callback, callback);
+                                        }
                                     }
-                                    setTimeout(function(){
-                                        callback(null, filePath);
-                                    }, 0);
+                                    if (!is_end) {
+                                        is_end = true;
+                                        setTimeout(function(){
+                                            callback(null, filePath);
+                                        }, 0);
+                                    }
                                 }, filePath);
                             } else {
-                                util.handleError(err1, callback, callback);
+                                if (!is_end) {
+                                    is_end = true;
+                                    util.handleError(err1, callback, callback);
+                                }
                             }
                         } else {
-                            setTimeout(function(){
-                                callback(null, filePath);
-                            }, 0);
+                            if (!is_end) {
+                                is_end = true;
+                                setTimeout(function(){
+                                    callback(null, filePath);
+                                }, 0);
+                            }
                         }
                     }, filePath);
                 } else {
-                    util.handleError(err, callback, callback);
+                    if (!is_end) {
+                        is_end = true;
+                        util.handleError(err, callback, callback);
+                    }
                 }
             } else {
                 //console.log(filePath);
                 //var stats = fs.statSync(filePath);
                 //console.log(stats);
-                setTimeout(function(){
-                    callback(null, filePath);
-                }, 0);
+                if (!is_end) {
+                    is_end = true;
+                    setTimeout(function(){
+                        callback(null, filePath);
+                    }, 0);
+                }
             }
         }, filePath);
+        setTimeout(function(){
+            if (!is_end) {
+                is_end = true;
+                util.handleError({code: 'ETIMEDOUT', message: "xml time out"}, callback, callback);
+            }
+        }, 180000);
     },
     getSubHdUrl: function(id, callback) {
         var url = 'http://subhd.com/ajax/down_ajax';
