@@ -1,6 +1,8 @@
 var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 var api = require("../models/api-tool.js");
+var googleApi = require("../models/api-tool-google.js");
+var mime = require("../util/mime.js");
 var stockTagTool = require("../models/tag-tool.js")("stock");
 var config_type = require('../../../ver.js');
 var config_glb = require('../../../config/' + config_type.dev_type + '.js');
@@ -466,6 +468,9 @@ module.exports = {
                     asset[y][q].payable = getParameter(xml, 'tifrs-bsci-ci:AccountsPayable', ai) + getParameter(xml, 'tifrs-bsci-ci:AccountsPayableToRelatedParties', ai) + getParameter(xml, 'tifrs-bsci-ci:OtherPayables', ai) + getParameter(xml, 'tifrs-bsci-ci:ShorttermNotesAndBillsPayable', ai) + getParameter(xml, 'tifrs-bsci-ci:NotesPayable', ai) + getParameter(xml, 'tifrs-bsci-ci:NotesPayableToRelatedParties', ai) + getParameter(xml, 'tifrs-bsci-ci:ConstructionContractsPayable', ai) + getParameter(xml, 'tifrs-bsci-ci:ReceiptsUnderCustody', ai);
                     asset[y][q].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', ai);
                     asset[y][q].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', ai) - asset[y][q].current_liabilities;
+                    if (asset[y][q].equityParent === 0) {
+                        asset[y][q].equityParent = getParameter(xml, 'ifrs:Equity', ai);
+                    }
                     if (quarterIsEmpty(asset[y][q])) {
                         asset[y][q] = null;
                     }
@@ -1484,6 +1489,128 @@ module.exports = {
             return Math.ceil((managementStatus[year][quarter-1].profitRelative+managementStatus[year][quarter-1].cashRelative+managementStatus[year][quarter-1].inventoriesRelative+managementStatus[year][quarter-1].receivableRelative+managementStatus[year][quarter-1].payableRelative)*1000)/1000;
         } else {
             return -10;
+        }
+    },
+    getSingleAnnual: function(year, folder, index, callback) {
+        var annual_data = {folderId: folder, name: 'tw' + index};
+        var annual_folder = null;
+        var annual_list = [];
+        googleApi.googleApi('list folder', annual_data, function(err, annualList) {
+            if (err) {
+                util.handleError(err, callback, callback);
+            } else {
+                if (annualList.length < 1) {
+                    googleApi.googleApi('create', {name: 'tw' + index, parent: folder}, function(err, metadata) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        } else {
+                            console.log(metadata);
+                            annual_folder = metadata.id;
+                            console.log(annual_list);
+                            recur_annual(year);
+                        }
+                    });
+                } else {
+                    annual_folder = annualList[0].id;
+                    googleApi.googleApi('list file', {folderId: annual_folder}, function(err, metadataList) {
+                        if (err) {
+                            util.handleError(err);
+                        }
+                        var matchName = false;
+                        for (var i in metadataList) {
+                            matchName = mime.getExtname(metadataList[i].title);
+                            annual_list.push(matchName.front);
+                        }
+                        console.log(annual_list);
+                        recur_annual(year);
+                    });
+                }
+            }
+        });
+        function recur_annual(cYear) {
+            if (annual_list.indexOf(cYear+'') === -1 && annual_list.indexOf('read' + cYear) === -1) {
+                var folderPath = '/mnt/stock/twse/' + index;
+                var filePath = folderPath + '/tmp';
+                if (!fs.existsSync(folderPath)) {
+                    mkdirp(folderPath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        api.getTwseAnnual(index, cYear, filePath, function(err, filename) {
+                            if (err) {
+                                util.handleError(err);
+                                cYear--;
+                                if (cYear > year - 5) {
+                                    recur_annual(cYear);
+                                } else {
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                }
+                            } else {
+                                var data = {type: 'auto', name: cYear + mime.getExtname(filename).ext, filePath: filePath, parent: annual_folder};
+                                googleApi.googleApi('upload', data, function(err, metadata) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    } else {
+                                        console.log(metadata);
+                                        console.log('done');
+                                    }
+                                    cYear--;
+                                    if (cYear > year - 5) {
+                                        recur_annual(cYear);
+                                    } else {
+                                        setTimeout(function(){
+                                            callback(null);
+                                        }, 0);
+                                    }
+                                });
+                            }
+                        });
+                    });
+                } else {
+                    api.getTwseAnnual(index, cYear, filePath, function(err, filename) {
+                        if (err) {
+                            util.handleError(err);
+                            cYear--;
+                            if (cYear > year - 5) {
+                                recur_annual(cYear);
+                            } else {
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            }
+                        } else {
+                            var data = {type: 'auto', name: cYear + mime.getExtname(filename).ext, filePath: filePath, parent: annual_folder};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err);
+                                } else {
+                                    console.log(metadata);
+                                    console.log('done');
+                                }
+                                cYear--;
+                                if (cYear > year - 5) {
+                                    recur_annual(cYear);
+                                } else {
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                }
+                            });
+                        }
+                    });
+                }
+            } else {
+                cYear--;
+                if (cYear > year - 5) {
+                    recur_annual(cYear);
+                } else {
+                    setTimeout(function(){
+                        callback(null);
+                    }, 0);
+                }
+            }
         }
     },
     getSingleStock: function(type, index, callback, stage) {

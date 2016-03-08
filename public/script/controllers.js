@@ -2625,7 +2625,21 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             }
         }
     }
-
+    $scope.forwardVideo = function(type) {
+        if (type === 'torrent') {
+            if ($scope.fixTorrentSub) {
+                torrent.currentTime += 0.5;
+            } else {
+                torrent.currentTime += 15;
+            }
+        } else {
+            if ($scope.fixVideoSub) {
+                video.currentTime += 0.5;
+            } else {
+                video.currentTime += 15;
+            }
+        }
+    }
     $scope.toggleSub = function(type) {
         var obj = video;
         if (type === 'torrent') {

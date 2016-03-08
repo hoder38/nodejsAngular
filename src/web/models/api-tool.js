@@ -33,6 +33,7 @@ var crypto = require('crypto'),
     fs = require("fs"),
     http = require('http'),
     https = require('https'),
+    path = require('path'),
     zlib = require('zlib');
 
 function signature(data, method) {
@@ -658,7 +659,7 @@ module.exports = {
                 }
                 access_token = tokens[0]["access_token"];
                 expire_in = tokens[0]["expire_in"];
-                if ((expire_in*1000) < (Date.now())) {
+                if ((expire_in*1000) < (Date.now()-300000)) {
                     this_obj.refreshToken(function(err) {
                         if (err) {
                             util.handleError(err, callback, callback, null);
@@ -669,7 +670,7 @@ module.exports = {
                     sendAPI(data, method, callback);
                 }
             });
-        } else if ((expire_in*1000) < (Date.now())) {
+        } else if ((expire_in*1000) < (Date.now()-300000)) {
             this_obj.refreshToken(function(err) {
                 if (err) {
                     util.handleError(err, callback, callback, null);
@@ -850,8 +851,48 @@ module.exports = {
             });
         }, 60000, false, false);
     },
-    //http://doc.twse.com.tw/server-java/t57sb01?id=&key=&step=1&co_id=2330&year=103&seamon=&mtype=F&dtype=F04
-    //http://doc.twse.com.tw/server-java/t57sb01?step=9&kind=F&co_id=2330&filename=2013_2330_20140624F04.pdf
+    getTwseAnnual: function(index, year, filePath, callback) {
+        var this_obj = this;
+        year = year - 1911;
+        var url = 'http://doc.twse.com.tw/server-java/t57sb01?id=&key=&step=1&co_id=' + index + '&year=' + year + '&seamon=&mtype=F&dtype=F04';
+        this.xuiteDownload(url, '', function(err, raw_data) {
+            if (err) {
+                util.handleError(err, callback, callback);
+            }
+            var info_match = raw_data.match(/>([^>\.]+\.pdf)</i);
+            if (!info_match) {
+                util.handleError({hoerror: 2, message: "cannot find annual location"}, callback, callback);
+            }
+            url = 'http://doc.twse.com.tw/server-java/t57sb01?step=9&kind=F&co_id=' + index + '&filename=' + info_match[1];
+            this_obj.xuiteDownload(url, '', function(err, raw_data1) {
+                if (err) {
+                    util.handleError(err, callback, callback);
+                }
+                info_match = raw_data1.match(/<a href='([^']+)'/);
+                if (!info_match) {
+                    util.handleError({hoerror: 2, message: "cannot find annual location"}, callback, callback);
+                }
+                if (!info_match[1].match(/^(http|https):\/\//)) {
+                    if (info_match[1].match(/^\//)) {
+                        info_match[1] = 'http://doc.twse.com.tw' + info_match[1];
+                    } else {
+                        info_match[1] = 'http://doc.twse.com.tw/' + info_match[1];
+                    }
+                }
+                this_obj.xuiteDownload(info_match[1], filePath, function(err, pathname, filename) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    if (!filename) {
+                        filename = path.basename(pathname);
+                    }
+                    setTimeout(function(){
+                        callback(null, filename);
+                    }, 0);
+                });
+            }, 60000, false, false, 'http://doc.twse.com.tw/', true);
+        }, 60000, false, false, 'http://doc.twse.com.tw/', true);
+    },
     getTwseXml: function(stockCode, year, quarter, filePath, callback) {
         var url = 'http://mops.twse.com.tw/server-java/FileDownLoad';
         var urlParse = urlMod.parse(url);

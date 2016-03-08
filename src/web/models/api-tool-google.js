@@ -280,7 +280,7 @@ function sendAPI(method, data, callback) {
                         exports.getApiQueue();
                         util.handleError(err, callback, callback, null);
                     } else {
-                        if (tokens.expiry_date < (Date.now()-300000)) {
+                        if (tokens.expiry_date < (Date.now()-600000)) {
                             console.log('uplad expire');
                             oauth2Client.refreshAccessToken(function(err, refresh_tokens) {
                                 if (err) {
@@ -463,7 +463,7 @@ function checkOauth(callback) {
                 util.handleError({hoerror: 2, message: "can not find token"}, callback, callback, null);
             }
             tokens = token[0];
-            if (tokens.expiry_date < (Date.now()-300000)) {
+            if (tokens.expiry_date < (Date.now()-600000)) {
                 console.log('expire');
                 oauth2Client.setCredentials(tokens);
                 oauth2Client.refreshAccessToken(function(err, refresh_tokens) {
@@ -489,7 +489,7 @@ function checkOauth(callback) {
                 }, 0);
             }
         });
-    } else if (tokens.expiry_date < (Date.now()-300000)) {
+    } else if (tokens.expiry_date < (Date.now()-600000)) {
         console.log('expire');
         oauth2Client.setCredentials(tokens);
         oauth2Client.refreshAccessToken(function(err, refresh_tokens) {

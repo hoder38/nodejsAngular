@@ -1679,61 +1679,85 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 for (var i in db_obj) {
                     DBdata[i] = db_obj[i];
                 }
-                mongo.orig("insert", "storage", DBdata, function(err, item){
-                    if(err) {
-                        sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
-                        util.handleError(err, next, res);
-                    }
-                    console.log(item);
-                    console.log('save end');
-                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                    sendWs({type: req.user.username, data: name + ' upload complete'}, item[0].adultonly);
-                    tagTool.getRelativeTag(mediaTag.def[0], req.user, mediaTag.opt, next, function(err, relative) {
-                        if (err) {
+                if (mediaType.type === 'video' && DBdata['status'] === 1) {
+                    var is_preview = true;
+                    var cProcess = avconv(['-i', filePath]);
+                    cProcess.once('exit', function(exitCode, signal, metadata2) {
+                        if (metadata2 && metadata2.input && metadata2.input.stream) {
+                            for (var i in metadata2.input.stream[0]) {
+                                console.log(metadata2.input.stream[0][i].type);
+                                console.log(metadata2.input.stream[0][i].codec);
+                                if (metadata2.input.stream[0][i].type === 'video' && metadata2.input.stream[0][i].codec !== 'h264') {
+                                    is_preview = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if (is_preview) {
+                            DBdata['status'] = 3;
+                        }
+                        save2DB();
+                    });
+                } else {
+                    save2DB();
+                }
+                function save2DB() {
+                    mongo.orig("insert", "storage", DBdata, function(err, item){
+                        if(err) {
+                            sendWs({type: req.user.username, data: 'upload fail: ' + err.message}, 0);
                             util.handleError(err, next, res);
                         }
-                        var reli = 5;
-                        if (relative.length < reli) {
-                            reli = relative.length;
-                        }
-                        if (util.checkAdmin(2 ,req.user)) {
-                            if (item[0].adultonly === 1) {
-                                mediaTag.def.push('18+');
+                        console.log(item);
+                        console.log('save end');
+                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                        sendWs({type: req.user.username, data: name + ' upload complete'}, item[0].adultonly);
+                        tagTool.getRelativeTag(mediaTag.def[0], req.user, mediaTag.opt, next, function(err, relative) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            var reli = 5;
+                            if (relative.length < reli) {
+                                reli = relative.length;
+                            }
+                            if (util.checkAdmin(2 ,req.user)) {
+                                if (item[0].adultonly === 1) {
+                                    mediaTag.def.push('18+');
+                                } else {
+                                    mediaTag.opt.push('18+');
+                                }
+                            }
+                            if (item[0].first === 1) {
+                                mediaTag.def.push('first item');
                             } else {
-                                mediaTag.opt.push('18+');
+                                mediaTag.opt.push('first item');
                             }
-                        }
-                        if (item[0].first === 1) {
-                            mediaTag.def.push('first item');
-                        } else {
-                            mediaTag.opt.push('first item');
-                        }
-                        var normal = '';
-                        for (var i = 0; i < reli; i++) {
-                            normal = tagTool.normalizeTag(relative[i]);
-                            if (!tagTool.isDefaultTag(normal)) {
-                                if (mediaTag.def.indexOf(normal) === -1 && mediaTag.opt.indexOf(normal) === -1) {
-                                    mediaTag.opt.push(normal);
+                            var normal = '';
+                            for (var i = 0; i < reli; i++) {
+                                normal = tagTool.normalizeTag(relative[i]);
+                                if (!tagTool.isDefaultTag(normal)) {
+                                    if (mediaTag.def.indexOf(normal) === -1 && mediaTag.opt.indexOf(normal) === -1) {
+                                        mediaTag.opt.push(normal);
+                                    }
                                 }
                             }
-                        }
-                        if (DBdata['untag']) {
-                            res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
-                        } else {
-                            res.json({id: item[0]._id});
-                        }
-                        if (!is_media) {
-                            mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
-                                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
-                                if(err) {
-                                    util.handleError(err);
-                                }
-                                console.log('transcode done');
-                                console.log(new Date());
-                            });
-                        }
+                            if (DBdata['untag']) {
+                                res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                            } else {
+                                res.json({id: item[0]._id});
+                            }
+                            if (!is_media) {
+                                mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
+                                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                    if(err) {
+                                        util.handleError(err);
+                                    }
+                                    console.log('transcode done');
+                                    console.log(new Date());
+                                });
+                            }
+                        });
                     });
-                });
+                }
             });
         }
     });
@@ -2071,7 +2095,9 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
         } else if (id[1] === 'kdr') {
             url = id[2];
         } else if (id[1] === 'yuk') {
-            url = 'http://v.youku.com/v_show/id_' + id[2] + '.html';
+            var idsub = id[2].match(/^([^_]+)_(\d+)$/);
+            url = 'http://v.youku.com/v_show/id_' + idsub[1] + '.html';
+            subIndex = Number(idsub[2]);
         } else if (id[1] === 'tud') {
             var idsub = id[2].match(/^([^_]+)_([^_]+)$/);
             url = 'http://www.tudou.com/albumplay/' + idsub[1] +'/' + idsub[2] +'.html';
@@ -5451,23 +5477,72 @@ function loopUpdateStock() {
                 stock_time = 1;
                 console.log('loopUpdateStock end');
             } else {
+                var annualList = [];
+                var folderList = [];
+                var year = new Date().getFullYear();
                 for (var i in items) {
                     if (stock_batch_list.indexOf(items[i].index) === -1) {
                         stock_batch_list.push(items[i].index);
                     }
+                    annualList.push(items[i].index);
                 }
-                if (stock_batch_list.length > 0) {
-                    updateStock('twse', function(err) {
-                        if (err) {
+                if (annualList.length > 0) {
+                    mongo.orig("find", "user", {auto: {$exists: true}, perm: 1}, function(err, userlist){
+                        if(err) {
                             util.handleError(err);
+                            restUpdate();
+                        } else {
+                            if (userlist.length > 0) {
+                                recur_find(0);
+                            } else {
+                                restUpdate();
+                            }
+                            function recur_find(index) {
+                                var downloaded_data = {folderId: userlist[index].auto, name: 'downloaded'};
+                                googleApi.googleApi('list folder', downloaded_data, function(err, downloadedList) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    } else {
+                                        if (downloadedList.length > 0) {
+                                            folderList.push(downloadedList[0].id);
+                                        }
+                                    }
+                                    index++;
+                                    if (index < userlist.length) {
+                                        recur_find(index);
+                                    } else {
+                                        if (folderList.length > 0) {
+                                            updateStockAnnual(year, folderList, annualList, 0, 0, function(err) {
+                                                if(err) {
+                                                    util.handleError(err);
+                                                }
+                                                restUpdate();
+                                            });
+                                        } else {
+                                            restUpdate();
+                                        }
+                                    }
+                                });
+                            }
                         }
-                        stock_time = 1;
-                        console.log('loopUpdateStock end');
                     });
                 } else {
-                    console.log('empty stock list');
-                    stock_time = 1;
-                    console.log('loopUpdateStock end');
+                    restUpdate();
+                }
+                function restUpdate() {
+                    if (stock_batch_list.length > 0) {
+                        updateStock('twse', function(err) {
+                            if (err) {
+                                util.handleError(err);
+                            }
+                            stock_time = 1;
+                            console.log('loopUpdateStock end');
+                        });
+                    } else {
+                        console.log('empty stock list');
+                        stock_time = 1;
+                        console.log('loopUpdateStock end');
+                    }
                 }
             }
         });
@@ -5486,6 +5561,32 @@ function loopUpdateStock() {
             console.log('loopUpdateStock end');
         }
     }
+}
+
+function updateStockAnnual(year, folderList, updateList, index, uIndex, callback) {
+    console.log('updateAnnual');
+    console.log(new Date());
+    console.log(year);
+    console.log(folderList[index]);
+    console.log(updateList[uIndex]);
+    stockTool.getSingleAnnual(year, folderList[index], updateList[uIndex], function(err) {
+        if (err) {
+            util.handleError(err, callback, callback);
+        }
+        uIndex++;
+        if (uIndex < updateList.length) {
+            updateStockAnnual(year, folderList, updateList, index, uIndex, callback);
+        } else {
+            index++;
+            if (index < folderList.length) {
+                updateStockAnnual(year, folderList, updateList, index, uIndex, callback);
+            } else {
+                setTimeout(function(){
+                    callback(null);
+                }, 0);
+            }
+        }
+    });
 }
 
 function updateStock(type, callback) {

@@ -38,33 +38,120 @@ function cmdUpdateStock(updateType, singleIndex) {
     console.log('cmdUpdateStock');
     console.log(new Date());
     console.log('update stock');
-    if (singleIndex && singleIndex !== '1' && singleIndex !== '2' && singleIndex !== '3' && singleIndex !== '4') {
-        updateStock(updateType, 'twse', [singleIndex], 0, function(err) {
+    if (updateType > 3) {
+        mongo.orig("find", "user", {auto: {$exists: true}, perm: 1}, function(err, userlist){
             if(err) {
                 util.handleError(err);
             } else {
-                console.log('stock update complete');
+                if (userlist.length > 0) {
+                    var folderList = [];
+                    var updateList = [];
+                    var year = new Date().getFullYear();
+                    recur_find(0);
+                    function recur_find(index) {
+                        var downloaded_data = {folderId: userlist[index].auto, name: 'downloaded'};
+                        googleApi.googleApi('list folder', downloaded_data, function(err, downloadedList) {
+                            if (err) {
+                                util.handleError(err);
+                            } else {
+                                if (downloadedList.length > 0) {
+                                    folderList.push(downloadedList[0].id);
+                                }
+                            }
+                            index++;
+                            if (index < userlist.length) {
+                                recur_find(index);
+                            } else {
+                                if (singleIndex) {
+                                    updateList.push(singleIndex);
+                                    updateStockAnnual(year, folderList, updateList, 0, 0, function(err) {
+                                        if(err) {
+                                            util.handleError(err);
+                                        } else {
+                                            console.log('stock update complete');
+                                        }
+                                    });
+                                } else {
+                                    mongo.orig("find", "stock", {important: 1}, function(err, stocks){
+                                        if(err) {
+                                            util.handleError(err);
+                                        } else {
+                                            for (var i in stocks) {
+                                                updateList.push(stocks[i].index);
+                                            }
+                                            updateStockAnnual(year, folderList, updateList, 0, 0, function(err) {
+                                                if(err) {
+                                                    util.handleError(err);
+                                                } else {
+                                                    console.log('stock update complete');
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    console.log('stock update complete');
+                }
             }
         });
     } else {
-        stockTool.getStockList('twse', function(err, stocklist){
-            if(err) {
-                util.handleError(err);
-            } else {
-                if (stocklist.length < 1) {
-                    console.log('empty stock list');
+        if (singleIndex && singleIndex !== '1' && singleIndex !== '2' && singleIndex !== '3' && singleIndex !== '4') {
+            updateStock(updateType, 'twse', [singleIndex], 0, function(err) {
+                if(err) {
+                    util.handleError(err);
                 } else {
-                    updateStock(updateType, 'twse', stocklist, 0, function(err) {
-                        if(err) {
-                            util.handleError(err);
-                        } else {
-                            console.log('stock update complete');
-                        }
-                    });
+                    console.log('stock update complete');
                 }
-            }
-        }, Number(singleIndex));
+            });
+        } else {
+            stockTool.getStockList('twse', function(err, stocklist){
+                if(err) {
+                    util.handleError(err);
+                } else {
+                    if (stocklist.length < 1) {
+                        console.log('empty stock list');
+                    } else {
+                        updateStock(updateType, 'twse', stocklist, 0, function(err) {
+                            if(err) {
+                                util.handleError(err);
+                            } else {
+                                console.log('stock update complete');
+                            }
+                        });
+                    }
+                }
+            }, Number(singleIndex));
+        }
     }
+}
+
+function updateStockAnnual(year, folderList, updateList, index, uIndex, callback) {
+    console.log('updateAnnual');
+    console.log(new Date());
+    console.log(year);
+    console.log(folderList[index]);
+    console.log(updateList[uIndex]);
+    stockTool.getSingleAnnual(year, folderList[index], updateList[uIndex], function(err) {
+        if (err) {
+            util.handleError(err, callback, callback);
+        }
+        uIndex++;
+        if (uIndex < updateList.length) {
+            updateStockAnnual(year, folderList, updateList, index, uIndex, callback);
+        } else {
+            index++;
+            if (index < folderList.length) {
+                updateStockAnnual(year, folderList, updateList, index, uIndex, callback);
+            } else {
+                setTimeout(function(){
+                    callback(null);
+                }, 0);
+            }
+        }
+    });
 }
 
 function updateStock(updateType, type, stocklist, index, callback) {
@@ -520,7 +607,7 @@ rl.on('line', function(line){
         break;
         default:
         console.log('help:');
-        console.log('stock updateType (start from 1) [single index]');
+        console.log('stock updateType({1: parse latest}, {2: parse all}, {3: download all}, {4: download annual}) [single index OR stock list type(1, 2, 3, 4)]');
         console.log('drive batchNumber [single username] [downloadIndex]');
         console.log('external type [clear]');
         console.log('complete [add]');

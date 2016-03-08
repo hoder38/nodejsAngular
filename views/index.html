@@ -289,6 +289,11 @@
                                         <a href="#" ng-click="fixSub()">Fix</a>
                                     </li>
                                     <li ng-show="videoSwitch">
+                                        <a href="#" ng-click="forwardVideo()">
+                                            <span class="glyphicon glyphicon-forward"></span>
+                                        </a>
+                                    </li>
+                                    <li ng-show="videoSwitch">
                                         <a href="#" ng-click="changeMode('video')">
                                             <span ng-show="video.mode === 1" class="glyphicon glyphicon-arrow-left"></span>{{(video.mode === 0 || video.mode === 1) && 'All' || ''}}{{(video.mode === 2) && '1' || ''}}
                                         </a>
@@ -526,6 +531,11 @@
                                     </li>
                                     <li ng-show="torrentSwitch">
                                         <a href="#" ng-click="fixSub('torrent')">Fix</a>
+                                    </li>
+                                    <li ng-show="torrentSwitch">
+                                        <a href="#" ng-click="forwardVideo('torrent')">
+                                            <span class="glyphicon glyphicon-forward"></span>
+                                        </a>
                                     </li>
                                     <li ng-hide="torrentSwitch" class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                         <a href="#" ng-click="torrentMove(-1)">

@@ -575,7 +575,7 @@ module.exports = {
                     util.handleError(err, callback, callback);
                 }
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()-4));
                 var docDate = '/' + date.getFullYear();
                 if (date.getDate() < 10) {
                     docDate = '/0' + date.getDate() + docDate;
@@ -632,7 +632,7 @@ module.exports = {
                 var list_match = false;
                 var data = null;
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()-4));
                 var docDate = monthNames[date.getMonth()]+' '+date.getDate()+', '+date.getFullYear();
                 console.log(docDate);
                 for (var i in raw_list) {
@@ -675,7 +675,7 @@ module.exports = {
                 var list_match = false;
                 var data = null;
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()-4));
                 var docDate = (date.getMonth()+1) + '/' + date.getDate() + '/' + date.getFullYear();
                 console.log(docDate);
                 list_match = raw_list[0].match(/class="first" href="([^"]+)/);
@@ -720,7 +720,7 @@ module.exports = {
                 var list_match = false;
                 var data = null;
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()-4));
                 var docDate = monthNames[date.getMonth()]+' '+date.getDate()+', '+date.getFullYear();
                 console.log(docDate);
                 list_match = raw_list[0].match(/href="([^"]+)">[a-zA-Z]+ Report<\/a> \(released ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
@@ -775,7 +775,7 @@ module.exports = {
                 }
                 var list = [];
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()-4));
                 var docDate = date.getDate() + ' ' + monthNameShorts[date.getMonth()]+'. '+date.getFullYear();
                 console.log(docDate);
                 if (raw_list[1] === docDate) {
@@ -817,7 +817,7 @@ module.exports = {
                 var list_match = false;
                 var data = null;
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()-4));
                 var docDate = date.getDate() + ' ' + monthNameShorts[date.getMonth()] + ' ' + date.getFullYear();
                 if (date.getDate() < 10) {
                     docDate = '0' + docDate;
@@ -871,7 +871,7 @@ module.exports = {
                 var list_match = false;
                 var data = null;
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()-4));
                 var docDate = date.getDate() + ' ' + monthNames[date.getMonth()] + ' ' + date.getFullYear();
                 console.log(docDate);
                 for (var i in raw_list) {
@@ -913,7 +913,7 @@ module.exports = {
                     var list_match = false;
                     var data = null;
                     var date = new Date();
-                    date = new Date(new Date(date).setDate(date.getDate()-1));
+                    date = new Date(new Date(date).setDate(date.getDate()-4));
                     var docDate = monthNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
                     console.log(docDate);
                     list_match = raw_list[0].match(/class="date-display-single">[a-zA-Z]+, ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
@@ -953,7 +953,7 @@ module.exports = {
                     util.handleError({hoerror: 2, message: 'cannot find rea latest'}, callback, callback);
                 }
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()-4));
                 var docDate = date.getFullYear() + '-';
                 if (date.getMonth()+1 < 10) {
                     docDate = docDate + '0' + (date.getMonth()+1) + '-';
@@ -998,7 +998,7 @@ module.exports = {
                     util.handleError({hoerror: 2, message: 'cannot find sca latest'}, callback, callback);
                 }
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()-4));
                 var docDate = monthNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
                 console.log(docDate);
                 var list = [];
@@ -1042,7 +1042,7 @@ module.exports = {
                     util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
                 }
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()-4));
                 var docDate = date.getFullYear() + '-';
                 if (date.getMonth() + 1 < 10) {
                     docDate = docDate + '0' + (date.getMonth() + 1) + '-';
@@ -2842,7 +2842,7 @@ module.exports = {
             if (index < 1) {
                 util.handleError({hoerror: 2, message: 'index must > 1'}, callback, callback);
             }
-            var sub_index = (+index)*1000%1000;
+            var sub_index = Math.round((+index)*1000)%1000;
             if (sub_index === 0) {
                 sub_index++;
             }
@@ -3601,7 +3601,7 @@ module.exports = {
                                 for (var i in raw_list) {
                                     list_match = raw_list[i].match(/^\["([^"]+)","([^_]+)_wd1"/);
                                     if (list_match) {
-                                        list.push({name: list_match[1], id: 'yuk_' + list_match[2]});
+                                        list.push({name: list_match[1], id: 'yuk_' + list_match[2] + '_' + sub_index});
                                     }
                                 }
                                 if (list.length > 0) {
@@ -3609,6 +3609,7 @@ module.exports = {
                                         return false;
                                     }
                                     var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
+                                    ret.index = ret.showId = (index*1000 + sub_index)/1000;
                                     return {ret: ret, total: list.length};
                                 } else {
                                     for (var i in raw_list) {
@@ -3651,7 +3652,7 @@ module.exports = {
                             for (var i in raw_list) {
                                 list_match = raw_list[i].match(/^\["([^"]+)","([^_]+)_wd1"/);
                                 if (list_match) {
-                                    list.push({name: list_match[1], id: 'yuk_' + list_match[2]});
+                                    list.push({name: list_match[1], id: 'yuk_' + list_match[2] + '_' + sub_index});
                                 }
                             }
                             console.log(list);
@@ -3659,6 +3660,7 @@ module.exports = {
                                 return false;
                             }
                             var ret = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
+                            ret.index = ret.showId = (index*1000 + sub_index)/1000;
                             return {ret: ret, total: list.length};
                         }
                         function otherSource() {

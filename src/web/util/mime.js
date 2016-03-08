@@ -273,5 +273,14 @@ module.exports = {
             }
         }
         return option;
+    },
+    getExtname: function(name) {
+        var result = name.match(ext_filename);
+        var extName = '';
+        if (result && result[0]) {
+            extName = result[0].toLowerCase();
+        }
+        var frontName = name.substr(0, name.length - extName.length);
+        return {front: frontName, ext: extName};
     }
 };
