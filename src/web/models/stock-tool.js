@@ -79,14 +79,19 @@ module.exports = {
         }
         var isOk = false;
         for (var i = 0; i < 4; i++) {
+            console.log(1);
             if (type === 1) {
+                console.log(2);
                 if (xmlDate = califrsCash(i, no_cover)) {
+                    console.log(xmlDate);
                     if (xmlDate.year === year && xmlDate.quarter === quarter) {
                         isOk = true;
                     }
                 }
             } else {
+                console.log(3);
                 if (xmlDate = calgaapCash(i, no_cover)) {
+                    console.log(xmlDate);
                     if (xmlDate.year === year && xmlDate.quarter === quarter) {
                         isOk = true;
                     }
@@ -326,14 +331,14 @@ module.exports = {
                         delete cash[y];
                     }
                 }
-            } else if ((xmlDate = getXmlDate(xml, 'tw-gaap-ins:ConsolidatedTotalIncome_StatementCashFlows', ci)) || (xmlDate = getXmlDate(xml, 'tw-gaap-ins:NetIncomeLoss_StatementCashFlows', ci))) {
+            } else if ((xmlDate = getXmlDate(xml, 'tw-gaap-ins:ConsolidatedTotalIncome_StatementCashFlows', ci)) || (xmlDate = getXmlDate(xml, 'tw-gaap-ins:NetIncomeLoss_StatementCashFlows', ci)) || (xmlDate = getXmlDate(xml, 'tw-gaap-ins:NetIncomeLoss-StatementCashFlows', ci))) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!cash[y]) {
                     cash[y] = [];
                 }
                 if (!cash[y][q] || !no_cover) {
-                    cash[y][q] = {profitBT: getParameter(xml, 'tw-gaap-ins:ConsolidatedTotalIncome_StatementCashFlows', ci) + getParameter(xml, 'tw-gaap-ins:NetIncomeLoss_StatementCashFlows', ci) + getParameter(xml, 'tw-gaap-ins:IncomeTaxExpenseBenefit', ci), operation: getParameter(xml, 'tw-gaap-ins:NetCashProvidedUsedOperatingActivities', ci), invest: getParameter(xml, 'tw-gaap-ins:NetCashProvidedUsedInvestingActivities', ci), finance: getParameter(xml, 'tw-gaap-ins:NetCashProvidedUsedFinancingActivities', ci), dividends: getParameter(xml, 'tw-gaap-ins:CashDividends', ci), change: getParameter(xml, 'tw-gaap-ins:NetChangesCashCashEquivalents', ci), begin: 0, end: 0};
+                    cash[y][q] = {profitBT: getParameter(xml, 'tw-gaap-ins:ConsolidatedTotalIncome_StatementCashFlows', ci) + getParameter(xml, 'tw-gaap-ins:NetIncomeLoss_StatementCashFlows', ci) + getParameter(xml, 'tw-gaap-ins:IncomeTaxExpenseBenefit', ci) + getParameter(xml, 'tw-gaap-ins:NetIncomeLoss-StatementCashFlows', ci), operation: getParameter(xml, 'tw-gaap-ins:NetCashProvidedUsedOperatingActivities', ci), invest: getParameter(xml, 'tw-gaap-ins:NetCashProvidedUsedInvestingActivities', ci), finance: getParameter(xml, 'tw-gaap-ins:NetCashProvidedUsedFinancingActivities', ci), dividends: getParameter(xml, 'tw-gaap-ins:CashDividends', ci), change: getParameter(xml, 'tw-gaap-ins:NetChangesCashCashEquivalents', ci), begin: 0, end: 0};
                     cashDate = getXmlDate(xml, 'tw-gaap-ins:CashCashEquivalents', i);
                     while (cashDate) {
                         if (cashDate.year === y) {
@@ -499,6 +504,9 @@ module.exports = {
                     asset[y][q].payable = getParameter(xml, 'tifrs-bsci-fh:Payables', ai) + getParameter(xml, 'tifrs-bsci-fh:DepositsFromTheCentralBankAndBanks', ai) + getParameter(xml, 'tifrs-bsci-fh:Deposits', ai);
                     asset[y][q].current_liabilities = asset[y][q].payable + getParameter(xml, 'tifrs-bsci-fh:DueToTheCentralBankAndBanks', ai) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', ai) + getParameter(xml, 'tifrs-bsci-fh:SecuritiesSoldUnderRepurchaseAgreements', ai) + getParameter(xml, 'tifrs-bsci-fh:CommercialPapersIssuedNet', ai) + getParameter(xml, 'tifrs-bsci-fh:DerivativeFinancialLiabilitiesForHedging', ai) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', ai);
                     asset[y][q].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', ai) - asset[y][q].current_liabilities;
+                    if (asset[y][q].equityParent === 0) {
+                        asset[y][q].equityParent = getParameter(xml, 'ifrs:Equity', ai);
+                    }
                     if (quarterIsEmpty(asset[y][q])) {
                         asset[y][q] = null;
                     }
@@ -527,6 +535,9 @@ module.exports = {
                     asset[y][q].payable = getParameter(xml, 'tifrs-bsci-basi:Payables', ai) + getParameter(xml, 'tifrs-bsci-basi:DepositsFromTheCentralBankAndBanks', ai) + getParameter(xml, 'tifrs-bsci-basi:DepositsAndRemittances', ai);
                     asset[y][q].current_liabilities = asset[y][q].payable + getParameter(xml, 'tifrs-bsci-basi:DueToTheCentralBankAndBanks', ai) + getParameter(xml, 'ifrs:FinancialLiabilitiesAtFairValueThroughProfitOrLoss', ai) + getParameter(xml, 'tifrs-bsci-basi:NotesAndBondsIssuedUnderRepurchaseAgreement', ai) + getParameter(xml, 'ifrs:CurrentTaxLiabilities', ai);
                     asset[y][q].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', ai) - asset[y][q].current_liabilities;
+                    if (asset[y][q].equityParent === 0) {
+                        asset[y][q].equityParent = getParameter(xml, 'ifrs:Equity', ai);
+                    }
                     if (quarterIsEmpty(asset[y][q])) {
                         asset[y][q] = null;
                     }
@@ -555,6 +566,9 @@ module.exports = {
                     asset[y][q].payable = getParameter(xml, 'tifrs-bsci-bd:CommercialPaperPayable', ai) + getParameter(xml, 'tifrs-bsci-bd:SecuritiesFinancingRefundableDeposits', ai) + getParameter(xml, 'tifrs-bsci-bd:DepositsPayableForSecuritiesFinancing', ai) + getParameter(xml, 'tifrs-bsci-bd:SecuritiesLendingRefundableDeposits', ai) + getParameter(xml, 'tifrs-bsci-bd:AccountsPayable', ai) + getParameter(xml, 'tifrs-bsci-bd:AdvanceReceipts', ai) + getParameter(xml, 'tifrs-bsci-bd:ReceiptsUnderCustody', ai) + getParameter(xml, 'tifrs-bsci-bd:OtherPayables', ai);
                     asset[y][q].noncurrent_liabilities = getParameter(xml, 'ifrs:NoncurrentLiabilities', ai);
                     asset[y][q].current_liabilities = getParameter(xml, 'ifrs:Liabilities', ai) - asset[y][q].noncurrent_liabilities;
+                    if (asset[y][q].equityParent === 0) {
+                        asset[y][q].equityParent = getParameter(xml, 'ifrs:Equity', ai);
+                    }
                     if (quarterIsEmpty(asset[y][q])) {
                         asset[y][q] = null;
                     }
@@ -583,6 +597,9 @@ module.exports = {
                     asset[y][q].payable = getParameter(xml, 'tifrs-bsci-mim:Payables', ai) + getParameter(xml, 'tifrs-bsci-mim:PayablesToRelatedParties', ai) + getParameter(xml, 'tifrs-bsci-mim:DepositsFromTheCentralBankAndBanks', ai) + getParameter(xml, 'tifrs-bsci-mim:DepositsAndRemittances', ai);
                     asset[y][q].current_liabilities = getParameter(xml, 'ifrs:CurrentLiabilities', ai);
                     asset[y][q].noncurrent_liabilities = getParameter(xml, 'ifrs:Liabilities', ai) - asset[y][q].current_liabilities;
+                    if (asset[y][q].equityParent === 0) {
+                        asset[y][q].equityParent = getParameter(xml, 'ifrs:Equity', ai);
+                    }
                     if (quarterIsEmpty(asset[y][q])) {
                         asset[y][q] = null;
                     }
@@ -611,6 +628,9 @@ module.exports = {
                     asset[y][q].payable = getParameter(xml, 'tifrs-bsci-ins:AccountsPayable', ai) + getParameter(xml, 'tifrs-bsci-ins:AdvanceReceipts', ai) + getParameter(xml, 'tifrs-bsci-ins:GuaranteeDepositsAndMarginsReceived', ai) + getParameter(xml, 'tifrs-bsci-ins:ReinsuranceLiabilityReserveReceived', ai);
                     asset[y][q].noncurrent_liabilities = getParameter(xml, 'tifrs-bsci-ins:LiabilitiesOnInsuranceProductSeparatedAccountAbstract', ai) + getParameter(xml, 'tifrs-bsci-ins:InsuranceLiabilities', ai) + getParameter(xml, 'tifrs-bsci-ins:ReserveForInsuranceWithNatureOfFinancialInstrument', ai) + getParameter(xml, 'tifrs-bsci-ins:PreferenceShareLiabilities', ai) + getParameter(xml, 'tifrs-bsci-ins:BondsPayable', ai) + getParameter(xml, 'tifrs-bsci-ins:FinancialLiabilitiesAtCost', ai);
                     asset[y][q].current_liabilities = getParameter(xml, 'ifrs:Liabilities', ai) - asset[y][q].noncurrent_liabilities;
+                    if (asset[y][q].equityParent === 0) {
+                        asset[y][q].equityParent = getParameter(xml, 'ifrs:Equity', ai);
+                    }
                     if (quarterIsEmpty(asset[y][q])) {
                         asset[y][q] = null;
                     }
@@ -1345,6 +1365,7 @@ module.exports = {
             for (var j in safetyStatus[i]) {
                 multiple++;
                 index += (safetyStatus[i][j].shortCash+safetyStatus[i][j].shortCashWithoutCL+safetyStatus[i][j].shortCashWithoutInvest)*multiple;
+                console.log(index);
             }
         }
         return -Math.ceil(index/(1+multiple)/multiple*2000)/1000;

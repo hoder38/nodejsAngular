@@ -2123,17 +2123,41 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                         list.push(list_match[1]);
                     }
                 }
-                if (list.length < 1) {
-                    util.handleError({hoerror: 2, message: id[1] + " video invaild!!!"}, next, res);
+                if (id[1] === 'yuk' && list[subIndex-1].match(/flv/)) {
+                    kubo_url = 'http://forum.123kubo.com/jx/show.php?playlist=1&fmt=1&rand=' + new Date();
+                    var base = new Buffer(url).toString('base64');
+                    api.kuboVideo(kubo_url, {url: base}, 'http://forum.123kubo.com/jx/show.php?url=' + base, function(err, raw_data) {
+                        if (err) {
+                            err.hoerror = 2;
+                            util.handleError(err, next, res);
+                        }
+                        var json_data = null;
+                        try {
+                            json_data = JSON.parse(raw_data);
+                        } catch (x) {
+                            console.log(raw_data);
+                            util.handleError({hoerror: 2, message: 'json parse error'}, next, res);
+                        }
+                        if (!json_data || !json_data['3gphd']) {
+                            console.log(raw_data);
+                            util.handleError({hoerror: 2, message: 'bilibili api fail'}, next, res);
+                        }
+                        var ret_obj = {title: json_data['title'], video: [json_data['3gphd'][0].url]};
+                        res.json(ret_obj);
+                    });
+                } else {
+                    if (list.length < 1) {
+                        util.handleError({hoerror: 2, message: id[1] + " video invaild!!!"}, next, res);
+                    }
+                    if (!list[subIndex-1]) {
+                        util.handleError({hoerror: 2, message: id[1] + " video index invaild!!!"}, next, res);
+                    }
+                    var ret_obj = {title: id[1], video: [list[subIndex-1]]};
+                    if (list.length > 1) {
+                        ret_obj['sub'] = list.length;
+                    }
+                    res.json(ret_obj);
                 }
-                if (!list[subIndex-1]) {
-                    util.handleError({hoerror: 2, message: id[1] + " video index invaild!!!"}, next, res);
-                }
-                var ret_obj = {title: id[1], video: [list[subIndex-1]]};
-                if (list.length > 1) {
-                    ret_obj['sub'] = list.length;
-                }
-                res.json(ret_obj);
             }, 60000, false, false, 'http://888blb1.flvapi.com/');
         } else if (id[1] === 'kdr') {
             var kubo_url = 'http://jaiwen.com/jx/gg58/xml.php?url=gg_' + url + '_cq';

@@ -1030,6 +1030,46 @@ module.exports = {
             }, 0);
         }, null, true);
     },
+    madComicSearch: function(url, post, callback) {
+        var urlParse = urlMod.parse(url);
+        // An object of options to indicate where to post to
+        var options = {
+            host: urlParse.hostname,
+            port: 80,
+            path: urlParse.path,
+            method: 'POST',
+            encoding : null
+        };
+        postData(post, null, options, {}, function(err, res) {
+            if (err) {
+                util.handleError(err, callback, callback);
+            }
+            setTimeout(function(){
+                callback(null, res.body);
+            }, 0);
+        }, null, true);
+    },
+    kuboVideo: function(url, post, referer, callback) {
+        var urlParse = urlMod.parse(url);
+        // An object of options to indicate where to post to
+        var options = {
+            host: urlParse.hostname,
+            port: 80,
+            path: urlParse.path,
+            method: 'POST',
+            headers: {
+                'Referer': referer
+            }
+        };
+        postData(post, null, options, {}, function(err, res) {
+            if (err) {
+                util.handleError(err, callback, callback);
+            }
+            setTimeout(function(){
+                callback(null, res.body);
+            }, 0);
+        });
+    },
     setApiQueue: function(name, param) {
         console.log(api_ing);
         if (api_ing >= config_glb.api_limit) {
