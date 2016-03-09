@@ -79,19 +79,14 @@ module.exports = {
         }
         var isOk = false;
         for (var i = 0; i < 4; i++) {
-            console.log(1);
             if (type === 1) {
-                console.log(2);
                 if (xmlDate = califrsCash(i, no_cover)) {
-                    console.log(xmlDate);
                     if (xmlDate.year === year && xmlDate.quarter === quarter) {
                         isOk = true;
                     }
                 }
             } else {
-                console.log(3);
                 if (xmlDate = calgaapCash(i, no_cover)) {
-                    console.log(xmlDate);
                     if (xmlDate.year === year && xmlDate.quarter === quarter) {
                         isOk = true;
                     }
