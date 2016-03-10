@@ -1360,7 +1360,6 @@ module.exports = {
             for (var j in safetyStatus[i]) {
                 multiple++;
                 index += (safetyStatus[i][j].shortCash+safetyStatus[i][j].shortCashWithoutCL+safetyStatus[i][j].shortCashWithoutInvest)*multiple;
-                console.log(index);
             }
         }
         return -Math.ceil(index/(1+multiple)/multiple*2000)/1000;
@@ -3498,3 +3497,5 @@ function quarterIsEmpty(quarter) {
     }
     return true;
 }
+//http://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/st43_result.php?l=zh-tw&d=105/03&stkno=3088&_=1457511385959
+//http://www.twse.com.tw/ch/trading/exchange/STOCK_DAY/STOCK_DAY_print.php?genpage=genpage/Report201602/201602_F3_1_8_2330.php&type=csv
