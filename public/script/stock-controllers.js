@@ -1952,8 +1952,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.stockPre = function() {
         var this_obj = this;
         if (this.toolList.item) {
-            var stockApi = $resource('/api/stock/getPredictPER/' + this.toolList.item.id, {}, {
-                'getPER': { method:'get' }
+            var stockApi = $resource($scope.main_url + '/api/stock/getPredictPER/' + this.toolList.item.id, {}, {
+                'getPER': { method:'get', withCredentials: true }
             });
             stockApi.getPER({}, function (result) {
                 if (result.loginOK) {

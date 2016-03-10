@@ -1261,15 +1261,22 @@ function downloadSubtitle (url, filePath, callback) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
-                util.SRT2VTT(filePath, ext, function(err) {
-                    if (err) {
-                        util.handleError(err, next, res);
-                    }
+                if (ext === 'vtt') {
                     util.deleteFolderRecursive(sub_location);
                     setTimeout(function(){
                         callback(null);
                     }, 0);
-                });
+                } else {
+                    util.SRT2VTT(filePath, ext, function(err) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        util.deleteFolderRecursive(sub_location);
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    });
+                }
             });
         });
     } else {
@@ -1351,16 +1358,23 @@ function downloadSubtitle (url, filePath, callback) {
                 fs.rename(sub_location + '/' + choose, filePath + '.' + ext, function(err) {
                     if (err) {
                         util.handleError(err, callback, callback);
-                }
-                util.SRT2VTT(filePath, ext, function(err) {
-                    if (err) {
-                            util.handleError(err, callback, callback);
-                        }
+                    }
+                    if (ext === 'vtt') {
                         util.deleteFolderRecursive(sub_location);
                         setTimeout(function(){
                             callback(null);
                         }, 0);
-                    });
+                    } else {
+                        util.SRT2VTT(filePath, ext, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            util.deleteFolderRecursive(sub_location);
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    }
                 });
             });
         });

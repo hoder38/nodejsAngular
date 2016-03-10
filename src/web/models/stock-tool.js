@@ -2310,158 +2310,180 @@ module.exports = {
             }
             switch(items[0].type) {
                 case 'twse':
+                var salesPath = '/mnt/stock/twse/' + items[0].index + '/sales';
                 var index = 0;
-                recur_mp();
-                function recur_mp() {
-                    url = 'http://mops.twse.com.tw/mops/web/ajax_t05st10_ifrs?encodeURIComponent=1&run=Y&step=0&yearmonth=' + year + month_str + '&colorchg=&TYPEK=all&co_id=' + items[0].index + '&off=1&year=' + year + '&month=' + month_str + '&firstin=true';
-                    api.xuiteDownload(url, '', function(err, data) {
+                var sales_data = null;
+                if (fs.existsSync(salesPath)) {
+                    fs.readFile(salesPath, 'utf8', function(err, salesFile) {
                         if (err) {
                             util.handleError(err, callback, callback);
                         }
-                        if (data.length > 500) {
-                            var raw = data.match(/-?[0-9,\.]+<\/TD>/gi);
-                            if (!raw || raw.length < 4) {
-                                util.handleError({hoerror: 2, message: "can not find month sales!!!"}, callback, callback);
+                        try {
+                            sales_data = JSON.parse(salesFile);
+                        } catch (x) {
+                            console.log(salesFile);
+                            util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                        }
+                        recur_mp();
+                    });
+                } else {
+                    recur_mp();
+                }
+                function recur_mp() {
+                    if (sales_data && sales_data[year] && sales_data[year][month_str]) {
+                        sales_num.push(sales_data[year][month_str].num);
+                        sales_per.push(sales_data[year][month_str].per);
+                        sales_pre.push(sales_data[year][month_str].pre);
+                        if (!start_month) {
+                            start_month = month;
+                        }
+                        rest_predict();
+                    } else {
+                        url = 'http://mops.twse.com.tw/mops/web/ajax_t05st10_ifrs?encodeURIComponent=1&run=Y&step=0&yearmonth=' + year + month_str + '&colorchg=&TYPEK=all&co_id=' + items[0].index + '&off=1&year=' + year + '&month=' + month_str + '&firstin=true';
+                        api.xuiteDownload(url, '', function(err, data) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
                             }
-                            sales_num.push(Number(raw[0].match(/[0-9,]+/)[0].replace(/,/g, '')));
-                            if (!start_month) {
-                                start_month = month;
+                            if (data.length > 500) {
+                                var raw = data.match(/-?[0-9,\.]+<\/TD>/gi);
+                                if (!raw || raw.length < 4) {
+                                    util.handleError({hoerror: 2, message: "can not find month sales!!!"}, callback, callback);
+                                }
+                                sales_num.push(Number(raw[0].match(/[0-9,]+/)[0].replace(/,/g, '')));
+                                if (!start_month) {
+                                    start_month = month;
+                                }
+                                if (raw.length > 10) {
+                                    sales_per.push(Number(raw[6].match(/-?[0-9\.]+/)[0]));
+                                    sales_pre.push(Number(raw[2].match(/[0-9,]+/)[0].replace(/,/g, '')));
+                                } else {
+                                    sales_per.push(Number(raw[3].match(/-?[0-9\.]+/)[0]));
+                                    sales_pre.push(Number(raw[1].match(/[0-9,]+/)[0].replace(/,/g, '')));
+                                }
+                                if (!sales_data) {
+                                    sales_data = {};
+                                }
+                                if (!sales_data[year]) {
+                                    sales_data[year] = {};
+                                }
+                                sales_data[year][month_str] = {num: sales_num[sales_num.length - 1], per: sales_per[sales_per.length - 1], pre: sales_pre[sales_pre.length - 1]};
+                            } else if (data.length > 200) {
+                                util.handleError({hoerror: 2, message: "稍後再查詢!!"}, callback, callback);
                             }
-                            if (raw.length > 10) {
-                                sales_per.push(Number(raw[6].match(/-?[0-9\.]+/)[0]));
-                                sales_pre.push(Number(raw[2].match(/[0-9,]+/)[0].replace(/,/g, '')));
+                            rest_predict();
+                        }, 10000, false, false);
+                        function rest_predict() {
+                            index++;
+                            if (month === 1) {
+                                year--;
+                                month = 12;
+                                month_str = month.toString();
                             } else {
-                                sales_per.push(Number(raw[3].match(/-?[0-9\.]+/)[0]));
-                                sales_pre.push(Number(raw[1].match(/[0-9,]+/)[0].replace(/,/g, '')));
-                            }
-                        } else if (data.length > 200) {
-                            util.handleError({hoerror: 2, message: "稍後再查詢!!"}, callback, callback);
-                        }
-                        index++;
-                        if (month === 1) {
-                            year--;
-                            month = 12;
-                            month_str = month.toString();
-                        } else {
-                            month--;
-                            month_str = month.toString();
-                            if (month < 10) {
-                                month_str = '0' + month_str;
-                            }
-                        }
-                        console.log(year);
-                        console.log(month_str);
-                        if (index >= 20 || sales_num.length > 11) {
-                            var perEven = caculateEven(sales_per, true);
-                            var sd = 0;
-                            for (var i = 0; i < sales_per.length; i++) {
-                                sd = sd + (sales_per[i] - perEven[perEven.length-1]) * (sales_per[i] - perEven[perEven.length-1]);
-                            }
-                            sd = Math.sqrt(sd/sales_per.length);
-                            //console.log(perEven[perEven.length-1]);
-                            //console.log(sd);
-                            var diff = 0;
-                            var predict_per = 0;
-                            var predict_sales_0 = 0;
-                            var predict_sales_1 = 0;
-                            var predict_sales_2 = 0;
-                            var predict_sales_3 = 0;
-                            for (var i = 0; i < 3; i++) {
-                                diff = sales_per[i] - perEven[perEven.length-1];
-                                if (diff >= 0) {
-                                    predict_per = predict_per + Math.ceil(diff/sd)*(3-i)/6;
-                                } else {
-                                    predict_per = predict_per - Math.ceil(-diff/sd) * (3-i)/6;
+                                month--;
+                                month_str = month.toString();
+                                if (month < 10) {
+                                    month_str = '0' + month_str;
                                 }
                             }
-                            //console.log(100 + perEven[perEven.length-1] + sd * predict_per);
-
-                            for (var i = 0; i < sales_per.length; i++) {
-                                //predict_sales = predict_sales + line.a + line.b * t + sd * diff;
-                                if (start_month > 1) {
-                                    start_month--;
-                                } else {
-                                    start_month = 12;
-                                }
-                                switch (start_month) {
-                                    case 1:
-                                    case 2:
-                                    case 3:
-                                    predict_sales_0 = predict_sales_0 + sales_num[i] * (100 + perEven[perEven.length-1] + sd * predict_per)/100;
-                                    break;
-                                    case 4:
-                                    case 5:
-                                    case 6:
-                                    predict_sales_1 = predict_sales_1 + sales_num[i] * (100 + perEven[perEven.length-1] + sd * predict_per)/100;
-                                    break;
-                                    case 7:
-                                    case 8:
-                                    case 9:
-                                    predict_sales_2 = predict_sales_2 + sales_num[i] * (100 + perEven[perEven.length-1] + sd * predict_per)/100;
-                                    break;
-                                    case 10:
-                                    case 11:
-                                    case 12:
-                                    predict_sales_3 = predict_sales_3 + sales_num[i] * (100 + perEven[perEven.length-1] + sd * predict_per)/100;
-                                }
-                            }
-                            console.log(predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3);
-                            sales = items[0].sales;
-                            asset = items[0].asset;
-                            year = date.getFullYear();
-                            var y = date.getFullYear(), q = 3;
-                            for (var i = 0; i < 20; i++) {
-                                if (asset[y] && asset[y][q]) {
-                                    break;
-                                } else {
-                                    if (q > 0) {
-                                        q--;
+                            console.log(year);
+                            console.log(month_str);
+                            if (index >= 20 || sales_num.length > 11) {
+                                fs.writeFile(salesPath, JSON.stringify(sales_data), 'utf8', function (err) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                });
+                                var predict_sales_0 = 0;
+                                var predict_sales_1 = 0;
+                                var predict_sales_2 = 0;
+                                var predict_sales_3 = 0;
+                                for (var i = 0; i < sales_per.length; i++) {
+                                    //predict_sales = predict_sales + line.a + line.b * t + sd * diff;
+                                    if (start_month > 1) {
+                                        start_month--;
                                     } else {
-                                        y--;
-                                        q = 3;
+                                        start_month = 12;
+                                    }
+                                    switch (start_month) {
+                                        case 1:
+                                        case 2:
+                                        case 3:
+                                        predict_sales_0 += sales_num[i] * (sales_per[i] + 100) / 100;
+                                        break;
+                                        case 4:
+                                        case 5:
+                                        case 6:
+                                        predict_sales_1 += sales_num[i] * (sales_per[i] + 100) / 100;
+                                        break;
+                                        case 7:
+                                        case 8:
+                                        case 9:
+                                        predict_sales_2 += sales_num[i] * (sales_per[i] + 100) / 100;
+                                        break;
+                                        case 10:
+                                        case 11:
+                                        case 12:
+                                        predict_sales_3 += sales_num[i] * (sales_per[i] + 100) / 100;
                                     }
                                 }
-                            }
-                            var salesStatus = this_obj.getSalesStatus(sales, asset);
-                            var managementStatus = this_obj.getManagementStatus(salesStatus, asset);
-                            var ret_str = '';
-                            var true_sales = 0;
-                            var previous_sales = 0;
-                            for (var i = sales_num.length-1; i >= 0; i--) {
-                                true_sales += sales_num[i];
-                                previous_sales += sales_pre[i];
-                            }
-
-                            ret_str = start_month + 'th ' + Math.ceil(((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3)/true_sales-1)*1000)/10 + '% ' + Math.ceil(true_sales/previous_sales*1000 - 1000)/10 + '%(t)';
-                            if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) > 0) {
-                                var predict_profit = managementStatus.a + managementStatus.b * predict_sales_0 * 1000;
-                                predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_1 * 1000;
-                                predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_2 * 1000;
-                                predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_3 * 1000;
-                                var predict_eps = predict_profit / asset[y][q].share * 10;
-                                console.log(predict_eps);
-                                if (predict_eps > 0) {
-                                    getStockPrice(items[0].type, items[0].index, function(err, price) {
-                                        if(err) {
-                                            util.handleError(err, callback, callback);
+                                console.log(predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3);
+                                sales = items[0].sales;
+                                asset = items[0].asset;
+                                year = date.getFullYear();
+                                var y = date.getFullYear(), q = 3;
+                                for (var i = 0; i < 20; i++) {
+                                    if (asset[y] && asset[y][q]) {
+                                        break;
+                                    } else {
+                                        if (q > 0) {
+                                            q--;
+                                        } else {
+                                            y--;
+                                            q = 3;
                                         }
-                                        var per = Math.ceil(price/predict_eps*1000)/1000;
-                                        setTimeout(function(){
-                                            callback(null, ret_str + ' ' + per, items[0].index);
-                                        }, 0);
-                                    });
+                                    }
                                 }
+                                var salesStatus = this_obj.getSalesStatus(sales, asset);
+                                var managementStatus = this_obj.getManagementStatus(salesStatus, asset);
+                                var ret_str = '';
+                                var true_sales = 0;
+                                var previous_sales = 0;
+                                for (var i = sales_num.length-1; i >= 0; i--) {
+                                    true_sales += sales_num[i];
+                                    previous_sales += sales_pre[i];
+                                }
+
+                                ret_str = start_month + 'th ' + Math.ceil(((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3)/true_sales-1)*1000)/10 + '% ' + Math.ceil(true_sales/previous_sales*1000 - 1000)/10 + '%(t)';
+                                if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) > 0) {
+                                    var predict_profit = managementStatus.a + managementStatus.b * predict_sales_0 * 1000;
+                                    predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_1 * 1000;
+                                    predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_2 * 1000;
+                                    predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_3 * 1000;
+                                    var predict_eps = predict_profit / asset[y][q].share * 10;
+                                    console.log(predict_eps);
+                                    if (predict_eps > 0) {
+                                        getStockPrice(items[0].type, items[0].index, function(err, price) {
+                                            if(err) {
+                                                util.handleError(err, callback, callback);
+                                            }
+                                            var per = Math.ceil(price/predict_eps*1000)/1000;
+                                            setTimeout(function(){
+                                                callback(null, ret_str + ' ' + per, items[0].index);
+                                            }, 0);
+                                        });
+                                    }
+                                }
+                                if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) <= 0 || predict_eps <= 0) {
+                                    setTimeout(function(){
+                                        callback(null, ret_str, items[0].index);
+                                    }, 0);
+                                }
+                                console.log('done');
+                            } else {
+                                recur_mp();
                             }
-                            if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) <= 0 || predict_eps <= 0) {
-                                setTimeout(function(){
-                                    callback(null, ret_str, items[0].index);
-                                }, 0);
-                            }
-                            console.log('done');
-                        } else {
-                            recur_mp();
                         }
-                    }, 10000, false, false);
+                    }
                 }
                 break;
                 default:

@@ -2399,25 +2399,6 @@ app.get('/api/stock/getPER/:uid', function(req, res,next) {
     });
 });
 
-app.get('/api/stock/getPredictPER/:uid', function(req, res,next) {
-    checkLogin(req, res, next, function(req, res, next) {
-        console.log('stock get predict per');
-        console.log(new Date());
-        console.log(req.url);
-        console.log(req.body);
-        var id = util.isValidString(req.params.uid, 'uid');
-        if (id === false) {
-            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
-        }
-        stockTool.getPredictPER(id, function(err, result, index) {
-            if (err) {
-                util.handleError(err, next, res);
-            }
-            res.json({per: index + ': ' + result});
-        });
-    });
-});
-
 app.get('/api/stock/getYield/:uid', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('stock get yield');

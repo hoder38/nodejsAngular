@@ -31,7 +31,7 @@ var trans_list = ['格鬥', '魔法', '偵探', '競技', '戰國', '魔幻', '�
 
 var trans_list_ch = ['動作', '奇幻', '犯罪', '運動', '歷史', '神秘', '喜劇', '浪漫', '香港', '動作', '神秘', '驚悚', '香港', '家庭', '台灣', '歐美', '歐美', '大陸'];
 
-var sub_arr = ['srt', 'ass', 'ssa'];
+var sub_arr = ['srt', 'ass', 'ssa', 'vtt'];
 var util = require("../util/utility.js");
 module.exports = {
     isImage: function(name) {
