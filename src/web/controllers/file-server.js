@@ -41,7 +41,8 @@ var drive_size = 500 * 1024 * 1024;
 
 var drive_time = {time: 0, size: 0};
 
-var stock_interval = 86400000;
+//var stock_interval = 86400000;
+var stock_interval = 172800000;
 
 var stock_time = 0;
 
@@ -2124,7 +2125,7 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                     }
                 }
                 if (id[1] === 'yuk' && list[subIndex-1].match(/flv/)) {
-                    kubo_url = 'http://forum.123kubo.com/jx/show.php?playlist=1&fmt=1&rand=' + new Date();
+                    kubo_url = 'http://forum.123kubo.com/jx/show.php?playlist=1&fmt=1&rand=' + new Date().getTime();
                     var base = new Buffer(url).toString('base64');
                     api.kuboVideo(kubo_url, {url: base}, 'http://forum.123kubo.com/jx/show.php?url=' + base, function(err, raw_data) {
                         if (err) {
@@ -5074,7 +5075,8 @@ app.get('/api/stock/getPredictPER/:uid', function(req, res,next) {
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        stockTool.getPredictPER(id, function(err, result, index) {
+        //stockTool.getPredictPER(id, function(err, result, index) {
+        stockTool.getInterval(id, function(err, result, index) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -5484,7 +5486,7 @@ function loopUpdateStock() {
         console.log('stock_batch_list remain');
         console.log(stock_batch_list.length);
     }
-    if (day === config_type.updateStockDate[0]) {
+    if (day === config_type.updateStockDate[0] || day === config_type.updateStockDate[1]) {
         console.log('update stock');
         stockTool.getStockList('twse', function(err, tw_stocklist){
             if(err) {

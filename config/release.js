@@ -30,7 +30,7 @@ module.exports = {
     hint: true,
     autoUpload: true,
     autoDownload: true,
-    updateStock: true,
+    updateStock: false,
     updateExternal: true,
     checkMedia: true,
     api_limit: 5,
