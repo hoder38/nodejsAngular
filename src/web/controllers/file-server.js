@@ -5075,8 +5075,8 @@ app.get('/api/stock/getPredictPER/:uid', function(req, res,next) {
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        //stockTool.getPredictPER(id, function(err, result, index) {
-        stockTool.getInterval(id, function(err, result, index) {
+        stockTool.getPredictPER(id, function(err, result, index) {
+        //stockTool.getInterval(id, function(err, result, index) {
             if (err) {
                 util.handleError(err, next, res);
             }
