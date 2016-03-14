@@ -1037,7 +1037,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         } else {
                             console.log(fileMega);
                             var streamMega = fileMega.download();
-                            filename = 'Mega file';
+                            var filename = 'Mega file';
                             if (fileMega.name) {
                                 filename = fileMega.name;
                             }
@@ -1432,7 +1432,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     } else {
                         console.log(fileMega);
                         var streamMega = fileMega.download();
-                        filename = 'Mega file';
+                        var filename = 'Mega file';
                         if (fileMega.name) {
                             filename = fileMega.name;
                         }
@@ -2112,6 +2112,7 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                     err.hoerror = 2;
                     util.handleError(err, next, res);
                 }
+                console.log(raw_data);
                 var video_list = raw_data.match(/\!\[CDATA\[[^\]]+/g);
                 if (!video_list) {
                     util.handleError({hoerror: 2, message: id[1] + " video invaild!!!"}, next, res);
@@ -2123,6 +2124,12 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                     if (list_match) {
                         list.push(list_match[1]);
                     }
+                }
+                if (list.length < 1) {
+                    util.handleError({hoerror: 2, message: id[1] + " video invaild!!!"}, next, res);
+                }
+                if (!list[subIndex-1]) {
+                    util.handleError({hoerror: 2, message: id[1] + " video index invaild!!!"}, next, res);
                 }
                 if (id[1] === 'yuk' && list[subIndex-1].match(/flv/)) {
                     kubo_url = 'http://forum.123kubo.com/jx/show.php?playlist=1&fmt=1&rand=' + new Date().getTime();
@@ -2147,12 +2154,6 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                         res.json(ret_obj);
                     });
                 } else {
-                    if (list.length < 1) {
-                        util.handleError({hoerror: 2, message: id[1] + " video invaild!!!"}, next, res);
-                    }
-                    if (!list[subIndex-1]) {
-                        util.handleError({hoerror: 2, message: id[1] + " video index invaild!!!"}, next, res);
-                    }
                     var ret_obj = {title: id[1], video: [list[subIndex-1]]};
                     if (list.length > 1) {
                         ret_obj['sub'] = list.length;
@@ -5076,11 +5077,29 @@ app.get('/api/stock/getPredictPER/:uid', function(req, res,next) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
         stockTool.getPredictPER(id, function(err, result, index) {
-        //stockTool.getInterval(id, function(err, result, index) {
             if (err) {
                 util.handleError(err, next, res);
             }
             res.json({per: index + ': ' + result});
+        });
+    });
+});
+
+app.get('/api/stock/getInterval/:uid', function(req, res,next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('stock get interval per');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        stockTool.getInterval(id, function(err, result, index) {
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            res.json({interval: index + ': ' + result});
         });
     });
 });

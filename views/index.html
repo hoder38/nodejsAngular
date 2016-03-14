@@ -301,7 +301,7 @@
                                     <li ng-show="video.playlist&&videoSwitch" tooltip="no end" tooltip-trigger="mouseenter">
                                         <input type="checkbox" ng-model="noEnd"/>
                                     </li>
-                                    <span ng-show="video.playlist&&!videoSwitch&&video.playlist.total > 1" >
+                                    <span ng-show="video.playlist&&!videoSwitch&&(video.playlist.total > 1 || video.playlist.obj.sub)" >
                                         <li class="{{mediaMoreDisabled && 'disabled' || ' '}}">
                                             <a href="#" ng-click="videoMove('video', 'previous')">
                                                 <span class="glyphicon glyphicon-chevron-up"></span>

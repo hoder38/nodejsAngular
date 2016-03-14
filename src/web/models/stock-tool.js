@@ -2324,6 +2324,7 @@ module.exports = {
                 var salesPath = '/mnt/stock/twse/' + items[0].index + '/sales';
                 var index = 0;
                 var sales_data = null;
+                var new_sales_data = null;
                 if (fs.existsSync(salesPath)) {
                     fs.readFile(salesPath, 'utf8', function(err, salesFile) {
                         if (err) {
@@ -2335,7 +2336,13 @@ module.exports = {
                             console.log(salesFile);
                             util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
                         }
-                        recur_mp();
+                        if (new Date().getTime() - sales_data['time'] < 86400000) {
+                            setTimeout(function(){
+                                callback(null, sales_data['return'], items[0].index);
+                            }, 0);
+                        } else {
+                            recur_mp();
+                        }
                     });
                 } else {
                     recur_mp();
@@ -2345,6 +2352,13 @@ module.exports = {
                         sales_num.push(sales_data[year][month_str].num);
                         sales_per.push(sales_data[year][month_str].per);
                         sales_pre.push(sales_data[year][month_str].pre);
+                        if (!new_sales_data) {
+                            new_sales_data = {};
+                        }
+                        if (!new_sales_data[year]) {
+                            new_sales_data[year] = {};
+                        }
+                        new_sales_data[year][month_str] = {num: sales_data[year][month_str].num, per: sales_data[year][month_str].per, pre: sales_data[year][month_str].pre};
                         if (!start_month) {
                             start_month = month;
                         }
@@ -2371,13 +2385,13 @@ module.exports = {
                                     sales_per.push(Number(raw[3].match(/-?[0-9\.]+/)[0]));
                                     sales_pre.push(Number(raw[1].match(/[0-9,]+/)[0].replace(/,/g, '')));
                                 }
-                                if (!sales_data) {
-                                    sales_data = {};
+                                if (!new_sales_data) {
+                                    new_sales_data = {};
                                 }
-                                if (!sales_data[year]) {
-                                    sales_data[year] = {};
+                                if (!new_sales_data[year]) {
+                                    new_sales_data[year] = {};
                                 }
-                                sales_data[year][month_str] = {num: sales_num[sales_num.length - 1], per: sales_per[sales_per.length - 1], pre: sales_pre[sales_pre.length - 1]};
+                                new_sales_data[year][month_str] = {num: sales_num[sales_num.length - 1], per: sales_per[sales_per.length - 1], pre: sales_pre[sales_pre.length - 1]};
                             } else if (data.length > 200) {
                                 util.handleError({hoerror: 2, message: "稍後再查詢!!"}, callback, callback);
                             }
@@ -2399,11 +2413,6 @@ module.exports = {
                             console.log(year);
                             console.log(month_str);
                             if (index >= 20 || sales_num.length > 11) {
-                                fs.writeFile(salesPath, JSON.stringify(sales_data), 'utf8', function (err) {
-                                    if (err) {
-                                        util.handleError(err);
-                                    }
-                                });
                                 var predict_sales_0 = 0;
                                 var predict_sales_1 = 0;
                                 var predict_sales_2 = 0;
@@ -2478,6 +2487,13 @@ module.exports = {
                                                 util.handleError(err, callback, callback);
                                             }
                                             var per = Math.ceil(price/predict_eps*1000)/1000;
+                                            new_sales_data['return'] = ret_str + ' ' + per;
+                                            new_sales_data['time'] = new Date().getTime();
+                                            fs.writeFile(salesPath, JSON.stringify(new_sales_data), 'utf8', function (err) {
+                                                if (err) {
+                                                    util.handleError(err);
+                                                }
+                                            });
                                             setTimeout(function(){
                                                 callback(null, ret_str + ' ' + per, items[0].index);
                                             }, 0);
@@ -2485,6 +2501,13 @@ module.exports = {
                                     }
                                 }
                                 if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) <= 0 || predict_eps <= 0) {
+                                    new_sales_data['return'] = ret_str;
+                                    new_sales_data['time'] = new Date().getTime();
+                                    fs.writeFile(salesPath, JSON.stringify(new_sales_data), 'utf8', function (err) {
+                                        if (err) {
+                                            util.handleError(err);
+                                        }
+                                    });
                                     setTimeout(function(){
                                         callback(null, ret_str, items[0].index);
                                     }, 0);
@@ -2499,6 +2522,451 @@ module.exports = {
                 break;
                 default:
                 util.handleError({hoerror: 2, message: "stock type unknown!!!"}, callback, callback);
+                break;
+            }
+        });
+    },
+    //http://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/st43_result.php?l=zh-tw&d=105/03&stkno=3088&_=1457511385959
+//http://www.twse.com.tw/ch/trading/exchange/STOCK_DAY/STOCK_DAY_print.php?genpage=genpage/Report201602/201602_F3_1_8_2330.php&type=csv
+    getInterval: function(id, callback) {
+        var this_obj = this;
+        var url = '';
+        var max = 0;
+        var min = 0;
+        var tmp_h = 0;
+        var tmp_l = 0;
+        var raw_arr = [];
+        var date = new Date();
+        var year = date.getFullYear();
+        var month = date.getMonth()+1;
+        var month_str = month.toString();
+        if (month < 10) {
+            month_str = '0' + month_str;
+        }
+        var start_month = 0;
+        console.log(year);
+        console.log(month_str);
+        mongo.orig("find", "stock", {_id: id}, {limit: 1}, function(err, items){
+            if(err) {
+                util.handleError(err, callback, callback);
+            }
+            if (items.length === 0) {
+                util.handleError({hoerror: 2, message: "can not find stock!!!"}, callback, callback);
+            }
+            var year_str = year - 1911;
+            switch(items[0].type) {
+                case 'twse':
+                var intervalPath = '/mnt/stock/twse/' + items[0].index + '/interval';
+                var index = 0;
+                var interval_data = null;
+                var new_interval_data = null;
+                if (fs.existsSync(intervalPath)) {
+                    fs.readFile(intervalPath, 'utf8', function(err, intervalFile) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        try {
+                            interval_data = JSON.parse(intervalFile);
+                        } catch (x) {
+                            console.log(intervalFile);
+                            util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                        }
+                        if (new Date().getTime() - interval_data['time'] < 604800000) {
+                            setTimeout(function(){
+                                callback(null, interval_data['return'], items[0].index);
+                            }, 0);
+                        } else {
+                            recur_mi(1);
+                        }
+                    });
+                } else {
+                    recur_mi(1);
+                }
+                function recur_mi(type) {
+                    //第一次一定要去上網更新
+                    if (start_month && interval_data && interval_data[year] && interval_data[year][month_str]) {
+                        raw_arr = raw_arr.concat(interval_data[year][month_str].raw);
+                        if (interval_data[year][month_str].max > max) {
+                            max = interval_data[year][month_str].max;
+                        }
+                        if (!min || interval_data[year][month_str].min < min) {
+                            min = interval_data[year][month_str].min;
+                        }
+                        if (!new_interval_data) {
+                            new_interval_data = {};
+                        }
+                        if (!new_interval_data[year]) {
+                            new_interval_data[year] = {};
+                        }
+                        new_interval_data[year][month_str] = interval_data[year][month_str];
+                        new_interval_data[year][month_str] = {raw: interval_data[year][month_str].raw, max: interval_data[year][month_str].max, min: interval_data[year][month_str].min};
+                        rest_interval();
+                    } else {
+                        if (type === 2) {
+                            url = 'http://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/st43_result.php?l=zh-tw&d=' + year_str + '/' + month_str + '&stkno=' + items[0].index + '&_=' + new Date().getTime();
+                            console.log(url);
+                            api.xuiteDownload(url, '', function(err, data) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                var tmp_data = null;
+                                try {
+                                    tmp_data = JSON.parse(data);
+                                } catch (x) {
+                                    console.log(data);
+                                    util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                                }
+                                if (!start_month) {
+                                    start_month = month;
+                                }
+                                var tmp_interval = [];
+                                var tmp_max = 0;
+                                var tmp_min = 0;
+                                if (tmp_data && tmp_data['iTotalRecords'] > 0) {
+                                    for (var i in tmp_data['aaData']) {
+                                        tmp_h = Number(tmp_data['aaData'][i][4].replace(/,/g, ''));
+                                        tmp_l = Number(tmp_data['aaData'][i][5].replace(/,/g, ''));
+                                        if (tmp_h > max) {
+                                            max = tmp_h;
+                                        }
+                                        if (!min || tmp_l < min) {
+                                            min = tmp_l;
+                                        }
+                                        if (tmp_h > tmp_max) {
+                                            tmp_max = tmp_h;
+                                        }
+                                        if (!tmp_min || tmp_l < tmp_min) {
+                                            tmp_min = tmp_l;
+                                        }
+                                        raw_arr.push({h: tmp_h, l: tmp_l, v: Number(tmp_data['aaData'][i][8].replace(/,/g, ''))});
+                                        tmp_interval.push(raw_arr[raw_arr.length - 1]);
+                                    }
+                                    if (!new_interval_data) {
+                                        new_interval_data = {};
+                                    }
+                                    if (!new_interval_data[year]) {
+                                        new_interval_data[year] = {};
+                                    }
+                                    new_interval_data[year][month_str] = {raw: tmp_interval, max: tmp_max, min: tmp_min};
+                                }
+                                rest_interval();
+                            }, 10000, false, false);
+                        } else if (type === 3) {
+                            url = 'http://www.twse.com.tw/ch/trading/exchange/STOCK_DAY/STOCK_DAY_print.php?genpage=genpage/Report' + year + month_str + '/' + year + month_str + '_F3_1_8_' + items[0].index + '.php&type=csv';
+                            console.log(url);
+                            api.xuiteDownload(url, '', function(err, data) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                if (!start_month) {
+                                    start_month = month;
+                                }
+                                var pattern = new RegExp(year_str + '\\/' + month_str + '.*', 'g');
+                                var data_list = data.match(pattern);
+                                if (data_list.length > 0) {
+                                    var tmp_interval = [];
+                                    var tmp_max = 0;
+                                    var tmp_min = 0;
+                                    var tmp_list = null;
+                                    var tmp_list_1 = [];
+                                    var tmp_index = -1;
+                                    var tmp_number = '';
+                                    for (var i in data_list) {
+                                        tmp_list_1 = [];
+                                        tmp_list = data_list[i].split(',');
+                                        for (var j in tmp_list) {
+                                            if (tmp_list[j].match(/^"/)) {
+                                                tmp_index = j;
+                                                tmp_list[j] = tmp_list[j].replace(/"/g, '');
+                                            } else if (tmp_list[j].match(/"$/)) {
+                                                tmp_list[j] = tmp_list[j].replace(/"/g, '');
+                                                for (var k = tmp_index; k <= j; k++) {
+                                                    tmp_number = tmp_number + tmp_list[k];
+                                                }
+                                                tmp_list_1.push(tmp_number);
+                                                tmp_index = -1;
+                                                tmp_number = '';
+                                            } else {
+                                                if (tmp_index === -1) {
+                                                    tmp_list_1.push(tmp_list[j]);
+                                                }
+                                            }
+                                        }
+                                        tmp_h = Number(tmp_list_1[4]);
+                                        tmp_l = Number(tmp_list_1[5]);
+                                        if (tmp_h > max) {
+                                            max = tmp_h;
+                                        }
+                                        if (!min || tmp_l < min) {
+                                            min = tmp_l;
+                                        }
+                                        if (tmp_h > tmp_max) {
+                                            tmp_max = tmp_h;
+                                        }
+                                        if (!tmp_min || tmp_l < tmp_min) {
+                                            tmp_min = tmp_l;
+                                        }
+                                        raw_arr.push({h: tmp_h, l: tmp_l, v: Number(tmp_list_1[8])});
+                                        tmp_interval.push(raw_arr[raw_arr.length - 1]);
+                                        if (!new_interval_data) {
+                                            new_interval_data = {};
+                                        }
+                                        if (!new_interval_data[year]) {
+                                            new_interval_data[year] = {};
+                                        }
+                                        new_interval_data[year][month_str] = {raw: tmp_interval, max: tmp_max, min: tmp_min};
+                                    }
+                                }
+                                rest_interval();
+                            }, 10000, false, false, 'http://www.twse.com.tw/',true);
+                        } else {
+                            url = 'http://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/st43_result.php?l=zh-tw&d=' + year_str + '/' + month_str + '&stkno=' + items[0].index + '&_=' + new Date().getTime();
+                            console.log(url);
+                            //var week_data = null;
+                            api.xuiteDownload(url, '', function(err, data) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                var tmp_data = null;
+                                try {
+                                    tmp_data = JSON.parse(data);
+                                } catch (x) {
+                                    console.log(data);
+                                    util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                                }
+                                if (!start_month) {
+                                    start_month = month;
+                                }
+                                var tmp_interval = [];
+                                var tmp_max = 0;
+                                var tmp_min = 0;
+                                if (tmp_data && tmp_data['iTotalRecords'] > 0) {
+                                    type = 2;
+                                    for (var i in tmp_data['aaData']) {
+                                        tmp_h = Number(tmp_data['aaData'][i][4].replace(/,/g, ''));
+                                        tmp_l = Number(tmp_data['aaData'][i][5].replace(/,/g, ''));
+                                        if (tmp_h > max) {
+                                            max = tmp_h;
+                                        }
+                                        if (!min || tmp_l < min) {
+                                            min = tmp_l;
+                                        }
+                                        if (tmp_h > tmp_max) {
+                                            tmp_max = tmp_h;
+                                        }
+                                        if (!tmp_min || tmp_l < tmp_min) {
+                                            tmp_min = tmp_l;
+                                        }
+                                        raw_arr.push({h: tmp_h, l: tmp_l, v: Number(tmp_data['aaData'][i][8].replace(/,/g, ''))});
+                                        tmp_interval.push(raw_arr[raw_arr.length - 1]);
+                                    }
+                                    if (!new_interval_data) {
+                                        new_interval_data = {};
+                                    }
+                                    if (!new_interval_data[year]) {
+                                        new_interval_data[year] = {};
+                                    }
+                                    new_interval_data[year][month_str] = {raw: tmp_interval, max: tmp_max, min: tmp_min};
+                                    rest_interval();
+                                } else {
+                                    url = 'http://www.twse.com.tw/ch/trading/exchange/STOCK_DAY/STOCK_DAY_print.php?genpage=genpage/Report' + year + month_str + '/' + year + month_str + '_F3_1_8_' + items[0].index + '.php&type=csv';
+                                    console.log(url);
+                                    api.xuiteDownload(url, '', function(err, data) {
+                                        if (err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        if (!start_month) {
+                                            start_month = month;
+                                        }
+                                        type = 3;
+                                        var pattern = new RegExp(year_str + '\\/' + month_str + '.*', 'g');
+                                        var data_list = data.match(pattern);
+                                        if (data_list.length > 0) {
+                                            var tmp_interval = [];
+                                            var tmp_max = 0;
+                                            var tmp_min = 0;
+                                            var tmp_list = null;
+                                            var tmp_list_1 = [];
+                                            var tmp_index = -1;
+                                            var tmp_number = '';
+                                            for (var i in data_list) {
+                                                tmp_list_1 = [];
+                                                tmp_list = data_list[i].split(',');
+                                                for (var j in tmp_list) {
+                                                    if (tmp_list[j].match(/^"/)) {
+                                                        tmp_index = j;
+                                                        tmp_list[j] = tmp_list[j].replace(/"/g, '');
+                                                    } else if (tmp_list[j].match(/"$/)) {
+                                                        tmp_list[j] = tmp_list[j].replace(/"/g, '');
+                                                        for (var k = tmp_index; k <= j; k++) {
+                                                            tmp_number = tmp_number + tmp_list[k];
+                                                        }
+                                                        tmp_list_1.push(tmp_number);
+                                                        tmp_index = -1;
+                                                        tmp_number = '';
+                                                    } else {
+                                                        if (tmp_index === -1) {
+                                                            tmp_list_1.push(tmp_list[j]);
+                                                        }
+                                                    }
+                                                }
+                                                tmp_h = Number(tmp_list_1[4]);
+                                                tmp_l = Number(tmp_list_1[5]);
+                                                if (tmp_h > max) {
+                                                    max = tmp_h;
+                                                }
+                                                if (!min || tmp_l < min) {
+                                                    min = tmp_l;
+                                                }
+                                                if (tmp_h > tmp_max) {
+                                                    tmp_max = tmp_h;
+                                                }
+                                                if (!tmp_min || tmp_l < tmp_min) {
+                                                    tmp_min = tmp_l;
+                                                }
+                                                raw_arr.push({h: tmp_h, l: tmp_l, v: Number(tmp_list_1[8])});
+                                                tmp_interval.push(raw_arr[raw_arr.length - 1]);
+                                                if (!new_interval_data) {
+                                                    new_interval_data = {};
+                                                }
+                                                if (!new_interval_data[year]) {
+                                                    new_interval_data[year] = {};
+                                                }
+                                                new_interval_data[year][month_str] = {raw: tmp_interval, max: tmp_max, min: tmp_min};
+                                            }
+                                        }
+                                        rest_interval();
+                                    }, 10000, false, false, 'http://www.twse.com.tw/',true);
+                                }
+                            }, 10000, false, false);
+                        }
+                        function rest_interval() {
+                            index++;
+                            if (month === 1) {
+                                year--;
+                                year_str = year - 1911;
+                                month = 12;
+                                month_str = month.toString();
+                            } else {
+                                month--;
+                                month_str = month.toString();
+                                if (month < 10) {
+                                    month_str = '0' + month_str;
+                                }
+                            }
+                            console.log(year);
+                            console.log(month_str);
+                            if (index >= 70 || raw_arr.length > 1250) {
+                                console.log(max);
+                                console.log(min);
+                                var final_arr = [];
+                                var sort_arr = [];
+                                for (var i = 0; i < 100; i++) {
+                                    final_arr[i] = 0;
+                                }
+                                var diff = (max - min) / 100;
+                                var s = 0;
+                                var e = 0;
+                                for (var i in raw_arr) {
+                                    e = Math.ceil((raw_arr[i].h - min) / diff);
+                                    s = Math.floor((raw_arr[i].l - min) / diff);
+                                    for (var j = s; j < e; j++) {
+                                        final_arr[j] += raw_arr[i].v;
+                                    }
+                                }
+                                sort_arr = util.clone(final_arr);
+                                sort_arr.sort(function(a,b) {
+                                    return a - b;
+                                });
+                                var interval = null;
+                                for (var i = 9; i > 0; i--) {
+                                    for (var j = 0; j < 5; j++) {
+                                        interval = group_interval(i, j);
+                                        if (interval) {
+                                            break;
+                                        }
+                                    }
+                                    if (interval) {
+                                        break;
+                                    }
+                                }
+                                console.log(i);
+                                console.log(j);
+                                console.log(interval);
+                                var ret_str = (Math.ceil(((interval[0].start - 1) * diff + min) * 100) / 100) + '-' + (Math.ceil((interval[0].end * diff + min) * 100) / 100);
+                                for (var i = 1; i < interval.length; i++) {
+                                    ret_str = ret_str + ', ' + (Math.ceil(((interval[i].start - 1) * diff + min) * 100) / 100) + '-' + (Math.ceil((interval[i].end * diff + min) * 100) / 100);
+                                }
+                                new_interval_data['return'] = ret_str;
+                                new_interval_data['time'] = new Date().getTime();
+                                fs.writeFile(intervalPath, JSON.stringify(new_interval_data), 'utf8', function (err) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                });
+                                setTimeout(function(){
+                                    callback(null, ret_str, items[0].index);
+                                }, 0);
+                                function group_interval(level, gap) {
+                                    var group = [];
+                                    var start = 0;
+                                    var ig = 0;
+                                    level = level * 10;
+                                    for (var i in final_arr) {
+                                        if (final_arr[i] >= sort_arr[level]) {
+                                            if (!start) {
+                                                start = i;
+                                            }
+                                            ig = 0;
+                                        } else {
+                                            if (start) {
+                                                if (ig < gap) {
+                                                    ig++;
+                                                } else {
+                                                    group.push({start: +start, end: i - 1 - ig});
+                                                    start = 0;
+                                                    ig = 0;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (start) {
+                                        group.push({start: +start, end: 99 - ig});
+                                    }
+                                    var group_num = 0;
+                                    var final_group = [];
+                                    for (var i in group) {
+                                        if (group[i].end - group[i].start > 28) {
+                                            for (var j in group) {
+                                                if (group[j].end - group[j].start > 8) {
+                                                    final_group.push(group[j]);
+                                                }
+                                            }
+                                            return final_group;
+                                        } else if (group[i].end - group[i].start > 8) {
+                                            group_num++;
+                                            if (group_num > 2) {
+                                                for (var j in group) {
+                                                    if (group[j].end - group[j].start > 8) {
+                                                        final_group.push(group[j]);
+                                                    }
+                                                }
+                                                return final_group;
+                                            }
+                                        }
+                                    }
+                                    return false;
+                                }
+                            } else {
+                                recur_mi(type);
+                            }
+                        }
+                    }
+                }
+                break;
+                default:
+                util.handleError({hoerror: 2, message: "stock type unknown!!!"}, callback, callback);
+                break;
             }
         });
     }
@@ -3530,5 +3998,3 @@ function quarterIsEmpty(quarter) {
     }
     return true;
 }
-//http://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/st43_result.php?l=zh-tw&d=105/03&stkno=3088&_=1457511385959
-//http://www.twse.com.tw/ch/trading/exchange/STOCK_DAY/STOCK_DAY_print.php?genpage=genpage/Report201602/201602_F3_1_8_2330.php&type=csv

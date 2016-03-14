@@ -39,7 +39,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.parsePoint2Focus = false;
     $scope.outputPoint = [];
     $scope.selectPoint = 0;
-    $scope.toolList = {per: false, yield: false, pre: false, point: false, dir: false, item: null};
+    $scope.toolList = {per: false, pre: false, point: false, interval: false, dir: false, item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -501,14 +501,14 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             this.$parent.toolList.dir = true;
             this.$parent.toolList.per = false;
             this.$parent.toolList.pre = false;
-            this.$parent.toolList.yield = false;
+            this.$parent.toolList.interval = false;
             this.$parent.toolList.point = false;
             confirm_str = item;
         } else {
             this.$parent.toolList.dir = false;
             this.$parent.toolList.per = true;
             this.$parent.toolList.pre = true;
-            this.$parent.toolList.yield = true;
+            this.$parent.toolList.interval = true;
             this.$parent.toolList.point = true;
         }
         this.toggleDropdown($event, 'item');
@@ -1980,17 +1980,17 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             addAlert('select a stock!!!');
         }
     }
-    $scope.stockYield = function() {
+    $scope.stockInterval = function() {
         var this_obj = this;
         if (this.toolList.item) {
-            var stockApi = $resource('/api/stock/getYield/' + this.toolList.item.id, {}, {
-                'getYield': { method:'get' }
+            var stockApi = $resource($scope.main_url + '/api/stock/getInterval/' + this.toolList.item.id, {}, {
+                'getInterval': { method:'get', withCredentials: true }
             });
-            stockApi.getYield({}, function (result) {
+            stockApi.getInterval({}, function (result) {
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    this_obj.inputIndex = result.yield;
+                    this_obj.inputIndex = result.interval;
                     this_obj.tagNew = false;
                     this_obj.bookmarkNew = false;
                     this_obj.parsePoint = false;

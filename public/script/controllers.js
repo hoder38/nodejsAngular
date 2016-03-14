@@ -2591,7 +2591,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             if (this.fixTorrentSub) {
                 this.mediaToggle('torrent');
                 var adjust = Math.ceil((torrent.currentTime - this.curTorrentSubTime) * 10)/10;
-                openModal("確定校準此字幕到此時間軸？完畢後請刷新頁面，字幕才會更新").then(function () {
+                openModal("確定校準此字幕到此時間軸？").then(function () {
                     $scope.fixTorrentSub = false;
                     $scope.curTorrentSub = '';
                     fixSubtitle(adjust, 'torrent');
@@ -2609,7 +2609,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             if (this.fixVideoSub) {
                 this.mediaToggle('video');
                 var adjust = Math.ceil((video.currentTime - this.curVideoSubTime) * 10)/10;
-                openModal("確定校準此字幕到此時間軸？完畢後請刷新頁面，字幕才會更新").then(function () {
+                openModal("確定校準此字幕到此時間軸？").then(function () {
                     $scope.fixVideoSub = false;
                     $scope.curVideoSub = '';
                     fixSubtitle(adjust, 'video');
@@ -2787,7 +2787,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         if (type === 'torrent') {
             append = $scope.torrent.id + '/' + adjust + '/' + $scope.torrent.index;
         } else {
-            append = $scope.video.id + '/' + adjust;
+            if ($scope.video.playlist.obj.id) {
+                append = $scope.video.playlist.obj.id + '/' + adjust;
+            } else {
+                append = $scope.video.id + '/' + adjust;
+            }
         }
         var subtitleApi = $resource($scope.main_url + '/api/subtitle/fix/' + append, {}, {
             'fix': { method:'GET', withCredentials: true }
@@ -3920,7 +3924,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     }
                 }
             }
-            if (newIndex >= 1 && newIndex <= this[type].playlist.total && !this.moveDisabled[type]) {
+            if (newIndex >= 1 && newIndex < this[type].playlist.total + 1 && !this.moveDisabled[type]) {
                 this.moveDisabled[type] = true;
                 var append = '';
                 this.mediaRecord('video', 0, ended);
@@ -4082,27 +4086,36 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     }
 
     $scope.nextVideo = function(type) {
-        if (this[type].playlist && this[type].playlist.obj.index < this[type].playlist.total) {
-            this.videoMove(type, 'next', true);
-        } else {
-            if (!this.noEnd && this[type].playlist) {
-                return false;
+        if (this[type].playlist) {
+            if (this[type].playlist.obj.sub) {
+                if (Math.round(this[type].playlist.obj.index) < this[type].playlist.total * 1000 + this[type].playlist.obj.sub) {
+                    this.videoMove(type, 'next', true);
+                    return true;
+                }
             } else {
-                if (type === 'music') {
-                    this.musicShuffle();
-                } else {
-                    switch (this[type].mode) {
-                        case 1:
-                        this.mediaMove(-1, type, true);
-                        break;
-                        case 2:
-                        this.mediaMove(0, type, true, true);
-                        break;
-                        case 0:
-                        default:
-                        this.mediaMove(1, type, true);
-                        break;
-                    }
+                if (this[type].playlist.obj.index < this[type].playlist.total) {
+                    this.videoMove(type, 'next', true);
+                    return true;
+                }
+            }
+        }
+        if (!this.noEnd && this[type].playlist) {
+            return false;
+        } else {
+            if (type === 'music') {
+                this.musicShuffle();
+            } else {
+                switch (this[type].mode) {
+                    case 1:
+                    this.mediaMove(-1, type, true);
+                    break;
+                    case 2:
+                    this.mediaMove(0, type, true, true);
+                    break;
+                    case 0:
+                    default:
+                    this.mediaMove(1, type, true);
+                    break;
                 }
             }
         }
@@ -5085,13 +5098,13 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         if (newVal) {
             if (newVal === 1) {
                 $scope.mediaToggle('torrent');
-                openModal("請在 Storage 下搜尋，並且只保留上一個版本的字幕，完成後請刷新頁面，才會更新字幕").then(function () {
+                openModal("請在 Storage 下搜尋，並且只保留上一個版本的字幕").then(function () {
                     $scope.$broadcast('subtitle', 'searchT');
                 }, function () {
                 });
             } else if (newVal === 2) {
                 $scope.mediaToggle('torrent');
-                openModal("請在 Storage 下上傳，並且只保留上一個版本的字幕，完成後請刷新頁面，才會更新字幕").then(function () {
+                openModal("請在 Storage 下上傳，並且只保留上一個版本的字幕").then(function () {
                     $scope.$broadcast('subtitle', 'uploadT');
                 }, function () {
                 });
@@ -5119,13 +5132,13 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         if (newVal) {
             if (newVal === 1) {
                 $scope.mediaToggle('video');
-                openModal("請在 Storage 下搜尋，並且只保留上一個版本的字幕，完成後請刷新頁面，才會更新字幕").then(function () {
+                openModal("請在 Storage 下搜尋，並且只保留上一個版本的字幕").then(function () {
                     $scope.$broadcast('subtitle', 'searchV');
                 }, function () {
                 });
             } else if (newVal === 2) {
                 $scope.mediaToggle('video');
-                openModal("請在 Storage 下上傳，並且只保留上一個版本的字幕，完成後請刷新頁面，才會更新字幕").then(function () {
+                openModal("請在 Storage 下上傳，並且只保留上一個版本的字幕").then(function () {
                     $scope.$broadcast('subtitle', 'uploadV');
                 }, function () {
                 });

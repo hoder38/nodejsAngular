@@ -2394,12 +2394,17 @@ app.get('/api/stock/getPER/:uid', function(req, res,next) {
             if (err) {
                 util.handleError(err, next, res);
             }
-            res.json({per:index + ': ' + result});
+            stockTool.getStockYield(id, function(err, result_1, index) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                res.json({per:index + ': ' + result + ' ' +result_1});
+            });
         });
     });
 });
 
-app.get('/api/stock/getYield/:uid', function(req, res, next) {
+/*app.get('/api/stock/getYield/:uid', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('stock get yield');
         console.log(new Date());
@@ -2416,7 +2421,7 @@ app.get('/api/stock/getYield/:uid', function(req, res, next) {
             res.json({yield:index + ': ' + result});
         });
     });
-});
+});*/
 
 app.get('/api/stock/getPoint/:uid/:price?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
