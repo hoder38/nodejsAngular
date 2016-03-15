@@ -108,6 +108,30 @@ app.get('/refresh', function (req, res, next) {
     res.end("refresh");
 });
 
+app.get('/s', function (req, res, next) {
+    console.log('short');
+    console.log(new Date());
+    console.log(req.url);
+    console.log(req.body);
+    mongo.orig("find", 'storage', {status: 7}, {sort: [['utime', 'desc']], limit: 1}, function(err, items){
+        if(err) {
+            util.handleError(err, next, res);
+        }
+        if (items.length < 1) {
+            util.handleError({hoerror: 2, message: "cannot find url"}, next, res);
+        }
+        if (!items[0].url) {
+            util.handleError({hoerror: 2, message: "dont have url"}, next, res);
+        }
+        var url = decodeURIComponent(items[0].url);
+        var body = '302. Redirecting to ' + url;
+        res.header('Content-Type', 'text/plain');
+        res.statusCode = 302;
+        res.header('Location', url);
+        res.end(body);
+    });
+});
+
 app.get('/api/logout', function(req, res, next) {
     console.log("logout");
     console.log(new Date());
@@ -3187,7 +3211,7 @@ app.get('/subtitle/:uid/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
         if (req.params.index) {
             url = url + '/' + req.params.index;
         }
-        body = '302. Redirecting to ' + url;
+        var body = '302. Redirecting to ' + url;
         res.header('Content-Type', 'text/plain');
         // Respond
         res.statusCode = 302;

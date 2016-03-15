@@ -2234,6 +2234,10 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                 res.json(ret_obj);
             });
         } else {
+            setTimeout(function(){
+                util.handleError({hoerror: 2, message: "video invaild!!!"}, next, res);
+            }, 3000);
+            return;
             youtubedl.getInfo(url, [], function(err, info) {
                 if (err) {
                     err.hoerror = 2;

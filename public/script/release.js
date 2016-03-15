@@ -3535,6 +3535,9 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                                     }, function(errorResult) {
                                         if (errorResult.status === 400) {
                                             addAlert(errorResult.data);
+                                            if (type === 'music') {
+                                                $scope.nextVideo('music');
+                                            }
                                         } else if (errorResult.status === 403) {
                                             addAlert('unknown API!!!');
                                         } else if (errorResult.status === 401) {
@@ -5611,6 +5614,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             }, function(errorResult) {
                                 if (errorResult.status === 400) {
                                     addAlert(errorResult.data);
+                                    if (type === 'music') {
+                                        $scope.nextVideo('music');
+                                    }
                             } else if (errorResult.status === 403) {
                                     addAlert('unknown API!!!');
                                 } else if (errorResult.status === 401) {
@@ -6081,6 +6087,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                 }, function(errorResult) {
                                                     if (errorResult.status === 400) {
                                                         addAlert(errorResult.data);
+                                                        if (type === 'music') {
+                                                            $scope.nextVideo('music');
+                                                        }
                                                     } else if (errorResult.status === 403) {
                                                         addAlert('unknown API!!!');
                                                     } else if (errorResult.status === 401) {
@@ -6354,6 +6363,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                 }, function(errorResult) {
                                                     if (errorResult.status === 400) {
                                                         addAlert(errorResult.data);
+                                                        if (type === 'music') {
+                                                            $scope.nextVideo('music');
+                                                        }
                                                     } else if (errorResult.status === 403) {
                                                         addAlert('unknown API!!!');
                                                     } else if (errorResult.status === 401) {
@@ -6586,6 +6598,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     }, function(errorResult) {
                                         if (errorResult.status === 400) {
                                             addAlert(errorResult.data);
+                                            if (type === 'music') {
+                                                $scope.nextVideo('music');
+                                            }
                                         } else if (errorResult.status === 403) {
                                             addAlert('unknown API!!!');
                                         } else if (errorResult.status === 401) {
