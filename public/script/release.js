@@ -10184,8 +10184,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         this.userNameFocus = true;
     }
 
-    $scope.generatePW = function() {
-        var passwordapi = $resource('/api/password/generate', {}, {
+    $scope.generatePW = function(type) {
+        var passwordapi = $resource('/api/password/generate/' + type, {}, {
             'generate': { method:'GET' }
         });
         var this_obj = this;

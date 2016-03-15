@@ -2413,12 +2413,16 @@ module.exports = {
                             console.log(year);
                             console.log(month_str);
                             if (index >= 20 || sales_num.length > 11) {
+                                var diff = 0;
                                 var predict_sales_0 = 0;
                                 var predict_sales_1 = 0;
                                 var predict_sales_2 = 0;
                                 var predict_sales_3 = 0;
                                 for (var i = 0; i < sales_per.length; i++) {
-                                    //predict_sales = predict_sales + line.a + line.b * t + sd * diff;
+                                    diff = 0;
+                                    for (var j = 0; j < i; j++) {
+                                        diff += (sales_per[j] - sales_per[i]) / 12;
+                                    }
                                     if (start_month > 1) {
                                         start_month--;
                                     } else {
@@ -2428,22 +2432,22 @@ module.exports = {
                                         case 1:
                                         case 2:
                                         case 3:
-                                        predict_sales_0 += sales_num[i] * (sales_per[i] + 100) / 100;
+                                        predict_sales_0 += sales_num[i] * (sales_per[i] + 100 + diff) / 100;
                                         break;
                                         case 4:
                                         case 5:
                                         case 6:
-                                        predict_sales_1 += sales_num[i] * (sales_per[i] + 100) / 100;
+                                        predict_sales_1 += sales_num[i] * (sales_per[i] + 100 + diff) / 100;
                                         break;
                                         case 7:
                                         case 8:
                                         case 9:
-                                        predict_sales_2 += sales_num[i] * (sales_per[i] + 100) / 100;
+                                        predict_sales_2 += sales_num[i] * (sales_per[i] + 100 + diff) / 100;
                                         break;
                                         case 10:
                                         case 11:
                                         case 12:
-                                        predict_sales_3 += sales_num[i] * (sales_per[i] + 100) / 100;
+                                        predict_sales_3 += sales_num[i] * (sales_per[i] + 100 + diff) / 100;
                                     }
                                 }
                                 console.log(predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3);
@@ -2526,8 +2530,6 @@ module.exports = {
             }
         });
     },
-    //http://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/st43_result.php?l=zh-tw&d=105/03&stkno=3088&_=1457511385959
-//http://www.twse.com.tw/ch/trading/exchange/STOCK_DAY/STOCK_DAY_print.php?genpage=genpage/Report201602/201602_F3_1_8_2330.php&type=csv
     getInterval: function(id, callback) {
         var this_obj = this;
         var url = '';
@@ -2583,7 +2585,6 @@ module.exports = {
                     recur_mi(1);
                 }
                 function recur_mi(type) {
-                    //第一次一定要去上網更新
                     if (start_month && interval_data && interval_data[year] && interval_data[year][month_str]) {
                         raw_arr = raw_arr.concat(interval_data[year][month_str].raw);
                         if (interval_data[year][month_str].max > max) {
@@ -2879,12 +2880,10 @@ module.exports = {
                                     return a - b;
                                 });
                                 var interval = null;
-                                for (var i = 9; i > 0; i--) {
-                                    for (var j = 0; j < 5; j++) {
-                                        interval = group_interval(i, j);
-                                        if (interval) {
-                                            break;
-                                        }
+                                for (var i = 19; i > 0; i--) {
+                                    interval = group_interval(i, 5);
+                                    if (interval) {
+                                        break;
                                     }
                                     if (interval) {
                                         break;
@@ -2911,7 +2910,7 @@ module.exports = {
                                     var group = [];
                                     var start = 0;
                                     var ig = 0;
-                                    level = level * 10;
+                                    level = level * 5;
                                     for (var i in final_arr) {
                                         if (final_arr[i] >= sort_arr[level]) {
                                             if (!start) {
@@ -2936,18 +2935,18 @@ module.exports = {
                                     var group_num = 0;
                                     var final_group = [];
                                     for (var i in group) {
-                                        if (group[i].end - group[i].start > 28) {
+                                        if (group[i].end - group[i].start > 33) {
                                             for (var j in group) {
-                                                if (group[j].end - group[j].start > 8) {
+                                                if (group[j].end - group[j].start > 13) {
                                                     final_group.push(group[j]);
                                                 }
                                             }
                                             return final_group;
-                                        } else if (group[i].end - group[i].start > 8) {
+                                        } else if (group[i].end - group[i].start > 13) {
                                             group_num++;
                                             if (group_num > 2) {
                                                 for (var j in group) {
-                                                    if (group[j].end - group[j].start > 8) {
+                                                    if (group[j].end - group[j].start > 13) {
                                                         final_group.push(group[j]);
                                                     }
                                                 }

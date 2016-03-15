@@ -3145,13 +3145,13 @@ app.put('/api/password/delRow/:uid', function (req, res, next) {
     });
 });
 
-app.get('/api/password/generate', function (req, res, next) {
+app.get('/api/password/generate/:type(\\d)', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("generate password");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        res.json({password: pwTool.generatePW()});
+        res.json({password: pwTool.generatePW(Number(req.params.type))});
     });
 });
 

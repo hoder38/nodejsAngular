@@ -9,8 +9,14 @@ var generatePassword = require('password-generator'),
 var algorithm = 'aes-256-ctr';
 
 module.exports = {
-    generatePW: function() {
-        return generatePassword(12, false, /[0-9a-zA-Z!@#$%]/);
+    generatePW: function(type) {
+        if (type === 3) {
+            return generatePassword(12, false, /[0-9]/);
+        } else if (type === 2) {
+            return generatePassword(12, false, /[0-9a-zA-Z]/);
+        } else {
+            return generatePassword(12, false, /[0-9a-zA-Z!@#$%]/);
+        }
     },
     newRow: function(data, user, next, callback) {
         if (!data['username'] || !data['password']|| !data['conpassword'] || !data['name']) {

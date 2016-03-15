@@ -1348,8 +1348,8 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
         this.userNameFocus = true;
     }
 
-    $scope.generatePW = function() {
-        var passwordapi = $resource('/api/password/generate', {}, {
+    $scope.generatePW = function(type) {
+        var passwordapi = $resource('/api/password/generate/' + type, {}, {
             'generate': { method:'GET' }
         });
         var this_obj = this;
