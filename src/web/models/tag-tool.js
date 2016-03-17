@@ -2,7 +2,7 @@ var util = require("../util/utility.js");
 var mongo = require("../models/mongo-tool.js");
 var mime = require('../util/mime.js');
 
-var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'youtube video', 'youtube playlist', 'youtube music', 'youtube music playlist', 'playlist unactive', 'kubo movie', 'kubo tv series', 'kubo tv show', 'kubo animation', 'yify movie', 'cartoonmad comic', 'bilibili animation', 'bilibili movie', 'comic99 comic'];
+var default_tags = ['18+', 'handlemedia', 'unactive', 'handlerecycle', 'first item', 'all item', 'important', 'no local', 'youtube video', 'youtube playlist', 'youtube music', 'youtube music playlist', 'playlist unactive', 'kubo movie', 'kubo tv series', 'kubo tv show', 'kubo animation', 'yify movie', 'cartoonmad comic', 'bilibili animation', 'bilibili movie', 'comic99 comic', '18-'];
 
 //var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'country', 'tw': '國家'}, {'name': 'year', 'tw': '年份'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'serial', 'tw': '連載中'}, {'name': 'album', 'tw': '專輯'}, {'name': 'author', 'tw': '作者'}, {'name': 'actor', 'tw': '演員'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}, {'name': 'animate_producer', 'tw': '動畫工作室'}, {'name': 'publisher', 'tw': '出版社'}, {'name': 'language', 'tw': '語言'}];
 var storage_parent_arr = [{'name': 'command', 'tw': '指令'}, {'name': 'media type', 'tw': '媒體種類'}, {'name': 'country', 'tw': '國家'}, {'name': 'year', 'tw': '年份'}, {'name': 'category', 'tw': '劇情分類'}, {'name': 'game_type', 'tw': '遊戲種類'}, {'name': 'music_style', 'tw': '曲風'}, {'name': 'author', 'tw': '作者'}, {'name': 'album', 'tw': '專輯'}, {'name': 'singer', 'tw': '歌手'}, {'name': 'actor', 'tw': '演員'}, {'name': 'director', 'tw': '導演'}, {'name': 'developer', 'tw': '開發商'}];
@@ -213,13 +213,13 @@ module.exports = function(collection) {
                 setSingleArray: function(value) {
                     var normal = normalize(value);
                     var defau = isDefaultTag(normal);
-                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10 || defau.index === 11 || defau.index === 13 || defau.index === 14 || defau.index === 15 || defau.index === 16 || defau.index === 17 || defau.index === 18 || defau.index === 19 || defau.index === 20 || defau.index === 21 || defau.index === 30 || defau.index === 31) {
+                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10 || defau.index === 11 || defau.index === 13 || defau.index === 14 || defau.index === 15 || defau.index === 16 || defau.index === 17 || defau.index === 18 || defau.index === 19 || defau.index === 20 || defau.index === 21 || defau.index === 22 || defau.index === 30 || defau.index === 31) {
                         return true;
                     } else {
                         for (var i = 0; i < search[name].index; i++) {
                             normal = search[name].tags[i];
                             defau = isDefaultTag(normal);
-                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10 && defau.index !== 11 &&defau.index !== 13 && defau.index !== 14 && defau.index !== 15 && defau.index !== 16 && defau.index !== 17 && defau.index !== 18 && defau.index !== 19 && defau.index !== 20 && defau.index !== 21 && defau.index !== 30 && defau.index !== 31) {
+                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10 && defau.index !== 11 &&defau.index !== 13 && defau.index !== 14 && defau.index !== 15 && defau.index !== 16 && defau.index !== 17 && defau.index !== 18 && defau.index !== 19 && defau.index !== 20 && defau.index !== 21 && defau.index !== 22 && defau.index !== 30 && defau.index !== 31) {
                                 search[name].tags = search[name].tags.slice(0, i);
                                 search[name].exactly = search[name].exactly.slice(0, i);
                                 search[name].index = search[name].tags.length;
@@ -1282,7 +1282,7 @@ module.exports = function(collection) {
             query.type = 0;
             for (var i in search_arr) {
                 index = isDefaultTag(normalize(search_arr[i]));
-                if (!index || index.index === 0 || index.index === 6){
+                if (!index || index.index === 0 || index.index === 6 || index.index === 22){
                     query_arr.push(denormalize(search_arr[i]));
                 //ymp
                 } else if (index.index === 11) {
@@ -1356,7 +1356,7 @@ module.exports = function(collection) {
             var country = '';
             for (var i in search_arr) {
                 index = isDefaultTag(normalize(search_arr[i]));
-                if (!index || index.index === 0 || index.index === 6) {
+                if (!index || index.index === 0 || index.index === 6 || index.index === 22) {
                     if (search_arr[i].match(/^\d\d\d\d$/)) {
                         if (Number(search_arr[i]) < 2100 && Number(search_arr[i]) > 1800) {
                             year = Number(search_arr[i]);
@@ -1413,7 +1413,7 @@ module.exports = function(collection) {
             var query_term = null;
             for (var i in search_arr) {
                 index = isDefaultTag(normalize(search_arr[i]));
-                if (!index || index.index === 0 || index.index === 6) {
+                if (!index || index.index === 0 || index.index === 6 || index.index === 22) {
                     if (yify_type.indexOf(normalize(search_arr[i])) !== -1) {
                         genre = normalize(search_arr[i]);
                         query_term = null;
@@ -1458,7 +1458,7 @@ module.exports = function(collection) {
             var search = false;
             for (var i in search_arr) {
                 index = isDefaultTag(normalize(search_arr[i]));
-                if (!index || index.index === 0 || index.index === 6) {
+                if (!index || index.index === 0 || index.index === 6 || index.index === 22) {
                     if (mad_type.indexOf(normalize(search_arr[i])) !== -1) {
                         comic_type = mad_type.indexOf(normalize(search_arr[i]));
                         query_term = null;
@@ -1504,7 +1504,7 @@ module.exports = function(collection) {
             var query_term = null;
             for (var i in search_arr) {
                 index = isDefaultTag(normalize(search_arr[i]));
-                if (!index || index.index === 0 || index.index === 6) {
+                if (!index || index.index === 0 || index.index === 6 || index.index === 22) {
                     if (c99_type.indexOf(normalize(search_arr[i])) !== -1) {
                         comic_type = c99_type.indexOf(normalize(search_arr[i]));
                         query_term = null;
@@ -1554,7 +1554,7 @@ module.exports = function(collection) {
             var search = 0;
             for (var i in search_arr) {
                 index = isDefaultTag(normalize(search_arr[i]));
-                if (!index || index.index === 0 || index.index === 6) {
+                if (!index || index.index === 0 || index.index === 6 || index.index === 22) {
                     if (search_arr[i].match(/^\d\d\d\d$/)) {
                         if (Number(search_arr[i]) < 2100 && Number(search_arr[i]) > 1800) {
                             s_year = Number(search_arr[i]);
@@ -1712,6 +1712,11 @@ var getStorageQuerySql = function(user, tagList, exactly) {
             } else if (index.index === 0) {
                 if (util.checkAdmin(2, user)) {
                     nosql['adultonly'] = 1;
+                    is_adultonly = true;
+                }
+            } else if (index.index === 22) {
+                if (util.checkAdmin(2, user)) {
+                    nosql['adultonly'] = 0;
                     is_adultonly = true;
                 }
             } else if (index.index === 1) {
