@@ -1132,7 +1132,7 @@ module.exports = {
                         delete sales[y];
                     }
                 }
-            } else if (xmlDate = getXmlDate(xml, 'tw-gaap-bd:ConsolidatedNetIncome', si)) {
+            } else if ((xmlDate = getXmlDate(xml, 'tw-gaap-bd:ConsolidatedNetIncome', si)) || (xmlDate = getXmlDate(xml, 'tw-gaap-bd:NetIncomeLoss-CashFlowStatement', si))) {
                 y = xmlDate.year;
                 q = xmlDate.quarter-1;
                 if (!sales[y]) {
@@ -1145,7 +1145,7 @@ module.exports = {
                     sales[y][q].cost = getParameter(xml, 'tw-gaap-bd:Expenditure', si) - sales[y][q].expenses - getParameter(xml, 'tw-gaap-bd:NonOperatingExpenseLoss', si);
                     sales[y][q].gross_profit = sales[y][q].revenue - sales[y][q].cost;
                     sales[y][q].operating = sales[y][q].gross_profit - sales[y][q].expenses;
-                    sales[y][q].profit = getParameter(xml, 'tw-gaap-bd:ConsolidatedNetIncome', si);
+                    sales[y][q].profit = getParameter(xml, 'tw-gaap-bd:ConsolidatedNetIncome', si) + getParameter(xml, 'tw-gaap-bd:NetIncomeLoss-CashFlowStatement', si);
                     sales[y][q].tax = getParameter(xml, 'tw-gaap-bd:IncomeTaxExpense', si);
                     sales[y][q].nonoperating = sales[y][q].profit + sales[y][q].tax - sales[y][q].operating;
                     sales[y][q].eps = getParameter(xml, 'tw-gaap-bd:PrimaryEarningsPerShare', si);
@@ -1290,7 +1290,7 @@ module.exports = {
                         if (salesStatus[i-1] && salesStatus[i-1].length === 0) {
                             delete salesStatus[i-1];
                         }
-                        if (!sales[i][j].revenue) {
+                        if (!sales[i][j].revenue || sales[i][j].revenue < 0) {
                             if (sales[i][j].profit) {
                                 sales[i][j].revenue = Math.abs(sales[i][j].profit / 100000);
                             } else {
@@ -1307,9 +1307,13 @@ module.exports = {
                             salesStatus[i][j].quarterEPS = sales[i][j].eps;
                         } else {
                             salesStatus[i][j].quarterRevenue = sales[i][j].revenue - sales[i][Number(j)-1].revenue;
-                            if (!salesStatus[i][j].quarterRevenue) {
+                            if (!salesStatus[i][j].quarterRevenue || salesStatus[i][j].quarterRevenue < 0) {
                                 if (sales[i][j].profit) {
-                                    salesStatus[i][j].quarterRevenue = Math.abs(sales[i][j].profit / 100000);
+                                    if (sales[i][Number(j)-1].profit && (sales[i][j].profit - sales[i][Number(j)-1].profit)) {
+                                        salesStatus[i][j].quarterRevenue = Math.abs((sales[i][j].profit - sales[i][Number(j)-1].profit) / 100000);
+                                    } else {
+                                        salesStatus[i][j].quarterRevenue = Math.abs(sales[i][j].profit / 100000);
+                                    }
                                 } else {
                                     salesStatus[i][j].quarterRevenue = 1000;
                                 }

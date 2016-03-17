@@ -2234,10 +2234,6 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                 res.json(ret_obj);
             });
         } else {
-            setTimeout(function(){
-                util.handleError({hoerror: 2, message: "video invaild!!!"}, next, res);
-            }, 3000);
-            return;
             youtubedl.getInfo(url, [], function(err, info) {
                 if (err) {
                     err.hoerror = 2;
@@ -2299,7 +2295,7 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
 
 app.get('/api/external/getSubtitle/:uid', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
-        console.log('external getSingle');
+        console.log('external getSub');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
