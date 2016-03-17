@@ -201,11 +201,6 @@ module.exports = {
                     mTag.opt.push(genre_list_ch[i]);
                 }
             }
-            for (var i in anime_list) {
-                if (mTag.opt.indexOf(anime_list[i]) === -1) {
-                    mTag.opt.push(anime_list[i]);
-                }
-            }
         }
         return mTag;
     },
