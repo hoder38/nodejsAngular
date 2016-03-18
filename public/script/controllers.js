@@ -1253,14 +1253,14 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     }, true);
 
     getOptionTag = function() {
-        var append = '';
-        if ($scope.tagList.length > 0) {
-            append = '/' + $scope.tagList[0];
-        }
-        var Info = $resource('/api/getOptionTag' + append, {}, {
-            'optionTag': { method:'GET' }
+        var Info = $resource('/api/getOptionTag', {}, {
+            'optionTag': { method:'POST' }
         });
-        Info.optionTag({}, function (result) {
+        var tags = [];
+        if ($scope.tagList.length > 0) {
+            tags = $scope.tagList;
+        }
+        Info.optionTag({tags: tags}, function (result) {
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
@@ -1394,7 +1394,32 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     addAlert('Please selects item!!!');
                 }
             } else {
-                addAlert('New tag is not vaild!!!');
+                if (!isValidString(this.newTagName, 'url')) {
+                    addAlert('New tag is not vaild!!!');
+                } else {
+                    var tagUrlapi = $resource('/api/addTagUrl', {}, {
+                        'addTagUrl': { method:'POST' }
+                    });
+                    var uids = [];
+                    var this_obj = this;
+                    for (var i in this.selectList) {
+                        uids.push(this.selectList[i].id);
+                    }
+                    tagUrlapi.addTagUrl({url: this.newTagName, uids: uids}, function(result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        }
+                        this_obj.tagNew = false;
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
+                }
             }
         } else {
             addAlert('Please inputs new tag!!!');
@@ -3115,11 +3140,44 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
     }
     $scope.addFeedback = function() {
+        var this_obj = this;
         if (this.feedbackInput) {
             if (!isValidString(this.feedbackInput, 'name')) {
-                addAlert('feedback name is not valid!!!');
-                this.feedbackInput = '';
-                this.feedbackBlur = true;
+                if (!isValidString(this.feedbackInput, 'url')) {
+                    addAlert('feedback name is not valid!!!');
+                    this.feedbackInput = '';
+                    this.feedbackBlur = true;
+                } else {
+                    var tagUrlapi = $resource('/api/addTagUrl', {}, {
+                        'addTagUrl': { method:'POST' }
+                    });
+                    tagUrlapi.addTagUrl({url: this.feedbackInput}, function(result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        } else {
+                            console.log(result.tags);
+                            this_obj.feedbackInput = '';
+                            this_obj.feedbackBlur = true;
+                            var index = -1;
+                            for (var i in result.tags) {
+                                index = arrayObjectIndexOf(this_obj.feedback.list, result.tags[i], 'tag');
+                                if (index === -1) {
+                                    this_obj.feedback.list.splice(0, 0, {tag: result.tags[i], select: true});
+                                } else {
+                                    this_obj.feedback.list[index].select = true;
+                                }
+                            }
+                        }
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
+                }
             } else {
                 var this_obj = this;
                 var index = arrayObjectIndexOf(this.feedback.list, this.feedbackInput, 'tag');

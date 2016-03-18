@@ -23,6 +23,12 @@ type_arr.vlog = type_arr.video;
 var genre_list = ['action', 'adventure', 'animation', 'biography', 'comedy', 'crime', 'documentary', 'drama', 'family', 'fantasy', 'film-noir', 'history', 'horror', 'music', 'musical', 'mystery', 'romance', 'sci-fi', 'sport', 'thriller', 'war', 'western'];
 var genre_list_ch = ['動作', '冒險', '動畫', '傳記', '喜劇', '犯罪', '記錄', '劇情', '家庭', '奇幻', '黑色電影', '歷史', '恐怖', '音樂', '音樂劇', '神祕', '浪漫', '科幻', '運動', '驚悚', '戰爭', '西部'];
 
+var game_list = ['casual', 'adventure', 'action', 'massively multiplayer', 'simulation', 'indie', 'racing', 'strategy', 'rpg', 'sports'];
+
+var game_list_ch = ['休閒', '冒險', '動作', '大型多人連線', '模擬', '獨立', '競速', '策略', '角色扮演', '運動'];
+
+var adult_list = ['ol', '中出', '同人誌', '多p', '多人合集', '女僕', '學生', '巨乳', '教師', '泳裝', '溫泉', '無碼', '熟女', '特殊制服', '痴女', '痴漢', '素人', '美腿', '藝能人', '護士', '野外', '風俗店', '魔物'];
+
 var anime_list = ['動作', '奇幻', '犯罪', '運動', '恐怖', '歷史', '神秘', '冒險', '校園', '喜劇', '浪漫', '少男', '科幻', '香港', '其他'];
 
 var comic_list = ['萌系', '喜劇', '動作', '科幻', '劇情', '犯罪', '運動', '奇幻', '神秘', '校園', '驚悚', '廚藝', '偽娘', '圖片', '冒險', '小說', '香港', '耽美', '經典', '歐美', '日文', '家庭'];
@@ -195,13 +201,13 @@ module.exports = {
     mediaTag: function(type) {
         'use strict';
         var mTag = util.clone(type_arr[type]);
-        if (type === 'video' || type === 'vlog' || type === 'doc'|| type === 'rawdoc' || type === 'image' || type === 'zipbook') {
+        /*if (type === 'video' || type === 'vlog' || type === 'doc'|| type === 'rawdoc' || type === 'image' || type === 'zipbook') {
             for (var i in genre_list_ch) {
                 if (mTag.opt.indexOf(genre_list_ch[i]) === -1) {
                     mTag.opt.push(genre_list_ch[i]);
                 }
             }
-        }
+        }*/
         return mTag;
     },
     changeExt: function(str, ext) {
@@ -258,6 +264,25 @@ module.exports = {
         } else if (lang === 'transed') {
             for (var i in trans_list_ch) {
                 option.push(trans_list_ch[i]);
+            }
+        } else if (lang === 'game') {
+            for (var i in game_list) {
+                option.push(game_list[i]);
+            }
+        } else if (lang === 'gamech') {
+            for (var i in game_list_ch) {
+                option.push(game_list_ch[i]);
+            }
+        } else if (lang === 'gameall') {
+            for (var i in game_list_ch) {
+                option.push(game_list_ch[i]);
+            }
+            for (var i in game_list) {
+                option.push(game_list[i]);
+            }
+        } else if (lang === 'adult') {
+            for (var i in adult_list) {
+                option.push(adult_list[i]);
             }
         } else {
             for (var i in genre_list) {

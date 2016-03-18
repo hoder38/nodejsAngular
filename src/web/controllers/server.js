@@ -930,6 +930,92 @@ app.put('/api/addTag/:tag', function(req, res, next){
     });
 });
 
+app.post('/api/addTagUrl', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("addTagUrl");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var url = util.isValidString(req.body.url, 'url');
+        if (req.body.url.match(/^(http|https):\/\/store\.steampowered\.com\/app\//)) {
+            console.log('steam');
+            externalTool.parseTagUrl('steam', req.body.url, function(err, taglist) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                console.log(taglist);
+                if (req.body.uids) {
+                    recur_add(0, 0);
+                    function recur_add(index, tagIndex) {
+                        tagTool.addTag(req.body.uids[index], taglist[tagIndex], req.user, next, function(err, result) {
+                            if (err) {
+                                if (err.message === 'uid is not vaild') {
+                                    util.handleError(err);
+                                } else {
+                                    util.handleError(err, next, res);
+                                }
+                            }
+                            tagIndex++;
+                            if (tagIndex < taglist.length) {
+                                recur_add(index, tagIndex);
+                            } else {
+                                sendWs({type: 'file', data: result.id}, result.adultonly);
+                                index++;
+                                if (index < req.body.uids.length) {
+                                    recur_add(index, tagIndex);
+                                } else {
+                                    res.json({apiOK: true});
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    res.json({tags: taglist});
+                }
+            });
+        } else if (req.body.url.match(/^(http|https):\/\/www\.imdb\.com\/title\//)) {
+            console.log('imdb');
+            externalTool.parseTagUrl('imdb', req.body.url, function(err, taglist) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                console.log(taglist);
+                if (req.body.uids) {
+                    recur_add(0, 0);
+                    function recur_add(index, tagIndex) {
+                        tagTool.addTag(req.body.uids[index], taglist[tagIndex], req.user, next, function(err, result) {
+                            if (err) {
+                                if (err.message === 'uid is not vaild') {
+                                    util.handleError(err);
+                                } else {
+                                    util.handleError(err, next, res);
+                                }
+                            }
+                            tagIndex++;
+                            if (tagIndex < taglist.length) {
+                                recur_add(index, tagIndex);
+                            } else {
+                                sendWs({type: 'file', data: result.id}, result.adultonly);
+                                tagIndex = 0;
+                                index++;
+                                if (index < req.body.uids.length) {
+                                    recur_add(index, tagIndex);
+                                } else {
+                                    res.json({apiOK: true});
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    res.json({tags: taglist});
+                }
+            });
+        } else {
+            util.handleError({hoerror: 2, message: "invalid tag url"}, next, res);
+        }
+    });
+});
+
 app.put('/api/stock/addTag/:tag', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("stock addTag");
@@ -2671,19 +2757,22 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
     });
 });
 
-app.get('/api/getOptionTag/:tag?', function(req, res, next) {
+app.post('/api/getOptionTag', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get option tag');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var optionList = ['first item'];
-        if (req.params.tag) {
-            tagTool.getRelativeTag(req.params.tag, req.user, optionList, next, function(err, relative) {
+        if (req.body.tags.length > 0) {
+            tagTool.getRelativeTag(req.body.tags[0], req.user, optionList, next, function(err, relative) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
-                if (util.checkAdmin(2 ,req.user)) {
+                if (req.body.tags.indexOf('first item') === -1) {
+                    optionList.push('first item');
+                }
+                if (util.checkAdmin(2 ,req.user) && req.body.tags.indexOf('18+') === -1) {
                     optionList.push('18+');
                 }
                 var reli = 5;
@@ -2695,10 +2784,27 @@ app.get('/api/getOptionTag/:tag?', function(req, res, next) {
                         optionList.push(relative[i]);
                     }
                 }
-                var mo = mime.getOptionTag('cht');
-                for (var i in mo) {
-                    if (optionList.indexOf(mo[i]) === -1) {
-                        optionList.push(mo[i]);
+
+                if (req.body.tags.indexOf('18+') !== -1) {
+                    var mo = mime.getOptionTag('adult');
+                    for (var i in mo) {
+                        if (optionList.indexOf(mo[i]) === -1) {
+                            optionList.push(mo[i]);
+                        }
+                    }
+                } else if (req.body.tags.indexOf('game') !== -1 || req.body.tags.indexOf('遊戲') !== -1) {
+                    var mo = mime.getOptionTag('gamech');
+                    for (var i in mo) {
+                        if (optionList.indexOf(mo[i]) === -1) {
+                            optionList.push(mo[i]);
+                        }
+                    }
+                } else {
+                    var mo = mime.getOptionTag('cht');
+                    for (var i in mo) {
+                        if (optionList.indexOf(mo[i]) === -1) {
+                            optionList.push(mo[i]);
+                        }
                     }
                 }
                 res.json({relative: optionList});

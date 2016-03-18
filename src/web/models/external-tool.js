@@ -16,6 +16,10 @@ var trans_list = mime.getOptionTag('trans');
 
 var trans_list_ed = mime.getOptionTag('transed');
 
+var game_list = mime.getOptionTag('game');
+
+var game_list_ch = mime.getOptionTag('gamech');
+
 var googleApi = require("../models/api-tool-google.js");
 
 var kubo_type = [['動作片', '喜劇片', '愛情片', '科幻片', '恐怖片', '劇情片', '戰爭片', '動畫片', '微電影'], ['台灣劇', '港劇', '大陸劇', '歐美劇', '韓劇', '日劇', '新/馬/泰/其他劇', '布袋戲', '綜藝', '美食旅遊', '訪談節目', '男女交友', '選秀競賽', '典禮晚會', '新聞時事', '投資理財', '歌劇戲曲'], ['動漫', '電影動畫片']];
@@ -4039,6 +4043,185 @@ module.exports = {
                 callback(null, ret_obj, false, total, vId_arr, nPageToken, pPageToken, pageToken, is_new);
             }, 0);
         });
+    },
+    parseTagUrl: function(type, url, callback) {
+        var taglist = [];
+        switch (type) {
+            case 'imdb':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                taglist.push('歐美');
+                var match_list = false;
+                var match_item = false;
+                var raw_list = raw_data.match(/<title>(.*?) \((\d\d\d\d)\) - IMDb<\/title>/);
+                if (raw_list) {
+                    if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                        taglist.push(raw_list[1].toLowerCase());
+                    }
+                    if (taglist.indexOf(raw_list[2].toLowerCase()) === -1) {
+                        taglist.push(raw_list[2].toLowerCase());
+                    }
+                }
+                raw_list = raw_data.match(/<span itemprop="director"[\s\S]+?<\/span>/g);
+                if (raw_list) {
+                    for (var i in raw_list) {
+                        match_list = raw_list[i].match(/([^>]+)<\/span>/);
+                        if (match_list) {
+                            if (taglist.indexOf(match_list[1].toLowerCase()) === -1) {
+                                taglist.push(match_list[1].toLowerCase());
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/<span itemprop="creator"[\s\S]+?<\/span>/g);
+                if (raw_list) {
+                    for (var i in raw_list) {
+                        match_list = raw_list[i].match(/([^>]+)<\/span>/);
+                        if (match_list) {
+                            if (taglist.indexOf(match_list[1].toLowerCase()) === -1) {
+                                taglist.push(match_list[1].toLowerCase());
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/<span itemprop="actors"[\s\S]+?<\/span>/g);
+                if (raw_list) {
+                    for (var i in raw_list) {
+                        match_list = raw_list[i].match(/([^>]+)<\/span>/);
+                        if (match_list) {
+                            if (taglist.indexOf(match_list[1].toLowerCase()) === -1) {
+                                taglist.push(match_list[1].toLowerCase());
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/<h4.*?>Country:[\s\S]+?<\/a>/);
+                if (raw_list) {
+                    match_list = raw_list[0].match(/([^>]+)<\/a>/);
+                    if (match_list) {
+                        if (taglist.indexOf(match_list[1].toLowerCase()) === -1) {
+                            taglist.push(match_list[1].toLowerCase());
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/<h4.*?>Genres:[\s\S]+?<\/div>/);
+                if (raw_list) {
+                    match_list = raw_list[0].match(/[^>]+<\/a>/g);
+                    if (match_list) {
+                        for (var i in match_list) {
+                            match_item = match_list[i].match(/[a-zA-Z\-]+/);
+                            if (match_item) {
+                                match_item = match_item[0].toLowerCase();
+                                if (genre_list.indexOf(match_item) !== -1) {
+                                    if (taglist.indexOf(match_item) === -1) {
+                                        taglist.push(match_item);
+                                    }
+                                    if (taglist.indexOf(genre_list_ch[genre_list.indexOf(match_item)]) === -1) {
+                                        taglist.push(genre_list_ch[genre_list.indexOf(match_item)]);
+                                    }
+                                } else {
+                                    if (taglist.indexOf(match_item) === -1) {
+                                        taglist.push(match_item);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, taglist);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'steam':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                taglist.push('歐美');
+                taglist.push('遊戲');
+                taglist.push('game');
+                var match_list = false;
+                var match_item = false;
+                var raw_list = raw_data.match(/<b>Title:<\/b> (.*?)<br>/);
+                if (raw_list) {
+                    if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                        taglist.push(raw_list[1].toLowerCase());
+                    }
+                }
+                raw_list = raw_data.match(/<b>Release Date:<\/b> \d?\d [a-zA-Z][a-zA-Z][a-zA-Z], (\d\d\d\d)<br>/);
+                if (raw_list) {
+                    if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                        taglist.push(raw_list[1].toLowerCase());
+                    }
+                }
+                raw_list = raw_data.match(/<b>Genre:<\/b>.*<br>/);
+                if (raw_list) {
+                    match_list = raw_list[0].match(/[^>]+<\/a>/g);
+                    if (match_list) {
+                        for (var i in match_list) {
+                            match_item = match_list[i].match(/[^<]+/);
+                            if (match_item) {
+                                match_item = match_item[0].toLowerCase();
+                                if (game_list.indexOf(match_item) !== -1) {
+                                    if (taglist.indexOf(match_item) === -1) {
+                                        taglist.push(match_item);
+                                    }
+                                    if (taglist.indexOf(game_list_ch[game_list.indexOf(match_item)]) === -1) {
+                                        taglist.push(game_list_ch[game_list.indexOf(match_item)]);
+                                    }
+                                } else {
+                                    if (taglist.indexOf(match_item) === -1) {
+                                        taglist.push(match_item);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/<b>Developer:<\/b>[\s\S]+?<br>/);
+                if (raw_list) {
+                    match_list = raw_list[0].match(/[^>]+<\/a>/g);
+                    if (match_list) {
+                        for (var i in match_list) {
+                            match_item = match_list[i].match(/[^<]+/);
+                            if (match_item) {
+                                match_item = match_item[0].toLowerCase();
+                                if (taglist.indexOf(match_item) === -1) {
+                                    taglist.push(match_item);
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/<b>Publisher:<\/b>[\s\S]+?<br>/);
+                if (raw_list) {
+                    match_list = raw_list[0].match(/[^>]+<\/a>/g);
+                    if (match_list) {
+                        for (var i in match_list) {
+                            match_item = match_list[i].match(/[^<]+/);
+                            if (match_item) {
+                                match_item = match_item[0].toLowerCase();
+                                if (taglist.indexOf(match_item) === -1) {
+                                    taglist.push(match_item);
+                                }
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, taglist);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            default:
+            util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
+            break;
+        }
     },
     bilibiliVideoUrl: function(url, callback) {
         var id = url.match(/(\d+)\/(index_(\d+)\.html)?$/);
