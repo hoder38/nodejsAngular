@@ -27,6 +27,10 @@ var game_list = ['casual', 'adventure', 'action', 'massively multiplayer', 'simu
 
 var game_list_ch = ['休閒', '冒險', '動作', '大型多人連線', '模擬', '獨立', '競速', '策略', '角色扮演', '運動'];
 
+var music_list_web = ['avant-garde', 'blues', 'children\'s', 'classical', 'comedy/spoken', 'country', 'easy listening', 'electronic', 'folk', 'holiday', 'international', 'jazz', 'latin', 'new age', 'pop/rock', 'r&b', 'rap', 'reggae', 'religious', 'stage & screen', 'vocal'];
+
+var music_list = ['avant-garde', 'blues', 'children\'s', 'classical', 'comedy or spoken', 'country', 'easy listening', 'electronic', 'folk', 'holiday', 'international', 'jazz', 'latin', 'new age', 'pop or rock', 'r&b', 'rap', 'reggae', 'religious', 'stage and screen', 'vocal'];
+
 var adult_list = ['ol', '中出', '同人誌', '多p', '多人合集', '女僕', '學生', '巨乳', '教師', '泳裝', '溫泉', '無碼', '熟女', '特殊制服', '痴女', '痴漢', '素人', '美腿', '藝能人', '護士', '野外', '風俗店', '魔物'];
 
 var anime_list = ['動作', '奇幻', '犯罪', '運動', '恐怖', '歷史', '神秘', '冒險', '校園', '喜劇', '浪漫', '少男', '科幻', '香港', '其他'];
@@ -273,16 +277,17 @@ module.exports = {
             for (var i in game_list_ch) {
                 option.push(game_list_ch[i]);
             }
-        } else if (lang === 'gameall') {
-            for (var i in game_list_ch) {
-                option.push(game_list_ch[i]);
-            }
-            for (var i in game_list) {
-                option.push(game_list[i]);
-            }
         } else if (lang === 'adult') {
             for (var i in adult_list) {
                 option.push(adult_list[i]);
+            }
+        } else if (lang === 'music') {
+            for (var i in music_list) {
+                option.push(music_list[i]);
+            }
+        } else if (lang === 'musicweb') {
+            for (var i in music_list_web) {
+                option.push(music_list_web[i]);
             }
         } else {
             for (var i in genre_list) {

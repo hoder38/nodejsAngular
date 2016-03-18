@@ -1010,6 +1010,43 @@ app.post('/api/addTagUrl', function(req, res, next){
                     res.json({tags: taglist});
                 }
             });
+        } else if (req.body.url.match(/^(http|https):\/\/www\.allmusic\.com\//)) {
+            console.log('allmusic');
+            externalTool.parseTagUrl('allmusic', req.body.url, function(err, taglist) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                console.log(taglist);
+                if (req.body.uids) {
+                    recur_add(0, 0);
+                    function recur_add(index, tagIndex) {
+                        tagTool.addTag(req.body.uids[index], taglist[tagIndex], req.user, next, function(err, result) {
+                            if (err) {
+                                if (err.message === 'uid is not vaild') {
+                                    util.handleError(err);
+                                } else {
+                                    util.handleError(err, next, res);
+                                }
+                            }
+                            tagIndex++;
+                            if (tagIndex < taglist.length) {
+                                recur_add(index, tagIndex);
+                            } else {
+                                sendWs({type: 'file', data: result.id}, result.adultonly);
+                                tagIndex = 0;
+                                index++;
+                                if (index < req.body.uids.length) {
+                                    recur_add(index, tagIndex);
+                                } else {
+                                    res.json({apiOK: true});
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    res.json({tags: taglist});
+                }
+            });
         } else {
             util.handleError({hoerror: 2, message: "invalid tag url"}, next, res);
         }
@@ -2794,6 +2831,13 @@ app.post('/api/getOptionTag', function(req, res, next) {
                     }
                 } else if (req.body.tags.indexOf('game') !== -1 || req.body.tags.indexOf('遊戲') !== -1) {
                     var mo = mime.getOptionTag('gamech');
+                    for (var i in mo) {
+                        if (optionList.indexOf(mo[i]) === -1) {
+                            optionList.push(mo[i]);
+                        }
+                    }
+                } else if (req.body.tags.indexOf('audio') !== -1 || req.body.tags.indexOf('音頻') !== -1) {
+                    var mo = mime.getOptionTag('music');
                     for (var i in mo) {
                         if (optionList.indexOf(mo[i]) === -1) {
                             optionList.push(mo[i]);

@@ -5439,6 +5439,13 @@ function getFeedback(item, callback, user) {
                     temp_tag.push(option_cht[i]);
                 }
             }
+        } else if (item.tags.indexOf('audio') !== -1 || item.tags.indexOf('音頻') !== -1) {
+            var option_cht = mime.getOptionTag('music');
+            for (var i in option_cht) {
+                if (item.tags.indexOf(option_cht[i]) === -1 && temp_tag.indexOf(option_cht[i]) === -1) {
+                    temp_tag.push(option_cht[i]);
+                }
+            }
         } else {
             var option_cht = mime.getOptionTag('cht');
             for (var i in option_cht) {

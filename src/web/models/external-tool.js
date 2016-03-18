@@ -20,6 +20,10 @@ var game_list = mime.getOptionTag('game');
 
 var game_list_ch = mime.getOptionTag('gamech');
 
+var music_list = mime.getOptionTag('music');
+
+var music_list_web = mime.getOptionTag('musicweb');
+
 var googleApi = require("../models/api-tool-google.js");
 
 var kubo_type = [['動作片', '喜劇片', '愛情片', '科幻片', '恐怖片', '劇情片', '戰爭片', '動畫片', '微電影'], ['台灣劇', '港劇', '大陸劇', '歐美劇', '韓劇', '日劇', '新/馬/泰/其他劇', '布袋戲', '綜藝', '美食旅遊', '訪談節目', '男女交友', '選秀競賽', '典禮晚會', '新聞時事', '投資理財', '歌劇戲曲'], ['動漫', '電影動畫片']];
@@ -4208,6 +4212,68 @@ module.exports = {
                                 match_item = match_item[0].toLowerCase();
                                 if (taglist.indexOf(match_item) === -1) {
                                     taglist.push(match_item);
+                                }
+                            }
+                        }
+                    }
+                }
+                setTimeout(function(){
+                    callback(null, taglist);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'allmusic':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                taglist.push('歐美');
+                taglist.push('音樂');
+                taglist.push('music');
+                var match_list = false;
+                var match_item = false;
+                var raw_list = raw_data.match(/data-artist="([^"]+)/);
+                if (raw_list) {
+                    if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                        taglist.push(raw_list[1].toLowerCase());
+                    }
+                } else {
+                    raw_list = raw_data.match(/<title>(.*?) \|/);
+                    if (raw_list) {
+                        if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                            taglist.push(raw_list[1].toLowerCase());
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/data-album="([^"]+)/);
+                if (raw_list) {
+                    if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                        taglist.push(raw_list[1].toLowerCase());
+                    }
+                }
+                raw_list = raw_data.match(/data-release-date="(\d\d\d\d)/);
+                if (raw_list) {
+                    if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                        taglist.push(raw_list[1].toLowerCase());
+                    }
+                }
+                raw_list = raw_data.match(/<h4>Genre<\/h4>[\s\S]+?<\/div>/);
+                if (raw_list) {
+                    match_list = raw_list[0].match(/[^>]+<\/a>/g);
+                    if (match_list) {
+                        for (var i in match_list) {
+                            match_item = match_list[i].match(/[^<]+/);
+                            if (match_item) {
+                                match_item = match_item[0].toLowerCase();
+                                if (music_list_web.indexOf(match_item) !== -1) {
+                                    if (taglist.indexOf(music_list[music_list_web.indexOf(match_item)]) === -1) {
+                                        taglist.push(music_list[music_list_web.indexOf(match_item)]);
+                                    }
+                                } else {
+                                    if (taglist.indexOf(match_item) === -1) {
+                                        taglist.push(match_item);
+                                    }
                                 }
                             }
                         }

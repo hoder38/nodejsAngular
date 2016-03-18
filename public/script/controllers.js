@@ -3155,7 +3155,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         if (result.loginOK) {
                             $window.location.href = $location.path();
                         } else {
-                            console.log(result.tags);
                             this_obj.feedbackInput = '';
                             this_obj.feedbackBlur = true;
                             var index = -1;
