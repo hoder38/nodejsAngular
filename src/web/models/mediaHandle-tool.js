@@ -1348,7 +1348,7 @@ module.exports = function(sendWs) {
                                             }
                                         }
                                         mediaTag = mime.mediaTag(mediaType['type']);
-                                        if (!isVideo && mediaType['type'] === 'music') {
+                                        if (mediaType['type'] === 'music') {
                                             DBdata['status'] = 4;
                                             mediaType = false;
                                         } else if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {
@@ -1398,7 +1398,7 @@ module.exports = function(sendWs) {
                                 }
                                 if (DBdata['time']) {
                                     mediaTag = mime.mediaTag(mediaType['type']);
-                                    if (!isVideo && mediaType['type'] === 'music') {
+                                    if (mediaType['type'] === 'music') {
                                         DBdata['status'] = 4;
                                         mediaType = false;
                                     } else if (isVideo && (mediaType['type'] === 'video' || mediaType['type'] === 'vlog')) {

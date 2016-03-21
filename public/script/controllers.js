@@ -2656,15 +2656,31 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.forwardVideo = function(type) {
         if (type === 'torrent') {
             if ($scope.fixTorrentSub) {
-                torrent.currentTime += 0.5;
+                if (torrent.currentTime >= 0.5) {
+                    torrent.currentTime -= 0.5;
+                } else {
+                    torrent.currentTime = 0;
+                }
             } else {
-                torrent.currentTime += 15;
+                if (torrent.currentTime >= 15) {
+                    torrent.currentTime -= 15;
+                } else {
+                    torrent.currentTime = 0;
+                }
             }
         } else {
             if ($scope.fixVideoSub) {
-                video.currentTime += 0.5;
+                if (video.currentTime >= 0.5) {
+                    video.currentTime -= 0.5;
+                } else {
+                    video.currentTime = 0;
+                }
             } else {
-                video.currentTime += 15;
+                if (video.currentTime >= 15) {
+                    video.currentTime -= 15;
+                } else {
+                    video.currentTime = 0;
+                }
             }
         }
     }
