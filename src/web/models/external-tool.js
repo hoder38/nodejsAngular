@@ -4135,6 +4135,9 @@ module.exports = {
                         }
                     }
                 }
+                for (var i in taglist) {
+                    taglist[i] = util.toValidName(taglist[i]);
+                }
                 setTimeout(function(){
                     callback(null, taglist);
                 }, 0);
@@ -4217,6 +4220,9 @@ module.exports = {
                         }
                     }
                 }
+                for (var i in taglist) {
+                    taglist[i] = util.toValidName(taglist[i]);
+                }
                 setTimeout(function(){
                     callback(null, taglist);
                 }, 0);
@@ -4278,6 +4284,9 @@ module.exports = {
                             }
                         }
                     }
+                }
+                for (var i in taglist) {
+                    taglist[i] = util.toValidName(taglist[i]);
                 }
                 setTimeout(function(){
                     callback(null, taglist);
