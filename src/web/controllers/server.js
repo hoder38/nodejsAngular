@@ -960,6 +960,7 @@ app.post('/api/addTagUrl', function(req, res, next){
                                 recur_add(index, tagIndex);
                             } else {
                                 sendWs({type: 'file', data: result.id}, result.adultonly);
+                                tagIndex = 0;
                                 index++;
                                 if (index < req.body.uids.length) {
                                     recur_add(index, tagIndex);
