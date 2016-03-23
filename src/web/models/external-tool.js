@@ -505,7 +505,7 @@ module.exports = {
                         util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
                     }
                     var raw_data = json_data['html'];
-                    var raw_list = raw_data.match(/class="list">[\s\S]+?<span class="year">\(\d\d\d\d\)/g);
+                    var raw_list = raw_data.match(/<img src="[\s\S]+?<span class="year">[\s\S]+?\(\d\d\d\d\)/g);
                     var list = [];
                     var data = null;
                     var tags = [];
@@ -513,14 +513,14 @@ module.exports = {
                     var info_item = null;
                     if (raw_list) {
                         for (var i in raw_list) {
-                            info_match = raw_list[i].match(/<a href="[^\d]+(\d+)\/"[^>]+>(.*?)<\/a>/);
+                            info_match = raw_list[i].match(/href="[^\d]+(\d+)\/"[^>]*>[\s]+(.*)/);
                             if (info_match) {
                                 info_item = info_match[2].replace(/<[^<]+>/g,'');
-                                data = {id: info_match[1], name: opencc.convertSync(info_item), count: 0};
-                                info_match = raw_list[i].match(/img src="([^"]+)/);
+                                data = {id: info_match[1], name: opencc.convertSync(info_item.trim()), count: 0};
+                                info_match = raw_list[i].match(/<img src="([^"]+)/);
                                 if (info_match) {
                                     data['thumb'] = info_match[1];
-                                    info_match = raw_list[i].match(/class="year">\((\d\d\d\d)/);
+                                    info_match = raw_list[i].match(/\((\d\d\d\d)/);
                                     if (info_match) {
                                         info_item = new Date(info_match[1] + '-01-01');
                                         data['date'] = info_item.getTime()/1000;
@@ -535,12 +535,12 @@ module.exports = {
                             }
                         }
                     } else {
-                        raw_list = raw_data.match(/class="img">[\s\S]+?<i class="icon-playtime"><\/i>[\s\S]+?(\d+(\.\d+)?万?|--)/g);
+                        raw_list = raw_data.match(/<img src="[\s\S]+?<i class="icon-playtime"[\s\S]+?(\d+(\.\d+)?万?|--)/g);
                         if (raw_list) {
                             var bDate = new Date('1970-01-01');
                             bDate = bDate.getTime()/1000;
                             for (var i in raw_list) {
-                                info_match = raw_list[i].match(/<a href="[^"]+?(av\d+)/);
+                                info_match = raw_list[i].match(/href="[^"]+?(av\d+)/);
                                 if (info_match) {
                                     data = {id: info_match[1], date: bDate};
                                     info_match = raw_list[i].match(/<img src="([^"]+)".*?title="([^"]+)/);

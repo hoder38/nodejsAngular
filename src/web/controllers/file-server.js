@@ -362,7 +362,7 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                                                     var realPath = filePath + '/real';
                                                     var engine = torrentStream(magnet, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
                                                     var playList = [];
-                                                    var tag_arr = ['torrent', 'playlist'];
+                                                    var tag_arr = ['torrent', 'playlist', '播放列表'];
                                                     var opt_arr = [];
                                                     var mediaType = null, mediaTag = null;
                                                     engine.on('ready', function() {
@@ -460,7 +460,7 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                                                 var realPath = filePath + '/real';
                                                 var engine = torrentStream(magnet, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
                                                 var playList = [];
-                                                var tag_arr = ['torrent', 'playlist'];
+                                                var tag_arr = ['torrent', 'playlist', '播放列表'];
                                                 var opt_arr = [];
                                                 var mediaType = null, mediaTag = null;
                                                 engine.on('ready', function() {
@@ -765,7 +765,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                 var realPath = filePath + '/real';
                                 var engine = torrentStream(url, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
                                 var playList = [];
-                                var tag_arr = ['torrent', 'playlist'];
+                                var tag_arr = ['torrent', 'playlist', '播放列表'];
                                 var opt_arr = [];
                                 var mediaType = null, mediaTag = null;
                                 engine.on('ready', function() {
@@ -1092,7 +1092,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                                         var realPath = filePath + '/real';
                                                         var engine = torrentStream(magnet, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
                                                         var playList = [];
-                                                        var tag_arr = ['torrent', 'playlist'];
+                                                        var tag_arr = ['torrent', 'playlist', '播放列表'];
                                                         var opt_arr = [];
                                                         var mediaType = null, mediaTag = null;
                                                         engine.on('ready', function() {
@@ -1163,7 +1163,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             var realPath = filePath + '/real';
                             var engine = torrentStream(url, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
                             var playList = [];
-                            var tag_arr = ['torrent', 'playlist'];
+                            var tag_arr = ['torrent', 'playlist', '播放列表'];
                             var opt_arr = [];
                             var mediaType = null, mediaTag = null;
                             engine.on('ready', function() {
@@ -1487,7 +1487,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                                     var realPath = filePath + '/real';
                                                     var engine = torrentStream(magnet, {tmp: config_glb.nas_tmp, path: realPath, connections: 20, uploads: 1});
                                                     var playList = [];
-                                                    var tag_arr = ['torrent', 'playlist'];
+                                                    var tag_arr = ['torrent', 'playlist', '播放列表'];
                                                     var opt_arr = [];
                                                     var mediaType = null, mediaTag = null;
                                                     engine.on('ready', function() {
@@ -3076,7 +3076,31 @@ app.get('/api/download2drive/:uid', function(req, res, next){
                             } else if (fileArr.length > 0) {
                                 recur_upload(0, 'file');
                             } else {
-                                sendWs({type: req.user.username, data: 'save complete'}, 0);
+                                var zip_filePath = null;
+                                if (fs.existsSync(filePath + '_zip')) {
+                                    zip_filePath = filePath + '_zip';
+                                } else if (fs.existsSync(filePath + '_7z')) {
+                                    zip_filePath = filePath + '_7z';
+                                } else if (fs.existsSync(filePath + '_rar')) {
+                                    zip_filePath = filePath + '_rar';
+                                }
+                                if (zip_filePath) {
+                                    console.log(zip_filePath);
+                                    data['filePath'] = zip_filePath;
+                                    console.log(data['filePath']);
+                                    googleApi.googleApi('upload', data, function(err, metadata) {
+                                        if (err) {
+                                            util.handleError(err);
+                                            sendWs({type: req.user.username, data: 'save to drive fail: ' + err.message}, 0);
+                                        } else {
+                                            console.log(metadata);
+                                            console.log('done');
+                                            sendWs({type: req.user.username, data: 'save complete'}, 0);
+                                        }
+                                    });
+                                } else {
+                                    sendWs({type: req.user.username, data: 'save complete'}, 0);
+                                }
                             }
                             function recur_upload(index, type) {
                                 if (type === 'folder') {
@@ -3213,7 +3237,7 @@ app.get('/api/download2drive/:uid', function(req, res, next){
     });
 });
 
-app.get('/download/:uid', function(req, res, next){
+app.get('/download/:uid/:zip?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('download file');
         console.log(new Date());
@@ -3232,6 +3256,15 @@ app.get('/download/:uid', function(req, res, next){
             }
             var filePath = util.getFileLocation(items[0].owner, items[0]._id);
             console.log(filePath);
+            if (req.params.zip) {
+                if (fs.existsSync(filePath + '_zip')) {
+                    filePath = filePath + '_zip';
+                } else if (fs.existsSync(filePath + '_7z')) {
+                    filePath = filePath + '_7z';
+                } else if (fs.existsSync(filePath + '_rar')) {
+                    filePath = filePath + '_rar';
+                }
+            }
             if (!fs.existsSync(filePath)) {
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
@@ -3599,6 +3632,10 @@ app.get('/api/torrent/all/download/:uid', function(req, res, next) {
             if (items.length === 0) {
                 util.handleError({hoerror: 2, message: 'torrent can not be fund!!!'}, next, res);
             }
+            if (!items[0]['magnet']) {
+                sendWs({type: req.user.username, zip: req.params.uid}, 0);
+                util.handleError({hoerror: 2, message: 'zip not support!!!'}, next, res);
+            }
             var filePath = util.getFileLocation(items[0].owner, items[0]._id);
             var bufferPath = null;
             var comPath = null;
@@ -3798,6 +3835,10 @@ app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res,
                 }
                 if (items.length === 0) {
                     util.handleError({hoerror: 2, message: 'torrent can not be fund!!!'}, next, res);
+                }
+                if (!items[0]['magnet']) {
+                    sendWs({type: req.user.username, zip: req.params.uid}, 0);
+                    util.handleError({hoerror: 2, message: 'zip not support!!!'}, next, res);
                 }
                 if (req.params.index === 'v') {
                     for (var i in items[0]['playList']) {
@@ -4660,14 +4701,39 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                     });
                 } else if (items[0].status === 9) {
                     util.deleteFolderRecursive(filePath);
-                    mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
-                        if(err) {
-                            util.handleError(err, next, res);
-                        }
-                        console.log('perm delete file');
-                        sendWs({type: 'file', data: items[0]._id}, 1, 1);
-                        res.json({apiOK: true});
-                    });
+                    var zip_filePath = null;
+                    if (fs.existsSync(filePath + '_zip')) {
+                        zip_filePath = filePath + '_zip';
+                    } else if (fs.existsSync(filePath + '_7z')) {
+                        zip_filePath = filePath + '_7z';
+                    } else if (fs.existsSync(filePath + '_rar')) {
+                        zip_filePath = filePath + '_rar';
+                    }
+                    if (zip_filePath) {
+                        console.log(zip_filePath);
+                        fs.unlink(zip_filePath, function (err) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
+                                if(err) {
+                                    util.handleError(err, next, res);
+                                }
+                                console.log('perm delete file');
+                                sendWs({type: 'file', data: items[0]._id}, 1, 1);
+                                res.json({apiOK: true});
+                            });
+                        });
+                    } else {
+                        mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
+                            if(err) {
+                                util.handleError(err, next, res);
+                            }
+                            console.log('perm delete file');
+                            sendWs({type: 'file', data: items[0]._id}, 1, 1);
+                            res.json({apiOK: true});
+                        });
+                    }
                 } else {
                     var del_arr = [filePath];
                     if (fs.existsSync(filePath + '.jpg')) {
@@ -4757,7 +4823,26 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                 } else if (items[0].status === 9) {
                     var total_file = items[0].playList.length;
                     if (total_file > 0) {
-                        recur_playlist_backup(0);
+                        var zip_filePath = null;
+                        if (fs.existsSync(filePath + '_zip')) {
+                            zip_filePath = filePath + '_zip';
+                        } else if (fs.existsSync(filePath + '_7z')) {
+                            zip_filePath = filePath + '_7z';
+                        } else if (fs.existsSync(filePath + '_rar')) {
+                            zip_filePath = filePath + '_rar';
+                        }
+                        if (zip_filePath) {
+                            console.log(zip_filePath);
+                            googleApi.googleBackup(items[0]._id, items[0].name, zip_filePath, items[0].tags, recycle, function(err) {
+                                if(err) {
+                                    util.handleError(err);
+                                } else {
+                                    recur_playlist_backup(0);
+                                }
+                            });
+                        } else {
+                            recur_playlist_backup(0);
+                        }
                     }
                     function recur_playlist_backup(index) {
                         var bufferPath = filePath + '/' + index;
@@ -5501,6 +5586,8 @@ function loopUpdateExternal() {
     console.log('loopUpdateExternal');
     console.log(new Date());
     external_time = new Date().getTime();
+    console.log('complete tag');
+    tagTool.completeMimeTag(1);
     console.log('lovetv');
     externalTool.getList('lovetv', function(err) {
         if (err) {

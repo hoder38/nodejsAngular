@@ -184,6 +184,97 @@ module.exports = function(sendWs) {
                             });
                         });
                     }
+                } else if (mediaType['type'] === 'zip') {
+                    var cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath;
+                    var zip_type = 1;
+                    if (mediaType['ext'] === 'rar' || mediaType['ext'] === 'cbr') {
+                        zip_type = 2;
+                        cmdline = 'unrar v ' + filePath;
+                    } else if (mediaType['ext'] === '7z') {
+                        zip_type = 3;
+                        cmdline = '7za l ' + filePath;
+                    }
+                    child_process.exec(cmdline, function (err, output) {
+                        if (err) {
+                            console.log(cmdline);
+                            util.handleError(err, callback, errerMedia, fileID, callback);
+                        }
+                        var tmplist = output.match(/[^\r\n]+/g);
+                        if (!tmplist) {
+                            util.handleError({hoerror: 2, message: 'is not zip'}, callback, errerMedia, fileID, callback);
+                        }
+                        var playlist = [];
+                        if (zip_type === 2) {
+                            var start = false;
+                            var tmp = false;
+                            for (var i in tmplist) {
+                                if (tmplist[i].match(/^-------------------/)) {
+                                    if (start) {
+                                        break;
+                                    } else {
+                                        start = true;
+                                    }
+                                } else if (start) {
+                                    tmp = tmplist[i].match(/^[\s]+(\d+)[\s]+\d+[\s]+\d+%/);
+                                    if (tmp && tmp[1] !== '0') {
+                                        playlist.push(tmplist[i-1].trim());
+                                    }
+                                }
+                            }
+                        } else if (zip_type === 3) {
+                            var start = false;
+                            var tmp = false;
+                            for (var i in tmplist) {
+                                if (tmplist[i].match(/^-------------------/)) {
+                                    if (start) {
+                                        break;
+                                    } else {
+                                        start = true;
+                                    }
+                                } else if (start) {
+                                    tmp = tmplist[i].substr(0, 38).match(/\d+$/);
+                                    if (tmp && tmp[0] !== '0') {
+                                        playlist.push(tmplist[i].substr(53));
+                                    }
+                                }
+                            }
+                        } else {
+                            for (var i in tmplist) {
+                                if (i !== '0') {
+                                    if (!tmplist[i].match(/\/$/)) {
+                                        playlist.push(tmplist[i]);
+                                    }
+                                }
+                            }
+                        }
+                        if (playlist.length < 1) {
+                            util.handleError({hoerror: 2, message: 'empty zip'}, callback, errerMedia, fileID, callback);
+                        }
+                        var zipName = filePath + '_zip';
+                        if (zip_type === 2) {
+                            zipName = filePath + '_rar';
+                        } else if (zip_type === 3){
+                            zipName = filePath + '_7z';
+                        }
+                        fs.rename(filePath, zipName, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, errerMedia, fileID, callback);
+                            }
+                            console.log(zipName);
+                            mkdirp(filePath, function(err) {
+                                if(err) {
+                                    console.log(filePath);
+                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                }
+                                mongo.orig("update", "storage", { _id: fileID }, {$set: {playList: playlist}}, function(err, item){
+                                    if(err) {
+                                        util.handleError(err, callback, errerMedia, fileID, callback);
+                                    }
+                                    this_obj.completeMedia(fileID, 9, callback);
+                                });
+                            });
+                        });
+                    });
                 } else {
                     if (mediaType['type'] === 'rawdoc') {
                         mediaType['ext'] = 'txt';
@@ -1430,6 +1521,7 @@ module.exports = function(sendWs) {
                         case 'sheet':
                         case 'present':
                         case 'zipbook':
+                        case 'zip':
                             DBdata['status'] = 1;
                             mediaTag = mime.mediaTag(mediaType['type']);
                             DBdata['mediaType'] = mediaType;

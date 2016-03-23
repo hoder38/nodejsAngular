@@ -458,127 +458,6 @@ function userDrive(drive_batch, userlist, index, docIndex, callback) {
     }
 }
 
-function completeMimeTag(add) {
-    var search_number = 0;
-    var complete_tag = [];
-    var option_tag_eng = mime.getOptionTag('eng');
-    var option_tag_cht = mime.getOptionTag('cht');
-    var trans_list = mime.getOptionTag('trans');
-    var trans_list_ed = mime.getOptionTag('transed');
-    var option_index = -1;
-    var tran_tag = null;
-    recur_com();
-    function recur_com() {
-        mongo.orig("find", "storage", {}, {limit: 100, skip : search_number, sort: '_id'}, function(err, items){
-            if(err) {
-                util.handleError(err);
-            } else {
-                recur_item(0);
-                function recur_item(index) {
-                    complete_tag = [];
-                    for (var i in items[index].tags) {
-                        option_index = trans_list.indexOf(items[index].tags[i]);
-                        if (option_index !== -1) {
-                            if (items[index].tags.indexOf(trans_list_ed[option_index]) === -1) {
-                                for (var j in items[index]) {
-                                    if (util.isValidString(j, 'uid') || j === 'eztv' || j === 'lovetv') {
-                                        if (items[index][j].indexOf(trans_list[option_index]) !== -1) {
-                                            tran_tag = trans_list_ed[option_index];
-                                            complete_tag.push({owner: j, tag: tran_tag});
-                                            option_index = option_tag_cht.indexOf(tran_tag);
-                                            if (option_index !== -1) {
-                                                if (items[index].tags.indexOf(option_tag_eng[option_index]) === -1) {
-                                                    complete_tag.push({owner: j, tag: option_tag_eng[option_index]});
-                                                }
-                                            }
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        option_index = option_tag_eng.indexOf(items[index].tags[i]);
-                        if (option_index !== -1) {
-                            if (items[index].tags.indexOf(option_tag_cht[option_index]) === -1) {
-                                for (var j in items[index]) {
-                                    if (util.isValidString(j, 'uid') || j === 'eztv' || j === 'lovetv') {
-                                        if (items[index][j].indexOf(option_tag_eng[option_index]) !== -1) {
-                                            complete_tag.push({owner: j, tag: option_tag_cht[option_index]});
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            option_index = option_tag_cht.indexOf(items[index].tags[i]);
-                            if (option_index !== -1) {
-                                if (items[index].tags.indexOf(option_tag_eng[option_index]) === -1) {
-                                    for (var j in items[index]) {
-                                        if (util.isValidString(j, 'uid') || j === 'eztv' || j === 'lovetv') {
-                                            if (items[index][j].indexOf(option_tag_cht[option_index]) !== -1) {
-                                                complete_tag.push({owner: j, tag: option_tag_eng[option_index]});
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    function completeNext() {
-                        index++;
-                        if (index < items.length) {
-                            recur_item(index);
-                        } else {
-                            search_number += items.length;
-                            console.log(search_number);
-                            if (items.length < 100) {
-                                console.log('end');
-                            } else {
-                                recur_com();
-                            }
-                        }
-                    }
-                    if (complete_tag.length > 0) {
-                        console.log(items[index].name);
-                        console.log(complete_tag);
-                        if (add) {
-                            recur_add(0);
-                        } else {
-                            completeNext();
-                        }
-                        function recur_add(tIndex) {
-                            tagTool.addTag(items[index]._id, complete_tag[tIndex].tag, {_id: complete_tag[tIndex].owner, perm: 1}, function(err) {
-                                if (err) {
-                                    util.handleError(err);
-                                }
-                                tIndex++;
-                                if (tIndex < complete_tag.length) {
-                                    recur_add(tIndex);
-                                } else {
-                                    completeNext();
-                                }
-                            }, function(err) {
-                                if (err) {
-                                    util.handleError(err);
-                                }
-                                tIndex++;
-                                if (tIndex < complete_tag.length) {
-                                    recur_add(tIndex);
-                                } else {
-                                    completeNext();
-                                }
-                            });
-                        }
-                    } else {
-                        completeNext();
-                    }
-                }
-            }
-        });
-    }
-}
-
 process.on('uncaughtException', function(err) {
     console.log('Threw Exception: %s  %s', err.name, err.message);
     if (err.stack) {
@@ -603,7 +482,7 @@ rl.on('line', function(line){
         break;
         case 'complete':
         console.log('complete');
-        completeMimeTag(cmd[1]);
+        tagTool.completeMimeTag(cmd[1]);
         break;
         default:
         console.log('help:');

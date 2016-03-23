@@ -352,7 +352,7 @@ module.exports = function(collection) {
                             }, 0);
                         } else {
                             for (var i in items[0]) {
-                                if (util.isValidString(i, 'uid') || i === 'kubo' || i === 'eztv') {
+                                if (util.isValidString(i, 'uid') || i === 'lovetv' || i === 'eztv') {
                                     tagType.tag[i] = tagType.tag.tags;
                                     mongo.orig("update", collection, {_id: id}, {$pull: tagType.tag}, function(err, item2){
                                         if(err) {
@@ -1671,6 +1671,183 @@ module.exports = function(collection) {
                 return url;
             } else {
                 return false;
+            }
+        },
+        completeMimeTag: function(add) {
+            var this_obj = this;
+            var search_number = 0;
+            var complete_tag = [];
+            var game_list = mime.getOptionTag('game');
+            var game_list_ch = mime.getOptionTag('gamech');
+            var media_list = mime.getOptionTag('media');
+            var media_list_ch = mime.getOptionTag('mediach');
+            var trans_list = mime.getOptionTag('trans');
+            var trans_list_ed = mime.getOptionTag('transed');
+            var option_index = -1;
+            var tran_tag = null;
+            recur_com();
+            function recur_com() {
+                mongo.orig("find", "storage", {}, {limit: 100, skip : search_number, sort: '_id'}, function(err, items){
+                    if(err) {
+                        util.handleError(err);
+                    } else {
+                        recur_item(0);
+                        function recur_item(index) {
+                            complete_tag = [];
+                            for (var i in items[index].tags) {
+                                option_index = trans_list.indexOf(items[index].tags[i]);
+                                if (option_index !== -1) {
+                                    if (items[index].tags.indexOf(trans_list_ed[option_index]) === -1) {
+                                        for (var j in items[index]) {
+                                            if (util.isValidString(j, 'uid') || j === 'eztv' || j === 'lovetv') {
+                                                if (items[index][j].indexOf(trans_list[option_index]) !== -1) {
+                                                    tran_tag = trans_list_ed[option_index];
+                                                    complete_tag.push({owner: j, tag: tran_tag});
+                                                    option_index = yify_type_cht.indexOf(tran_tag);
+                                                    if (option_index !== -1) {
+                                                        if (items[index].tags.indexOf(yify_type[option_index]) === -1) {
+                                                            complete_tag.push({owner: j, tag: yify_type[option_index]});
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                option_index = yify_type.indexOf(items[index].tags[i]);
+                                if (option_index !== -1) {
+                                    if (items[index].tags.indexOf(yify_type_cht[option_index]) === -1) {
+                                        for (var j in items[index]) {
+                                            if (util.isValidString(j, 'uid') || j === 'eztv' || j === 'lovetv') {
+                                                if (items[index][j].indexOf(yify_type[option_index]) !== -1) {
+                                                    complete_tag.push({owner: j, tag: yify_type_cht[option_index]});
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    option_index = yify_type_cht.indexOf(items[index].tags[i]);
+                                    if (option_index !== -1) {
+                                        if (items[index].tags.indexOf(yify_type[option_index]) === -1) {
+                                            for (var j in items[index]) {
+                                                if (util.isValidString(j, 'uid') || j === 'eztv' || j === 'lovetv') {
+                                                    if (items[index][j].indexOf(yify_type_cht[option_index]) !== -1) {
+                                                        complete_tag.push({owner: j, tag: yify_type[option_index]});
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                option_index = game_list.indexOf(items[index].tags[i]);
+                                if (option_index !== -1) {
+                                    if (items[index].tags.indexOf(game_list_ch[option_index]) === -1) {
+                                        for (var j in items[index]) {
+                                            if (util.isValidString(j, 'uid') || j === 'eztv' || j === 'lovetv') {
+                                                if (items[index][j].indexOf(game_list[option_index]) !== -1) {
+                                                    complete_tag.push({owner: j, tag: game_list_ch[option_index]});
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    option_index = game_list_ch.indexOf(items[index].tags[i]);
+                                    if (option_index !== -1) {
+                                        if (items[index].tags.indexOf(game_list[option_index]) === -1) {
+                                            for (var j in items[index]) {
+                                                if (util.isValidString(j, 'uid') || j === 'eztv' || j === 'lovetv') {
+                                                    if (items[index][j].indexOf(game_list_ch[option_index]) !== -1) {
+                                                        complete_tag.push({owner: j, tag: game_list[option_index]});
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                option_index = media_list.indexOf(items[index].tags[i]);
+                                if (option_index !== -1) {
+                                    if (items[index].tags.indexOf(media_list_ch[option_index]) === -1) {
+                                        for (var j in items[index]) {
+                                            if (util.isValidString(j, 'uid') || j === 'eztv' || j === 'lovetv') {
+                                                if (items[index][j].indexOf(media_list[option_index]) !== -1) {
+                                                    complete_tag.push({owner: j, tag: media_list_ch[option_index]});
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    option_index = media_list_ch.indexOf(items[index].tags[i]);
+                                    if (option_index !== -1) {
+                                        if (items[index].tags.indexOf(media_list[option_index]) === -1) {
+                                            for (var j in items[index]) {
+                                                if (util.isValidString(j, 'uid') || j === 'eztv' || j === 'lovetv') {
+                                                    if (items[index][j].indexOf(media_list_ch[option_index]) !== -1) {
+                                                        complete_tag.push({owner: j, tag: media_list[option_index]});
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            function completeNext() {
+                                index++;
+                                if (index < items.length) {
+                                    recur_item(index);
+                                } else {
+                                    search_number += items.length;
+                                    console.log(search_number);
+                                    if (items.length < 100) {
+                                        console.log('end');
+                                    } else {
+                                        recur_com();
+                                    }
+                                }
+                            }
+                            if (complete_tag.length > 0) {
+                                console.log(items[index].name);
+                                console.log(complete_tag);
+                                if (add) {
+                                    recur_add(0);
+                                } else {
+                                    completeNext();
+                                }
+                                function recur_add(tIndex) {
+                                    this_obj.addTag(items[index]._id, complete_tag[tIndex].tag, {_id: complete_tag[tIndex].owner, perm: 1}, function(err) {
+                                        if (err) {
+                                            util.handleError(err);
+                                        }
+                                        tIndex++;
+                                        if (tIndex < complete_tag.length) {
+                                            recur_add(tIndex);
+                                        } else {
+                                            completeNext();
+                                        }
+                                    }, function(err) {
+                                        if (err) {
+                                            util.handleError(err);
+                                        }
+                                        tIndex++;
+                                        if (tIndex < complete_tag.length) {
+                                            recur_add(tIndex);
+                                        } else {
+                                            completeNext();
+                                        }
+                                    });
+                                }
+                            } else {
+                                completeNext();
+                            }
+                        }
+                    }
+                });
             }
         }
     };

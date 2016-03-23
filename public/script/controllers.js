@@ -3362,9 +3362,16 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 }
                                 break;*/
                             case $scope.id:
-                                $scope.$apply(function() {
-                                    addAlert(wsmsg.data);
-                                });
+                                if (wsmsg.zip) {
+                                    openModal('unzip error want to download zip?').then(function () {
+                                        $window.location.href = $scope.main_url + '/download/' + wsmsg.zip + '/zip';
+                                    }, function () {
+                                    });
+                                } else {
+                                    $scope.$apply(function() {
+                                        addAlert(wsmsg.data);
+                                    });
+                                }
                                 break;
                             default:
                                 console.log(wsmsg);
