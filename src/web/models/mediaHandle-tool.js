@@ -266,11 +266,17 @@ module.exports = function(sendWs) {
                                     console.log(filePath);
                                     util.handleError(err, callback, errerMedia, fileID, callback);
                                 }
-                                mongo.orig("update", "storage", { _id: fileID }, {$set: {playList: playlist}}, function(err, item){
+                                mkdirp(filePath + '/real', function(err) {
                                     if(err) {
+                                        console.log(filePath);
                                         util.handleError(err, callback, errerMedia, fileID, callback);
                                     }
-                                    this_obj.completeMedia(fileID, 9, callback);
+                                    mongo.orig("update", "storage", { _id: fileID }, {$set: {playList: playlist}}, function(err, item){
+                                        if(err) {
+                                            util.handleError(err, callback, errerMedia, fileID, callback);
+                                        }
+                                        this_obj.completeMedia(fileID, 9, callback);
+                                    });
                                 });
                             });
                         });
