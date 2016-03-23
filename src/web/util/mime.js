@@ -22,7 +22,7 @@ type_arr.vlog = type_arr.video;
 
 var media_list = ['image', 'photo', 'comic', 'image book', 'video', 'movie', 'animation', 'tv show', 'audio', 'song', 'music', 'audio book', 'doc', 'book', 'novel', 'presentation', 'sheet', 'code', 'web', 'url', 'forum', 'wiki', 'zip', 'playlist'];
 
-var media_list_ch = ['圖片', '相片', '漫畫', '圖片集', '影片', '電影', '動畫', '電視劇', '音頻', '歌曲', '音樂', '有聲書', '文件', '書籍', '小說', '簡報', '試算表', '文件', '程式碼', '網頁', '網址', '論壇', '維基', '壓縮檔', '播放列表'];
+var media_list_ch = ['圖片', '相片', '漫畫', '圖片集', '影片', '電影', '動畫', '電視劇', '音頻', '歌曲', '音樂', '有聲書', '文件', '書籍', '小說', '簡報', '試算表', '程式碼', '網頁', '網址', '論壇', '維基', '壓縮檔', '播放列表'];
 
 var genre_list = ['action', 'adventure', 'animation', 'biography', 'comedy', 'crime', 'documentary', 'drama', 'family', 'fantasy', 'film-noir', 'history', 'horror', 'music', 'musical', 'mystery', 'romance', 'sci-fi', 'sport', 'thriller', 'war', 'western'];
 var genre_list_ch = ['動作', '冒險', '動畫', '傳記', '喜劇', '犯罪', '記錄', '劇情', '家庭', '奇幻', '黑色電影', '歷史', '恐怖', '音樂', '音樂劇', '神祕', '浪漫', '科幻', '運動', '驚悚', '戰爭', '西部'];
