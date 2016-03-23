@@ -859,37 +859,48 @@ module.exports = {
             if (err) {
                 util.handleError(err, callback, callback);
             }
-            var info_match = raw_data.match(/>([^>\.]+\.pdf)</i);
+            var info_match = raw_data.match(/>([^>\.]+\.(pdf|zip|doc))</i);
             if (!info_match) {
+                console.log(url);
                 util.handleError({hoerror: 2, message: "cannot find annual location"}, callback, callback);
             }
             url = 'http://doc.twse.com.tw/server-java/t57sb01?step=9&kind=F&co_id=' + index + '&filename=' + info_match[1];
+            var ori_name = info_match[1];
             this_obj.xuiteDownload(url, '', function(err, raw_data1) {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
                 info_match = raw_data1.match(/<a href='([^']+)'/);
                 if (!info_match) {
-                    util.handleError({hoerror: 2, message: "cannot find annual location"}, callback, callback);
+                    console.log(url);
+                    this_obj.xuiteDownload(url, filePath, function(err, pathname, filename) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        setTimeout(function(){
+                            callback(null, ori_name);
+                        }, 0);
+                    }, 60000, false);
+                } else {
+                    if (!info_match[1].match(/^(http|https):\/\//)) {
+                        if (info_match[1].match(/^\//)) {
+                            info_match[1] = 'http://doc.twse.com.tw' + info_match[1];
+                        } else {
+                            info_match[1] = 'http://doc.twse.com.tw/' + info_match[1];
+                        }
+                    }
+                    this_obj.xuiteDownload(info_match[1], filePath, function(err, pathname, filename) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        if (!filename) {
+                            filename = path.basename(pathname);
+                        }
+                        setTimeout(function(){
+                            callback(null, filename);
+                        }, 0);
+                    });
                 }
-                if (!info_match[1].match(/^(http|https):\/\//)) {
-                    if (info_match[1].match(/^\//)) {
-                        info_match[1] = 'http://doc.twse.com.tw' + info_match[1];
-                    } else {
-                        info_match[1] = 'http://doc.twse.com.tw/' + info_match[1];
-                    }
-                }
-                this_obj.xuiteDownload(info_match[1], filePath, function(err, pathname, filename) {
-                    if (err) {
-                        util.handleError(err, callback, callback);
-                    }
-                    if (!filename) {
-                        filename = path.basename(pathname);
-                    }
-                    setTimeout(function(){
-                        callback(null, filename);
-                    }, 0);
-                });
             }, 60000, false, false, 'http://doc.twse.com.tw/', true);
         }, 60000, false, false, 'http://doc.twse.com.tw/', true);
     },
