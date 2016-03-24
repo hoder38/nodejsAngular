@@ -2653,7 +2653,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             }
         }
     }
-    $scope.forwardVideo = function(type) {
+    $scope.backwardVideo = function(type) {
         if (type === 'torrent') {
             if ($scope.fixTorrentSub) {
                 if (torrent.currentTime >= 0.5) {

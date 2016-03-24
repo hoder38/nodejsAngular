@@ -289,8 +289,8 @@
                                         <a href="#" ng-click="fixSub()">Fix</a>
                                     </li>
                                     <li ng-show="videoSwitch">
-                                        <a href="#" ng-click="backVideo()">
-                                            <span class="glyphicon glyphicon-back"></span>
+                                        <a href="#" ng-click="backwardVideo()">
+                                            <span class="glyphicon glyphicon-backward"></span>
                                         </a>
                                     </li>
                                     <li ng-show="videoSwitch">
@@ -373,7 +373,7 @@
                                             <span class="glyphicon glyphicon-info-sign"></span>
                                         </a>
                                     </li>
-                                    <li ng-show="music.playlist&&musicSwitch">
+                                    <li ng-show="musicSwitch">
                                         <a href="#" ng-click="changeMode('music')">
                                             <span ng-show="music.mode === 1" class="glyphicon glyphicon-arrow-left"></span>{{(music.mode === 0 || music.mode === 1) && 'All' || ''}}{{(music.mode === 2) && '1' || ''}}<span ng-show="music.mode === 3" class="glyphicon glyphicon-random"></span>
                                         </a>
