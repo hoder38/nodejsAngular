@@ -557,7 +557,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
-    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, save2local: false, save2drive: false, recover: false, delMedia: false, allDownload: false, title: '', item: null};
+    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, save2local: false, save2drive: false, recover: false, delMedia: false, allDownload: false, join: false, title: '', item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -1659,6 +1659,36 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         return false;
     }
 
+    $scope.fileJoin = function() {
+        if (this.selectList.length > 0) {
+            var uids = [];
+            var this_obj = this;
+            for (var i in this.selectList) {
+                uids.push(this.selectList[i].id);
+            }
+            var Info = $resource(this.main_url + '/api/joinFile', {}, {
+                'joinFile': { method:'PUT', withCredentials: true }
+            });
+            Info.joinFile({uids: uids}, function (result) {
+                if (result.loginOK) {
+                    $window.location.href = $location.path();
+                } else {
+                    addAlert('joining completed');
+                }
+            }, function(errorResult) {
+                if (errorResult.status === 400) {
+                    addAlert(errorResult.data);
+                } else if (errorResult.status === 403) {
+                    addAlert('unknown API!!!');
+                } else if (errorResult.status === 401) {
+                    $window.location.href = $location.path();
+                }
+            });
+        } else {
+            addAlert('Please selects item!!!');
+        }
+    }
+
     $scope.fileEdit = function(item) {
         if (!item) {
             item = this.toolList.item;
@@ -2191,6 +2221,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.save2local = false;
             this.$parent.toolList.save2drive = false;
             this.$parent.toolList.allDownload = false;
+            this.$parent.toolList.join = false;
             confirm_str = item;
         } else {
             if (item.status === 7 || item.status === 8 || item.status === 9 || item.thumb) {
@@ -2207,6 +2238,11 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 this.$parent.toolList.allDownload = true;
             } else {
                 this.$parent.toolList.allDownload = false;
+            }
+            if (item.status === 0 || item.status === 1 || item.status === 9) {
+                this.$parent.toolList.join = true;
+            } else {
+                this.$parent.toolList.join = false;
             }
             this.$parent.toolList.dir = false;
             if (item.isOwn) {

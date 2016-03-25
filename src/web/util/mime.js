@@ -1,7 +1,7 @@
 /*jslint regexp: true*/
 var ext_filename = /(?:\.([^.]+))?$/;
 var image_arr = ['jpg', 'gif', 'bmp', 'jpeg', 'png'];
-var zip_arr = ['zip', 'rar', '7z', 'cbr', 'cbz'];
+var zip_arr = ['zip', 'rar', '7z', 'cbr', 'cbz', '001'];
 var tor_arr = ['torrent'];
 //vlog
 //var video_arr = ['mp4', 'rm', 'mts', 'm2ts', '3gp2', '3gp', 'mpg', 'asf', 'mpeg', 'avi', 'mov', 'wmv', 'flv', 'rmvb', 'webm', 'm4v', 'f4v', 'mkv'];
@@ -149,7 +149,15 @@ module.exports = {
             return false;
         }
         if (zip_arr.indexOf(extName) !== -1) {
-            return extName;
+            if (extName === '001') {
+                if (name.match(/zip\.001$/)) {
+                    return 'zip';
+                } else if (name.match(/7z\.001$/)) {
+                    return '7z';
+                }
+            } else {
+                return extName;
+            }
         } else {
             return false;
         }
@@ -178,16 +186,20 @@ module.exports = {
         if (image_arr.indexOf(extName) !== -1) {
             return {type: 'image', ext: extName};
         } else if (zip_arr.indexOf(extName) !== -1) {
-            name = name.replace(ext_filename, function (a) {
-                return '';
-            });
-            if (name.match(/\.book$/)) {
+            if (name.match(/\.book\.(zip|7z|rar)$/)) {
                 return {type: 'zipbook', ext: extName};
             } else if (extName === 'cbr' || extName === 'cbz') {
                 return {type: 'zipbook', ext: extName};
             } else {
-                //playlist
-                return {type: 'zip', ext: extName};
+                if (extName === '001') {
+                    if (name.match(/\.zip\.001$/)) {
+                        return {type: 'zip', ext: 'zip'};
+                    } else if (name.match(/\.7z\.001$/)) {
+                        return {type: 'zip', ext: '7z'};
+                    }
+                } else {
+                    return {type: 'zip', ext: extName};
+                }
             }
         } else if (video_arr.indexOf(extName) !== -1) {
             return {type: 'video', ext: extName};

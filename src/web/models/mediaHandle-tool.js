@@ -189,11 +189,29 @@ module.exports = function(sendWs) {
                     var zip_type = 1;
                     if (mediaType['ext'] === 'rar' || mediaType['ext'] === 'cbr') {
                         zip_type = 2;
-                        cmdline = 'unrar v ' + filePath;
+                        cmdline = 'unrar v -v ' + filePath;
                     } else if (mediaType['ext'] === '7z') {
                         zip_type = 3;
                         cmdline = '7za l ' + filePath;
                     }
+                    var is_processed = false;
+                    var append = '';
+                    if (fs.existsSync(filePath + '.1.rar')) {
+                        append = '.1.rar';
+                        is_processed = true;
+                    } else if (fs.existsSync(filePath + '_zip')) {
+                        append = '_zip';
+                        is_processed = true;
+                    } else if (fs.existsSync(filePath + '_7z')) {
+                        append = '_7z';
+                        is_processed = true;
+                    }
+                    if (fs.existsSync(filePath + '_zip_c')) {
+                        append = '_zip_c';
+                    } else if (fs.existsSync(filePath + '_7z_c')) {
+                        append = '_7z_c';
+                    }
+                    cmdline = cmdline + append;
                     child_process.exec(cmdline, function (err, output) {
                         if (err) {
                             console.log(cmdline);
@@ -210,12 +228,12 @@ module.exports = function(sendWs) {
                             for (var i in tmplist) {
                                 if (tmplist[i].match(/^-------------------/)) {
                                     if (start) {
-                                        break;
+                                        start = false;
                                     } else {
                                         start = true;
                                     }
                                 } else if (start) {
-                                    tmp = tmplist[i].match(/^[\s]+(\d+)[\s]+\d+[\s]+\d+%/);
+                                    tmp = tmplist[i].match(/^[\s]+(\d+)[\s]+\d+[\s]+(\d+%|-->)/);
                                     if (tmp && tmp[1] !== '0') {
                                         playlist.push(tmplist[i-1].trim());
                                     }
@@ -250,36 +268,45 @@ module.exports = function(sendWs) {
                         if (playlist.length < 1) {
                             util.handleError({hoerror: 2, message: 'empty zip'}, callback, errerMedia, fileID, callback);
                         }
-                        var zipName = filePath + '_zip';
-                        if (zip_type === 2) {
-                            zipName = filePath + '_rar';
-                        } else if (zip_type === 3){
-                            zipName = filePath + '_7z';
-                        }
-                        fs.rename(filePath, zipName, function(err) {
-                            if (err) {
-                                util.handleError(err, callback, errerMedia, fileID, callback);
-                            }
-                            console.log(zipName);
-                            mkdirp(filePath, function(err) {
+                        if (is_processed) {
+                            mongo.orig("update", "storage", { _id: fileID }, {$set: {playList: playlist}}, function(err, item){
                                 if(err) {
-                                    console.log(filePath);
                                     util.handleError(err, callback, errerMedia, fileID, callback);
                                 }
-                                mkdirp(filePath + '/real', function(err) {
+                                this_obj.completeMedia(fileID, 9, callback);
+                            });
+                        } else {
+                            var zipName = filePath + '_zip';
+                            if (zip_type === 2) {
+                                zipName = filePath + '.1.rar';
+                            } else if (zip_type === 3){
+                                zipName = filePath + '_7z';
+                            }
+                            fs.rename(filePath, zipName, function(err) {
+                                if (err) {
+                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                }
+                                console.log(zipName);
+                                mkdirp(filePath, function(err) {
                                     if(err) {
                                         console.log(filePath);
                                         util.handleError(err, callback, errerMedia, fileID, callback);
                                     }
-                                    mongo.orig("update", "storage", { _id: fileID }, {$set: {playList: playlist}}, function(err, item){
+                                    mkdirp(filePath + '/real', function(err) {
                                         if(err) {
+                                            console.log(filePath);
                                             util.handleError(err, callback, errerMedia, fileID, callback);
                                         }
-                                        this_obj.completeMedia(fileID, 9, callback);
+                                        mongo.orig("update", "storage", { _id: fileID }, {$set: {playList: playlist}}, function(err, item){
+                                            if(err) {
+                                                util.handleError(err, callback, errerMedia, fileID, callback);
+                                            }
+                                            this_obj.completeMedia(fileID, 9, callback);
+                                        });
                                     });
                                 });
                             });
-                        });
+                        }
                     });
                 } else {
                     if (mediaType['type'] === 'rawdoc') {

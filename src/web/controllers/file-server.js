@@ -3083,8 +3083,8 @@ app.get('/api/download2drive/:uid', function(req, res, next){
                                     zip_filePath = filePath + '_zip';
                                 } else if (fs.existsSync(filePath + '_7z')) {
                                     zip_filePath = filePath + '_7z';
-                                } else if (fs.existsSync(filePath + '_rar')) {
-                                    zip_filePath = filePath + '_rar';
+                                } else if (fs.existsSync(filePath + '.1.rar')) {
+                                    zip_filePath = filePath + '.1.rar';
                                 }
                                 if (zip_filePath) {
                                     console.log(zip_filePath);
@@ -3263,8 +3263,8 @@ app.get('/download/:uid/:zip?', function(req, res, next){
                     filePath = filePath + '_zip';
                 } else if (fs.existsSync(filePath + '_7z')) {
                     filePath = filePath + '_7z';
-                } else if (fs.existsSync(filePath + '_rar')) {
-                    filePath = filePath + '_rar';
+                } else if (fs.existsSync(filePath + '.1.rar')) {
+                    filePath = filePath + '.1.rar';
                 }
             }
             if (!fs.existsSync(filePath)) {
@@ -3888,6 +3888,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res,
 
 function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
     console.log(torrent_pool.length);
+    console.log(zip_pool.length);
     var shortTorrent = null;
     var realPath = null;
     var bufferPath = null;
@@ -3909,9 +3910,13 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
         if (!shortTorrent) {
             var is_run = false;
             var zip_type = 0;
-            if (fs.existsSync(filePath + '_zip')) {
+            if (fs.existsSync(filePath + '_zip_c')) {
+                zip_type = 4;
+            } else if (fs.existsSync(filePath + '_7z_c')) {
+                zip_type = 5;
+            } else if (fs.existsSync(filePath + '_zip')) {
                 zip_type = 1;
-            } else if (fs.existsSync(filePath + '_rar')) {
+            } else if (fs.existsSync(filePath + '.1.rar')) {
                 zip_type = 2;
             } else if (fs.existsSync(filePath + '_7z')) {
                 zip_type = 3;
@@ -3920,7 +3925,6 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
                 sendWs({type: user.username, data: 'not torrent or zip'}, 0);
                 util.handleError({hoerror: 2, message: 'not torrent or zip'});
             } else {
-                console.log(zip_pool);
                 for (var i in zip_pool) {
                     if (id.equals(zip_pool[i].fileId) && zip_pool[i].index === fileIndex) {
                         is_queue = true;
@@ -4114,9 +4118,11 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
                     }
                 }
             }
+            console.log(choose);
+            console.log(time);
             if (time) {
                 user = zip_pool[choose].user;
-                id = zip_pool[choose].id;
+                id = zip_pool[choose].fileId;
                 fileIndex = zip_pool[choose].index;
                 var filePath = util.getFileLocation(zip_pool[choose].fileOwner, zip_pool[choose].fileId);
                 bufferPath = filePath + '/' + fileIndex;
@@ -4446,9 +4452,13 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
                 } else {
                     var cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip ' + realPath + ' \'' + filename + '\'';
                     if (zip_type === 2) {
-                        cmdline = 'unrar x ' + filePath + '_rar ' + realPath + ' \'' + filename + '\'';
+                        cmdline = 'unrar x ' + filePath + '.1.rar ' + realPath + ' \'' + filename + '\'';
                     } else if (zip_type === 3) {
                         cmdline = '7za x ' + filePath + '_7z -o' + realPath + ' \'' + filename + '\'';
+                    } else if (zip_type === 4) {
+                        cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip_c ' + realPath + ' \'' + filename + '\'';
+                    } else if (zip_type === 5) {
+                        cmdline = '7za x ' + filePath + '_7z_c -o' + realPath + ' \'' + filename + '\'';
                     }
                     if (fs.existsSync(realPath + '/' + filename)) {
                         fs.unlink(realPath + '/' + filename, function (err) {
@@ -4496,7 +4506,6 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
                     } else {
                         child_process.exec(cmdline, function (err, output) {
                             if (err) {
-                                console.log(cmdline);
                                 sendWs({type: user.username, zip: id, data: 'zip fail: ' + err.message}, 0);
                                 util.handleError(err);
                                 for (var i in zip_pool) {
@@ -4874,24 +4883,46 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                         zip_filePath = filePath + '_zip';
                     } else if (fs.existsSync(filePath + '_7z')) {
                         zip_filePath = filePath + '_7z';
-                    } else if (fs.existsSync(filePath + '_rar')) {
-                        zip_filePath = filePath + '_rar';
+                    } else if (fs.existsSync(filePath + '.1.rar')) {
+                        zip_filePath = filePath + '.1.rar';
                     }
                     if (zip_filePath) {
-                        console.log(zip_filePath);
-                        fs.unlink(zip_filePath, function (err) {
-                            if (err) {
-                                util.handleError(err, next, res);
+                        var del_arr = [zip_filePath];
+                        if (fs.existsSync(filePath + '_zip_c')) {
+                            del_arr.push(filePath + '_zip_c');
+                        } else if (fs.existsSync(filePath + '_7z_c')) {
+                            del_arr.push(filePath + '_7z_c');
+                        } else {
+                            var rIndex = 2;
+                            while (fs.existsSync(filePath + '.' + rIndex + '.rar')) {
+                                del_arr.push(filePath + '.' + rIndex + '.rar');
+                                rIndex++;
                             }
-                            mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
-                                if(err) {
+                        }
+                        console.log(del_arr);
+                        recur_zip_del(0);
+                        function recur_zip_del(index) {
+                            fs.unlink(del_arr[index], function (err) {
+                                if (err) {
                                     util.handleError(err, next, res);
                                 }
-                                console.log('perm delete file');
-                                sendWs({type: 'file', data: items[0]._id}, 1, 1);
-                                res.json({apiOK: true});
+                                index++;
+                                if (index < del_arr.length) {
+                                    setTimeout(function(){
+                                        recur_zip_del(index);
+                                    }, 0);
+                                } else {
+                                    mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
+                                        if(err) {
+                                            util.handleError(err, next, res);
+                                        }
+                                        console.log('perm delete file');
+                                        sendWs({type: 'file', data: items[0]._id}, 1, 1);
+                                        res.json({apiOK: true});
+                                    });
+                                }
                             });
-                        });
+                        }
                     } else {
                         mongo.orig("remove", "storage", {_id: id, $isolated: 1}, function(err, item2){
                             if(err) {
@@ -4996,8 +5027,8 @@ app.delete('/api/delFile/:uid/:recycle', function(req, res, next){
                             zip_filePath = filePath + '_zip';
                         } else if (fs.existsSync(filePath + '_7z')) {
                             zip_filePath = filePath + '_7z';
-                        } else if (fs.existsSync(filePath + '_rar')) {
-                            zip_filePath = filePath + '_rar';
+                        } else if (fs.existsSync(filePath + '.1.rar')) {
+                            zip_filePath = filePath + '.1.rar';
                         }
                         if (zip_filePath) {
                             console.log(zip_filePath);
@@ -5100,6 +5131,196 @@ app.put('/api/editFile/:uid', function(req, res, next){
             delete result.adultonly;
             res.json(result);
         });
+    });
+});
+
+app.put('/api/joinFile', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("joinFile");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        //check is split
+        var uids = [];
+        var id = false;
+        for (var i in req.body.uids) {
+            id = util.isValidString(req.body.uids[i], 'uid');
+            if (id !== false) {
+                uids.push(id);
+            }
+        }
+        if (uids.length < 2) {
+            util.handleError({hoerror: 2, message: "must large than one split"}, next, res);
+        }
+        var join_items = [];
+        recur_find(0);
+        function recur_find(index) {
+            mongo.orig("find", "storage", {_id: uids[index]}, {limit: 1}, function(err, items){
+                if(err) {
+                    util.handleError(err, next, res);
+                }
+                if (items.length > 0) {
+                    join_items.push(items[0]);
+                }
+                index++;
+                if (index < uids.length) {
+                    recur_find(index);
+                } else {
+                    if (join_items.length < 2) {
+                        util.handleError({hoerror: 2, message: "must large than one split"}, next, res);
+                    }
+                    var main_match = false;
+                    for (var i in join_items) {
+                        main_match = join_items[i]['name'].match(/^(.*)\.(part0*1\.(rar)|(7z)\.0*1|(zip)\.0*1)$/i);
+                        if (main_match) {
+                            break;
+                        }
+                    }
+                    if (!main_match) {
+                        util.handleError({hoerror: 2, message: "need the first split"}, next, res);
+                    }
+                    var zip_type = 1;
+                    if (main_match[3]) {
+                        zip_type = 2;
+                    } else if (main_match[4]) {
+                        zip_type = 3;
+                    }
+                    var order_items = {};
+                    var pattern = new RegExp('\\.zip\\.(\\d+)' + '$', 'i');
+                    if (zip_type === 2) {
+                        pattern = new RegExp('\\.part(\\d+)\\.rar' + '$', 'i');
+                    } else if (zip_type === 3) {
+                        pattern = new RegExp('\\.7z\\.(\\d+)' + '$', 'i');
+                    }
+                    var sub_match = false;
+                    for (var i in join_items) {
+                        if (join_items[i]['name'].substr(0, main_match[1].length) === main_match[1]) {
+                            sub_match = join_items[i]['name'].match(pattern);
+                            if (sub_match) {
+                                order_items[Number(sub_match[1])] = join_items[i];
+                            }
+                        }
+                    }
+                    if (Object.keys(order_items).length < 2) {
+                        util.handleError({hoerror: 2, message: "must large than one split"}, next, res);
+                    }
+                    if (zip_type === 2) {
+                        //copy
+                        var filePath = null;
+                        var filePath1 = util.getFileLocation(order_items[1].owner, order_items[1]._id);
+                        recur_copy(2);
+                        function recur_copy(index) {
+                            if (order_items[index]) {
+                                filePath = util.getFileLocation(order_items[index].owner, order_items[index]._id) + '.1.rar';
+                                if (!fs.existsSync(filePath)) {
+                                    filePath = util.getFileLocation(order_items[index].owner, order_items[index]._id);
+                                }
+                                var stream = fs.createReadStream(filePath);
+                                stream.on('error', function(err){
+                                    console.log('copy file:' + filePath + ' error!!!');
+                                    util.handleError(err, next, res);
+                                });
+                                stream.on('close', function() {
+                                    index++;
+                                    if (index <= Object.keys(order_items).length) {
+                                        recur_copy(index);
+                                    } else {
+                                        res.json({apiOk: true});
+                                        //mediahandle
+                                        mediaHandleTool.handleMediaUpload(mime.mediaType(order_items[1]['name']), filePath1, order_items[1]._id, order_items[1]['name'], fs.statSync(filePath1)["size"], req.user, function(err) {
+                                            sendWs({type: 'file', data: order_items[1]._id}, order_items[1].adultonly);
+                                            if (err) {
+                                                util.handleError(err);
+                                            }
+                                            console.log('transcode done');
+                                            console.log(new Date());
+                                        });
+                                    }
+                                });
+                                stream.pipe(fs.createWriteStream(filePath1 + '.' + index + '.rar'));
+                            } else {
+                                res.json({apiOk: true});
+                                //mediahandle
+                                mediaHandleTool.handleMediaUpload(mime.mediaType(order_items[1]['name']), filePath1, order_items[1]._id, order_items[1]['name'], fs.statSync(filePath1)["size"], req.user, function(err) {
+                                    sendWs({type: 'file', data: order_items[1]._id}, order_items[1].adultonly);
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    console.log('transcode done');
+                                    console.log(new Date());
+                                });
+                            }
+                        }
+                    } else {
+                         //cat
+                        var ext = '_zip';
+                        if (zip_type === 3) {
+                            ext = '_7z';
+                        }
+                        var cmdline = 'cat';
+                        var filePath = null;
+                        for (var i = 1; i <= Object.keys(order_items).length; i++) {
+                            if (order_items[i]) {
+                                filePath = util.getFileLocation(order_items[i].owner, order_items[i]._id) + ext;
+                                if (!fs.existsSync(filePath)) {
+                                    filePath = util.getFileLocation(order_items[i].owner, order_items[i]._id);
+                                }
+                                cmdline = cmdline + ' ' + filePath;
+                            } else {
+                                break;
+                            }
+                        }
+                        filePath = util.getFileLocation(order_items[1].owner, order_items[1]._id) + ext + '_c';
+                        cmdline = cmdline + ' >> ' + filePath;
+                        console.log(cmdline);
+                        //unlink _c
+                        if (fs.existsSync(filePath)) {
+                            fs.unlink(filePath, function (err) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                child_process.exec(cmdline, function (err, output) {
+                                    if (err) {
+                                        console.log(cmdline);
+                                        util.handleError(err, next, res);
+                                    }
+                                    res.json({apiOk: true});
+                                    //mediahandle
+                                    filePath = util.getFileLocation(order_items[1].owner, order_items[1]._id);
+                                    mediaHandleTool.handleMediaUpload(mime.mediaType(order_items[1]['name']), filePath, order_items[1]._id, order_items[1]['name'], fs.statSync(filePath)["size"], req.user, function(err) {
+                                        sendWs({type: 'file', data: order_items[1]._id}, order_items[1].adultonly);
+                                        if (err) {
+                                            util.handleError(err);
+                                        }
+                                        console.log('transcode done');
+                                        console.log(new Date());
+                                    });
+                                });
+                            });
+                        } else {
+                            child_process.exec(cmdline, function (err, output) {
+                                if (err) {
+                                    console.log(cmdline);
+                                    util.handleError(err, next, res);
+                                }
+                                res.json({apiOk: true});
+                                //mediahandle
+                                filePath = util.getFileLocation(order_items[1].owner, order_items[1]._id);
+                                mediaHandleTool.handleMediaUpload(mime.mediaType(order_items[1]['name']), filePath, order_items[1]._id, order_items[1]['name'], fs.statSync(filePath)["size"], req.user, function(err) {
+                                    sendWs({type: 'file', data: order_items[1]._id}, order_items[1].adultonly);
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    console.log('transcode done');
+                                    console.log(new Date());
+                                });
+                            });
+                        }
+
+                    }
+                }
+            });
+        }
     });
 });
 
