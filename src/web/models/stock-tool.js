@@ -2245,11 +2245,11 @@ module.exports = {
                 if (yearEPS > 0) {
                     var range = Math.floor(price / yearEPS / 5);
                     if (range > 1) {
-                        epsRange = Math.floor(50 * yearEPS * (range - 1)) /10 + ', ' + Math.floor(50 * yearEPS * range) /10 + ', ' + Math.floor(50 * yearEPS * (range + 1)) /10 + ', ' + Math.floor(50 * yearEPS * (range + 2)) /10;
+                        epsRange = (5 * (range - 1)) + ' ' + Math.floor(50 * yearEPS * (range - 1)) /10 + ', ' + Math.floor(50 * yearEPS * range) /10 + ', ' + Math.floor(50 * yearEPS * (range + 1)) /10 + ', ' + Math.floor(50 * yearEPS * (range + 2)) /10;
                     } else if (range > 0) {
-                        epsRange = Math.floor(50 * yearEPS * range) /10 + ', ' + Math.floor(50 * yearEPS * (range + 1)) /10 + ', ' + Math.floor(50 * yearEPS * (range + 2)) /10;
+                        epsRange = (5 * range) + ' ' + Math.floor(50 * yearEPS * range) /10 + ', ' + Math.floor(50 * yearEPS * (range + 1)) /10 + ', ' + Math.floor(50 * yearEPS * (range + 2)) /10;
                     } else {
-                        epsRange = Math.floor(50 * yearEPS * (range + 1)) /10 + ', ' + Math.floor(50 * yearEPS * (range + 2)) /10;
+                        epsRange = (5 * (range + 1)) + ' ' + Math.floor(50 * yearEPS * (range + 1)) /10 + ', ' + Math.floor(50 * yearEPS * (range + 2)) /10;
                     }
                 } else {
                     epsRange = -Math.floor(-yearEPS*1000)/1000;
@@ -2666,63 +2666,67 @@ module.exports = {
                                 if (!start_month) {
                                     start_month = month;
                                 }
-                                var pattern = new RegExp(year_str + '\\/' + month_str + '.*', 'g');
-                                var data_list = data.match(pattern);
-                                if (data_list.length > 0) {
-                                    var tmp_interval = [];
-                                    var tmp_max = 0;
-                                    var tmp_min = 0;
-                                    var tmp_list = null;
-                                    var tmp_list_1 = [];
-                                    var tmp_index = -1;
-                                    var tmp_number = '';
-                                    for (var i in data_list) {
-                                        tmp_list_1 = [];
-                                        tmp_list = data_list[i].split(',');
-                                        for (var j in tmp_list) {
-                                            if (tmp_list[j].match(/^"/)) {
-                                                tmp_index = j;
-                                                tmp_list[j] = tmp_list[j].replace(/"/g, '');
-                                            } else if (tmp_list[j].match(/"$/)) {
-                                                tmp_list[j] = tmp_list[j].replace(/"/g, '');
-                                                for (var k = tmp_index; k <= j; k++) {
-                                                    tmp_number = tmp_number + tmp_list[k];
-                                                }
-                                                tmp_list_1.push(tmp_number);
-                                                tmp_index = -1;
-                                                tmp_number = '';
-                                            } else {
-                                                if (tmp_index === -1) {
-                                                    tmp_list_1.push(tmp_list[j]);
+                                if (data.length > 100) {
+                                    var pattern = new RegExp(year_str + '\\/' + month_str + '.*', 'g');
+                                    var data_list = data.match(pattern);
+                                    if (data_list.length > 0) {
+                                        var tmp_interval = [];
+                                        var tmp_max = 0;
+                                        var tmp_min = 0;
+                                        var tmp_list = null;
+                                        var tmp_list_1 = [];
+                                        var tmp_index = -1;
+                                        var tmp_number = '';
+                                        for (var i in data_list) {
+                                            tmp_list_1 = [];
+                                            tmp_list = data_list[i].split(',');
+                                            for (var j in tmp_list) {
+                                                if (tmp_list[j].match(/^"/)) {
+                                                    tmp_index = j;
+                                                    tmp_list[j] = tmp_list[j].replace(/"/g, '');
+                                                } else if (tmp_list[j].match(/"$/)) {
+                                                    tmp_list[j] = tmp_list[j].replace(/"/g, '');
+                                                    for (var k = tmp_index; k <= j; k++) {
+                                                        tmp_number = tmp_number + tmp_list[k];
+                                                    }
+                                                    tmp_list_1.push(tmp_number);
+                                                    tmp_index = -1;
+                                                    tmp_number = '';
+                                                } else {
+                                                    if (tmp_index === -1) {
+                                                        tmp_list_1.push(tmp_list[j]);
+                                                    }
                                                 }
                                             }
+                                            tmp_h = Number(tmp_list_1[4]);
+                                            tmp_l = Number(tmp_list_1[5]);
+                                            if (tmp_h > max) {
+                                                max = tmp_h;
+                                            }
+                                            if (!min || tmp_l < min) {
+                                                min = tmp_l;
+                                            }
+                                            if (tmp_h > tmp_max) {
+                                                tmp_max = tmp_h;
+                                            }
+                                            if (!tmp_min || tmp_l < tmp_min) {
+                                                tmp_min = tmp_l;
+                                            }
+                                            raw_arr.push({h: tmp_h, l: tmp_l, v: Number(tmp_list_1[8])});
+                                            tmp_interval.push(raw_arr[raw_arr.length - 1]);
+                                            if (!new_interval_data) {
+                                                new_interval_data = {};
+                                            }
+                                            if (!new_interval_data[year]) {
+                                                new_interval_data[year] = {};
+                                            }
+                                            new_interval_data[year][month_str] = {raw: tmp_interval, max: tmp_max, min: tmp_min};
                                         }
-                                        tmp_h = Number(tmp_list_1[4]);
-                                        tmp_l = Number(tmp_list_1[5]);
-                                        if (tmp_h > max) {
-                                            max = tmp_h;
-                                        }
-                                        if (!min || tmp_l < min) {
-                                            min = tmp_l;
-                                        }
-                                        if (tmp_h > tmp_max) {
-                                            tmp_max = tmp_h;
-                                        }
-                                        if (!tmp_min || tmp_l < tmp_min) {
-                                            tmp_min = tmp_l;
-                                        }
-                                        raw_arr.push({h: tmp_h, l: tmp_l, v: Number(tmp_list_1[8])});
-                                        tmp_interval.push(raw_arr[raw_arr.length - 1]);
-                                        if (!new_interval_data) {
-                                            new_interval_data = {};
-                                        }
-                                        if (!new_interval_data[year]) {
-                                            new_interval_data[year] = {};
-                                        }
-                                        new_interval_data[year][month_str] = {raw: tmp_interval, max: tmp_max, min: tmp_min};
                                     }
+                                    rest_interval();
+                                } else {
+                                    rest_interval(true);
                                 }
-                                rest_interval();
                             }, 10000, false, false, 'http://www.twse.com.tw/',true);
                         } else {
                             url = 'http://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/st43_result.php?l=zh-tw&d=' + year_str + '/' + month_str + '&stkno=' + items[0].index + '&_=' + new Date().getTime();
@@ -2784,68 +2788,72 @@ module.exports = {
                                             start_month = month;
                                         }
                                         type = 3;
-                                        var pattern = new RegExp(year_str + '\\/' + month_str + '.*', 'g');
-                                        var data_list = data.match(pattern);
-                                        if (data_list.length > 0) {
-                                            var tmp_interval = [];
-                                            var tmp_max = 0;
-                                            var tmp_min = 0;
-                                            var tmp_list = null;
-                                            var tmp_list_1 = [];
-                                            var tmp_index = -1;
-                                            var tmp_number = '';
-                                            for (var i in data_list) {
-                                                tmp_list_1 = [];
-                                                tmp_list = data_list[i].split(',');
-                                                for (var j in tmp_list) {
-                                                    if (tmp_list[j].match(/^"/)) {
-                                                        tmp_index = j;
-                                                        tmp_list[j] = tmp_list[j].replace(/"/g, '');
-                                                    } else if (tmp_list[j].match(/"$/)) {
-                                                        tmp_list[j] = tmp_list[j].replace(/"/g, '');
-                                                        for (var k = tmp_index; k <= j; k++) {
-                                                            tmp_number = tmp_number + tmp_list[k];
-                                                        }
-                                                        tmp_list_1.push(tmp_number);
-                                                        tmp_index = -1;
-                                                        tmp_number = '';
-                                                    } else {
-                                                        if (tmp_index === -1) {
-                                                            tmp_list_1.push(tmp_list[j]);
+                                        if (data.length > 100) {
+                                            var pattern = new RegExp(year_str + '\\/' + month_str + '.*', 'g');
+                                            var data_list = data.match(pattern);
+                                            if (data_list.length > 0) {
+                                                var tmp_interval = [];
+                                                var tmp_max = 0;
+                                                var tmp_min = 0;
+                                                var tmp_list = null;
+                                                var tmp_list_1 = [];
+                                                var tmp_index = -1;
+                                                var tmp_number = '';
+                                                for (var i in data_list) {
+                                                    tmp_list_1 = [];
+                                                    tmp_list = data_list[i].split(',');
+                                                    for (var j in tmp_list) {
+                                                        if (tmp_list[j].match(/^"/)) {
+                                                            tmp_index = j;
+                                                            tmp_list[j] = tmp_list[j].replace(/"/g, '');
+                                                        } else if (tmp_list[j].match(/"$/)) {
+                                                            tmp_list[j] = tmp_list[j].replace(/"/g, '');
+                                                            for (var k = tmp_index; k <= j; k++) {
+                                                                tmp_number = tmp_number + tmp_list[k];
+                                                            }
+                                                            tmp_list_1.push(tmp_number);
+                                                            tmp_index = -1;
+                                                            tmp_number = '';
+                                                        } else {
+                                                            if (tmp_index === -1) {
+                                                                tmp_list_1.push(tmp_list[j]);
+                                                            }
                                                         }
                                                     }
+                                                    tmp_h = Number(tmp_list_1[4]);
+                                                    tmp_l = Number(tmp_list_1[5]);
+                                                    if (tmp_h > max) {
+                                                        max = tmp_h;
+                                                    }
+                                                    if (!min || tmp_l < min) {
+                                                        min = tmp_l;
+                                                    }
+                                                    if (tmp_h > tmp_max) {
+                                                        tmp_max = tmp_h;
+                                                    }
+                                                    if (!tmp_min || tmp_l < tmp_min) {
+                                                        tmp_min = tmp_l;
+                                                    }
+                                                    raw_arr.push({h: tmp_h, l: tmp_l, v: Number(tmp_list_1[8])});
+                                                    tmp_interval.push(raw_arr[raw_arr.length - 1]);
+                                                    if (!new_interval_data) {
+                                                        new_interval_data = {};
+                                                    }
+                                                    if (!new_interval_data[year]) {
+                                                        new_interval_data[year] = {};
+                                                    }
+                                                    new_interval_data[year][month_str] = {raw: tmp_interval, max: tmp_max, min: tmp_min};
                                                 }
-                                                tmp_h = Number(tmp_list_1[4]);
-                                                tmp_l = Number(tmp_list_1[5]);
-                                                if (tmp_h > max) {
-                                                    max = tmp_h;
-                                                }
-                                                if (!min || tmp_l < min) {
-                                                    min = tmp_l;
-                                                }
-                                                if (tmp_h > tmp_max) {
-                                                    tmp_max = tmp_h;
-                                                }
-                                                if (!tmp_min || tmp_l < tmp_min) {
-                                                    tmp_min = tmp_l;
-                                                }
-                                                raw_arr.push({h: tmp_h, l: tmp_l, v: Number(tmp_list_1[8])});
-                                                tmp_interval.push(raw_arr[raw_arr.length - 1]);
-                                                if (!new_interval_data) {
-                                                    new_interval_data = {};
-                                                }
-                                                if (!new_interval_data[year]) {
-                                                    new_interval_data[year] = {};
-                                                }
-                                                new_interval_data[year][month_str] = {raw: tmp_interval, max: tmp_max, min: tmp_min};
                                             }
+                                            rest_interval();
+                                        } else {
+                                            rest_interval(true);
                                         }
-                                        rest_interval();
-                                    }, 10000, false, false, 'http://www.twse.com.tw/',true);
+                                    }, 10000, false, false, 'http://www.twse.com.tw/', true);
                                 }
                             }, 10000, false, false);
                         }
-                        function rest_interval() {
+                        function rest_interval(is_stop) {
                             index++;
                             if (month === 1) {
                                 year--;
@@ -2861,7 +2869,7 @@ module.exports = {
                             }
                             console.log(year);
                             console.log(month_str);
-                            if (index >= 70 || raw_arr.length > 1250) {
+                            if (is_stop || index >= 70 || raw_arr.length > 1250) {
                                 console.log(max);
                                 console.log(min);
                                 var final_arr = [];
