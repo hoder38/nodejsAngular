@@ -4442,13 +4442,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
                 util.handleError(err);
             } else {
                 if (fs.existsSync(comPath)) {
-                    for (var i in zip_pool) {
-                        if (id.equals(zip_pool[i].fileId) && zip_pool[i].index === fileIndex) {
-                            zip_pool.splice(i, 1);
-                            break;
-                        }
-                    }
-                    queueTorrent('pop', true);
+                    zip_del();
                 } else {
                     var cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip ' + realPath + ' \'' + filename + '\'';
                     if (zip_type === 2) {
@@ -4465,40 +4459,26 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
                             if (err) {
                                 sendWs({type: user.username, zip: id, data: 'zip fail: ' + err.message}, 0);
                                 util.handleError(err);
-                                for (var i in zip_pool) {
-                                    if (id.equals(zip_pool[i].fileId) && zip_pool[i].index === fileIndex) {
-                                        zip_pool.splice(i, 1);
-                                        break;
-                                    }
-                                }
-                                queueTorrent('pop', true);
+                                zip_del();
                             } else {
                                 child_process.exec(cmdline, function (err, output) {
                                     if (err) {
                                         console.log(cmdline);
                                         sendWs({type: user.username, zip: id, data: 'zip fail: ' + err.message}, 0);
                                         util.handleError(err);
-                                        for (var i in zip_pool) {
-                                            if (id.equals(zip_pool[i].fileId) && zip_pool[i].index === fileIndex) {
-                                                zip_pool.splice(i, 1);
-                                                break;
-                                            }
-                                        }
-                                        queueTorrent('pop', true);
+                                        zip_del();
                                     } else {
-                                        fs.rename(realPath + '/' + filename, comPath, function(err) {
-                                            if (err) {
-                                                sendWs({type: user.username, zip: id, data: 'zip fail: ' + err.message}, 0);
-                                                util.handleError(err);
-                                            }
-                                            for (var i in zip_pool) {
-                                                if (id.equals(zip_pool[i].fileId) && zip_pool[i].index === fileIndex) {
-                                                    zip_pool.splice(i, 1);
-                                                    break;
-                                                }
-                                            }
-                                            queueTorrent('pop', true);
+                                        var stream = fs.createReadStream(realPath + '/' + filename);
+                                        stream.on('error', function(err){
+                                            console.log('copy file:' + realPath + '/' + filename + ' error!!!');
+                                            sendWs({type: user.username, zip: id, data: 'zip fail: ' + err.message}, 0);
+                                            util.handleError(err);
+                                            zip_del();
                                         });
+                                        stream.on('close', function() {
+                                            zip_del(true);
+                                        });
+                                        stream.pipe(fs.createWriteStream(comPath));
                                     }
                                 });
                             }
@@ -4508,33 +4488,68 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
                             if (err) {
                                 sendWs({type: user.username, zip: id, data: 'zip fail: ' + err.message}, 0);
                                 util.handleError(err);
-                                for (var i in zip_pool) {
-                                    if (id.equals(zip_pool[i].fileId) && zip_pool[i].index === fileIndex) {
-                                        zip_pool.splice(i, 1);
-                                        break;
-                                    }
-                                }
-                                queueTorrent('pop', true);
+                                zip_del();
                             } else {
-                                fs.rename(realPath + '/' + filename, comPath, function(err) {
-                                    if (err) {
-                                        sendWs({type: user.username, zip: id, data: 'zip fail: ' + err.message}, 0);
-                                        util.handleError(err);
-                                    }
-                                    for (var i in zip_pool) {
-                                        if (id.equals(zip_pool[i].fileId) && zip_pool[i].index === fileIndex) {
-                                            zip_pool.splice(i, 1);
-                                            break;
-                                        }
-                                    }
-                                    queueTorrent('pop', true);
+                                var stream = fs.createReadStream(realPath + '/' + filename);
+                                stream.on('error', function(err){
+                                    console.log('copy file:' + realPath + '/' + filename + ' error!!!');
+                                    sendWs({type: user.username, zip: id, data: 'zip fail: ' + err.message}, 0);
+                                    util.handleError(err);
+                                    zip_del();
                                 });
+                                stream.on('close', function() {
+                                    zip_del(true);
+                                });
+                                stream.pipe(fs.createWriteStream(comPath));
                             }
                         });
                     }
                 }
             }
         });
+        function zip_del(is_success) {
+            for (var i in zip_pool) {
+                if (id.equals(zip_pool[i].fileId) && zip_pool[i].index === fileIndex) {
+                    zip_pool.splice(i, 1);
+                    break;
+                }
+            }
+            queueTorrent('pop', true);
+            if (is_success) {
+                var videoInfo = mime.isVideo(filename);
+                if (videoInfo) {
+                    //上傳drive
+                    var dbName = path.basename(filename);
+                    var dbPath = realPath + '/' + filename;
+                    mediaHandleTool.handleTag(dbPath, {}, dbName, '', 0, function(err, mediaType, mediaTag, DBdata) {
+                        if (err) {
+                            util.handleError(err);
+                        } else {
+                            mediaType['fileIndex'] = fileIndex;
+                            mediaType['realPath'] = filename;
+                            DBdata['status'] = 9;
+                            delete DBdata['mediaType'];
+                            DBdata['mediaType.' + fileIndex] = mediaType;
+                            console.log(DBdata);
+                            mongo.orig("update", "storage", { _id: id }, {$set: DBdata}, function(err, item2){
+                                if(err) {
+                                    util.handleError(err);
+                                } else {
+                                    var dbStats = fs.statSync(dbPath);
+                                    mediaHandleTool.handleMediaUpload(mediaType, filePath, id, dbName, dbStats['size'], user, function(err) {
+                                        if(err) {
+                                            util.handleError(err);
+                                        }
+                                        console.log('transcode done');
+                                        console.log(new Date());
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        }
     }
 }
 
@@ -4631,34 +4646,83 @@ app.get('/torrent/:index(\\d+|v)/:uid/:fresh(0+)?', function (req, res, next) {
                 var bufferPath = filePath + '/' + fileIndex;
                 var comPath = bufferPath + '_complete';
                 var errPath = bufferPath + '_error';
-                if (fs.existsSync(comPath)) {
-                    var total = fs.statSync(comPath).size;
-                    console.log('complete');
-                    if (req.headers['range']) {
-                        var range = req.headers.range;
-                        var parts = range.replace(/bytes(=|: )/, "").split("-");
-                        var partialstart = parts[0];
-                        var partialend = parts[1];
-
-                        var start = parseInt(partialstart, 10);
-                        var end = partialend ? parseInt(partialend, 10) : total-1;
-                        var chunksize = (end-start)+1;
-                        //console.log(start);
-                        //console.log(end);
-                        //console.log(total);
-                        res.writeHead(206, { 'Content-Range': 'bytes ' + start + '-' + end + '/' + total, 'Accept-Ranges': 'bytes', 'Content-Length': chunksize, 'Content-Type': 'video/mp4' });
-                        fs.createReadStream(comPath, {start: start, end: end}).pipe(res);
+                var type = 3;
+                if (mime.isImage(items[0].playList[fileIndex])) {
+                    type = 2;
+                } else if (mime.isVideo(items[0].playList[fileIndex]) || mime.isMusic(items[0].playList[fileIndex])) {
+                    type = 1;
+                }
+                if (type === 3 || type === 2) {
+                    if (fileIndex === 0 || fileIndex === items[0].playList.length - 1) {
+                        mongo.orig("remove", "storageRecord", {userId: req.user._id, fileId: items[0]._id, $isolated: 1}, function(err,user){
+                            if(err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (fs.existsSync(comPath)) {
+                                res.download(comPath, unescape(encodeURIComponent(items[0].playList[fileIndex])));
+                            } else {
+                                util.handleError({hoerror: 2, message: 'need download first!!!'}, next, res);
+                            }
+                        });
                     } else {
-                        res.writeHead(200, { 'Content-Length': total, 'Content-Type': 'video/mp4' });
-                        fs.createReadStream(comPath).pipe(res);
+                        var utime = Math.round(new Date().getTime() / 1000);
+                        var data = {};
+                        data['recordTime'] = '0&' + fileIndex;
+                        data['mtime'] = utime;
+                        mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {$set: data}, function(err, item2){
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (item2 === 0) {
+                                mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items2){
+                                    console.log(items2);
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (items2.length === 0) {
+                                        data['userId'] = req.user._id;
+                                        data['fileId'] = items[0]._id;
+                                        data['recordTime'] = '0&' + fileIndex;
+                                        data['mtime'] = utime;
+                                        mongo.orig("insert", "storageRecord", data, function(err, item3){
+                                            if(err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            if (fs.existsSync(comPath)) {
+                                                res.download(comPath, unescape(encodeURIComponent(items[0].playList[fileIndex])));
+                                            } else {
+                                                util.handleError({hoerror: 2, message: 'need download first!!!'}, next, res);
+                                            }
+                                        });
+                                    } else {
+                                        data['fileId'] = items[0]._id;
+                                        data['recordTime'] = '0&' + fileIndex;
+                                        data['mtime'] = utime;
+                                        mongo.orig("update", "storageRecord", {_id: items2[0]._id}, {$set: data}, function(err, item3){
+                                            if(err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            if (fs.existsSync(comPath)) {
+                                                res.download(comPath, unescape(encodeURIComponent(items[0].playList[fileIndex])));
+                                            } else {
+                                                util.handleError({hoerror: 2, message: 'need download first!!!'}, next, res);
+                                            }
+                                        });
+                                    }
+                                });
+                            } else {
+                                if (fs.existsSync(comPath)) {
+                                    res.download(comPath, unescape(encodeURIComponent(items[0].playList[fileIndex])));
+                                } else {
+                                    util.handleError({hoerror: 2, message: 'need download first!!!'}, next, res);
+                                }
+                            }
+                        });
                     }
                 } else {
-                    if (fs.existsSync(errPath)) {
-                        util.handleError({hoerror: 2, message: 'video error!!!'}, next, res);
-                    }
-                    if (fs.existsSync(bufferPath)) {
-                        console.log('play');
-                        var total = fs.statSync(bufferPath).size;
+                    if (fs.existsSync(comPath)) {
+                        var total = fs.statSync(comPath).size;
+                        console.log('complete');
                         if (req.headers['range']) {
                             var range = req.headers.range;
                             var parts = range.replace(/bytes(=|: )/, "").split("-");
@@ -4668,11 +4732,37 @@ app.get('/torrent/:index(\\d+|v)/:uid/:fresh(0+)?', function (req, res, next) {
                             var start = parseInt(partialstart, 10);
                             var end = partialend ? parseInt(partialend, 10) : total-1;
                             var chunksize = (end-start)+1;
+                            //console.log(start);
+                            //console.log(end);
+                            //console.log(total);
                             res.writeHead(206, { 'Content-Range': 'bytes ' + start + '-' + end + '/' + total, 'Accept-Ranges': 'bytes', 'Content-Length': chunksize, 'Content-Type': 'video/mp4' });
-                            fs.createReadStream(bufferPath, {start: start, end: end}).pipe(res);
+                            fs.createReadStream(comPath, {start: start, end: end}).pipe(res);
                         } else {
                             res.writeHead(200, { 'Content-Length': total, 'Content-Type': 'video/mp4' });
-                            fs.createReadStream(bufferPath).pipe(res);
+                            fs.createReadStream(comPath).pipe(res);
+                        }
+                    } else {
+                        if (fs.existsSync(errPath)) {
+                            util.handleError({hoerror: 2, message: 'video error!!!'}, next, res);
+                        }
+                        if (fs.existsSync(bufferPath)) {
+                            console.log('play');
+                            var total = fs.statSync(bufferPath).size;
+                            if (req.headers['range']) {
+                                var range = req.headers.range;
+                                var parts = range.replace(/bytes(=|: )/, "").split("-");
+                                var partialstart = parts[0];
+                                var partialend = parts[1];
+
+                                var start = parseInt(partialstart, 10);
+                                var end = partialend ? parseInt(partialend, 10) : total-1;
+                                var chunksize = (end-start)+1;
+                                res.writeHead(206, { 'Content-Range': 'bytes ' + start + '-' + end + '/' + total, 'Accept-Ranges': 'bytes', 'Content-Length': chunksize, 'Content-Type': 'video/mp4' });
+                                fs.createReadStream(bufferPath, {start: start, end: end}).pipe(res);
+                            } else {
+                                res.writeHead(200, { 'Content-Length': total, 'Content-Type': 'video/mp4' });
+                                fs.createReadStream(bufferPath).pipe(res);
+                            }
                         }
                     }
                 }

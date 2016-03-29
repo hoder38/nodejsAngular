@@ -2122,8 +2122,9 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     }
                 }
                 this_obj['torrent'].complete = false;
-                this_obj['torrent'].name = this_obj['torrent'].list[this_obj['torrent'].index];
+                this_obj['torrent'].name = this_obj['torrent'].list[this_obj['torrent'].index]['name'];
                 this_obj['torrent'].src = $scope.main_url + '/torrent/' + this_obj['torrent'].index + '/' + this_obj['torrent'].id;
+                this_obj['torrent'].type = this_obj['torrent'].list[this_obj['torrent'].index]['type'];
                 removeCue('torrent');
                 this_obj['torrent'].sub = '/subtitle/' + this_obj['torrent'].id + '/' + this_obj['torrent'].index;
                 this_obj.mediaToggle('torrent', true);
@@ -2142,6 +2143,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     }
 
     $scope.downloadFile = function (id){
+        console.log(123);
         if (!id) {
             id = this.toolList.item.id;
         }
@@ -2558,7 +2560,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', option: 0, playlist: null, mode: 0, itemName: ""};
     $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, mode: false};
     $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
-    $scope.torrent = {id: "", src: "", complete: "", sub: "", name: "null", list: [], index: 0, bookmarkID: '', option: 0};
+    $scope.torrent = {id: "", src: "", complete: "", sub: "", name: "null", list: [], index: 0, bookmarkID: '', option: 0, type: 1};
     $scope.inputUrl = '';
     $scope.disableUrlSave = false;
     $scope.isAdult = false;
@@ -3772,6 +3774,10 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         });
     }
 
+    $scope.downloadTorrent = function() {
+        $window.location.href = this['torrent'].src;
+    }
+
     $scope.downloadAll = function() {
         if (!this.toolList.item) {
             return;
@@ -3804,12 +3810,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             torrent.currentTime = torrentPre;
             torrent.pause();
         } else {
-            if (this.torrent.id) {
+            if (this.torrent.id && this.torrent.type === 1) {
                 this.mediaRecord('torrent', 0, end);
             }
             var count = this.torrent.list.length;
             if (count === 1) {
-                if (!end || this.torrent.complete) {
+                if (this.torrent.type === 1 && (!end || this.torrent.complete)) {
                     torrent.currentTime = 0;
                     torrent.pause();
                 }
@@ -3822,7 +3828,8 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     this.torrent.index = +this.torrent.index + number;
                 }
                 this.torrent.complete = false;
-                this.torrent.name = this.torrent.list[this.torrent.index];
+                this.torrent.name = this.torrent.list[this.torrent.index]['name'];
+                this.torrent.type = this.torrent.list[this.torrent.index]['type'];
                 this.torrent.src = $scope.main_url + '/torrent/' + this.torrent.index + '/' + this.torrent.id;
                 removeCue('torrent');
                 this.torrent.sub = '/subtitle/' + this.torrent.id + '/' + this.torrent.index;

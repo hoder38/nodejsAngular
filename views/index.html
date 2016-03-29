@@ -533,8 +533,8 @@
                                         <a href="#" ng-click="fixSub('torrent')">Fix</a>
                                     </li>
                                     <li ng-show="torrentSwitch">
-                                        <a href="#" ng-click="backVideo('torrent')">
-                                            <span class="glyphicon glyphicon-back"></span>
+                                        <a href="#" ng-click="backwardVideo('torrent')">
+                                            <span class="glyphicon glyphicon-backward"></span>
                                         </a>
                                     </li>
                                     <li ng-hide="torrentSwitch" class="{{mediaMoreDisabled && 'disabled' || ' '}}">
@@ -545,6 +545,11 @@
                                     <li ng-hide="torrent.complete||torrentSwitch">
                                         <a href="#" ng-click="torrentCheck()">
                                             <span class="glyphicon glyphicon-refresh"></span>
+                                        </a>
+                                    </li>
+                                    <li ng-show="torrent.type === 3 && torrent.complete && !torrentSwitch">
+                                        <a href="#" confirmed-click="downloadTorrent()" ng-confirm-click="Would you sure to download this file?">
+                                            <span class="glyphicon glyphicon-download-alt"></span>
                                         </a>
                                     </li>
                                     <li ng-hide="torrentSwitch">
@@ -566,9 +571,10 @@
                                     </li>
                                 </ul>
                             </nav>
-                            <video ng-show="torrent.src" class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{torrent.src | trusted}}" controls autoplay ng-torrent ng-ended="torrentMove(1, true)" ng-play="testLogin()" ng-pause="mediaRecord('torrent')" ng-click="torrentToggle()" tabindex=1 id="torrent-tag">
+                            <video ng-show="torrent.src && torrent.type === 1" class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{torrent.src | trusted}}" controls autoplay ng-torrent ng-ended="torrentMove(1, true)" ng-play="testLogin()" ng-pause="mediaRecord('torrent')" ng-click="torrentToggle()" tabindex=1 id="torrent-tag">
                                 <track label="English" kind="captions" srclang="en" ng-src="{{torrent.sub | trusted}}" default="" />
                             </video>
+                            <img ng-if="torrent.src && torrent.type === 2" ng-src="{{torrent.src | trusted}}" alt="{{torrent.name}}" />
                         </div>
                     </section>
                 </section>

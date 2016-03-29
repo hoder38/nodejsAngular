@@ -1048,6 +1048,117 @@ app.post('/api/addTagUrl', function(req, res, next){
                     res.json({tags: taglist});
                 }
             });
+        } else if (req.body.url.match(/^(http|https):\/\/marvel\.wikia\.com\/wiki\//)) {
+            console.log('marvel');
+            externalTool.parseTagUrl('marvel', req.body.url, function(err, taglist) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                console.log(taglist);
+                if (req.body.uids) {
+                    recur_add(0, 0);
+                    function recur_add(index, tagIndex) {
+                        tagTool.addTag(req.body.uids[index], taglist[tagIndex], req.user, next, function(err, result) {
+                            if (err) {
+                                if (err.message === 'uid is not vaild') {
+                                    util.handleError(err);
+                                } else {
+                                    util.handleError(err, next, res);
+                                }
+                            }
+                            tagIndex++;
+                            if (tagIndex < taglist.length) {
+                                recur_add(index, tagIndex);
+                            } else {
+                                sendWs({type: 'file', data: result.id}, result.adultonly);
+                                tagIndex = 0;
+                                index++;
+                                if (index < req.body.uids.length) {
+                                    recur_add(index, tagIndex);
+                                } else {
+                                    res.json({apiOK: true});
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    res.json({tags: taglist});
+                }
+            });
+        } else if (req.body.url.match(/^(http|https):\/\/dc\.wikia\.com\/wiki\//)) {
+            console.log('dc');
+            externalTool.parseTagUrl('dc', req.body.url, function(err, taglist) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                console.log(taglist);
+                if (req.body.uids) {
+                    recur_add(0, 0);
+                    function recur_add(index, tagIndex) {
+                        tagTool.addTag(req.body.uids[index], taglist[tagIndex], req.user, next, function(err, result) {
+                            if (err) {
+                                if (err.message === 'uid is not vaild') {
+                                    util.handleError(err);
+                                } else {
+                                    util.handleError(err, next, res);
+                                }
+                            }
+                            tagIndex++;
+                            if (tagIndex < taglist.length) {
+                                recur_add(index, tagIndex);
+                            } else {
+                                sendWs({type: 'file', data: result.id}, result.adultonly);
+                                tagIndex = 0;
+                                index++;
+                                if (index < req.body.uids.length) {
+                                    recur_add(index, tagIndex);
+                                } else {
+                                    res.json({apiOK: true});
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    res.json({tags: taglist});
+                }
+            });
+        } else if (req.body.url.match(/^(http|https):\/\/thetvdb.com\//)) {
+            console.log('tvdb');
+            externalTool.parseTagUrl('tvdb', req.body.url, function(err, taglist) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                console.log(taglist);
+                if (req.body.uids) {
+                    recur_add(0, 0);
+                    function recur_add(index, tagIndex) {
+                        tagTool.addTag(req.body.uids[index], taglist[tagIndex], req.user, next, function(err, result) {
+                            if (err) {
+                                if (err.message === 'uid is not vaild') {
+                                    util.handleError(err);
+                                } else {
+                                    util.handleError(err, next, res);
+                                }
+                            }
+                            tagIndex++;
+                            if (tagIndex < taglist.length) {
+                                recur_add(index, tagIndex);
+                            } else {
+                                sendWs({type: 'file', data: result.id}, result.adultonly);
+                                tagIndex = 0;
+                                index++;
+                                if (index < req.body.uids.length) {
+                                    recur_add(index, tagIndex);
+                                } else {
+                                    res.json({apiOK: true});
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    res.json({tags: taglist});
+                }
+            });
         } else {
             util.handleError({hoerror: 2, message: "invalid tag url"}, next, res);
         }
@@ -2094,10 +2205,20 @@ app.get('/api/torrent/query/preview/:id', function (req, res,next) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
+                var list = [];
+                for (var i in items[0].playList) {
+                    if (mime.isImage(items[0].playList[i])) {
+                        list.push({name: items[0].playList[i], type: 2});
+                    } else if (mime.isVideo(items[0].playList[i]) || mime.isMusic(items[0].playList[i])) {
+                        list.push({name: items[0].playList[i], type: 1});
+                    } else {
+                        list.push({name: items[0].playList[i], type: 3});
+                    }
+                }
                 if (items2.length === 0) {
-                    res.json({id: items[0]._id, list: items[0].playList});
+                    res.json({id: items[0]._id, list: list});
                 } else {
-                    res.json({id: items[0]._id, list: items[0].playList, time: items2[0].recordTime});
+                    res.json({id: items[0]._id, list: list, time: items2[0].recordTime});
                 }
                 tagTool.setLatest('', id, req.session, function(err) {
                     if (err) {

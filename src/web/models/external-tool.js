@@ -4293,6 +4293,434 @@ module.exports = {
                 }, 0);
             }, 60000, false, false);
             break;
+            case 'marvel':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                taglist.push('歐美');
+                taglist.push('漫畫');
+                taglist.push('comic');
+                taglist.push('marvel');
+                var match_list = false;
+                var match_item = false;
+                var raw_list = raw_data.match(/<title>(.*) - Marvel Database - Wikia<\/title>/i);
+                if (raw_list) {
+                    match_list = raw_list[1].match(/^(.*) Vol/i);
+                    if (match_list) {
+                        if (taglist.indexOf(match_list[1].toLowerCase()) === -1) {
+                            taglist.push(match_list[1].toLowerCase());
+                        }
+                    } else {
+                        match_list = raw_list[1].match(/^(.*) \d+/i);
+                        if (match_list) {
+                            if (taglist.indexOf(match_list[1].toLowerCase()) === -1) {
+                                taglist.push(match_list[1].toLowerCase());
+                            }
+                        } else {
+                            if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                                taglist.push(raw_list[1].toLowerCase());
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>[a-zA-Z]+ \d?\d, (\d\d\d\d)</i);
+                if (raw_list) {
+                    if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                        taglist.push(raw_list[1].toLowerCase());
+                    }
+                }
+                raw_list = raw_data.match(/>Editor-in-Chief<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'editor-in-chief' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Cover Artists<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'cover artists' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Writers<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'writers' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Pencilers<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'pencilers' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Inkers<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'inkers' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Letterers<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'letterers' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Editors<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'editors' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                for (var i in taglist) {
+                    taglist[i] = util.toValidName(taglist[i]);
+                }
+                setTimeout(function(){
+                    callback(null, taglist);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'dc':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                taglist.push('歐美');
+                taglist.push('漫畫');
+                taglist.push('comic');
+                taglist.push('dc');
+                var match_list = false;
+                var match_item = false;
+                var raw_list = raw_data.match(/<title>(.*) - DC Database - Wikia<\/title>/i);
+                if (raw_list) {
+                    match_list = raw_list[1].match(/^(.*) Vol/i);
+                    if (match_list) {
+                        if (taglist.indexOf(match_list[1].toLowerCase()) === -1) {
+                            taglist.push(match_list[1].toLowerCase());
+                        }
+                    } else {
+                        match_list = raw_list[1].match(/^(.*) \d+/i);
+                        if (match_list) {
+                            if (taglist.indexOf(match_list[1].toLowerCase()) === -1) {
+                                taglist.push(match_list[1].toLowerCase());
+                            }
+                        } else {
+                            if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                                taglist.push(raw_list[1].toLowerCase());
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/title="Category\:(\d\d\d\d), [a-zA-Z]+">[a-zA-Z]+</i);
+                if (raw_list) {
+                    if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                        taglist.push(raw_list[1].toLowerCase());
+                    }
+                }
+                raw_list = raw_data.match(/>Editor-in-Chief<.*<\/div>[\s\S]+?<\/div>/i);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'editor-in-chief' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Cover Artists<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'cover artists' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Writers<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'writers' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Pencilers<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'pencilers' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Inkers<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'inkers' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Letterers<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'letterers' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Editors<.*<\/div>[\s\S]+?<\/div>/ig);
+                if (raw_list) {
+                    for (var j in raw_list) {
+                        match_list = raw_list[j].match(/>[^><]+</g);
+                        if (match_list) {
+                            for (var i in match_list) {
+                                if (match_list[i].length > 4) {
+                                    match_item = match_list[i].match(/^>(.*)<$/);
+                                    if (match_item) {
+                                        if (match_item[1].toLowerCase() !== 'editors' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                            taglist.push(match_item[1].toLowerCase());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                for (var i in taglist) {
+                    taglist[i] = util.toValidName(taglist[i]);
+                }
+                setTimeout(function(){
+                    callback(null, taglist);
+                }, 0);
+            }, 60000, false, false);
+            break;
+            case 'tvdb':
+            api.xuiteDownload(url, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                taglist.push('歐美');
+                taglist.push('電視劇');
+                taglist.push('tv show');
+                var match_list = false;
+                var match_item = false;
+                var raw_list = raw_data.match(/<h1>(.*)<\/h1>/);
+                if (raw_list) {
+                    if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                        taglist.push(raw_list[1].toLowerCase());
+                    }
+                }
+                raw_list = raw_data.match(/[a-zA-Z]+ \d?\d, (\d\d\d\d)/);
+                if (raw_list) {
+                    if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                        taglist.push(raw_list[1].toLowerCase());
+                    }
+                }
+                raw_list = raw_data.match(/[a-zA-Z]+ \d?\d, (\d\d\d\d)/);
+                if (raw_list) {
+                    if (taglist.indexOf(raw_list[1].toLowerCase()) === -1) {
+                        taglist.push(raw_list[1].toLowerCase());
+                    }
+                }
+                raw_list = raw_data.match(/>Network:<[\s\S]+?<\/td>/);
+                if (raw_list) {
+                    match_list = raw_list[0].match(/>[^><]+</g);
+                    if (match_list) {
+                        for (var i in match_list) {
+                            if (match_list[i].length > 4) {
+                                match_item = match_list[i].match(/^>(.*)<$/);
+                                if (match_item) {
+                                    if (match_item[1].toLowerCase() !== 'network:' && taglist.indexOf(match_item[1].toLowerCase()) === -1) {
+                                        taglist.push(match_item[1].toLowerCase());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                raw_list = raw_data.match(/>Genre:<[\s\S]+?<\/td>/);
+                if (raw_list) {
+                    match_list = raw_list[0].match(/>[^><]+</g);
+                    if (match_list) {
+                        for (var i in match_list) {
+                            if (match_list[i].length > 4) {
+                                match_item = match_list[i].match(/^>(.*)<$/);
+                                if (match_item) {
+                                    match_item = match_item[1].toLowerCase();
+                                    if (match_item !== 'genre:') {
+                                        if (match_item === 'science-fiction') {
+                                            match_item = 'sci-fi';
+                                        }
+                                        if (genre_list.indexOf(match_item) !== -1) {
+                                            if (taglist.indexOf(match_item) === -1) {
+                                                taglist.push(match_item);
+                                            }
+                                            if (taglist.indexOf(genre_list_ch[genre_list.indexOf(match_item)]) === -1) {
+                                                taglist.push(genre_list_ch[genre_list.indexOf(match_item)]);
+                                            }
+                                        } else {
+                                            if (taglist.indexOf(match_item) === -1) {
+                                                taglist.push(match_item);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                for (var i in taglist) {
+                    taglist[i] = util.toValidName(taglist[i]);
+                }
+                setTimeout(function(){
+                    callback(null, taglist);
+                }, 0);
+            }, 60000, false, false);
+            break;
             default:
             util.handleError({hoerror: 2, message: 'unknown external type'}, callback, callback);
             break;
