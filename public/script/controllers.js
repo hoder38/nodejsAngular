@@ -2560,7 +2560,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     $scope.music = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', option: 0, playlist: null, mode: 0, itemName: ""};
     $scope.doc = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1, mode: false};
     $scope.present = {id: "", src: "", name: "null", list: [], index: 0, front: 0, back: 0, frontPage: 0, backPage: 0, end: false, bookmarkID: '', presentId: 1, showId: 1, maxId: 1};
-    $scope.torrent = {id: "", src: "", complete: "", sub: "", name: "null", list: [], index: 0, bookmarkID: '', option: 0, type: 1};
+    $scope.torrent = {id: "", src: "", complete: "", sub: "", name: "null", list: [], index: 0, bookmarkID: '', option: 0, size: 0, type: 1};
     $scope.inputUrl = '';
     $scope.disableUrlSave = false;
     $scope.isAdult = false;
@@ -3404,9 +3404,13 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     addAlert(wsmsg.data);
                                 });
                                 if (wsmsg.zip) {
-                                    openModal('unzip error want to download zip?').then(function () {
-                                        $window.location.href = $scope.main_url + '/download/' + wsmsg.zip + '/zip';
+                                    openModal('want to input password?').then(function () {
+                                        openBlockPW($scope.zipPW, $scope, wsmsg.zip);
                                     }, function () {
+                                        openModal('unzip error want to download zip?').then(function () {
+                                            $window.location.href = $scope.main_url + '/download/' + wsmsg.zip + '/zip';
+                                        }, function () {
+                                        });
                                     });
                                 }
                                 break;
@@ -3422,6 +3426,29 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 //addAlert(errorResult.data);
             } else if (errorResult.status === 403) {
                 addAlert('unknown API!!!');
+            }
+        });
+    }
+
+    $scope.zipPW = function(id) {
+        var this_obj = this;
+        var api = $resource('/api/zipPassword/' + id, {}, {
+            'zipPW': { method:'PUT' }
+        });
+        api.zipPW({pwd: this.userPW}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                this_obj.closeBlockPW();
+                addAlert('password update completed, please unzip again');
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
             }
         });
     }
@@ -3827,6 +3854,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 } else {
                     this.torrent.index = +this.torrent.index + number;
                 }
+                this.torrent.size = 0;
                 this.torrent.complete = false;
                 this.torrent.name = this.torrent.list[this.torrent.index]['name'];
                 this.torrent.type = this.torrent.list[this.torrent.index]['type'];

@@ -235,7 +235,11 @@ module.exports = function(sendWs) {
                                 } else if (start) {
                                     tmp = tmplist[i].match(/^[\s]+(\d+)[\s]+\d+[\s]+(\d+%|-->)/);
                                     if (tmp && tmp[1] !== '0') {
-                                        playlist.push(tmplist[i-1].trim());
+                                        if (tmplist[i-1].trim().match(/^\*/)) {
+                                            playlist.push(tmplist[i-1].trim().substr(1));
+                                        } else {
+                                            playlist.push(tmplist[i-1].trim());
+                                        }
                                     }
                                 }
                             }

@@ -1026,6 +1026,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     var urlMega = url.replace(/(https|http):\/\/mega\.[^\/]+\//, 'https://mega.co.nz/');
                     mega.file(urlMega).loadAttributes(function(err, fileMega) {
                         if (err) {
+                            util.handleError(err);
                             api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                                 if (err) {
                                     util.handleError(err, next, res);
@@ -1421,6 +1422,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 var urlMega = url.replace(/(https|http):\/\/mega\.[^\/]+\//, 'https://mega.co.nz/');
                 mega.file(urlMega).loadAttributes(function(err, fileMega) {
                     if (err) {
+                        util.handleError(err);
                         api.xuiteDownload(url, filePath, function(err, pathname, filename) {
                             if (err) {
                                 util.handleError(err, next, res);
@@ -3707,9 +3709,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res,
             var newBuffer = false;
             if (fs.existsSync(comPath)) {
                 var total = fs.statSync(comPath).size;
-                if (total > bufferSize) {
-                    newBuffer = true;
-                }
+                newBuffer = true;
                 res.json({newBuffer: newBuffer, complete: true, ret_size: total});
             } else if (fs.existsSync(bufferPath)) {
                 var total = fs.statSync(bufferPath).size;
@@ -3857,9 +3857,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res,
                 var newBuffer = false;
                 if (fs.existsSync(comPath)) {
                     var total = fs.statSync(comPath).size;
-                    if (total > bufferSize) {
-                        newBuffer = true;
-                    }
+                    newBuffer = true;
                     res.json({newBuffer: newBuffer, complete: true, ret_size: total});
                 } else if (fs.existsSync(bufferPath)) {
                     var total = fs.statSync(bufferPath).size;
@@ -3871,14 +3869,14 @@ app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res,
                     if (items[0]['magnet']) {
                         queueTorrent('add', req.user, decodeURIComponent(items[0]['magnet']), fileIndex, items[0]._id, items[0].owner);
                     } else {
-                        queueTorrent('add', req.user, '', fileIndex, items[0]._id, items[0].owner, items[0]['playList'][fileIndex]);
+                        queueTorrent('add', req.user, '', fileIndex, items[0]._id, items[0].owner, items[0]['playList'][fileIndex], items[0].pwd);
                     }
                 } else {
                     res.json({start: true});
                     if (items[0]['magnet']) {
                         queueTorrent('add', req.user, decodeURIComponent(items[0]['magnet']), fileIndex, items[0]._id, items[0].owner);
                     } else {
-                        queueTorrent('add', req.user, '', fileIndex, items[0]._id, items[0].owner, items[0]['playList'][fileIndex]);
+                        queueTorrent('add', req.user, '', fileIndex, items[0]._id, items[0].owner, items[0]['playList'][fileIndex], items[0].pwd);
                     }
                 }
             });
@@ -3886,7 +3884,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res,
     });
 });
 
-function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
+function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
     console.log(torrent_pool.length);
     console.log(zip_pool.length);
     var shortTorrent = null;
@@ -3935,10 +3933,10 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
                 }
                 if (!is_queue) {
                     if (is_run) {
-                        zip_pool.push({index: fileIndex, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, name: pType, type: zip_type, run: false});
+                        zip_pool.push({index: fileIndex, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, name: pType, type: zip_type, pwd: pwd, run: false});
                     } else {
-                        zip_pool.push({index: fileIndex, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, name: pType, type: zip_type, run: true});
-                        startZip(fileIndex, pType, zip_type, filePath);
+                        zip_pool.push({index: fileIndex, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, name: pType, type: zip_type, pwd: pwd, run: true});
+                        startZip(fileIndex, pType, zip_type, filePath, pwd);
                     }
                 }
             }
@@ -4128,7 +4126,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
                 bufferPath = filePath + '/' + fileIndex;
                 comPath = bufferPath + '_complete';
                 realPath = filePath + '/real';
-                startZip(fileIndex, zip_pool[choose].name, zip_pool[choose].type, filePath);
+                startZip(fileIndex, zip_pool[choose].name, zip_pool[choose].type, filePath, zip_pool[choose].pwd);
             }
         } else {
             console.log('torrent pop');
@@ -4435,7 +4433,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
             }
         }
     }
-    function startZip(fileIndex, filename, zip_type, filePath) {
+    function startZip(fileIndex, filename, zip_type, filePath, zipPwd) {
         mongo.orig("update", "storage", {_id: id}, {$set: {utime: Math.round(new Date().getTime() / 1000)}}, function(err, item2){
             if(err) {
                 sendWs({type: user.username, zip: id, data: 'zip fail: ' + err.message}, 0);
@@ -4444,15 +4442,34 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType) {
                 if (fs.existsSync(comPath)) {
                     zip_del();
                 } else {
-                    var cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip ' + realPath + ' \'' + filename + '\'';
+                    var cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip ' + realPath + ' "' + filename.replace(/"/g, '\\"') + '"';
+                    if (zipPwd) {
+                        cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip ' + realPath + ' "' + filename.replace(/"/g, '\\"') + '" ' + zipPwd;
+                    }
                     if (zip_type === 2) {
-                        cmdline = 'unrar x ' + filePath + '.1.rar ' + realPath + ' \'' + filename + '\'';
+                        if (zipPwd) {
+                            cmdline = 'unrar x ' + filePath + '.1.rar ' + realPath + ' "' + filename.replace(/"/g, '\\"') + '" -p' + zipPwd;
+                        } else {
+                            cmdline = 'unrar x ' + filePath + '.1.rar ' + realPath + ' "' + filename.replace(/"/g, '\\"') + '"';
+                        }
                     } else if (zip_type === 3) {
-                        cmdline = '7za x ' + filePath + '_7z -o' + realPath + ' \'' + filename + '\'';
+                        if (zipPwd) {
+                            cmdline = '7za x ' + filePath + '_7z -o' + realPath + ' "' + filename.replace(/"/g, '\\"') + '" -p' + zipPwd;
+                        } else {
+                            cmdline = '7za x ' + filePath + '_7z -o' + realPath + ' "' + filename.replace(/"/g, '\\"') + '"';
+                        }
                     } else if (zip_type === 4) {
-                        cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip_c ' + realPath + ' \'' + filename + '\'';
+                        if (zipPwd) {
+                            cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip_c ' + realPath + ' "' + filename.replace(/"/g, '\\"') + '" ' + zipPwd;
+                        } else {
+                            cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip_c ' + realPath + ' "' + filename.replace(/"/g, '\\"') + '"';
+                        }
                     } else if (zip_type === 5) {
-                        cmdline = '7za x ' + filePath + '_7z_c -o' + realPath + ' \'' + filename + '\'';
+                        if (zipPwd) {
+                            cmdline = '7za x ' + filePath + '_7z_c -o' + realPath + ' "' + filename.replace(/"/g, '\\"') + '" -p' + zipPwd;
+                        } else {
+                            cmdline = '7za x ' + filePath + '_7z_c -o' + realPath + ' "' + filename.replace(/"/g, '\\"') + '"';
+                        }
                     }
                     if (fs.existsSync(realPath + '/' + filename)) {
                         fs.unlink(realPath + '/' + filename, function (err) {

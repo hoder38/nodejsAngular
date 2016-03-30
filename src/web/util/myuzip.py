@@ -16,6 +16,10 @@ sys.setdefaultencoding('utf8')
 print "Processing File " + sys.argv[1]
 
 file=zipfile.ZipFile(sys.argv[1],"r");
+
+if len(sys.argv) >= 5:
+    file.setpassword(sys.argv[4])
+
 for name in file.namelist():
     try:
         utf8name=name.decode('gbk')

@@ -2197,7 +2197,6 @@ app.get('/api/torrent/query/preview/:id', function (req, res,next) {
             if (err) {
                 util.handleError(err, next, res);
             }
-            console.log(items);
             if (items.length === 0 || items[0].status !== 9) {
                 util.handleError({hoerror: 2, message: 'playlist can not be fund!!!'}, next, res);
             }
@@ -2230,6 +2229,37 @@ app.get('/api/torrent/query/preview/:id', function (req, res,next) {
                         }
                     });
                 });
+            });
+        });
+    });
+});
+
+app.put('/api/zipPassword/:uid', function (req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("zip password");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "file is not vaild"}, next, res);
+        }
+        pwd = util.isValidString(req.body.pwd, 'altpwd');
+        if (pwd === false) {
+            util.handleError({hoerror: 2, message: "password is not vaild"}, next, res);
+        }
+        mongo.orig("find", "storage", {_id: id, status: 9}, {limit: 1}, function(err, items){
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (items.length === 0) {
+                util.handleError({hoerror: 2, message: 'zip can not be fund!!!'}, next, res);
+            }
+            mongo.orig("update", "storage", {_id: id, status: 9}, {$set: {pwd: pwd}}, function(err, item2){
+                if(err) {
+                    util.handleError(err, next, res);
+                }
+                res.json({apiOk: true});
             });
         });
     });

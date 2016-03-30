@@ -972,7 +972,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
                 addAlert('email is not vaild!!!');
             }
             if (this.isNew) {
-                if (!isValidString(this.newPassword, 'altpwd') || !isValidString(this.userConPassword, 'altpwd')) {
+                if (!isValidString(this.newPassword, 'pwd') || !isValidString(this.userConPassword, 'pwd')) {
                     addAlert('password not vaild!!!');
                 } else if (this.newPassword !== this.userConPassword) {
                     addAlert('password is not equal!!!');
@@ -982,7 +982,7 @@ function PasswordCntl($route, $routeParams, $location, $resource, $window, $cook
                     this.newRow();
                 }
             } else {
-                if (this.newPassword && (!isValidString(this.newPassword, 'altpwd') || !isValidString(this.userConPassword, 'altpwd'))) {
+                if (this.newPassword && (!isValidString(this.newPassword, 'pwd') || !isValidString(this.userConPassword, 'pwd'))) {
                     addAlert('password not vaild!!!');
                 } else if (this.newPassword && (this.newPassword !== this.userConPassword)) {
                     addAlert('password is not equal!!!');

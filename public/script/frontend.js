@@ -47,19 +47,11 @@ function isValidString(str, type)
         }
     }
 
+    //較寬鬆
     if (type === 'passwd')
     {
         //if (str.search(/^(?=.*\d)(?=.*[a-zA-Z]).{6,20}$/) != -1)
-        if (str.search(/^[0-9a-zA-Z!@#$%]{6,20}$/) != -1)
-        {
-            return true;
-        }
-    }
-
-    if (type === 'altpwd')
-    {
-        //if (str.search(/^(?=.*\d)(?=.*[a-zA-Z]).{6,20}$/) != -1)
-        if (str.search(/^[0-9a-zA-Z!@#$%]{4,20}$/) != -1)
+        if (str.search(/^[0-9a-zA-Z!@#$%]{2,20}$/) != -1)
         {
             return true;
         }
