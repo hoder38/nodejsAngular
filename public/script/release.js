@@ -5737,7 +5737,9 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     $window.location.href = $location.path();
                                 } else {
                                     if (videoId === this_obj[type].playlist.obj.id) {
-                                        if (this_obj[type].playlist) {
+                                        if (this_obj[type].playlist.obj.title) {
+                                            this_obj[type].itemName = ':' + this_obj[type].playlist.obj.title;
+                                        } else {
                                             this_obj[type].itemName = ':' + result.title;
                                         }
                                         if (type === 'music') {
