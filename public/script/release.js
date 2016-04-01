@@ -2242,7 +2242,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.$on('file', function(e, d) {
         var id = JSON.parse(d);
         var date;
-        var index = arrayObjectIndexOf($scope.itemList, id, 'id');
         var storageApi = $resource('/api/storage/single/' + id, {}, {
             'single': { method:'get' }
         });
@@ -2251,6 +2250,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
+                var index = arrayObjectIndexOf($scope.itemList, id, 'id');
                 if (result.empty) {
                     if (index !== -1) {
                         $scope.itemList.splice(index, 1);
