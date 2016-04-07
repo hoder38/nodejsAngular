@@ -3324,6 +3324,7 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                         var data = {};
                         data['recordTime'] = index;
                         data['mtime'] = utime;
+                        data['tags'] = items[0].tags;
                         mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {$set: data}, function(err, item2){
                             if (err) {
                                 util.handleError(err, next, res);
@@ -3339,6 +3340,7 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                                         data['fileId'] = items[0]._id;
                                         data['recordTime'] = index;
                                         data['mtime'] = utime;
+                                        data['tags'] = items[0].tags;
                                         mongo.orig("insert", "storageRecord", data, function(err, item3){
                                             if(err) {
                                                 util.handleError(err, next, res);
@@ -3349,6 +3351,7 @@ app.get('/image/:uid/:number(\\d+)?', function(req, res, next){
                                         data['fileId'] = items[0]._id;
                                         data['recordTime'] = index;
                                         data['mtime'] = utime;
+                                        data['tags'] = items[0].tags;
                                         mongo.orig("update", "storageRecord", {_id: items2[0]._id}, {$set: data}, function(err, item3){
                                             if(err) {
                                                 util.handleError(err, next, res);
@@ -3465,6 +3468,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                 var data = {};
                                 data['recordTime'] = index;
                                 data['mtime'] = utime;
+                                data['tags'] = items[0].tags;
                                 mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {$set: data}, function(err, item2){
                                     if (err) {
                                         util.handleError(err, next, res);
@@ -3479,6 +3483,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                                 data['fileId'] = items[0]._id;
                                                 data['recordTime'] = index;
                                                 data['mtime'] = utime;
+                                                data['tags'] = items[0].tags;
                                                 mongo.orig("insert", "storageRecord", data, function(err, item3){
                                                     if(err) {
                                                         util.handleError(err, next, res);
@@ -3489,6 +3494,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                                 data['fileId'] = items[0]._id;
                                                 data['recordTime'] = index;
                                                 data['mtime'] = utime;
+                                                data['tags'] = items[0].tags;
                                                 mongo.orig("update", "storageRecord", {_id: items3[0]._id}, {$set: data}, function(err, item3){
                                                     if(err) {
                                                         util.handleError(err, next, res);
@@ -3527,6 +3533,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                 var data = {};
                                 data['recordTime'] = index;
                                 data['mtime'] = utime;
+                                data['tags'] = items[0].tags;
                                 mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {$set: data}, function(err, item2){
                                     if (err) {
                                         util.handleError(err, next, res);
@@ -3541,6 +3548,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                                 data['fileId'] = items[0]._id;
                                                 data['recordTime'] = index;
                                                 data['mtime'] = utime;
+                                                data['tags'] = items[0].tags;
                                                 mongo.orig("insert", "storageRecord", data, function(err, item3){
                                                     if(err) {
                                                         util.handleError(err, next, res);
@@ -3551,6 +3559,7 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
                                                 data['fileId'] = items[0]._id;
                                                 data['recordTime'] = index;
                                                 data['mtime'] = utime;
+                                                data['tags'] = items[0].tags;
                                                 mongo.orig("update", "storageRecord", {_id: items3[0]._id}, {$set: data}, function(err, item3){
                                                     if(err) {
                                                         util.handleError(err, next, res);
@@ -4686,6 +4695,7 @@ app.get('/torrent/:index(\\d+|v)/:uid/:fresh(0+)?', function (req, res, next) {
                         var data = {};
                         data['recordTime'] = '0&' + fileIndex;
                         data['mtime'] = utime;
+                        data['tags'] = items[0].tags;
                         mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: items[0]._id}, {$set: data}, function(err, item2){
                             if (err) {
                                 util.handleError(err, next, res);
@@ -4701,6 +4711,7 @@ app.get('/torrent/:index(\\d+|v)/:uid/:fresh(0+)?', function (req, res, next) {
                                         data['fileId'] = items[0]._id;
                                         data['recordTime'] = '0&' + fileIndex;
                                         data['mtime'] = utime;
+                                        data['tags'] = items[0].tags;
                                         mongo.orig("insert", "storageRecord", data, function(err, item3){
                                             if(err) {
                                                 util.handleError(err, next, res);
@@ -4715,6 +4726,7 @@ app.get('/torrent/:index(\\d+|v)/:uid/:fresh(0+)?', function (req, res, next) {
                                         data['fileId'] = items[0]._id;
                                         data['recordTime'] = '0&' + fileIndex;
                                         data['mtime'] = utime;
+                                        data['tags'] = items[0].tags;
                                         mongo.orig("update", "storageRecord", {_id: items2[0]._id}, {$set: data}, function(err, item3){
                                             if(err) {
                                                 util.handleError(err, next, res);

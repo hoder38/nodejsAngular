@@ -785,6 +785,261 @@ app.get('/api/storage/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(
     });
 });
 
+app.get('/api/storage/getRandom/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(\\d+)', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("storage");
+        console.log("random");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        mongo.orig("find", "storageRecord", {userId: req.user._id}, {"limit" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            var tag_list = mime.getOptionTag();
+            var count_list = [];
+            for (var i in tag_list) {
+                count_list.push(1);
+            }
+            var index = -1;
+            for (var i in items) {
+                if (items[i]['tags']) {
+                    for (var j in items[i]['tags']) {
+                        index = tag_list.indexOf(items[i]['tags'][j]);
+                        if (index !== -1) {
+                            count_list[index]++;
+                        }
+                    }
+                }
+            }
+            function selectRandom(count_arr, select_arr) {
+                var accm_list = [];
+                if (select_arr) {
+                    for (var i in select_arr) {
+                        if (i < 1) {
+                            accm_list.push(count_arr[select_arr[i]]);
+                        } else {
+                            accm_list.push(accm_list[i-1] + count_arr[select_arr[i]]);
+                        }
+                    }
+                } else {
+                    for (var i in count_arr) {
+                        if (i < 1) {
+                            accm_list.push(count_arr[i]);
+                        } else {
+                            accm_list.push(accm_list[i-1] + count_arr[i]);
+                        }
+                    }
+                }
+                //console.log(accm_list);
+                var rand = Math.random() * accm_list[accm_list.length-1];
+                console.log(rand);
+                var ch = 0;
+                for (var i in accm_list) {
+                    if (accm_list[i] >= rand) {
+                        ch = Number(i);
+                        break;
+                    }
+                }
+                if (select_arr) {
+                    ch = select_arr[ch];
+                }
+                //console.log(ch);
+                return ch;
+            }
+            //var choose = selectRandom(count_list);
+            var choose = 4;
+            var random_tag = [tag_list[choose]];
+            if (choose === 0) {
+                random_tag.push(tag_list[selectRandom(count_list, [1, 2])]);
+                random_tag.push(tag_list[selectRandom(count_list, [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43])]);
+            } else if (choose > 0 && choose < 3) {
+                //pic type
+                random_tag.splice(0, 0, tag_list[0]);
+                random_tag.push(tag_list[selectRandom(count_list, [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43])]);
+            } else if (choose === 3) {
+                //pic book
+                random_tag.splice(0, 0, tag_list[0]);
+                random_tag.push(tag_list[selectRandom(count_list, [1, 2])]);
+                random_tag.push(tag_list[selectRandom(count_list, [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43])]);
+            } else if (choose === 4) {
+                //video
+                random_tag.push(tag_list[selectRandom(count_list, [5, 6, 7])]);
+                random_tag.push(tag_list[selectRandom(count_list, [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43])]);
+            } else if (choose === 6) {
+                //video type && video cate
+                var mtype = selectRandom(count_list, [5, 6, 7]);
+                if (mtype === 6) {
+                    random_tag.push(tag_list[selectRandom(count_list, [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43])]);
+                } else {
+                    random_tag.splice(0, 0, tag_list[mtype]);
+                }
+                random_tag.splice(0, 0, tag_list[4]);
+            } else if (choose > 4 && choose < 8) {
+                //video type
+                random_tag.splice(0, 0, tag_list[4]);
+                random_tag.push(tag_list[selectRandom(count_list, [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43])]);
+            } else if (choose === 8) {
+                //audio
+                random_tag.push(tag_list[selectRandom(count_list, [9, 10, 11])]);
+                random_tag.push(tag_list[selectRandom(count_list, [51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71])]);
+            } else if (choose === 10) {
+                //audio type && video cate
+                var mtype = selectRandom(count_list, [4, 8]);
+                if (mtype === 4) {
+                    random_tag.splice(0, 0, tag_list[selectRandom(count_list, [5, 6, 7])]);
+                    random_tag.push(tag_list[selectRandom(count_list, [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43])]);
+                } else {
+                    random_tag.push(tag_list[selectRandom(count_list, [51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71])]);
+                }
+                random_tag.splice(0, 0, tag_list[mtype]);
+            } else if (choose > 8 && choose < 12) {
+                //audio type
+                random_tag.splice(0, 0, tag_list[8]);
+                random_tag.push(tag_list[selectRandom(count_list, [51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71])]);
+            } else if (choose === 12) {
+                //doc
+                random_tag.push(tag_list[selectRandom(count_list, [13, 14, 17, 18])]);
+                random_tag.push(tag_list[selectRandom(count_list, [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43])]);
+            } else if (choose > 12 && choose < 15 || choose > 16 && choose < 19) {
+                //doc type
+                random_tag.splice(0, 0, tag_list[12]);
+                random_tag.push(tag_list[selectRandom(count_list, [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43])]);
+            } else if (choose === 15) {
+                //pre
+            } else if (choose === 16) {
+                //sheet
+            } else if (choose === 19) {
+                //url
+                random_tag.push(tag_list[selectRandom(count_list, [20, 21])]);
+            } else if (choose > 19 && choose < 22) {
+                //url type
+                random_tag.splice(0, 0, tag_list[19]);
+            } else if (choose === 22) {
+                //zip
+                random_tag.push(tag_list[23]);
+            } else if (choose === 23) {
+                //zip type
+                random_tag.splice(0, 0, tag_list[22]);
+            } else if (choose === 24 || choose === 25 || choose === 40) {
+                //g m 9
+                var mtype = selectRandom(count_list, [0, 4, 12, 24, 25, 42, 44, 45, 46, 47, 48, 49, 50]);
+                if (mtype > 23) {
+                    random_tag.splice(0, 0, '遊戲');
+                } else{
+                    var stype = 0;
+                    if (mtype === 0) {
+                        stype = 2;
+                    } else if (mtype === 4) {
+                        stype = selectRandom(count_list, [5, 6, 7]);
+                    } else {
+                        stype = selectRandom(count_list, [13, 14]);
+                    }
+                    random_tag.splice(0, 0, tag_list[stype]);
+                    random_tag.splice(0, 0, tag_list[mtype]);
+                }
+            /*} else if (choose === 27 || choose === 28 || choose === 32 || choose === 37 || choose === 39) {
+                //m 9
+            } else if (choose === 34 || choose === 35 || choose === 38) {
+                //m
+            } else if (choose === 30 || choose === 31 || choose === 41) {
+                //9
+                */
+            } else if (choose > 23 && choose < 44) {
+                var mtype = selectRandom(count_list, [0, 4, 12]);
+                var stype = 0;
+                if (mtype === 0) {
+                    stype = 2;
+                } else if (mtype === 4) {
+                    stype = selectRandom(count_list, [5, 6, 7]);
+                } else {
+                    stype = selectRandom(count_list, [13, 14]);
+                }
+                random_tag.splice(0, 0, tag_list[stype]);
+                random_tag.splice(0, 0, tag_list[mtype]);
+            } else if (choose > 43 && choose < 51) {
+                random_tag.splice(0, 0, '遊戲');
+            } else if (choose > 50 && choose < 72) {
+                random_tag.splice(0, 0, tag_list[selectRandom(count_list, [9, 10, 11])]);
+                random_tag.splice(0, 0, tag_list[8]);
+            } else {
+                random_tag.splice(0, 0, '18+');
+            }
+            if (random_tag[0] === '影片') {
+                var mtype = 0;
+                if (random_tag[1] === '電影') {
+                    mtype = selectRandom([10, 1, 1, 1, 1, 1]);
+                    if (mtype === 3) {
+                        //yify
+                        var tmp_type = random_tag.splice(random_tag.length -1, 1);
+                        random_tag = ['yify movie', 'no local', tmp_type[0]];
+                    } else if (mtype === 4) {
+                        //kubo
+                        random_tag = ['kubo movie', 'no local'];
+                    } else if (mtype === 5) {
+                        //bilibili
+                        random_tag = ['bilibili movie', 'no local'];
+                    }
+                } else if (random_tag[1] === '動畫') {
+                    mtype = selectRandom([8, 1, 1, 1, 1]);
+                    if (mtype === 3) {
+                        //kubo
+                        random_tag = ['kubo animation', 'no local'];
+                    } else if (mtype === 4) {
+                        //bilibili
+                        random_tag = ['bilibili animation', 'no local'];
+                    }
+                } else if (random_tag[1] === '電視劇') {
+                    mtype = selectRandom([8, 1, 1, 1, 1]);
+                    if (mtype === 3) {
+                        random_tag = ['kubo tv series', 'no local'];
+                    } else if (mtype === 4) {
+                        random_tag = ['kubo tv show', 'no local'];
+                    }
+                }
+                if (mtype === 1) {
+                    random_tag = ['youtube video', 'no local'];
+                } else if (mtype === 2) {
+                    random_tag = ['youtube playlist', 'no local'];
+                }
+            } else if (random_tag[0] === '圖片' && (random_tag[1] === '漫畫' || random_tag[2] === '漫畫')) {
+                var mtype = selectRandom([4, 1, 1]);
+                if (mtype === 1) {
+                    random_tag = ['cartoonmad comic', 'no local', tag_list[selectRandom(count_list, [24, 25, 27, 28, 32, 34, 35, 37, 38, 39, 40])]];
+                } else if (mtype === 2) {
+                    random_tag = ['comic99 comic', 'no local', tag_list[selectRandom(count_list, [24, 25, 27, 28, 30, 31, 32, 37, 39, 40, 41])]];
+                }
+            } else if (random_tag[0] === '音頻') {
+                var mtype = selectRandom([4, 1, 1]);
+                if (mtype === 1) {
+                    random_tag = ['music','youtube music', 'no local'];
+                } else if (mtype === 2) {
+                    random_tag = ['music','youtube music playlist', 'no local'];
+                }
+            }
+            res.cookie('fileSortName', req.params.sortName);
+            res.cookie('fileSortType', req.params.sortType);
+            var page = Number(req.params.page);
+            var tags = tagTool.searchTags(req.session);
+            if (!tags) {
+                util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
+            }
+            var random_exactly = [];
+            for (var i in random_tag) {
+                random_exactly.push(true);
+            }
+            tags.setArray('', random_tag, random_exactly);
+            tagTool.tagQuery(0, null, null, null, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+                if (err) {
+                    util.handleError(err, next, callback);
+                }
+                var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
+                res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
+            });
+        });
+    });
+});
+
 app.get('/api/stock/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(\\d+)/:name?/:exactly(true|false)?/:index(\\d+)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("stock");
@@ -2139,45 +2394,59 @@ app.get('/api/media/record/:id/:time/:pId?', function(req, res, next){
                 }
             });
         } else {
-            var utime = Math.round(new Date().getTime() / 1000);
-            var data = {};
-            data['recordTime'] = req.params.time;
-            data['mtime'] = utime;
-            mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: data}, function(err, item){
+            mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items3){
                 if (err) {
                     util.handleError(err, next, res);
                 }
-                if (item === 0) {
-                    mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
-                        if (err) {
-                            util.handleError(err, next, res);
-                        }
-                        if (items.length === 0) {
-                            data['userId'] = req.user._id;
-                            data['fileId'] = id;
-                            data['recordTime'] = req.params.time;
-                            data['mtime'] = utime;
-                            mongo.orig("insert", "storageRecord", data, function(err, item1){
-                                if(err) {
-                                    util.handleError(err, next, res);
-                                }
-                                res.json({apiOK: true});
-                            });
-                        } else {
-                            data['fileId'] = id;
-                            data['recordTime'] = req.params.time;
-                            data['mtime'] = utime;
-                            mongo.orig("update", "storageRecord", {_id: items[0]._id}, {$set: data}, function(err, item1){
-                                if(err) {
-                                    util.handleError(err, next, res);
-                                }
-                                res.json({apiOK: true});
-                            });
-                        }
-                    });
-                } else {
-                    res.json({apiOK: true});
+                var utime = Math.round(new Date().getTime() / 1000);
+                var data = {};
+                data['recordTime'] = req.params.time;
+                data['mtime'] = utime;
+                if (items3[0]) {
+                    data['tags'] = items3[0].tags;
                 }
+                mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: data}, function(err, item){
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (item === 0) {
+                        mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (items.length === 0) {
+                                data['userId'] = req.user._id;
+                                data['fileId'] = id;
+                                data['recordTime'] = req.params.time;
+                                data['mtime'] = utime;
+                                if (items3[0]) {
+                                    data['tags'] = items3[0].tags;
+                                }
+                                mongo.orig("insert", "storageRecord", data, function(err, item1){
+                                    if(err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    res.json({apiOK: true});
+                                });
+                            } else {
+                                data['fileId'] = id;
+                                data['recordTime'] = req.params.time;
+                                data['mtime'] = utime;
+                                if (items3[0]) {
+                                    data['tags'] = items3[0].tags;
+                                }
+                                mongo.orig("update", "storageRecord", {_id: items[0]._id}, {$set: data}, function(err, item1){
+                                    if(err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    res.json({apiOK: true});
+                                });
+                            }
+                        });
+                    } else {
+                        res.json({apiOK: true});
+                    }
+                });
             });
         }
     });
@@ -2611,48 +2880,56 @@ app.get('/api/media/setTime/:id/:type/:obj?/:pageToken?/:back(back)?', function(
             if (obj === false) {
                 util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
-            var utime = Math.round(new Date().getTime() / 1000);
-            var data = {};
-            data['recordTime'] = obj;
-            var pageToken = false;
-            if (req.params.pageToken) {
-                pageToken = util.isValidString(req.params.pageToken, 'name');
-                if (pageToken !== false) {
-                    data['pageToken'] = pageToken;
-                }
-            }
-            data['mtime'] = utime;
-            mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: data}, function(err, item){
+            mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items3){
                 if (err) {
                     util.handleError(err, next, res);
                 }
-                if (item === 0) {
-                    mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
-                        if (err) {
-                            util.handleError(err, next, res);
-                        }
-                        if (items.length === 0) {
-                            data['userId'] = req.user._id;
-                            data['fileId'] = id;
-                            mongo.orig("insert", "storageRecord", data, function(err, item1){
-                                if(err) {
-                                    util.handleError(err, next, res);
-                                }
-                                getRecord();
-                            });
-                        } else {
-                            data['fileId'] = id;
-                            mongo.orig("update", "storageRecord", {_id: items[0]._id}, {$set: data}, function(err, item1){
-                                if(err) {
-                                    util.handleError(err, next, res);
-                                }
-                                getRecord();
-                            });
-                        }
-                    });
-                } else {
-                    getRecord();
+                var utime = Math.round(new Date().getTime() / 1000);
+                var data = {};
+                if (items3[0]) {
+                    data['tags'] = items3[0].tags;
                 }
+                data['recordTime'] = obj;
+                var pageToken = false;
+                if (req.params.pageToken) {
+                    pageToken = util.isValidString(req.params.pageToken, 'name');
+                    if (pageToken !== false) {
+                        data['pageToken'] = pageToken;
+                    }
+                }
+                data['mtime'] = utime;
+                mongo.orig("update", "storageRecord", {userId: req.user._id, fileId: id}, {$set: data}, function(err, item){
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (item === 0) {
+                        mongo.orig("find", "storageRecord", {userId: req.user._id}, {"skip" : 100, "sort":  [["mtime", "desc"]]}, function(err, items){
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (items.length === 0) {
+                                data['userId'] = req.user._id;
+                                data['fileId'] = id;
+                                mongo.orig("insert", "storageRecord", data, function(err, item1){
+                                    if(err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    getRecord();
+                                });
+                            } else {
+                                data['fileId'] = id;
+                                mongo.orig("update", "storageRecord", {_id: items[0]._id}, {$set: data}, function(err, item1){
+                                    if(err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    getRecord();
+                                });
+                            }
+                        });
+                    } else {
+                        getRecord();
+                    }
+                });
             });
         } else {
             getRecord();

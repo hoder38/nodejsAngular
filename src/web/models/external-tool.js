@@ -1023,9 +1023,9 @@ module.exports = {
                             }
                         }
                         data = {url: list_match[1]};
-                        list_match = raw_list[i].match(/\(released ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
+                        list_match = raw_list[i].match(/\(released ([a-zA-Z]+)[\s]+(\d\d?, \d\d\d\d)/);
                         if (list_match) {
-                            if (list_match[1] === docDate) {
+                            if (list_match[1] + ' ' + list_match[2] === docDate) {
                                 data['date'] = (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear();
                                 data['name'] = util.toValidName('Michigan Consumer Sentiment Index');
                                 list.push(data);
@@ -1336,6 +1336,19 @@ module.exports = {
                             data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName(list_match[2]), url: list_match[1]};
                             list.push(data);
                         }
+                        list_match = json_data[i].content.match(/href="([^"]+)".*title="([^"]+)">\d\d\d\d?年\d\d?月臺灣採購經理人指數新聞稿\.pdf/);
+                        if (list_match) {
+                            if (!list_match[1].match(/^(http|https):\/\//)) {
+                                if (list_match[1].match(/^\//)) {
+                                    list_match[1] = 'http://index.ndc.gov.tw' + list_match[1];
+                                } else {
+                                    list_match[1] = 'http://index.ndc.gov.tw/' + list_match[1];
+                                }
+                            }
+                            list_match[1] =  list_match[1].replace(/&amp;/g, '&');
+                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName(list_match[2]), url: list_match[1]};
+                            list.push(data);
+                        }
                     }
                 }
                 setTimeout(function(){
@@ -1520,7 +1533,7 @@ module.exports = {
                     docDate = docDate + date.getDate();
                 }
                 console.log(docDate);
-                var raw_list = raw_data.match(/href="[^"]+" title="[^"]+">\d\d\d年\d\d?月海關進出口貿易統計速報<[\s\S]+?>\d\d\d\d-\d\d-\d\d/g);
+                var raw_list = raw_data.match(/href="[^"]+" title="[^"]+">\d\d\d年\d\d?月海關進出口貿易(統計速報|初步統計)<[\s\S]+?>\d\d\d\d-\d\d-\d\d/g);
                 if (!raw_list) {
                     util.handleError({hoerror: 2, message: 'cannot find mof latest'}, callback, callback);
                 }
@@ -1565,6 +1578,7 @@ module.exports = {
                 var list = [];
                 var list_match = false;
                 var date = new Date();
+                date = new Date(new Date(date).setDate(date.getDate()-20));
                 var docDate = date.getFullYear() + '-';
                 if (date.getMonth() + 1 < 10) {
                     docDate = docDate + '0' + (date.getMonth() + 1) + '-';
@@ -4174,6 +4188,9 @@ module.exports = {
                             match_item = match_list[i].match(/[^<]+/);
                             if (match_item) {
                                 match_item = match_item[0].toLowerCase();
+                                if (match_item === 'sports') {
+                                    match_item = 'sport';
+                                }
                                 if (game_list.indexOf(match_item) !== -1) {
                                     if (taglist.indexOf(match_item) === -1) {
                                         taglist.push(match_item);

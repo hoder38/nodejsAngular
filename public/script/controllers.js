@@ -866,7 +866,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     }
 
     $scope.submitText = function() {
-        if (!this.inputText) {
+        if (!this.inputText && (this.parentList.length > 0 || this.historyList.length > 0)) {
             return false;
         }
         var this_obj = this;
@@ -878,7 +878,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         this.music.end = false;
         this.doc.end = false;
         this.present.end = false;
-        getItemlist(this_obj, this.inputText);
+        getItemlist(this_obj, this.inputText, 0, null, true);
         this.inputText = '';
     }
 
@@ -1009,7 +1009,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         });
     }
 
-    getItemlist = function (this_obj, name, index, isExactly) {
+    getItemlist = function (this_obj, name, index, isExactly, isRandom) {
         name = typeof name !== 'undefined' ? name : null;
         index = typeof index !== 'undefined' ? index : 0;
         var Info = null, exactly = 'false', more = true;
@@ -1023,9 +1023,15 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             exactly = 'true';
         }
         if (!name && !index) {
-            Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
-                'storage': { method:'GET' }
-            });
+            if (isRandom) {
+                Info = $resource('/api/storage/getRandom/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
+                    'storage': { method:'GET' }
+                });
+            } else {
+                Info = $resource('/api/storage/get/' + this_obj.fileSort.sort + '/' + this_obj.page, {}, {
+                    'storage': { method:'GET' }
+                });
+            }
         } else if (name && !index) {
             if (!isValidString(name, 'name')) {
                 addAlert('search tag is not vaild!!!');
@@ -1342,6 +1348,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                     addAlert('Please inputs search name!!!');
                     return false;
                 }
+                this.searchSubing = true;
                 var externalApi = $resource(this.main_url + '/api/external/getSubtitle/' + id, {}, {
                     'getSingle': { method:'GET', withCredentials: true }
                 });
@@ -1350,8 +1357,11 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                         $window.location.href = $location.path();
                     } else {
                         addAlert('subtitle get');
+                        this_obj.searchSub = false;
+                        this_obj.searchSubing = false;
                     }
                 }, function(errorResult) {
+                    this_obj.searchSubing = false;
                     if (errorResult.status === 400) {
                         addAlert(errorResult.data);
                     } else if (errorResult.status === 403) {
@@ -3022,7 +3032,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             var vTime = 0;
             vTime = parseInt(video.currentTime);
             var vXmlhttp = new XMLHttpRequest();
-            var append = '';
             if ($scope.video.playlist) {
                 vId = $scope.video.playlist.obj.id;
             }
@@ -3038,14 +3047,17 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             vXmlhttp.setRequestHeader("Content-type", "application/json");
             vXmlhttp.send('');
         }
-        /*var mId = $scope.music.id;
-        if (mId) {
+        var mId = $scope.music.id;
+        if (mId && music.duration) {
             var mTime = parseInt(music.currentTime);
             var mXmlhttp = new XMLHttpRequest();
+            if ($scope.music.playlist) {
+                mId = $scope.music.playlist.obj.id;
+            }
             mXmlhttp.open("GET", "/api/media/record/" + mId + '/' + mTime, false);//the false is for making the call synchronous
             mXmlhttp.setRequestHeader("Content-type", "application/json");
             mXmlhttp.send('');
-        }*/
+        }
         var dId = $scope.doc.id;
         if (dId && $scope.doc.iframeOffset) {
             var dTime = $scope.doc.showId;
@@ -3895,11 +3907,15 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         callback(null);
                     }, 0);
                 }
-                return false;
-                //music不記錄
-                //if (!end) {
-                //    time = parseInt(music.currentTime);
-                //}
+                if (!end) {
+                    time = parseInt(music.currentTime);
+                }
+                if (is_playlist && this[type].playlist) {
+                    append = '/' + id;
+                }
+                if (this[type].playlist) {
+                    id = this[type].playlist.obj.id;
+                }
             } else if (type === 'torrent') {
                 if (!torrent || !torrent.duration) {
                     if (callback) {
