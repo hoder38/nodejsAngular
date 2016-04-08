@@ -5640,9 +5640,9 @@ module.exports = {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                var raw_list = raw_data.match(/本文及附表電子檔下載.*href="([^"]+)/);
+                var raw_list = raw_data.match(/本文及附表電子檔下載.*?href="([^"]+)/);
                 if (!raw_list) {
-                    raw_list = raw_data.match(/新聞稿本文.*href="([^"]+)/);
+                    raw_list = raw_data.match(/新聞稿本文.*?href="([^"]+)/);
                     if (!raw_list) {
                     raw_list = raw_data.match(/href="([^"]+)" title="\d\d\d年\d\d?月新聞稿\.pdf"/);
                         if (!raw_list) {
