@@ -5910,7 +5910,7 @@ if (config_glb.autoDownload) {
                 loopDoc();
             }
         }, doc_interval);
-    }, 30000);
+    }, 120000);
 }
 
 if (config_glb.autoUpload) {
