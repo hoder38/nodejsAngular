@@ -280,16 +280,23 @@ module.exports = {
             // Set up the request
             var req = https.request(options, function(res) {
                 res.setEncoding('utf8');
-                new_token = urlMod.parse(res.headers.location, true).query;
-                mongo.orig("update", "accessToken", {api: "xuite"}, {$set: new_token}, function(err,token){
-                    if(err) {
-                        util.handleError(err, callback, callback);
-                    }
-                    access_token = new_token["access_token"];
-                    expire_in = new_token["expire_in"];
-                    setTimeout(function(){
-                        callback(null);
-                    }, 0);
+                var str = '';
+                res.on('data', function (chunk) {
+                    str += chunk;
+                });
+                res.on('end', function () {
+                    console.log(str);
+                    new_token = JSON.parse(str);
+                    mongo.orig("update", "accessToken", {api: "xuite"}, {$set: new_token}, function(err,token){
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        access_token = new_token["access_token"];
+                        expire_in = new_token["expire_in"];
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    });
                 });
             });
             req.on('error', function(e) {
