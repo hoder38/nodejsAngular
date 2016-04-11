@@ -226,8 +226,11 @@ app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
                 if (items.length === 0 ) {
                     util.handleError({hoerror: 2, message: 'file not exist!!!'}, next, callback);
                 }
-                if ((items[0].status !== 3 && items[0].status !== 9) || items[0].owner === 'lovetv' || items[0].owner === 'eztv') {
+                if (items[0].status !== 3 && items[0].status !== 9) {
                     util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+                }
+                if (items[0].thumb) {
+                    util.handleError({hoerror: 2, message: "external file, please open video"}, next, res);
                 }
                 filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 if (items[0].status === 9 && req.params.index) {
@@ -243,7 +246,6 @@ app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
                             fileIndex = Number(req.params.index);
                         }
                     }
-                    fileIndex = Number(req.params.index);
                     filePath = filePath + '/' + fileIndex;
                 }
                 var folderPath = path.dirname(filePath);
@@ -2441,8 +2443,11 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                 if (items.length <= 0) {
                     util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
                 }
-                if ((items[0].status !== 3 && items[0].status !== 9) || items[0].owner === 'lovetv' || items[0].owner === 'eztv') {
+                if (items[0].status !== 3 && items[0].status !== 9) {
                     util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+                }
+                if (items[0].thumb) {
+                    util.handleError({hoerror: 2, message: "external file, please open video"}, next, res);
                 }
                 if (req.params.index) {
                     if (req.params.index === 'v') {

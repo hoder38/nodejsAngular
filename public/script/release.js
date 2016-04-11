@@ -2169,7 +2169,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.uploadAll();
         } else if ($scope.videoSub && $scope.video.id) {
             if ($scope.video.playlist) {
-                fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.video.playlist.obj.id;
+                fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.video.playlist.obj.id + '/v';
             } else {
                 fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.video.id;
             }
@@ -2849,7 +2849,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                         append = this.toolList.item.id;
                     } else if (this.videoSearchSub && this.video.id) {
                         if (this.video.playlist) {
-                            append = this.video.playlist.obj.id;
+                            append = this.video.playlist.obj.id + '/v';
                         } else {
                             append = this.video.id;
                         }
