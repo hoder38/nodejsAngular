@@ -670,18 +670,26 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         if (d === 'uploadT') {
             $scope.uploadSub = true;
             $scope.torrentSub = true;
+            $scope.videoSub = false;
+            $scope.toolSub = false;
         } else if (d === 'searchT') {
             $scope.searchSub = true;
             $scope.torrentSearchSub = true;
+            $scope.videoSearchSub = false;
+            $scope.toolSearchSub = false;
             $scope.subNameFocus = true;
             $scope.subName = '';
             $scope.subEpisode = '';
         } else if (d === 'uploadV') {
             $scope.uploadSub = true;
             $scope.videoSub = true;
+            $scope.torrentSub = false;
+            $scope.toolSub = false;
         } else if (d === 'searchV') {
             $scope.searchSub = true;
             $scope.videoSearchSub = true;
+            $scope.torrentSearchSub = false;
+            $scope.toolSearchSub = false;
             $scope.subNameFocus = true;
             $scope.subName = '';
             $scope.subEpisode = '';
