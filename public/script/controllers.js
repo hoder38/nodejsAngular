@@ -2065,7 +2065,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                         this_obj.$parent[type].maxId = item.present;
                         if (type === 'video') {
                             removeCue();
-                            this_obj.$parent[type].sub = '/subtitle/' + videoId;
+                            this_obj.$parent[type].sub = '/subtitle/' + videoId + '/v';
                         }
                         var tempList = $filter("filter")(this_obj.itemList, {status: status});
                         this_obj.$parent[type].name = item.name;
@@ -4242,7 +4242,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         }
                         if (type === 'video') {
                             removeCue();
-                            this_obj[type].sub = '/subtitle/' + videoId;
+                            this_obj[type].sub = '/subtitle/' + videoId + '/v';
                         }
                     }
                 }, function(errorResult) {
@@ -4720,7 +4720,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     }
                                     if (type === 'video') {
                                         removeCue();
-                                        this_obj[type].sub = '/subtitle/' + videoId;
+                                        this_obj[type].sub = '/subtitle/' + videoId + '/v';
                                     }
                                     this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
@@ -4996,7 +4996,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     }
                                     if (type === 'video') {
                                         removeCue();
-                                        this_obj[type].sub = '/subtitle/' + videoId;
+                                        this_obj[type].sub = '/subtitle/' + videoId + '/v';
                                     }
                                     this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
@@ -5231,7 +5231,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         }
                         if (type === 'video') {
                             removeCue();
-                            this_obj[type].sub = '/subtitle/' + videoId;
+                            this_obj[type].sub = '/subtitle/' + videoId + '/v';
                         }
                         this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
