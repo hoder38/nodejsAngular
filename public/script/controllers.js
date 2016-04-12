@@ -4321,25 +4321,29 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             var this_obj = this;
             if (number === 0) {
                 var subIndex = Math.round(this.image.showId*1000)%1000;
+                var pIndex = Math.floor(this.image.presentId);
                 var sIndex = Math.floor(this.image.showId);
-                if (subIndex >= 1 && subIndex <= this.image.playlist.obj.sub) {
+                if (subIndex >= 1 && subIndex <= this.image.playlist.obj.sub && sIndex === pIndex) {
                     this.image.presentId = this.image.showId;
                     recordExternalImg();
                 } else {
-                    if (subIndex < 1 && sIndex > 1) {
-                        //settime
-                        sIndex--;
-                        subIndex = 1;
-                        this.image.presentId = this.image.showId = (sIndex*1000 + subIndex)/1000;
-                    } else if (subIndex > this.image.playlist.obj.sub && pIndex < this.image.maxId) {
-                        //settime
-                        sIndex++;
-                        subIndex = 1;
-                        this.image.presentId = this.image.showId = (sIndex*1000 + subIndex)/1000;
-                    } else {
+                    //settime
+                    if (sIndex > this.image.maxId || sIndex < 1) {
                         this.image.showId = this.image.presentId;
                         return false;
                     }
+                    if (sIndex !== pIndex) {
+                        subIndex = 1;
+                    }
+                    if (subIndex < 1) {
+                        subIndex = 1;
+                    } else if (subIndex > this.image.playlist.obj.sub) {
+                        if (sIndex < this.image.maxId) {
+                            sIndex++;
+                        }
+                        subIndex = 1;
+                    }
+                    this.image.presentId = this.image.showId = (sIndex*1000 + subIndex)/1000;
                     recordExternalImg('new');
                 }
             } else {
