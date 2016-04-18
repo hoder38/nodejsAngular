@@ -1653,7 +1653,7 @@ var app = angular.module('app', ['ngResource', 'ngRoute', 'ngCookies', 'ngSaniti
             video.focus();
         };
         video.addEventListener('loadedmetadata', function () {
-            if (videoStart) {
+            if (videoStart && video.duration) {
                 video.currentTime = videoStart;
                 videoStart = 0;
             }

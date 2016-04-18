@@ -6134,8 +6134,8 @@ function loopUpdateStock() {
         console.log('stock_batch_list remain');
         console.log(stock_batch_list.length);
     }
-    if (day === config_type.updateStockDate[0] || day === config_type.updateStockDate[1]) {
-        console.log('update stock');
+    var sDay = config_type.updateStockDate.indexOf(day);
+    if (sDay !== -1) {
         stockTool.getStockList('twse', function(err, tw_stocklist){
             if(err) {
                 util.handleError(err);
@@ -6147,98 +6147,85 @@ function loopUpdateStock() {
                         stock_batch_list.push(tw_stocklist[i]);
                     }
                 }
-                if (stock_batch_list.length > 0) {
-                    updateStock('twse', function(err) {
-                        if (err) {
-                            util.handleError(err);
-                        }
+                mongo.orig("find", "stock", {important: 1}, function(err, items){
+                    if(err) {
+                        util.handleError(err);
                         stock_time = 1;
                         console.log('loopUpdateStock end');
-                    });
-                } else {
-                    console.log('empty stock list');
-                    stock_time = 1;
-                    console.log('loopUpdateStock end');
-                }
-            }
-        });
-    } else if (config_type.updateStockDate.indexOf(day) !== -1) {
-        console.log('update important stock');
-        mongo.orig("find", "stock", {important: 1}, function(err, items){
-            if(err) {
-                util.handleError(err);
-                stock_time = 1;
-                console.log('loopUpdateStock end');
-            } else {
-                var annualList = [];
-                var folderList = [];
-                var year = new Date().getFullYear();
-                for (var i in items) {
-                    if (stock_batch_list.indexOf(items[i].index) === -1) {
-                        stock_batch_list.push(items[i].index);
-                    }
-                    annualList.push(items[i].index);
-                }
-                if (annualList.length > 0) {
-                    mongo.orig("find", "user", {auto: {$exists: true}, perm: 1}, function(err, userlist){
-                        if(err) {
-                            util.handleError(err);
-                            restUpdate();
-                        } else {
-                            if (userlist.length > 0) {
-                                recur_find(0);
-                            } else {
-                                restUpdate();
+                    } else {
+                        var annualList = [];
+                        var folderList = [];
+                        var year = new Date().getFullYear();
+                        for (var i in items) {
+                            if (stock_batch_list.indexOf(items[i].index) === -1) {
+                                stock_batch_list.push(items[i].index);
                             }
-                            function recur_find(index) {
-                                var downloaded_data = {folderId: userlist[index].auto, name: 'downloaded'};
-                                googleApi.googleApi('list folder', downloaded_data, function(err, downloadedList) {
+                            if (annualList.indexOf(items[i].index) === -1) {
+                                annualList.push(items[i].index);
+                            }
+                        }
+                        if (annualList.length > 0) {
+                            mongo.orig("find", "user", {auto: {$exists: true}, perm: 1}, function(err, userlist){
+                                if(err) {
+                                    util.handleError(err);
+                                    restUpdate();
+                                } else {
+                                    if (userlist.length > 0) {
+                                        recur_find(0);
+                                    } else {
+                                        restUpdate();
+                                    }
+                                    function recur_find(index) {
+                                        var downloaded_data = {folderId: userlist[index].auto, name: 'downloaded'};
+                                        googleApi.googleApi('list folder', downloaded_data, function(err, downloadedList) {
+                                            if (err) {
+                                                util.handleError(err);
+                                            } else {
+                                                if (downloadedList.length > 0) {
+                                                    folderList.push(downloadedList[0].id);
+                                                }
+                                            }
+                                            index++;
+                                            if (index < userlist.length) {
+                                                recur_find(index);
+                                            } else {
+                                                if (folderList.length > 0) {
+                                                    updateStockAnnual(year, folderList, annualList, 0, 0, function(err) {
+                                                        if(err) {
+                                                            util.handleError(err);
+                                                        }
+                                                        restUpdate();
+                                                    });
+                                                } else {
+                                                    restUpdate();
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        } else {
+                            restUpdate();
+                        }
+                        function restUpdate() {
+                            if (stock_batch_list.length > 0) {
+                                updateStock('twse', function(err) {
                                     if (err) {
                                         util.handleError(err);
-                                    } else {
-                                        if (downloadedList.length > 0) {
-                                            folderList.push(downloadedList[0].id);
-                                        }
                                     }
-                                    index++;
-                                    if (index < userlist.length) {
-                                        recur_find(index);
-                                    } else {
-                                        if (folderList.length > 0) {
-                                            updateStockAnnual(year, folderList, annualList, 0, 0, function(err) {
-                                                if(err) {
-                                                    util.handleError(err);
-                                                }
-                                                restUpdate();
-                                            });
-                                        } else {
-                                            restUpdate();
-                                        }
-                                    }
+                                    stock_time = 1;
+                                    console.log('loopUpdateStock end');
                                 });
+                            } else {
+                                console.log('empty stock list');
+                                stock_time = 1;
+                                console.log('loopUpdateStock end');
                             }
                         }
-                    });
-                } else {
-                    restUpdate();
-                }
-                function restUpdate() {
-                    if (stock_batch_list.length > 0) {
-                        updateStock('twse', function(err) {
-                            if (err) {
-                                util.handleError(err);
-                            }
-                            stock_time = 1;
-                            console.log('loopUpdateStock end');
-                        });
-                    } else {
-                        console.log('empty stock list');
-                        stock_time = 1;
-                        console.log('loopUpdateStock end');
                     }
-                }
+                });
             }
-        });
+        }, Math.floor(sDay/2)+1);
     } else {
         if (stock_batch_list.length > 0) {
             updateStock('twse', function(err) {

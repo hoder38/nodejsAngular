@@ -237,7 +237,9 @@ function postData(fields, files, options, headers, callback, filePath, not_utf8)
             });
             response.on('end', function() {
                 if (not_utf8) {
-                    response.body = util.bufferToString(response.body);
+                    if (response.body) {
+                        response.body = util.bufferToString(response.body);
+                    }
                 }
                 setTimeout(function(){
                     callback(null, response);
@@ -495,7 +497,9 @@ module.exports = {
                                             }, 0);
                                         });
                                     } else {
-                                        res.body = util.bufferToString(res.body);
+                                        if (res.body) {
+                                            res.body = util.bufferToString(res.body);
+                                        }
                                         setTimeout(function(){
                                             callback(null, res.body);
                                         }, 0);

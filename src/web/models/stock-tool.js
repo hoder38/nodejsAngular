@@ -2582,6 +2582,7 @@ module.exports = {
                                 callback(null, interval_data['return'], items[0].index);
                             }, 0);
                         } else {
+                            console.log(intervalFile.length);
                             recur_mi(1);
                         }
                     });
@@ -2910,7 +2911,9 @@ module.exports = {
                                 }
                                 new_interval_data['return'] = ret_str;
                                 new_interval_data['time'] = new Date().getTime();
-                                fs.writeFile(intervalPath, JSON.stringify(new_interval_data), 'utf8', function (err) {
+                                var jsonStr = JSON.stringify(new_interval_data);
+                                console.log(jsonStr.length);
+                                fs.writeFile(intervalPath, jsonStr, 'utf8', function (err) {
                                     if (err) {
                                         util.handleError(err);
                                     }
