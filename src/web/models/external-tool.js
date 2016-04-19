@@ -3117,7 +3117,7 @@ module.exports = {
                     var encodeTorrent = false;
                     var torrentHash = null;
                     var ret_obj = {index: index, showId: index, is_magnet: true, complete: false};
-                    if (eItems[0].list[index-1].length > 1) {
+                    if (eItems[0].list[index-1].length > 0) {
                         recur_check(0);
                     } else {
                         ret_obj['title'] = chooseMag.name;
@@ -3225,7 +3225,7 @@ module.exports = {
                             var encodeTorrent = false;
                             var torrentHash = null;
                             var ret_obj = {index: index, showId: index, is_magnet: true, complete: false};
-                            if (list[index-1].length > 1) {
+                            if (list[index-1].length > 0) {
                                 recur_check2(0);
                             } else {
                                 ret_obj['title'] = chooseMag.name;
