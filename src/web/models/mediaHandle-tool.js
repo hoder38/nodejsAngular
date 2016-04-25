@@ -836,7 +836,7 @@ module.exports = function(sendWs) {
                 }
             }
         },
-        editFile: function (uid, newName, user, next, callback) {
+        editFile: function (uid, newName, user, next, callback, convert) {
             var name = util.isValidString(newName, 'name'),
                 id = util.isValidString(uid, 'uid'),
                 this_obj = this;
@@ -873,7 +873,11 @@ module.exports = function(sendWs) {
                         var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                         var time = Math.round(new Date().getTime() / 1000);
                         console.log(items[0]);
-                        this_obj.handleTag(filePath, {utime: time, untag: 1, time: items[0].time, height: items[0].height}, newName, items[0].name, items[0].status, function(err, mediaType, mediaTag, DBdata) {
+                        var status = 0;
+                        if (!convert) {
+                            status = items[0].status;
+                        }
+                        this_obj.handleTag(filePath, {utime: time, untag: 1, time: items[0].time, height: items[0].height}, newName, items[0].name, status, function(err, mediaType, mediaTag, DBdata) {
                             if(err) {
                                 util.handleError(err, next, callback);
                             }
@@ -941,6 +945,7 @@ module.exports = function(sendWs) {
                                     setTimeout(function(){
                                         callback(null, {id: id, name: name, select: result_tag, option: mediaTag.opt, other: items[0].tags, adultonly: items[0].adultonly});
                                     }, 0);
+                                    console.log(mediaType);
                                     this_obj.handleMediaUpload(mediaType, filePath, id, name, items[0].size, user, function(err) {
                                         //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                                         if(err) {
@@ -1443,7 +1448,7 @@ module.exports = function(sendWs) {
                     oldType = mime.mediaType(oldName),
                     mediaTag = {def:[], opt:[]};
                 var isVideo = false;
-                if (mediaType && (status === 0 || status === 1 || status === 5) && (!oldType || (mediaType.ext !== oldType.ext))) {
+                if (mediaType && (status === 0 || status === 1 || status === 5) && (!oldType || (mediaType.ext !== oldType.ext) || (mediaType.type !== oldType.type))) {
                     switch(mediaType['type']) {
                         case 'video':
                         case 'vlog':

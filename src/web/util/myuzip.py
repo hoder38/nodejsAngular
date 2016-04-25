@@ -24,7 +24,10 @@ for name in file.namelist():
     try:
         utf8name=name.decode('gbk')
     except:
-        utf8name=name.decode('big5')
+        try:
+            utf8name=name.decode('big5')
+        except:
+            utf8name=name
     if len(sys.argv) >= 3:
         if len(sys.argv) >= 4:
             if utf8name == sys.argv[3]:

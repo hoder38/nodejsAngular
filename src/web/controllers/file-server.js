@@ -3633,6 +3633,393 @@ app.get('/preview/:uid/:type(doc|images|resources|\\d+)?/:imgName(image\\d+.png|
     });
 });
 
+
+//rar不能多檔
+app.get('/api/torrent/convert/:uid', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("torrent covert image book");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items){
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (items.length === 0) {
+                util.handleError({hoerror: 2, message: 'torrent can not be found!!!'}, next, res);
+            }
+            if (items[0].status !== 9) {
+                util.handleError({hoerror: 2, message: 'file type error!!!'}, next, res);
+            }
+            var mediaType = mime.mediaType(items[0].name);
+            if (!mediaType || mediaType.type !== 'zip') {
+                util.handleError({hoerror: 2, message: 'must be zip!!!'}, next, res);
+            }
+            var filePath = util.getFileLocation(items[0].owner, items[0]._id);
+            util.deleteFolderRecursive(filePath);
+            var append = '';
+            var zip_type = 0;
+            if (mediaType.ext === 'zip') {
+                append = '_zip';
+                zip_type = 1;
+                if (fs.existsSync(filePath + '_zip_c')) {
+                    append =  '_zip_c';
+                }
+            } else if (mediaType.ext === '7z') {
+                append = '_7z';
+                zip_type = 3;
+                if (fs.existsSync(filePath + '_7z_c')) {
+                    append =  '_7z_c';
+                }
+            } else {
+                append = '.1.rar';
+                zip_type = 2;
+            }
+            fs.rename(filePath + append, filePath, function(err) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                mediaHandleTool.editFile(id, mime.changeExt(items[0].name, 'book.' + mediaType.ext), req.user, next, function(err, result) {
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
+                    sendWs({type: 'file', data: result.id}, result.adultonly);
+                    delete result.adultonly;
+                    res.json(result);
+                    var del_arr = [];
+                    if (fs.existsSync(filePath + '_zip_c')) {
+                        del_arr.push(filePath + '_zip_c');
+                    } else if(fs.existsSync(filePath + '_zip')) {
+                        del_arr.push(filePath + '_zip');
+                    } else if (fs.existsSync(filePath + '_7z_c')) {
+                        del_arr.push(filePath + '_7z_c');
+                    } else if(fs.existsSync(filePath + '_7z')) {
+                        del_arr.push(filePath + '_7z');
+                    } else {
+                        var rIndex = 2;
+                        while (fs.existsSync(filePath + '.' + rIndex + '.rar')) {
+                            del_arr.push(filePath + '.' + rIndex + '.rar');
+                            rIndex++;
+                        }
+                    }
+                    console.log(del_arr);
+                    if (del_arr.length > 0) {
+                        recur_zip_del1(0);
+                    }
+                    function recur_zip_del1(index) {
+                        fs.unlink(del_arr[index], function (err) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            index++;
+                            if (index < del_arr.length) {
+                                setTimeout(function(){
+                                    recur_zip_del1(index);
+                                }, 0);
+                            }
+                        });
+                    }
+                }, 1);
+            });
+        });
+    });
+});
+
+app.get('/api/torrent/copy/:uid/:index(\\d+)', function(req, res, next) {
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log("torrent copy");
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        var id = util.isValidString(req.params.uid, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        var index = Number(req.params.index);
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items){
+            if (err) {
+                util.handleError(err, next, res);
+            }
+            if (items.length === 0) {
+                util.handleError({hoerror: 2, message: 'torrent can not be found!!!'}, next, res);
+            }
+            if (items[0].status !== 9) {
+                util.handleError({hoerror: 2, message: 'file type error!!!'}, next, res);
+            }
+            if (!items[0].playList[index]) {
+                util.handleError({hoerror: 2, message: 'torrent index can not be found!!!'}, next, res);
+            }
+            var origName = path.basename(items[0].playList[index]);
+            var origPath = util.getFileLocation(items[0].owner, items[0]._id);
+            origPath = origPath + '/' + index + '_complete';
+            if (!fs.existsSync(origPath)) {
+                util.handleError({hoerror: 2, message: 'please download first!!!'}, next, res);
+            }
+            var oOID = mongo.objectID();
+            var filePath = util.getFileLocation(req.user._id, oOID);
+            var folderPath = path.dirname(filePath);
+            if (!fs.existsSync(folderPath)) {
+                mkdirp(folderPath, function(err) {
+                    if(err) {
+                        console.log(filePath);
+                        util.handleError(err, next, res);
+                    }
+                    var stream = fs.createReadStream(origPath);
+                    stream.on('error', function(err){
+                        console.log('save file error!!!');
+                        util.handleError(err, next, res);
+                    });
+                    stream.on('close', streamClose);
+                    stream.pipe(fs.createWriteStream(filePath));
+                });
+            } else {
+                var stream = fs.createReadStream(origPath);
+                stream.on('error', function(err){
+                    console.log('save file error!!!');
+                    util.handleError(err, next, res);
+                });
+                stream.on('close', streamClose);
+                stream.pipe(fs.createWriteStream(filePath));
+            }
+            function streamClose(filename, tag_arr, opt_arr, db_obj){
+                var name = util.toValidName(origName);
+                if (filename) {
+                    name = util.toValidName(filename);
+                }
+                if (tagTool.isDefaultTag(tagTool.normalizeTag(name))) {
+                    name = mime.addPost(name, '1');
+                }
+                var utime = Math.round(new Date().getTime() / 1000);
+                var oUser_id = req.user._id;
+                var data = {};
+                data['_id'] = oOID;
+                data['name'] = name;
+                data['owner'] = oUser_id;
+                data['utime'] = utime;
+                if (db_obj && db_obj['magnet']) {
+                    data['size'] = 0;
+                } else {
+                    data['size'] = fs.statSync(origPath)['size'];
+                }
+                data['count'] = 0;
+                data['first'] = 1;
+                data['recycle'] = 0;
+                if (util.checkAdmin(2 ,req.user) && items[0]['adultonly'] === 1) {
+                    data['adultonly'] = 1;
+                } else {
+                    data['adultonly'] = 0;
+                }
+                data['untag'] = 1;
+                if (db_obj && db_obj['magnet']) {
+                    data['status'] = 9;//media type
+                } else {
+                    data['status'] = 0;//media type
+                }
+                mediaHandleTool.handleTag(filePath, data, name, '', 0, function(err, mediaType, mediaTag, DBdata) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (mediaType.type === 'video') {
+                        var is_preview = true;
+                        var cProcess = avconv(['-i', filePath]);
+                        cProcess.once('exit', function(exitCode, signal, metadata2) {
+                            if (metadata2 && metadata2.input && metadata2.input.stream) {
+                                for (var i in metadata2.input.stream[0]) {
+                                    console.log(metadata2.input.stream[0][i].type);
+                                    console.log(metadata2.input.stream[0][i].codec);
+                                    if (metadata2.input.stream[0][i].type === 'video' && metadata2.input.stream[0][i].codec !== 'h264') {
+                                        is_preview = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (is_preview) {
+                                DBdata['status'] = 3;
+                                if (mediaType.ext === 'mp4') {
+                                    mediaType = false;
+                                    if (fs.existsSync(origPath + '_s.jpg')) {
+                                        var streamJpg = fs.createReadStream(origPath + '_s.jpg');
+                                        streamJpg.on('error', function(err){
+                                            console.log('save jpg error!!!');
+                                            util.handleError(err);
+                                        });
+                                        streamJpg.pipe(fs.createWriteStream(filePath + '_s.jpg'));
+                                    }
+                                }
+                            }
+                            save2DB(mediaType, mediaTag, DBdata);
+                        });
+                    } else {
+                        save2DB(mediaType, mediaTag, DBdata);
+                    }
+                });
+                function save2DB(mediaType, mediaTag, DBdata) {
+                    var normal = tagTool.normalizeTag(name);
+                    if (mediaTag.def.indexOf(normal) === -1) {
+                        mediaTag.def.push(normal);
+                    }
+                    normal = tagTool.normalizeTag(req.user.username);
+                    if (mediaTag.def.indexOf(normal) === -1) {
+                        mediaTag.def.push(normal);
+                    }
+                    if (items[0].tags) {
+                        var del_index = -1;
+                        del_index = items[0].tags.indexOf('壓縮檔');
+                        if (del_index !== -1) {
+                            items[0].tags.splice(del_index, 1);
+                        }
+                        del_index = items[0].tags.indexOf('zip');
+                        if (del_index !== -1) {
+                            items[0].tags.splice(del_index, 1);
+                        }
+                        del_index = items[0].tags.indexOf('播放列表');
+                        if (del_index !== -1) {
+                            items[0].tags.splice(del_index, 1);
+                        }
+                        del_index = items[0].tags.indexOf('playlist');
+                        if (del_index !== -1) {
+                            items[0].tags.splice(del_index, 1);
+                        }
+                        if (tag_arr) {
+                            for (var i in tag_arr) {
+                                if (items[0].tags.indexOf(tag_arr[i]) === -1) {
+                                    items[0].tags.push(tag_arr[i]);
+                                }
+                            }
+                        }
+                        var is_d = false;
+                        var oIndex = -1;
+                        var option_cht = mime.getOptionTag('cht');
+                        var option_eng = mime.getOptionTag('eng');
+                        for (var i in items[0].tags) {
+                            normal = tagTool.normalizeTag(items[0].tags[i]);
+                            is_d = tagTool.isDefaultTag(normal);
+                            if (!is_d) {
+                                if (mediaTag.def.indexOf(normal) === -1) {
+                                    mediaTag.def.push(normal);
+                                    oIndex = option_cht.indexOf(normal);
+                                    if (oIndex !== -1) {
+                                        if (mediaTag.def.indexOf(option_eng[oIndex]) === -1) {
+                                            mediaTag.def.push(option_eng[oIndex]);
+                                        }
+                                    } else {
+                                        oIndex = option_eng.indexOf(normal);
+                                        if (oIndex !== -1) {
+                                            if (mediaTag.def.indexOf(option_cht[oIndex]) === -1) {
+                                                mediaTag.def.push(option_cht[oIndex]);
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (is_d.index === 0) {
+                                    DBdata['adultonly'] = 1;
+                                }
+                            }
+                        }
+                    }
+                    if (opt_arr) {
+                        var is_d = false;
+                        for (var i in opt_arr) {
+                            normal = tagTool.normalizeTag(opt_arr[i]);
+                            is_d = tagTool.isDefaultTag(normal);
+                            if (!is_d) {
+                                if (mediaTag.def.indexOf(normal) === -1 && mediaTag.opt.indexOf(normal) === -1) {
+                                    mediaTag.opt.push(normal);
+                                }
+                            }
+                        }
+                    }
+                    var tags = tagTool.searchTags(req.session);
+                    if (tags) {
+                        var parentList = tags.getArray();
+                        var is_d = false;
+                        for (var i in parentList.cur) {
+                            normal = tagTool.normalizeTag(parentList.cur[i]);
+                            is_d = tagTool.isDefaultTag(normal);
+                            if (!is_d) {
+                                if (mediaTag.def.indexOf(normal) === -1) {
+                                    mediaTag.def.push(normal);
+                                }
+                            } else {
+                                if (is_d.index === 0) {
+                                    DBdata['adultonly'] = 1;
+                                }
+                            }
+                        }
+                        var temp_tag = [];
+                        for (var j in mediaTag.opt) {
+                            normal = tagTool.normalizeTag(mediaTag.opt[j]);
+                            if (!tagTool.isDefaultTag(normal)) {
+                                if (mediaTag.def.indexOf(normal) === -1) {
+                                    temp_tag.push(normal);
+                                }
+                            }
+                        }
+                        mediaTag.opt = temp_tag;
+                    }
+                    DBdata['tags'] = mediaTag.def;
+                    DBdata[oUser_id] = mediaTag.def;
+                    for (var i in db_obj) {
+                        DBdata[i] = db_obj[i];
+                    }
+                    mongo.orig("insert", "storage", DBdata, function(err, item){
+                        if(err) {
+                            util.handleError(err, next, res);
+                        }
+                        console.log(item);
+                        console.log('save end');
+                        sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                        tagTool.getRelativeTag(mediaTag.def[0], req.user, mediaTag.opt, next, function(err, relative) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            var reli = 5;
+                            if (relative.length < reli) {
+                                reli = relative.length;
+                            }
+                            if (util.checkAdmin(2 ,req.user)) {
+                                if (item[0].adultonly === 1) {
+                                    mediaTag.def.push('18+');
+                                } else {
+                                    mediaTag.opt.push('18+');
+                                }
+                            }
+                            if (item[0].first === 1) {
+                                mediaTag.def.push('first item');
+                            } else {
+                                mediaTag.opt.push('first item');
+                            }
+                            var normal = '';
+                            for (var i = 0; i < reli; i++) {
+                                normal = tagTool.normalizeTag(relative[i]);
+                                if (!tagTool.isDefaultTag(normal)) {
+                                    if (mediaTag.def.indexOf(normal) === -1 && mediaTag.opt.indexOf(normal) === -1) {
+                                        mediaTag.opt.push(normal);
+                                    }
+                                }
+                            }
+                            res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                            mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
+                                sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                                if(err) {
+                                    util.handleError(err);
+                                }
+                                console.log('transcode done');
+                                console.log(new Date());
+                            });
+                        });
+                    });
+                }
+            };
+        });
+    });
+});
+
 app.get('/api/torrent/all/download/:uid', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("torrent all downlad");

@@ -557,7 +557,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.exactlyList = [];
     $scope.searchBlur = false;
     $scope.multiSearch = false;
-    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, save2local: false, save2drive: false, recover: false, delMedia: false, allDownload: false, join: false, title: '', item: null};
+    $scope.toolList = {download: false, edit: false, upload: false, searchSub: false, del: false, dir: false, subscription: false, save2local: false, save2drive: false, recover: false, delMedia: false, allDownload: false, join: false, convert: false, title: '', item: null};
     $scope.dropdown.item = false;
     $scope.tagNew = false;
     $scope.tagNewFocus = false;
@@ -1677,6 +1677,44 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
         return false;
     }
 
+    $scope.fileConvert = function() {
+        var this_obj = this;
+        var Info = $resource(this.main_url + '/api/torrent/convert/' + this.toolList.item.id, {}, {
+            'convertFile': { method:'GET', withCredentials: true }
+        });
+        Info.convertFile({}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                if (result.name) {
+                    if (this_obj.feedback.run) {
+                        if (this_obj.feedback.uid === result.id) {
+                            showFeedback(result);
+                        } else {
+                            var index = arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id');
+                            if (index === -1) {
+                                this_obj.feedback.queue.push(result);
+                            } else {
+                                this_obj.feedback.queue.splice(index, 1, result);
+                            }
+                        }
+                    } else {
+                        this_obj.feedback.run = true;
+                        showFeedback(result);
+                    }
+                }
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
+    }
+
     $scope.fileJoin = function() {
         if (this.selectList.length > 0) {
             var uids = [];
@@ -1720,7 +1758,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    item.name = result.name;
                     this_obj.itemNameNew = false;
                     if (result.name) {
                         if (this_obj.feedback.run) {
@@ -2161,7 +2198,6 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     }
 
     $scope.downloadFile = function (id){
-        console.log(123);
         if (!id) {
             id = this.toolList.item.id;
         }
@@ -2242,6 +2278,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.save2drive = false;
             this.$parent.toolList.allDownload = false;
             this.$parent.toolList.join = false;
+            this.$parent.toolList.convert = false;
             confirm_str = item;
         } else {
             if (item.status === 7 || item.status === 8 || item.status === 9 || item.thumb) {
@@ -2256,8 +2293,10 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             }
             if (item.status === 9) {
                 this.$parent.toolList.allDownload = true;
+                this.$parent.toolList.convert = true;
             } else {
                 this.$parent.toolList.allDownload = false;
+                this.$parent.toolList.convert = false;
             }
             if (item.status === 0 || item.status === 1 || item.status === 9) {
                 this.$parent.toolList.join = true;
@@ -4619,8 +4658,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     }
                                     this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                     if (type === 'doc') {
-                                        this_obj[type].iframeOffset = null;
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
+                                        if (this_obj[type].list.length === 1) {
+                                            $scope.setDoc();
+                                        } else {
+                                            this_obj[type].iframeOffset = null;
+                                        }
                                     } else if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
                                         if (this_obj[type].playlist && this_obj[type].playlist.obj.pre_url) {
                                             this_obj[type].src = this_obj[type].playlist.obj.pre_url + this_obj[type].playlist.obj.pre_obj[Math.round(this_obj[type].playlist.obj.index*1000)%1000 -1];
@@ -4895,7 +4938,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     }
                                     this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                                     if (type === 'doc') {
-                                        this_obj[type].iframeOffset = null;
+                                        if (this_obj[type].list.length === 1) {
+                                            $scope.setDoc();
+                                        } else {
+                                            this_obj[type].iframeOffset = null;
+                                        }
                                         this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                                     } else if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
                                         if (this_obj[type].playlist && this_obj[type].playlist.obj.pre_url) {
@@ -5130,7 +5177,11 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         }
                         this_obj[type].maxId = this_obj[type].list[this_obj[type].index + this_obj[type].back].present;
                         if (type === 'doc') {
-                            this_obj[type].iframeOffset = null;
+                            if (this_obj[type].list.length === 1) {
+                                $scope.setDoc();
+                            } else {
+                                this_obj[type].iframeOffset = null;
+                            }
                             this_obj[type].src = $scope.main_url + '/' + preType + '/' + this_obj[type].list[this_obj[type].index + this_obj[type].back].id + '/doc';
                         } else if (this_obj[type].list[this_obj[type].index + this_obj[type].back].thumb) {
                             if (this_obj[type].playlist && this_obj[type].playlist.obj.pre_url) {
@@ -5303,6 +5354,12 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     $scope.$broadcast('subtitle', 'uploadT');
                 }, function () {
                 });
+            } else if (newVal === 3) {
+                $scope.mediaToggle('torrent');
+                openModal("確定要把此子項目複製成單項?").then(function () {
+                    $scope.copy2local($scope.torrent.id, $scope.torrent.index);
+                }, function () {
+                });
             }
             $scope.torrent.option = 0;
         }
@@ -5371,7 +5428,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             }
         }
     }
-    $scope.setDoc = function(iframeWindow, iframeOffset, textNode) {
+    $scope.setDoc = function(iframeWindow, iframeOffset) {
         this.doc.win = typeof iframeWindow !== 'undefined' ? iframeWindow : this.doc.win;
         this.doc.iframeOffset = typeof iframeOffset !== 'undefined' ? iframeOffset : this.doc.iframeOffset;
         if (this.doc.win) {
@@ -5380,6 +5437,41 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         if (this.doc.iframeOffset) {
             this.doc.maxId = this.doc.iframeOffset.length-1;
         }
+    }
+    $scope.copy2local = function(id, index) {
+        var torrentApi = $resource(this.main_url + '/api/torrent/copy/' + id + '/' + index, {}, {
+            'copy': { method:'GET', withCredentials: true }
+        });
+        torrentApi.copy({}, function (result) {
+            if (result.loginOK) {
+                $window.location.href = $location.path();
+            } else {
+                if (result.id) {
+                    if ($scope.feedback.run) {
+                        if ($scope.feedback.uid === result.id) {
+                            showFeedback(result);
+                        } else {
+                            if (arrayObjectIndexOf($scope.feedback.queue, result.id, 'id') === -1) {
+                                $scope.feedback.queue.push(result);
+                            } else {
+                                $scope.feedback.queue.splice(index, 1, result);
+                            }
+                        }
+                    } else {
+                        $scope.feedback.run = true;
+                        showFeedback(result);
+                    }
+                }
+            }
+        }, function(errorResult) {
+            if (errorResult.status === 400) {
+                addAlert(errorResult.data);
+            } else if (errorResult.status === 403) {
+                addAlert('unknown API!!!');
+            } else if (errorResult.status === 401) {
+                $window.location.href = $location.path();
+            }
+        });
     }
     $scope.mediaToggle = function(type, open) {
         switch (type) {

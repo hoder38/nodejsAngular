@@ -252,6 +252,9 @@
             <li ng-show="toolList.del">
                 <a confirmed-click="fileDel()" ng-confirm-click="Would you sure to delete this file?" href="#">delete</a>
             </li>
+            <li ng-show="toolList.convert">
+                <a confirmed-click="fileConvert()" ng-confirm-click="Would you sure to convert this zip to image book?" href="#">convert</a>
+            </li>
             <li ng-show="toolList.join">
                 <a confirmed-click="fileJoin()" ng-confirm-click="Would you sure to join the split zips?" href="#">join</a>
             </li>
