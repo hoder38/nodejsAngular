@@ -867,7 +867,7 @@ module.exports = function(sendWs) {
                         if (items[0].tags.indexOf(result.tag) === -1) {
                             items[0].tags.splice(0, 0, result.tag);
                         }
-                        if (items[0][user._id.toString()].indexOf(result.tag) === -1) {
+                        if (items[0][user._id.toString()] && items[0][user._id.toString()].indexOf(result.tag) === -1) {
                             items[0][user._id.toString()].splice(0, 0, result.tag);
                         }
                         var filePath = util.getFileLocation(items[0].owner, items[0]._id);
@@ -905,13 +905,20 @@ module.exports = function(sendWs) {
                                 if(err) {
                                     util.handleError(err, next, callback);
                                 }
-                                var result_tag = mediaTag.def.concat(items[0][user._id.toString()]);
-                                var index_tag = 0;
-                                for (var i in result_tag) {
-                                    index_tag = items[0].tags.indexOf(result_tag[i]);
-                                    if (index_tag !== -1) {
-                                        items[0].tags.splice(index_tag, 1);
+                                var result_tag = [];
+                                var others_tag = [];
+                                if (!util.checkAdmin(1, user)) {
+                                    result_tag = mediaTag.def.concat(items[0][user._id.toString()]);
+                                    var index_tag = 0;
+                                    for (var i in result_tag) {
+                                        index_tag = items[0].tags.indexOf(result_tag[i]);
+                                        if (index_tag !== -1) {
+                                            items[0].tags.splice(index_tag, 1);
+                                        }
                                     }
+                                    others_tag = items[0].tags;
+                                } else {
+                                    result_tag = mediaTag.def.concat(items[0].tags);
                                 }
                                 tagTool.getRelativeTag(result_tag[0], user, mediaTag.opt, next, function(err, relative) {
                                     if (err) {
@@ -943,9 +950,8 @@ module.exports = function(sendWs) {
                                         }
                                     }
                                     setTimeout(function(){
-                                        callback(null, {id: id, name: name, select: result_tag, option: mediaTag.opt, other: items[0].tags, adultonly: items[0].adultonly});
+                                        callback(null, {id: id, name: name, select: result_tag, option: mediaTag.opt, other: others_tag, adultonly: items[0].adultonly});
                                     }, 0);
-                                    console.log(mediaType);
                                     this_obj.handleMediaUpload(mediaType, filePath, id, name, items[0].size, user, function(err) {
                                         //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                                         if(err) {

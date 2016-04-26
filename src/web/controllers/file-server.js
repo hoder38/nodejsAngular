@@ -706,6 +706,7 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                                     }
                                 }
                             }
+                            mediaTag.opt = supplyTag(mediaTag.def, mediaTag.opt);
                             res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
                             mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
                                 sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
@@ -1748,6 +1749,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                 }
                             }
                             if (DBdata['untag']) {
+                                mediaTag.opt = supplyTag(mediaTag.def, mediaTag.opt);
                                 res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
                             } else {
                                 res.json({id: item[0]._id});
@@ -1882,6 +1884,7 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
                             }
                         }
                     }
+                    mediaTag.opt = supplyTag(mediaTag.def, mediaTag.opt);
                     res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
                 });
             });
@@ -4003,6 +4006,7 @@ app.get('/api/torrent/copy/:uid/:index(\\d+)', function(req, res, next) {
                                     }
                                 }
                             }
+                            mediaTag.opt = supplyTag(mediaTag.def, mediaTag.opt);
                             res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
                             mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
                                 sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
@@ -5640,6 +5644,7 @@ app.put('/api/editFile/:uid', function(req, res, next){
             }
             sendWs({type: 'file', data: result.id}, result.adultonly);
             delete result.adultonly;
+            result.option = supplyTag(result.select, result.option, result.other);
             res.json(result);
         });
     });
@@ -6385,6 +6390,40 @@ function checkLogin(req, res, next, callback) {
     }
 }
 
+function supplyTag(tags, retTags, otherTags) {
+    otherTags = typeof otherTags !== 'undefined' ? otherTags : [];
+    if (tags.indexOf('18+') !== -1) {
+        var option_cht = mime.getOptionTag('adult');
+        for (var i in option_cht) {
+            if (tags.indexOf(option_cht[i]) === -1 && retTags.indexOf(option_cht[i]) === -1 && otherTags.indexOf(option_cht[i]) === -1) {
+                retTags.push(option_cht[i]);
+            }
+        }
+    } else if (tags.indexOf('game') !== -1 || tags.indexOf('遊戲') !== -1) {
+        var option_cht = mime.getOptionTag('gamech');
+        for (var i in option_cht) {
+            if (tags.indexOf(option_cht[i]) === -1 && retTags.indexOf(option_cht[i]) === -1 && otherTags.indexOf(option_cht[i]) === -1) {
+                retTags.push(option_cht[i]);
+            }
+        }
+    } else if (tags.indexOf('audio') !== -1 || tags.indexOf('音頻') !== -1) {
+        var option_cht = mime.getOptionTag('music');
+        for (var i in option_cht) {
+            if (tags.indexOf(option_cht[i]) === -1 && retTags.indexOf(option_cht[i]) === -1 && otherTags.indexOf(option_cht[i]) === -1) {
+                retTags.push(option_cht[i]);
+            }
+        }
+    } else {
+        var option_cht = mime.getOptionTag('cht');
+        for (var i in option_cht) {
+            if (tags.indexOf(option_cht[i]) === -1 && retTags.indexOf(option_cht[i]) === -1 && otherTags.indexOf(option_cht[i]) === -1) {
+                retTags.push(option_cht[i]);
+            }
+        }
+    }
+    return retTags;
+}
+
 //user_id是改不是owner的時候用
 function getFeedback(item, callback, user) {
     var filePath = util.getFileLocation(item.owner, item._id);
@@ -6410,35 +6449,7 @@ function getFeedback(item, callback, user) {
                 temp_tag.push(mediaTag.opt[i]);
             }
         }
-        if (item.tags.indexOf('18+') !== -1) {
-            var option_cht = mime.getOptionTag('adult');
-            for (var i in option_cht) {
-                if (item.tags.indexOf(option_cht[i]) === -1 && temp_tag.indexOf(option_cht[i]) === -1) {
-                    temp_tag.push(option_cht[i]);
-                }
-            }
-        } else if (item.tags.indexOf('game') !== -1 || item.tags.indexOf('遊戲') !== -1) {
-            var option_cht = mime.getOptionTag('gamech');
-            for (var i in option_cht) {
-                if (item.tags.indexOf(option_cht[i]) === -1 && temp_tag.indexOf(option_cht[i]) === -1) {
-                    temp_tag.push(option_cht[i]);
-                }
-            }
-        } else if (item.tags.indexOf('audio') !== -1 || item.tags.indexOf('音頻') !== -1) {
-            var option_cht = mime.getOptionTag('music');
-            for (var i in option_cht) {
-                if (item.tags.indexOf(option_cht[i]) === -1 && temp_tag.indexOf(option_cht[i]) === -1) {
-                    temp_tag.push(option_cht[i]);
-                }
-            }
-        } else {
-            var option_cht = mime.getOptionTag('cht');
-            for (var i in option_cht) {
-                if (item.tags.indexOf(option_cht[i]) === -1 && temp_tag.indexOf(option_cht[i]) === -1) {
-                    temp_tag.push(option_cht[i]);
-                }
-            }
-        }
+        temp_tag = supplyTag(item.tags, temp_tag);
         if (!util.checkAdmin(1, user)) {
             var index_tag = -1;
             for (var i in item[user._id.toString()]) {
