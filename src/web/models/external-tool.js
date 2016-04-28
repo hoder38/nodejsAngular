@@ -4427,12 +4427,12 @@ module.exports = {
                             }
                         }
                     } else {
-                        raw_list = raw_data.match(/class="e-item("|-l")[\s\S]+?a href="\/video\/[^>]+/g);
+                        raw_list = raw_data.match(/class="e-item("|-l")[\s\S]+?a href=".*?\/video\/[^>]+/g);
                         if (!raw_list) {
                             util.handleError({hoerror: 2, message: 'empty list'}, callback2, callback2);
                         }
                         for (var i in raw_list) {
-                            list_match = raw_list[i].match(/a href="\/video\/(av\d+)\/(index_(\d+)\.html)?.*?title="([^"]*)/);
+                            list_match = raw_list[i].match(/a href=".*?\/video\/(av\d+)\/(index_(\d+)\.html)?.*?title="([^"]*)/);
                             if (list_match) {
                                 if (list_match[3]) {
                                     list.splice(0, 0, {id: 'bil_' + list_match[1] + '_' + list_match[3], name: list_match[4]});
