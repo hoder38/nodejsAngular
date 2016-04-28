@@ -10095,7 +10095,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                 addAlert('email is not vaild!!!');
             }
             if (this.isNew) {
-                if (!isValidString(this.newPassword, 'pwd') || !isValidString(this.userConPassword, 'pwd')) {
+                if (!isValidString(this.newPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd')) {
                     addAlert('password not vaild!!!');
                 } else if (this.newPassword !== this.userConPassword) {
                     addAlert('password is not equal!!!');
@@ -10105,7 +10105,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                     this.newRow();
                 }
             } else {
-                if (this.newPassword && (!isValidString(this.newPassword, 'pwd') || !isValidString(this.userConPassword, 'pwd'))) {
+                if (this.newPassword && (!isValidString(this.newPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd'))) {
                     addAlert('password not vaild!!!');
                 } else if (this.newPassword && (this.newPassword !== this.userConPassword)) {
                     addAlert('password is not equal!!!');
