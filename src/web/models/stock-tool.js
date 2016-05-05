@@ -2396,7 +2396,7 @@ module.exports = {
                                     new_sales_data[year] = {};
                                 }
                                 new_sales_data[year][month_str] = {num: sales_num[sales_num.length - 1], per: sales_per[sales_per.length - 1], pre: sales_pre[sales_pre.length - 1]};
-                            } else if (data.length > 200) {
+                            } else if (data.length > 400) {
                                 util.handleError({hoerror: 2, message: "稍後再查詢!!"}, callback, callback);
                             }
                             rest_predict();
