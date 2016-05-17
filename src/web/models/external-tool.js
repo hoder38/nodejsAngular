@@ -1101,11 +1101,19 @@ module.exports = {
                     }
                     docDate = monthNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
                     console.log(docDate);
+                    var docDate1 = monthNames[date.getMonth()] + ' ';
+                    if (date.getDate() < 10) {
+                        docDate1 = docDate1 + '0' + date.getDate();
+                    } else {
+                        docDate1 = docDate1 + date.getDate();
+                    }
+                    docDate1 = docDate1 + ', ' + date.getFullYear();
+                    console.log(docDate1);
                     raw_list = raw_data.match(/class="dates">Release Date:  ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
                     if (!raw_list) {
                         util.handleError({hoerror: 2, message: 'cannot find sca latest'}, callback, callback);
                     }
-                    if (docDate === raw_list[1]) {
+                    if (docDate === raw_list[1] || docDate1 === raw_list[1]) {
                         data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
                         raw_list = raw_data.match(/Current Release[\s]*<a href="([^"]+)/i);
                         if (!raw_list) {
@@ -1128,11 +1136,11 @@ module.exports = {
                             err.hoerror = 2;
                             util.handleError(err, callback, callback);
                         }
-                        raw_list = raw_data.match(/">Last update: ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
+                        raw_list = raw_data.match(/">Last update:[\s]+([a-zA-Z]+ \d\d?, \d\d\d\d)/);
                         if (!raw_list) {
                             util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
                         }
-                        if (docDate === raw_list[1]) {
+                        if (docDate === raw_list[1] || docDate1 === raw_list[1]) {
                             data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
                             raw_list = raw_data.match(/Current Release[\s]*<a href="([^"]+)/i);
                             if (!raw_list) {

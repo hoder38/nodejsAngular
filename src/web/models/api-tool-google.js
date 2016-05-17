@@ -39,6 +39,10 @@ var api_pool = [];
 
 var api_ing = 0;
 
+var api_duration = 0;
+
+var api_expire = 86400;
+
 var oath_waiting = 60000;
 
 //index 10 CAoQAA
@@ -1149,6 +1153,20 @@ var exports = module.exports = {
         console.log(api_ing);
         if (api_ing >= config_glb.api_limit) {
             console.log('reach limit');
+            var now = new Date().getTime()/1000;
+            if (!api_duration) {
+                api_duration = now;
+            } else if ((now - api_duration) > api_expire) {
+                var item = api_pool.splice(0, 1)[0];
+                if (item) {
+                    console.log('expire go queue');
+                    console.log(item.fun_name);
+                    console.log(item.fun_param);
+                    setTimeout(function(){
+                        this_obj[item.fun_name].apply(this_obj, item.fun_param);
+                    }, 0);
+                }
+            }
             api_pool.push({fun_name: name, fun_param: param});
             return false;
         } else {
@@ -1164,6 +1182,7 @@ var exports = module.exports = {
         if (api_ing > 0) {
             api_ing--;
         }
+        api_duration = 0;
         var item = api_pool.splice(0, 1)[0];
         if (item) {
             console.log('go queue');
