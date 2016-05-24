@@ -3058,7 +3058,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     }
 
     $scope.sendPW = function() {
-        if (this.userPW && !isValidString(this.userPW, 'zippwd')) {
+        if (this.userPW && !isValidString(this.userPW, 'altpwd')) {
             addAlert('user password is not vaild!!!');
         } else {
             this.pwCallback.apply(this.pwObj, this.pwArgs);

@@ -57,7 +57,7 @@ function isValidString(str, type)
     }
 
     //較寬鬆
-    if (type === 'zippwd')
+    if (type === 'altpwd')
     {
         //if (str.search(/^(?=.*\d)(?=.*[a-zA-Z]).{6,20}$/) != -1)
         if (str.search(/^[0-9a-zA-Z\.!@#$%\u4e00-\u9fa5]{2,30}$/) != -1)

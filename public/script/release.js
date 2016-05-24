@@ -4610,7 +4610,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     }
 
     $scope.sendPW = function() {
-        if (this.userPW && !isValidString(this.userPW, 'zippwd')) {
+        if (this.userPW && !isValidString(this.userPW, 'altpwd')) {
             addAlert('user password is not vaild!!!');
         } else {
             this.pwCallback.apply(this.pwObj, this.pwArgs);
@@ -10095,7 +10095,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                 addAlert('email is not vaild!!!');
             }
             if (this.isNew) {
-                if (!isValidString(this.newPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd')) {
+                if (!isValidString(this.newPassword, 'altpwd') || !isValidString(this.userConPassword, 'altpwd')) {
                     addAlert('password not vaild!!!');
                 } else if (this.newPassword !== this.userConPassword) {
                     addAlert('password is not equal!!!');
@@ -10105,7 +10105,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
                     this.newRow();
                 }
             } else {
-                if (this.newPassword && (!isValidString(this.newPassword, 'passwd') || !isValidString(this.userConPassword, 'passwd'))) {
+                if (this.newPassword && (!isValidString(this.newPassword, 'altpwd') || !isValidString(this.userConPassword, 'altpwd'))) {
                     addAlert('password not vaild!!!');
                 } else if (this.newPassword && (this.newPassword !== this.userConPassword)) {
                     addAlert('password is not equal!!!');
@@ -10602,7 +10602,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     }
 
     //較寬鬆
-    if (type === 'zippwd')
+    if (type === 'altpwd')
     {
         //if (str.search(/^(?=.*\d)(?=.*[a-zA-Z]).{6,20}$/) != -1)
         if (str.search(/^[0-9a-zA-Z\.!@#$%\u4e00-\u9fa5]{2,30}$/) != -1)
