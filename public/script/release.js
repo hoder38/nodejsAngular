@@ -4610,7 +4610,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     }
 
     $scope.sendPW = function() {
-        if (this.userPW && !isValidString(this.userPW, 'passwd')) {
+        if (this.userPW && !isValidString(this.userPW, 'zippwd')) {
             addAlert('user password is not vaild!!!');
         } else {
             this.pwCallback.apply(this.pwObj, this.pwArgs);
@@ -10592,11 +10592,20 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         }
     }
 
-    //較寬鬆
     if (type === 'passwd')
     {
         //if (str.search(/^(?=.*\d)(?=.*[a-zA-Z]).{6,20}$/) != -1)
-        if (str.search(/^[0-9a-zA-Z\.!@#$%]{2,20}$/) != -1)
+        if (str.search(/^[0-9a-zA-Z!@#$%]{2,30}$/) != -1)
+        {
+            return true;
+        }
+    }
+
+    //較寬鬆
+    if (type === 'zippwd')
+    {
+        //if (str.search(/^(?=.*\d)(?=.*[a-zA-Z]).{6,20}$/) != -1)
+        if (str.search(/^[0-9a-zA-Z\.!@#$%]{2,30}\x00-\x7F$/) != -1)
         {
             return true;
         }
