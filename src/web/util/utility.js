@@ -96,12 +96,12 @@ module.exports = {
                     }
                     break;
                 case 'passwd':
-                    if (str.match(/^[0-9a-zA-Z!@#$%]{6,20}$/)) {
+                    if (str.match(/^[0-9a-zA-Z\.!@#$%]{6,20}$/)) {
                         return str;
                     }
                     break;
                 case 'altpwd':
-                    if (str.match(/^[0-9a-zA-Z!@#$%]{2,30}$/)) {
+                    if (str.match(/^[0-9a-zA-Z\.!@#$%]{2,30}$/)) {
                         return str;
                     }
                     break;
