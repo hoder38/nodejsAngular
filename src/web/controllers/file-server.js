@@ -4876,6 +4876,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                             cmdline = '7za x ' + filePath + '_7z_c -o' + realPath + ' "' + filename.replace(/"/g, '\\"') + '"';
                         }
                     }
+                    console.log(cmdline);
                     if (fs.existsSync(realPath + '/' + filename)) {
                         fs.unlink(realPath + '/' + filename, function (err) {
                             if (err) {
@@ -4885,7 +4886,6 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                             } else {
                                 child_process.exec(cmdline, function (err, output) {
                                     if (err) {
-                                        console.log(cmdline);
                                         sendWs({type: user.username, zip: id, data: 'zip fail: ' + err.message}, 0);
                                         util.handleError(err);
                                         zip_del();
