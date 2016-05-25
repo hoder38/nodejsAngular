@@ -591,22 +591,70 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             addAlert('Filter tag is not vaild!!!');
             return false;
         }
-        var condition = this.filterCondition.match(/^(per|yield)([<>]\d+)\s*((per|yield)([<>]\d+))?$/);
+        var condition = this.filterCondition.match(/^(per|yield|p|s|m)([<>]\-?\d+\.?\d*)\s*((per|yield|p|s|m)([<>]\-?\d+\.?\d*))?\s*((per|yield|p|s|m)([<>]\-?\d+\.?\d*))?\s*((per|yield|p|s|m)([<>]\-?\d+\.?\d*))?\s*((per|yield|p|s|m)([<>]\-?\d+\.?\d*))?$/);
         if (!condition) {
             addAlert('Filter condition is not vaild!!!');
             return false;
         }
         var per = '';
         var yield = '';
+        var pp = '';
+        var ss = '';
+        var mm = '';
         if (condition[1] === 'per') {
             per = condition[2];
         } else if (condition[1] === 'yield') {
             yield = condition[2];
+        } else if (condition[1] === 'p') {
+            pp = condition[2];
+        } else if (condition[1] === 's') {
+            ss = condition[2];
+        } else if (condition[1] === 'm') {
+            mm = condition[2];
         }
         if (condition[4] === 'per') {
             per = condition[5];
         } else if (condition[4] === 'yield') {
             yield = condition[5];
+        } else if (condition[4] === 'p') {
+            pp = condition[5];
+        } else if (condition[4] === 's') {
+            ss = condition[5];
+        } else if (condition[4] === 'm') {
+            mm = condition[5];
+        }
+        if (condition[7] === 'per') {
+            per = condition[8];
+        } else if (condition[7] === 'yield') {
+            yield = condition[8];
+        } else if (condition[7] === 'p') {
+            pp = condition[8];
+        } else if (condition[7] === 's') {
+            ss = condition[8];
+        } else if (condition[7] === 'm') {
+            mm = condition[8];
+        }
+        if (condition[10] === 'per') {
+            per = condition[11];
+        } else if (condition[10] === 'yield') {
+            yield = condition[11];
+        } else if (condition[10] === 'p') {
+            pp = condition[11];
+        } else if (condition[10] === 's') {
+            ss = condition[11];
+        } else if (condition[10] === 'm') {
+            mm = condition[11];
+        }
+        if (condition[13] === 'per') {
+            per = condition[14];
+        } else if (condition[13] === 'yield') {
+            yield = condition[14];
+        } else if (condition[13] === 'p') {
+            pp = condition[14];
+        } else if (condition[13] === 's') {
+            ss = condition[14];
+        } else if (condition[13] === 'm') {
+            mm = condition[14];
         }
         var filterLimit = 100;
         if (this.filterLimit && !this.filterLimit.match(/^\d+$/)) {
@@ -617,8 +665,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             filterLimit = Number(this.filterLimit);
         }
         this.filterStock = false;
-        var stockApi = $resource('/api/stock/filter/' + this.filterTag, {}, {
-            'filter': { method:'PUT' }
+        var stockApi = $resource($scope.main_url + '/api/stock/filter/' + this.filterTag, {}, {
+            'filter': { method:'PUT', withCredentials: true }
         });
         var filter = {limit: filterLimit};
         if (per) {
@@ -626,6 +674,15 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
         }
         if (yield) {
             filter['yield'] = yield;
+        }
+        if (pp) {
+            filter['p'] = pp;
+        }
+        if (ss) {
+            filter['s'] = ss;
+        }
+        if (mm) {
+            filter['m'] = mm;
         }
         stockApi.filter(filter, function (result) {
             if (result.loginOK) {
