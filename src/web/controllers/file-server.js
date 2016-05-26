@@ -56,6 +56,8 @@ var media_interval = 7200000;
 
 var torrent_duration = 172800000;
 
+var zip_duration = 21600000;
+
 var media_time = 0;
 
 var torrent_pool = [];
@@ -769,6 +771,9 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     shortTorrent = shortTorrent[0];
                     if (shortTorrent === 'magnet:stop') {
                         queueTorrent('stop', req.user);
+                        res.json({stop: true});
+                    } else if(shortTorrent === 'magnet:stopzip') {
+                        queueTorrent('stop', req.user, null, true);
                         res.json({stop: true});
                     } else {
                         var torrentHash = shortTorrent.match(/[^:]+$/);
@@ -4350,7 +4355,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                     if (is_run) {
                         zip_pool.push({index: fileIndex, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, name: pType, type: zip_type, pwd: pwd, run: false});
                     } else {
-                        zip_pool.push({index: fileIndex, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, name: pType, type: zip_type, pwd: pwd, run: true});
+                        zip_pool.push({index: fileIndex, user: user, time: Math.round(new Date().getTime() / 1000), start: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, name: pType, type: zip_type, pwd: pwd, run: true});
                         startZip(fileIndex, pType, zip_type, filePath, pwd);
                     }
                 }
@@ -4446,7 +4451,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                     console.log('new engine');
                     if (!is_queue) {
                         console.log('torrent new');
-                        torrent_pool.push({hash: shortTorrent, index: [fileIndex], engine: engine, user: user, time: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, torrent: torrent});
+                        torrent_pool.push({hash: shortTorrent, index: [fileIndex], engine: engine, user: user, time: Math.round(new Date().getTime() / 1000), start: Math.round(new Date().getTime() / 1000), fileId: id, fileOwner: owner, torrent: torrent});
                         engine.on('ready', function() {
                             console.log('torrent ready');
                             startTorrent(fileIndex, bufferPath, comPath);
@@ -4537,6 +4542,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                 user = zip_pool[choose].user;
                 id = zip_pool[choose].fileId;
                 fileIndex = zip_pool[choose].index;
+                zip_pool[choose].start = Math.round(new Date().getTime() / 1000);
                 var filePath = util.getFileLocation(zip_pool[choose].fileOwner, zip_pool[choose].fileId);
                 bufferPath = filePath + '/' + fileIndex;
                 comPath = bufferPath + '_complete';
@@ -4594,6 +4600,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                         torrent_pool[i].engine = engine;
                         user = torrent_pool[i].user;
                         id = torrent_pool[i].fileId;
+                        torrent_pool[i].start = Math.round(new Date().getTime() / 1000);
                         for (var j in torrent_pool[i].index) {
                             fileIndex = torrent_pool[i].index[j];
                             console.log(fileIndex);
@@ -4621,36 +4628,70 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
         break;
         case 'stop':
         console.log('torrent stop');
-        if (user) {
-            for (var i in torrent_pool) {
-                if (user._id.equals(torrent_pool[i].user._id)) {
-                    console.log('engine stop');
-                    console.log(torrent_pool[i].hash);
-                    if (torrent_pool[i].engine) {
-                        torrent_pool[i].engine.destroy();
-                    }
-                    for (var j in torrent_pool) {
-                        if (torrent_pool[j].hash === torrent_pool[i].hash) {
-                            torrent_pool.splice(j, 1);
-                            break;
+        if (fileIndex) {
+            if (user) {
+                for (var i in zip_pool) {
+                    if (user._id.equals(zip_pool[i].user._id)) {
+                        console.log('zip stop');
+                        console.log(zip_pool[i].fileId);
+                        if (zip_pool[i].run) {
+                            zip_pool[i].chp.kill('SIGKILL');
+                        }
+                        for (var j in zip_pool) {
+                            if (zip_pool[i].fileId.equals(zip_pool[i].fileId)) {
+                                zip_pool.splice(j, 1);
+                                break;
+                            }
                         }
                     }
                 }
-            }
-        } else {
-            if (torrent_pool[torrent].engine) {
-                torrent_pool[torrent].engine.destroy();
-            }
-            for (var j in torrent_pool) {
-                if (torrent_pool[j].hash === torrent_pool[torrent].hash) {
-                    torrent_pool.splice(j, 1);
-                    break;
+            } else {
+                if (zip_pool[torrent].run) {
+                    zip_pool[torrent].chp.kill('SIGKILL');
+                }
+                for (var j in zip_pool) {
+                    if (zip_pool[torrent].fileId.equals(zip_pool[i].fileId)) {
+                        zip_pool.splice(j, 1);
+                        break;
+                    }
                 }
             }
-        }
-        var is_solt = true;
-        while(is_solt) {
-            is_solt = queueTorrent('pop');
+            var is_solt = true;
+            while(is_solt) {
+                is_solt = queueTorrent('pop', true);
+            }
+        } else {
+            if (user) {
+                for (var i in torrent_pool) {
+                    if (user._id.equals(torrent_pool[i].user._id)) {
+                        console.log('engine stop');
+                        console.log(torrent_pool[i].hash);
+                        if (torrent_pool[i].engine) {
+                            torrent_pool[i].engine.destroy();
+                        }
+                        for (var j in torrent_pool) {
+                            if (torrent_pool[j].hash === torrent_pool[i].hash) {
+                                torrent_pool.splice(j, 1);
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (torrent_pool[torrent].engine) {
+                    torrent_pool[torrent].engine.destroy();
+                }
+                for (var j in torrent_pool) {
+                    if (torrent_pool[j].hash === torrent_pool[torrent].hash) {
+                        torrent_pool.splice(j, 1);
+                        break;
+                    }
+                }
+            }
+            var is_solt = true;
+            while(is_solt) {
+                is_solt = queueTorrent('pop');
+            }
         }
         break;
         default:
@@ -4894,7 +4935,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                                 util.handleError(err);
                                 zip_del();
                             } else {
-                                child_process.exec(cmdline, function (err, output) {
+                                var chp = child_process.exec(cmdline, function (err, output) {
                                     if (err) {
                                         sendWs({type: user.username, zip: id, data: 'zip fail: ' + err.message}, 0);
                                         util.handleError(err);
@@ -4913,10 +4954,11 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                                         stream.pipe(fs.createWriteStream(comPath));
                                     }
                                 });
+                                zip_pool[0].chp = chp;
                             }
                         });
                     } else {
-                        child_process.exec(cmdline, function (err, output) {
+                        var chp = child_process.exec(cmdline, function (err, output) {
                             if (err) {
                                 sendWs({type: user.username, zip: id, data: 'zip fail: ' + err.message}, 0);
                                 util.handleError(err);
@@ -4935,6 +4977,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                                 stream.pipe(fs.createWriteStream(comPath));
                             }
                         });
+                        zip_pool[0].chp = chp;
                     }
                 }
             }
@@ -4942,6 +4985,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
         function zip_del(is_success) {
             for (var i in zip_pool) {
                 if (id.equals(zip_pool[i].fileId) && zip_pool[i].index === fileIndex) {
+                    zip_pool[i].chp.kill('SIGKILL');
                     zip_pool.splice(i, 1);
                     break;
                 }
@@ -6912,11 +6956,19 @@ function loopHandleMedia() {
     media_time = new Date().getTime();
     var kick_time = Math.round((media_time - torrent_duration)/ 1000);
     for (var i in torrent_pool) {
-        if (torrent_pool[i].time < kick_time) {
+        if (torrent_pool[i].engine && torrent_pool[i].start < kick_time) {
             queueTorrent('stop', null, i);
             break;
         }
     }
+    var kick_zip_time = Math.round((media_time - zip_duration)/ 1000);
+    for (var i in zip_pool) {
+        if (zip_pool[i].run && zip_pool[i].time < kick_time) {
+            queueTorrent('stop', null, i, true);
+            break;
+        }
+    }
+    zip_duration
     mediaHandleTool.checkMedia(function(err) {
         if (err) {
             util.handleError(err);
