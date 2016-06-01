@@ -3138,18 +3138,21 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                     mok = true;
                     if (pp) {
                         pok = false;
+                        console.log(result.items[i].profitIndex);
                         if ((pp[1] === '>' && result.items[i].profitIndex > pp[2]) || (pp[1] === '<' && result.items[i].profitIndex < pp[2])) {
                             pok = true;
                         }
                     }
                     if (ss) {
                         sok = false;
+                        console.log(result.items[i].safetyIndex);
                         if ((ss[1] === '>' && result.items[i].safetyIndex > ss[2]) || (ss[1] === '<' && result.items[i].safetyIndex < ss[2])) {
                             sok = true;
                         }
                     }
                     if (mm) {
                         mok = false;
+                        console.log(result.items[i].managementIndex);
                         if ((mm[1] === '>' && result.items[i].managementIndex > mm[2]) || (mm[1] === '<' && result.items[i].managementIndex < mm[2])) {
                             mok = true;
                         }
