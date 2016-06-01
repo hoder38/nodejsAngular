@@ -3131,6 +3131,9 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                 var pok = true;
                 var sok = true;
                 var mok = true;
+                console.log(pp);
+                console.log(ss);
+                console.log(mm);
                 for (var i in result.items) {
                     console.log(result.items[i].name);
                     pok = true;
@@ -3157,7 +3160,17 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                             mok = true;
                         }
                     }
+                    if (pok) {
+                        console.log('p');
+                    }
+                    if (sok) {
+                        console.log('s');
+                    }
+                    if (mok) {
+                        console.log('m');
+                    }
                     if (pok && sok && mok) {
+                        console.log('ok');
                         first_stage.push(result.items[i]);
                     }
                 }
