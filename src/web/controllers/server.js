@@ -3131,46 +3131,29 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                 var pok = true;
                 var sok = true;
                 var mok = true;
-                console.log(pp);
-                console.log(ss);
-                console.log(mm);
                 for (var i in result.items) {
-                    console.log(result.items[i].name);
                     pok = true;
                     sok = true;
                     mok = true;
                     if (pp) {
                         pok = false;
-                        console.log(result.items[i].profitIndex);
                         if ((pp[1] === '>' && result.items[i].profitIndex > pp[2]) || (pp[1] === '<' && result.items[i].profitIndex < pp[2])) {
                             pok = true;
                         }
                     }
                     if (ss) {
                         sok = false;
-                        console.log(result.items[i].safetyIndex);
                         if ((ss[1] === '>' && result.items[i].safetyIndex > ss[2]) || (ss[1] === '<' && result.items[i].safetyIndex < ss[2])) {
                             sok = true;
                         }
                     }
                     if (mm) {
                         mok = false;
-                        console.log(result.items[i].managementIndex);
                         if ((mm[1] === '>' && result.items[i].managementIndex > mm[2]) || (mm[1] === '<' && result.items[i].managementIndex < mm[2])) {
                             mok = true;
                         }
                     }
-                    if (pok) {
-                        console.log('p');
-                    }
-                    if (sok) {
-                        console.log('s');
-                    }
-                    if (mok) {
-                        console.log('m');
-                    }
                     if (pok && sok && mok) {
-                        console.log('ok');
                         first_stage.push(result.items[i]);
                     }
                 }
