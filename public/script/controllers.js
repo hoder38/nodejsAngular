@@ -2022,21 +2022,38 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                                             this_obj.$parent[type].src = $scope.main_url + '/torrent/v/' + videoId;
                                         } else {
                                             if (isValidString(this_obj.$parent[type].playlist.obj.magnet, 'url')) {
-                                                var uploadurl = $scope.main_url + '/api/upload/url';
-                                                if (this_obj.$parent.adultonly) {
-                                                    uploadurl = $scope.main_url + '/api/upload/url/1';
-                                                }
-                                                var upApi = $resource(uploadurl, {}, {
-                                                    'uploadUrl': { method:'POST', withCredentials: true }
+                                                var Info = $resource('/api/getPath', {}, {
+                                                    'getPath': { method:'GET' }
                                                 });
-                                                upApi.uploadUrl({url: this_obj.$parent[type].playlist.obj.magnet, hide: true}, function (result) {
+                                                Info.getPath({}, function (result) {
                                                     if (result.loginOK) {
                                                         $window.location.href = $location.path();
                                                     } else {
-                                                        videoId = this_obj.$parent[type].playlist.obj.id = result.id;
-                                                        this_obj.$parent[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                                        removeCue();
-                                                        this_obj.$parent[type].sub = '/subtitle/' + videoId + '/v';
+                                                        var uploadurl = $scope.main_url + '/api/upload/url';
+                                                        if (this_obj.$parent.adultonly) {
+                                                            uploadurl = $scope.main_url + '/api/upload/url/1';
+                                                        }
+                                                        var upApi = $resource(uploadurl, {}, {
+                                                            'uploadUrl': { method:'POST', withCredentials: true }
+                                                        });
+                                                        upApi.uploadUrl({url: this_obj.$parent[type].playlist.obj.magnet, hide: true, path: result.path}, function (result) {
+                                                            if (result.loginOK) {
+                                                                $window.location.href = $location.path();
+                                                            } else {
+                                                                videoId = this_obj.$parent[type].playlist.obj.id = result.id;
+                                                                this_obj.$parent[type].src = $scope.main_url + '/torrent/v/' + videoId;
+                                                                removeCue();
+                                                                this_obj.$parent[type].sub = '/subtitle/' + videoId + '/v';
+                                                            }
+                                                        }, function(errorResult) {
+                                                            if (errorResult.status === 400) {
+                                                                addAlert(errorResult.data);
+                                                            } else if (errorResult.status === 403) {
+                                                                addAlert('unknown API!!!');
+                                                            } else if (errorResult.status === 401) {
+                                                                $window.location.href = $location.path();
+                                                            }
+                                                        });
                                                     }
                                                 }, function(errorResult) {
                                                     if (errorResult.status === 400) {
@@ -3166,7 +3183,15 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         } else {
             item.url = $scope.main_url + '/upload/file';
         }
-        //console.info('onBeforeUploadItem', item);
+        var pXmlhttp = new XMLHttpRequest();
+        pXmlhttp.open("GET", '/api/getPath', false);//the false is for making the call synchronous
+        pXmlhttp.setRequestHeader("Content-type", "application/json");
+        pXmlhttp.onreadystatechange = function() {
+            if (pXmlhttp.readyState == 4 && pXmlhttp.status == 200) {
+                item.formData = [{path: pXmlhttp.responseText}];
+            }
+        }
+        pXmlhttp.send('');
     };
     uploader.onSuccessItem = function(fileItem, response, status, headers) {
         //console.info('onSuccessItem', fileItem, response, status, headers);
@@ -3517,39 +3542,56 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         var this_obj = this;
         this.inputUrl = '';
         if (isValidString(url, 'url')) {
-            var uploadurl = this.main_url + '/api/upload/url';
-            if (this.adultonly) {
-                uploadurl = this.main_url + '/api/upload/url/1';
-            }
-            var api = $resource(uploadurl, {}, {
-                'uploadUrl': { method:'POST', withCredentials: true }
+            var Info = $resource('/api/getPath', {}, {
+                'getPath': { method:'GET' }
             });
-            api.uploadUrl({url: url}, function (result) {
-                this_obj.inputUrl = '';
+            Info.getPath({}, function (result) {
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    if (result.stop) {
-                        addAlert('torrent was stoped');
-                    } else {
-                        if (result.name) {
-                            if (this_obj.feedback.run) {
-                                if (this_obj.feedback.uid === result.id) {
-                                    showFeedback(result);
-                                } else {
-                                    var index = arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id');
-                                    if (index === -1) {
-                                        this_obj.feedback.queue.push(result);
+                    var uploadurl = this_obj.main_url + '/api/upload/url';
+                    if (this_obj.adultonly) {
+                        uploadurl = this_obj.main_url + '/api/upload/url/1';
+                    }
+                    var api = $resource(uploadurl, {}, {
+                        'uploadUrl': { method:'POST', withCredentials: true }
+                    });
+                    api.uploadUrl({url: url, path: result.path}, function (result) {
+                        this_obj.inputUrl = '';
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        } else {
+                            if (result.stop) {
+                                addAlert('torrent was stoped');
+                            } else {
+                                if (result.name) {
+                                    if (this_obj.feedback.run) {
+                                        if (this_obj.feedback.uid === result.id) {
+                                            showFeedback(result);
+                                        } else {
+                                            var index = arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id');
+                                            if (index === -1) {
+                                                this_obj.feedback.queue.push(result);
+                                            } else {
+                                                this_obj.feedback.queue.splice(index, 1, result);
+                                            }
+                                        }
                                     } else {
-                                        this_obj.feedback.queue.splice(index, 1, result);
+                                        this_obj.feedback.run = true;
+                                        showFeedback(result);
                                     }
                                 }
-                            } else {
-                                this_obj.feedback.run = true;
-                                showFeedback(result);
                             }
                         }
-                    }
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
                 }
             }, function(errorResult) {
                 if (errorResult.status === 400) {
@@ -3621,34 +3663,51 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
         var this_obj = this;
         if (isValidString(url, 'url')) {
-            var uploadurl = this.main_url + '/api/upload/url';
-            if (this.adultonly) {
-                uploadurl = this.main_url + '/api/upload/url/1';
-            }
-            var api = $resource(uploadurl, {}, {
-                'uploadUrl': { method:'POST', withCredentials: true }
+            var Info = $resource('/api/getPath', {}, {
+                'getPath': { method:'GET' }
             });
-            api.uploadUrl({url: url}, function (result) {
+            Info.getPath({}, function (result) {
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    if (result.name) {
-                        if (this_obj.feedback.run) {
-                            if (this_obj.feedback.uid === result.id) {
-                                showFeedback(result);
-                            } else {
-                                var index = arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id');
-                                if (index === -1) {
-                                    this_obj.feedback.queue.push(result);
+                    var uploadurl = this_obj.main_url + '/api/upload/url';
+                    if (this_obj.adultonly) {
+                        uploadurl = this_obj.main_url + '/api/upload/url/1';
+                    }
+                    var api = $resource(uploadurl, {}, {
+                        'uploadUrl': { method:'POST', withCredentials: true }
+                    });
+                    api.uploadUrl({url: url, path: result.path}, function (result) {
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        } else {
+                            if (result.name) {
+                                if (this_obj.feedback.run) {
+                                    if (this_obj.feedback.uid === result.id) {
+                                        showFeedback(result);
+                                    } else {
+                                        var index = arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id');
+                                        if (index === -1) {
+                                            this_obj.feedback.queue.push(result);
+                                        } else {
+                                            this_obj.feedback.queue.splice(index, 1, result);
+                                        }
+                                    }
                                 } else {
-                                    this_obj.feedback.queue.splice(index, 1, result);
+                                    this_obj.feedback.run = true;
+                                    showFeedback(result);
                                 }
                             }
-                        } else {
-                            this_obj.feedback.run = true;
-                            showFeedback(result);
                         }
-                    }
+                    }, function(errorResult) {
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
                 }
             }, function(errorResult) {
                 if (errorResult.status === 400) {
@@ -3731,37 +3790,54 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         var this_obj = this;
         if (isValidString(url, 'url') && !this.disableUrlSave) {
             this.disableUrlSave = true;
-            var addurl = this.main_url + '/api/addurl';
-            if (this.adultonly) {
-                addurl = this.main_url + '/api/addurl/1';
-            }
-            var api = $resource(addurl, {}, {
-                'addurl': { method:'POST', withCredentials: true }
+            var Info = $resource('/api/getPath', {}, {
+                'getPath': { method:'GET' }
             });
-            api.addurl({url: url}, function (result) {
-                this_obj.disableUrlSave = false;
+            Info.getPath({}, function (result) {
                 if (result.loginOK) {
                     $window.location.href = $location.path();
                 } else {
-                    if (result.name) {
-                        if (this_obj.feedback.run) {
-                            if (this_obj.feedback.uid === result.id) {
-                                showFeedback(result);
-                            } else {
-                                if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
-                                    this_obj.feedback.queue.push(result);
+                    var addurl = this_obj.main_url + '/api/addurl';
+                    if (this_obj.adultonly) {
+                        addurl = this_obj.main_url + '/api/addurl/1';
+                    }
+                    var api = $resource(addurl, {}, {
+                        'addurl': { method:'POST', withCredentials: true }
+                    });
+                    api.addurl({url: url, path: result.path}, function (result) {
+                        this_obj.disableUrlSave = false;
+                        if (result.loginOK) {
+                            $window.location.href = $location.path();
+                        } else {
+                            if (result.name) {
+                                if (this_obj.feedback.run) {
+                                    if (this_obj.feedback.uid === result.id) {
+                                        showFeedback(result);
+                                    } else {
+                                        if (arrayObjectIndexOf(this_obj.feedback.queue, result.id, 'id') === -1) {
+                                            this_obj.feedback.queue.push(result);
+                                        } else {
+                                            this_obj.feedback.queue.splice(index, 1, result);
+                                        }
+                                    }
                                 } else {
-                                    this_obj.feedback.queue.splice(index, 1, result);
+                                    this_obj.feedback.run = true;
+                                    showFeedback(result);
                                 }
                             }
-                        } else {
-                            this_obj.feedback.run = true;
-                            showFeedback(result);
                         }
-                    }
+                    }, function(errorResult) {
+                        this_obj.disableUrlSave = false;
+                        if (errorResult.status === 400) {
+                            addAlert(errorResult.data);
+                        } else if (errorResult.status === 403) {
+                            addAlert('unknown API!!!');
+                        } else if (errorResult.status === 401) {
+                            $window.location.href = $location.path();
+                        }
+                    });
                 }
             }, function(errorResult) {
-                this_obj.disableUrlSave = false;
                 if (errorResult.status === 400) {
                     addAlert(errorResult.data);
                 } else if (errorResult.status === 403) {
@@ -4208,22 +4284,39 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                 this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
                             } else {
                                 if (isValidString(this_obj[type].playlist.obj.magnet, 'url')) {
-                                    var uploadurl = $scope.main_url + '/api/upload/url';
-                                    if (this_obj.adultonly) {
-                                        uploadurl = $scope.main_url + '/api/upload/url/1';
-                                    }
-                                    var upApi = $resource(uploadurl, {}, {
-                                        'uploadUrl': { method:'POST', withCredentials: true }
+                                    var Info = $resource('/api/getPath', {}, {
+                                        'getPath': { method:'GET' }
                                     });
-                                    upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true}, function (result) {
+                                    Info.getPath({}, function (result) {
                                         if (result.loginOK) {
                                             $window.location.href = $location.path();
                                         } else {
-                                            console.log(result);
-                                            videoId = this_obj[type].playlist.obj.id = result.id;
-                                            this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                            removeCue();
-                                            this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                            var uploadurl = $scope.main_url + '/api/upload/url';
+                                            if (this_obj.adultonly) {
+                                                uploadurl = $scope.main_url + '/api/upload/url/1';
+                                            }
+                                            var upApi = $resource(uploadurl, {}, {
+                                                'uploadUrl': { method:'POST', withCredentials: true }
+                                            });
+                                            upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true, path: result.path}, function (result) {
+                                                if (result.loginOK) {
+                                                    $window.location.href = $location.path();
+                                                } else {
+                                                    console.log(result);
+                                                    videoId = this_obj[type].playlist.obj.id = result.id;
+                                                    this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
+                                                    removeCue();
+                                                    this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                }
+                                            }, function(errorResult) {
+                                                if (errorResult.status === 400) {
+                                                    addAlert(errorResult.data);
+                                                } else if (errorResult.status === 403) {
+                                                    addAlert('unknown API!!!');
+                                                } else if (errorResult.status === 401) {
+                                                    $window.location.href = $location.path();
+                                                }
+                                            });
                                         }
                                     }, function(errorResult) {
                                         if (errorResult.status === 400) {
@@ -4689,22 +4782,39 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                         isOri();
                                                     } else {
                                                         if (isValidString(this_obj[type].playlist.obj.magnet, 'url')) {
-                                                            var uploadurl = $scope.main_url + '/api/upload/url';
-                                                            if (this_obj.adultonly) {
-                                                                uploadurl = $scope.main_url + '/api/upload/url/1';
-                                                            }
-                                                            var upApi = $resource(uploadurl, {}, {
-                                                                'uploadUrl': { method:'POST', withCredentials: true }
+                                                            var Info = $resource('/api/getPath', {}, {
+                                                                'getPath': { method:'GET' }
                                                             });
-                                                            upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true}, function (result) {
+                                                            Info.getPath({}, function (result) {
                                                                 if (result.loginOK) {
                                                                     $window.location.href = $location.path();
                                                                 } else {
-                                                                    videoId = this_obj[type].playlist.obj.id = result.id;
-                                                                    this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                                                    isOri();
-                                                                    removeCue();
-                                                                    this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                                    var uploadurl = $scope.main_url + '/api/upload/url';
+                                                                    if (this_obj.adultonly) {
+                                                                        uploadurl = $scope.main_url + '/api/upload/url/1';
+                                                                    }
+                                                                    var upApi = $resource(uploadurl, {}, {
+                                                                        'uploadUrl': { method:'POST', withCredentials: true }
+                                                                    });
+                                                                    upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true, path: result.path}, function (result) {
+                                                                        if (result.loginOK) {
+                                                                            $window.location.href = $location.path();
+                                                                        } else {
+                                                                            videoId = this_obj[type].playlist.obj.id = result.id;
+                                                                            this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
+                                                                            isOri();
+                                                                            removeCue();
+                                                                            this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                                        }
+                                                                    }, function(errorResult) {
+                                                                        if (errorResult.status === 400) {
+                                                                            addAlert(errorResult.data);
+                                                                        } else if (errorResult.status === 403) {
+                                                                            addAlert('unknown API!!!');
+                                                                        } else if (errorResult.status === 401) {
+                                                                            $window.location.href = $location.path();
+                                                                        }
+                                                                    });
                                                                 }
                                                             }, function(errorResult) {
                                                                 if (errorResult.status === 400) {
@@ -4969,22 +5079,39 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                         isOri();
                                                     } else {
                                                         if (isValidString(this_obj[type].playlist.obj.magnet, 'url')) {
-                                                            var uploadurl = $scope.main_url + '/api/upload/url';
-                                                            if (this_obj.adultonly) {
-                                                                uploadurl = $scope.main_url + '/api/upload/url/1';
-                                                            }
-                                                            var upApi = $resource(uploadurl, {}, {
-                                                                'uploadUrl': { method:'POST', withCredentials: true }
+                                                            var Info = $resource('/api/getPath', {}, {
+                                                                'getPath': { method:'GET' }
                                                             });
-                                                            upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true}, function (result) {
+                                                            Info.getPath({}, function (result) {
                                                                 if (result.loginOK) {
                                                                     $window.location.href = $location.path();
                                                                 } else {
-                                                                    videoId = this_obj[type].playlist.obj.id = result.id;
-                                                                    this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                                                    isOri();
-                                                                    removeCue();
-                                                                    this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                                    var uploadurl = $scope.main_url + '/api/upload/url';
+                                                                    if (this_obj.adultonly) {
+                                                                        uploadurl = $scope.main_url + '/api/upload/url/1';
+                                                                    }
+                                                                    var upApi = $resource(uploadurl, {}, {
+                                                                        'uploadUrl': { method:'POST', withCredentials: true }
+                                                                    });
+                                                                    upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true, path: result.path}, function (result) {
+                                                                        if (result.loginOK) {
+                                                                            $window.location.href = $location.path();
+                                                                        } else {
+                                                                            videoId = this_obj[type].playlist.obj.id = result.id;
+                                                                            this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
+                                                                            isOri();
+                                                                            removeCue();
+                                                                            this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                                        }
+                                                                    }, function(errorResult) {
+                                                                        if (errorResult.status === 400) {
+                                                                            addAlert(errorResult.data);
+                                                                        } else if (errorResult.status === 403) {
+                                                                            addAlert('unknown API!!!');
+                                                                        } else if (errorResult.status === 401) {
+                                                                            $window.location.href = $location.path();
+                                                                        }
+                                                                    });
                                                                 }
                                                             }, function(errorResult) {
                                                                 if (errorResult.status === 400) {
@@ -5208,22 +5335,39 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                             isOri();
                                         } else {
                                             if (isValidString(this_obj[type].playlist.obj.magnet, 'url')) {
-                                                var uploadurl = $scope.main_url + '/api/upload/url';
-                                                if (this_obj.adultonly) {
-                                                    uploadurl = $scope.main_url + '/api/upload/url/1';
-                                                }
-                                                var upApi = $resource(uploadurl, {}, {
-                                                    'uploadUrl': { method:'POST', withCredentials: true }
+                                                var Info = $resource('/api/getPath', {}, {
+                                                    'getPath': { method:'GET' }
                                                 });
-                                                upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true}, function (result) {
+                                                Info.getPath({}, function (result) {
                                                     if (result.loginOK) {
                                                         $window.location.href = $location.path();
                                                     } else {
-                                                        videoId = this_obj[type].playlist.obj.id = result.id;
-                                                        this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
-                                                        isOri();
-                                                        removeCue();
-                                                        this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                        var uploadurl = $scope.main_url + '/api/upload/url';
+                                                        if (this_obj.adultonly) {
+                                                            uploadurl = $scope.main_url + '/api/upload/url/1';
+                                                        }
+                                                        var upApi = $resource(uploadurl, {}, {
+                                                            'uploadUrl': { method:'POST', withCredentials: true }
+                                                        });
+                                                        upApi.uploadUrl({url: this_obj[type].playlist.obj.magnet, hide: true, path: result.path}, function (result) {
+                                                            if (result.loginOK) {
+                                                                $window.location.href = $location.path();
+                                                            } else {
+                                                                videoId = this_obj[type].playlist.obj.id = result.id;
+                                                                this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
+                                                                isOri();
+                                                                removeCue();
+                                                                this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                            }
+                                                        }, function(errorResult) {
+                                                            if (errorResult.status === 400) {
+                                                                addAlert(errorResult.data);
+                                                            } else if (errorResult.status === 403) {
+                                                                addAlert('unknown API!!!');
+                                                            } else if (errorResult.status === 401) {
+                                                                $window.location.href = $location.path();
+                                                            }
+                                                        });
                                                     }
                                                 }, function(errorResult) {
                                                     if (errorResult.status === 400) {
@@ -5439,29 +5583,47 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
     }
     $scope.copy2local = function(id, index) {
-        var torrentApi = $resource(this.main_url + '/api/torrent/copy/' + id + '/' + index, {}, {
-            'copy': { method:'GET', withCredentials: true }
+        var this_obj = this;
+        var Info = $resource('/api/getPath', {}, {
+            'getPath': { method:'GET' }
         });
-        torrentApi.copy({}, function (result) {
+        Info.getPath({}, function (result) {
             if (result.loginOK) {
                 $window.location.href = $location.path();
             } else {
-                if (result.id) {
-                    if ($scope.feedback.run) {
-                        if ($scope.feedback.uid === result.id) {
-                            showFeedback(result);
-                        } else {
-                            if (arrayObjectIndexOf($scope.feedback.queue, result.id, 'id') === -1) {
-                                $scope.feedback.queue.push(result);
+                var torrentApi = $resource(this_obj.main_url + '/api/torrent/copy/' + id + '/' + index, {}, {
+                    'copy': { method:'POST', withCredentials: true }
+                });
+                torrentApi.copy({path: result.path}, function (result) {
+                    if (result.loginOK) {
+                        $window.location.href = $location.path();
+                    } else {
+                        if (result.id) {
+                            if ($scope.feedback.run) {
+                                if ($scope.feedback.uid === result.id) {
+                                    showFeedback(result);
+                                } else {
+                                    if (arrayObjectIndexOf($scope.feedback.queue, result.id, 'id') === -1) {
+                                        $scope.feedback.queue.push(result);
+                                    } else {
+                                        $scope.feedback.queue.splice(index, 1, result);
+                                    }
+                                }
                             } else {
-                                $scope.feedback.queue.splice(index, 1, result);
+                                $scope.feedback.run = true;
+                                showFeedback(result);
                             }
                         }
-                    } else {
-                        $scope.feedback.run = true;
-                        showFeedback(result);
                     }
-                }
+                }, function(errorResult) {
+                    if (errorResult.status === 400) {
+                        addAlert(errorResult.data);
+                    } else if (errorResult.status === 403) {
+                        addAlert('unknown API!!!');
+                    } else if (errorResult.status === 401) {
+                        $window.location.href = $location.path();
+                    }
+                });
             }
         }, function(errorResult) {
             if (errorResult.status === 400) {

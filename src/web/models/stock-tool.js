@@ -2329,29 +2329,25 @@ module.exports = {
                 var index = 0;
                 var sales_data = null;
                 var new_sales_data = null;
-                if (fs.existsSync(salesPath)) {
-                    fs.readFile(salesPath, 'utf8', function(err, salesFile) {
-                        if (err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        try {
-                            sales_data = JSON.parse(salesFile);
-                        } catch (x) {
-                            console.log(salesFile);
-                            util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
-                        }
+
+                mongo.orig("find", "salesCache", {type: items[0].type, index: items[0].index}, {limit: 1}, function(err, eItems){
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    if (eItems.length > 0) {
+                        sales_data = eItems[0];
                         if (new Date().getTime() - sales_data['time'] < 86400000) {
                             setTimeout(function(){
                                 callback(null, sales_data['return'], items[0].index);
                             }, 0);
                         } else {
-                            recur_mp();
+                            recur_mp(true);
                         }
-                    });
-                } else {
-                    recur_mp();
-                }
-                function recur_mp() {
+                    } else {
+                        recur_mp();
+                    }
+                });
+                function recur_mp(is_insert) {
                     if (sales_data && sales_data[year] && sales_data[year][month_str]) {
                         sales_num.push(sales_data[year][month_str].num);
                         sales_per.push(sales_data[year][month_str].per);
@@ -2497,11 +2493,22 @@ module.exports = {
                                             var per = Math.ceil(price/predict_eps*1000)/1000;
                                             new_sales_data['return'] = ret_str + ' ' + per;
                                             new_sales_data['time'] = new Date().getTime();
-                                            fs.writeFile(salesPath, JSON.stringify(new_sales_data), 'utf8', function (err) {
-                                                if (err) {
-                                                    util.handleError(err);
-                                                }
-                                            });
+                                            if (is_insert) {
+                                                mongo.orig("update", "salesCache", {type: items[0].type, index: items[0].index}, {$set: new_sales_data}, function(err, item3){
+                                                    if(err) {
+                                                        util.handleError(err);
+                                                    }
+                                                });
+                                            } else {
+                                                new_sales_data['type'] = items[0].type;
+                                                new_sales_data['index'] = items[0].index;
+                                                mongo.orig("insert", "salesCache", new_sales_data, function(err, item3){
+                                                    if(err) {
+                                                        util.handleError(err);
+                                                    }
+                                                    console.log(item3);
+                                                });
+                                            }
                                             setTimeout(function(){
                                                 callback(null, ret_str + ' ' + per, items[0].index);
                                             }, 0);
@@ -2511,18 +2518,29 @@ module.exports = {
                                 if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) <= 0 || predict_eps <= 0) {
                                     new_sales_data['return'] = ret_str;
                                     new_sales_data['time'] = new Date().getTime();
-                                    fs.writeFile(salesPath, JSON.stringify(new_sales_data), 'utf8', function (err) {
-                                        if (err) {
-                                            util.handleError(err);
-                                        }
-                                    });
+                                    if (is_insert) {
+                                        mongo.orig("update", "salesCache", {type: items[0].type, index: items[0].index}, {$set: new_sales_data}, function(err, item3){
+                                            if(err) {
+                                                util.handleError(err);
+                                            }
+                                        });
+                                    } else {
+                                        new_sales_data['type'] = items[0].type;
+                                        new_sales_data['index'] = items[0].index;
+                                        mongo.orig("insert", "salesCache", new_sales_data, function(err, item3){
+                                            if(err) {
+                                                util.handleError(err);
+                                            }
+                                            console.log(item3);
+                                        });
+                                    }
                                     setTimeout(function(){
                                         callback(null, ret_str, items[0].index);
                                     }, 0);
                                 }
                                 console.log('done');
                             } else {
-                                recur_mp();
+                                recur_mp(is_insert);
                             }
                         }
                     }

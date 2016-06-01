@@ -665,8 +665,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
             filterLimit = Number(this.filterLimit);
         }
         this.filterStock = false;
-        var stockApi = $resource($scope.main_url + '/api/stock/filter/' + this.filterTag, {}, {
-            'filter': { method:'PUT', withCredentials: true }
+        var stockApi = $resource('/api/stock/filter/' + this.filterTag, {}, {
+            'filter': { method:'PUT'}
         });
         var filter = {limit: filterLimit};
         if (per) {
@@ -2009,8 +2009,8 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     $scope.stockPre = function() {
         var this_obj = this;
         if (this.toolList.item) {
-            var stockApi = $resource($scope.main_url + '/api/stock/getPredictPER/' + this.toolList.item.id, {}, {
-                'getPER': { method:'get', withCredentials: true }
+            var stockApi = $resource('/api/stock/getPredictPER/' + this.toolList.item.id, {}, {
+                'getPER': { method:'get'}
             });
             stockApi.getPER({}, function (result) {
                 if (result.loginOK) {
