@@ -3132,6 +3132,7 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                 var sok = true;
                 var mok = true;
                 for (var i in result.items) {
+                    console.log(result.items[i].name);
                     pok = true;
                     sok = true;
                     mok = true;
