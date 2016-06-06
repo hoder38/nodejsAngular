@@ -272,45 +272,78 @@ module.exports = function(sendWs) {
                         if (playlist.length < 1) {
                             util.handleError({hoerror: 2, message: 'empty zip'}, callback, errerMedia, fileID, callback);
                         }
-                        if (is_processed) {
-                            mongo.orig("update", "storage", { _id: fileID }, {$set: {playList: playlist}}, function(err, item){
-                                if(err) {
-                                    util.handleError(err, callback, errerMedia, fileID, callback);
-                                }
-                                this_obj.completeMedia(fileID, 9, callback);
-                            });
-                        } else {
-                            var zipName = filePath + '_zip';
-                            if (zip_type === 2) {
-                                zipName = filePath + '.1.rar';
-                            } else if (zip_type === 3){
-                                zipName = filePath + '_7z';
+                        mongo.orig("find", "storage", {_id: fileID}, {limit: 1}, function(err, items){
+                            if (err) {
+                                util.handleError(err, callback, errerMedia, fileID, callback);
                             }
-                            fs.rename(filePath, zipName, function(err) {
-                                if (err) {
-                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                            if (items.length < 1) {
+                                util.handleError({hoerror: 2, message: "cannot find zip"}, next, res);
+                            }
+                            var mediaType = null, mediaTag = null;
+                            var tag_arr = [];
+                            for (var i in playlist) {
+                                mediaType = mime.mediaType(playlist[i]);
+                                if (mediaType) {
+                                    mediaTag = mime.mediaTag(mediaType['type']);
+                                    for (var j in mediaTag.def) {
+                                        if (tag_arr.indexOf(mediaTag.def[j]) === -1) {
+                                            tag_arr.push(mediaTag.def[j]);
+                                        }
+                                    }
                                 }
-                                console.log(zipName);
-                                mkdirp(filePath, function(err) {
+                            }
+                            var utags = [];
+                            if (items[0][user._id]) {
+                                utags = items[0][user._id];
+                            }
+                            for (var i in tag_arr) {
+                                if (items[0].tags.indexOf(tag_arr[i]) === -1) {
+                                    items[0].tags.push(tag_arr[i]);
+                                    utags.push(tag_arr[i]);
+                                }
+                            }
+                            var data = {playList: playlist, tags: items[0].tags};
+                            data[user._id] = utags;
+                            if (is_processed) {
+                                mongo.orig("update", "storage", { _id: fileID }, {$set: data}, function(err, item){
                                     if(err) {
-                                        console.log(filePath);
                                         util.handleError(err, callback, errerMedia, fileID, callback);
                                     }
-                                    mkdirp(filePath + '/real', function(err) {
+                                    this_obj.completeMedia(fileID, 9, callback);
+                                });
+                            } else {
+                                var zipName = filePath + '_zip';
+                                if (zip_type === 2) {
+                                    zipName = filePath + '.1.rar';
+                                } else if (zip_type === 3){
+                                    zipName = filePath + '_7z';
+                                }
+                                fs.rename(filePath, zipName, function(err) {
+                                    if (err) {
+                                        util.handleError(err, callback, errerMedia, fileID, callback);
+                                    }
+                                    console.log(zipName);
+                                    mkdirp(filePath, function(err) {
                                         if(err) {
                                             console.log(filePath);
                                             util.handleError(err, callback, errerMedia, fileID, callback);
                                         }
-                                        mongo.orig("update", "storage", { _id: fileID }, {$set: {playList: playlist}}, function(err, item){
+                                        mkdirp(filePath + '/real', function(err) {
                                             if(err) {
+                                                console.log(filePath);
                                                 util.handleError(err, callback, errerMedia, fileID, callback);
                                             }
-                                            this_obj.completeMedia(fileID, 9, callback);
+                                            mongo.orig("update", "storage", { _id: fileID }, {$set: data}, function(err, item){
+                                                if(err) {
+                                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                                }
+                                                this_obj.completeMedia(fileID, 9, callback);
+                                            });
                                         });
                                     });
                                 });
-                            });
-                        }
+                            }
+                        });
                     });
                 } else {
                     if (mediaType['type'] === 'rawdoc') {

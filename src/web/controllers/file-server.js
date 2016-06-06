@@ -104,7 +104,6 @@ var express = require('express'),
     server = https.createServer(credentials, app),
     mkdirp = require('mkdirp'),
     readline = require('readline'),
-    mega = require('mega'),
     readTorrent = require('read-torrent');
     sessionStore = require("../models/session-tool.js")(express_session);
 
@@ -375,7 +374,6 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                                                     var mediaType = null, mediaTag = null;
                                                     engine.on('ready', function() {
                                                         engine.files.forEach(function(file) {
-                                                            //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
                                                             playList.push(file.path);
                                                             console.log(file.name);
                                                             mediaType = mime.mediaType(file.name);
@@ -392,7 +390,6 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                                                                     }
                                                                 }
                                                             }
-                                                            //}
                                                         });
                                                         //insert
                                                         if (playList.length <= 0) {
@@ -473,7 +470,6 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                                                 var mediaType = null, mediaTag = null;
                                                 engine.on('ready', function() {
                                                     engine.files.forEach(function(file) {
-                                                        //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
                                                         playList.push(file.path);
                                                         console.log(file.name);
                                                         mediaType = mime.mediaType(file.name);
@@ -490,7 +486,6 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                                                                 }
                                                             }
                                                         }
-                                                        //}
                                                     });
                                                     //insert
                                                     if (playList.length <= 0) {
@@ -783,7 +778,6 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                 var mediaType = null, mediaTag = null;
                                 engine.on('ready', function() {
                                     engine.files.forEach(function(file) {
-                                        //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
                                         playList.push(file.path);
                                         console.log(file.name);
                                         mediaType = mime.mediaType(file.name);
@@ -800,7 +794,6 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                                 }
                                             }
                                         }
-                                        //}
                                     });
                                     //insert
                                     if (playList.length <= 0) {
@@ -1034,32 +1027,112 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         });
                     });
                 } else if (url.match(/^(https|http):\/\/mega\./)) {
-                    var urlMega = url.replace(/(https|http):\/\/mega\.[^\/]+\//, 'https://mega.co.nz/');
-                    mega.file(urlMega).loadAttributes(function(err, fileMega) {
-                        if (err) {
-                            util.handleError(err);
-                            api.xuiteDownload(url, filePath, function(err, pathname, filename) {
-                                if (err) {
-                                    util.handleError(err, next, res);
-                                }
-                                if (!filename) {
-                                    filename = path.basename(pathname);
-                                }
-                                console.log(filename);
-                                streamClose(filename, [], []);
-                            });
-                        } else {
-                            console.log(fileMega);
-                            var streamMega = fileMega.download();
-                            var filename = 'Mega file';
-                            if (fileMega.name) {
-                                filename = fileMega.name;
-                            }
-                            streamMega.pipe(fs.createWriteStream(filePath));
-                            streamMega.on('end', function() {
-                                streamClose(filename, ['mega upload'], []);
-                            });
+                    mkdirp(filePath + '/real', function(err) {
+                        if(err) {
+                            console.log(filePath + '/real');
+                            util.handleError(err, next, res);
                         }
+                        var cmdline = 'megadl --no-progress --path "' + filePath + '/real" "' + url + '"';
+                        console.log(cmdline);
+                        child_process.exec(cmdline, function (err, output) {
+                            if (err) {
+                                util.handleError(err);
+                                util.deleteFolderRecursive(filePath);
+                                api.xuiteDownload(url, filePath, function(err, pathname, filename) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (!filename) {
+                                        filename = path.basename(pathname);
+                                    }
+                                    console.log(filename);
+                                    streamClose(filename, [], []);
+                                });
+                            } else {
+                                var playList = [];
+                                megaFolder('');
+                                function megaFolder(previous) {
+                                    fs.readdirSync(filePath + '/real/' + previous).forEach(function(file,index){
+                                        var curPath = filePath + '/real/' + previous + '/' + file;
+                                        if (previous === '') {
+                                            curPath = filePath + '/real/' + file;
+                                        }
+                                        if(fs.lstatSync(curPath).isDirectory()) {
+                                            if (previous === '') {
+                                                megaFolder(file);
+                                            } else {
+                                                megaFolder(previous + '/' + file);
+                                            }
+                                        } else {
+                                            if (previous === '') {
+                                                playList.push(file);
+                                            } else {
+                                                playList.push(previous + '/' + file);
+                                            }
+                                        }
+                                    });
+                                }
+                                console.log(playList);
+                                if (playList.length < 1) {
+                                    util.deleteFolderRecursive(filePath);
+                                    util.handleError({hoerror: 2, message: "mega empty"}, next, res);
+                                } else if (playList.length === 1) {
+                                    var filename = path.basename(playList[0]);
+                                    fs.rename(filePath + '/real/' + playList[0], filePath + '_t', function(err) {
+                                        if (err) {
+                                            util.deleteFolderRecursive(filePath);
+                                            util.handleError(err, next, res);
+                                        }
+                                        util.deleteFolderRecursive(filePath);
+                                        fs.rename(filePath + '_t', filePath, function(err) {
+                                            if (err) {
+                                                util.deleteFolderRecursive(filePath);
+                                                util.handleError(err, next, res);
+                                            }
+                                            streamClose(filename, ['mega upload'], []);
+                                        });
+                                    });
+                                } else {
+                                    var filename = path.basename(playList[0]);
+                                    var tag_arr = ['mega upload', 'playlist', '播放列表'];
+                                    var opt_arr = [];
+                                    var mediaType = null, mediaTag = null;
+                                    recur_media(0);
+                                    function recur_media(index) {
+                                        var stream = fs.createReadStream(filePath + '/real/' + playList[index]);
+                                        stream.on('error', function(err){
+                                            util.deleteFolderRecursive(filePath);
+                                            console.log('save mega error!!!');
+                                            util.handleError(err, next, res);
+                                        });
+                                        stream.on('close', function() {
+                                            mediaType = mime.mediaType(playList[index]);
+                                            if (mediaType) {
+                                                mediaTag = mime.mediaTag(mediaType['type']);
+                                                for (var i in mediaTag.def) {
+                                                    if (tag_arr.indexOf(mediaTag.def[i]) === -1) {
+                                                        tag_arr.push(mediaTag.def[i]);
+                                                    }
+                                                }
+                                                for (var i in mediaTag.opt) {
+                                                    if (tag_arr.indexOf(mediaTag.opt[i]) === -1 && opt_arr.indexOf(mediaTag.opt[i]) === -1) {
+                                                        opt_arr.push(mediaTag.opt[i]);
+                                                    }
+                                                }
+                                            }
+                                            index++;
+                                            if (index < playList.length) {
+                                                recur_media(index)
+                                            } else {
+                                                util.deleteFolderRecursive(folderPath + '/mega');
+                                                streamClose(filename, tag_arr, opt_arr, {mega: encodeTorrent, playList: playList});
+                                            }
+                                        });
+                                        stream.pipe(fs.createWriteStream(filePath + '/' + index + '_complete'));
+                                    }
+                                }
+                            }
+                        });
                     });
                 } else {
                     api.xuiteDownload(url, filePath, function(err, pathname, filename) {
@@ -1111,11 +1184,10 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                                         var mediaType = null, mediaTag = null;
                                                         engine.on('ready', function() {
                                                             engine.files.forEach(function(file) {
-                                                                //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
                                                                 playList.push(file.path);
                                                                 console.log(file.name);
                                                                 mediaType = mime.mediaType(file.name);
-                                                                    if (mediaType) {
+                                                                if (mediaType) {
                                                                     mediaTag = mime.mediaTag(mediaType['type']);
                                                                     for (var i in mediaTag.def) {
                                                                         if (tag_arr.indexOf(mediaTag.def[i]) === -1) {
@@ -1128,7 +1200,6 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                                                         }
                                                                     }
                                                                 }
-                                                                //}
                                                             });
                                                             //insert
                                                             if (playList.length <= 0) {
@@ -1182,7 +1253,6 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             var mediaType = null, mediaTag = null;
                             engine.on('ready', function() {
                                 engine.files.forEach(function(file) {
-                                    //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
                                     playList.push(file.path);
                                     console.log(file.name);
                                     mediaType = mime.mediaType(file.name);
@@ -1199,7 +1269,6 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                             }
                                         }
                                     }
-                                    //}
                                 });
                                 //insert
                                 if (playList.length <= 0) {
@@ -1430,32 +1499,112 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                     });
                 });
             } else if (url.match(/^(https|http):\/\/mega\./)) {
-                var urlMega = url.replace(/(https|http):\/\/mega\.[^\/]+\//, 'https://mega.co.nz/');
-                mega.file(urlMega).loadAttributes(function(err, fileMega) {
-                    if (err) {
-                        util.handleError(err);
-                        api.xuiteDownload(url, filePath, function(err, pathname, filename) {
-                            if (err) {
-                                util.handleError(err, next, res);
-                            }
-                            if (!filename) {
-                                filename = path.basename(pathname);
-                            }
-                            console.log(filename);
-                            streamClose(filename, [], []);
-                        });
-                    } else {
-                        console.log(fileMega);
-                        var streamMega = fileMega.download();
-                        var filename = 'Mega file';
-                        if (fileMega.name) {
-                            filename = fileMega.name;
-                        }
-                        streamMega.pipe(fs.createWriteStream(filePath));
-                        streamMega.on('end', function() {
-                            streamClose(filename, ['mega upload'], []);
-                        });
+                mkdirp(filePath + '/real', function(err) {
+                    if(err) {
+                        console.log(filePath + '/real');
+                        util.handleError(err, next, res);
                     }
+                    var cmdline = 'megadl --no-progress --path "' + filePath + '/real" "' + url + '"';
+                    console.log(cmdline);
+                    child_process.exec(cmdline, function (err, output) {
+                        if (err) {
+                            util.handleError(err);
+                            util.deleteFolderRecursive(filePath);
+                            api.xuiteDownload(url, filePath, function(err, pathname, filename) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                if (!filename) {
+                                    filename = path.basename(pathname);
+                                }
+                                console.log(filename);
+                                streamClose(filename, [], []);
+                            });
+                        } else {
+                            var playList = [];
+                            megaFolder('');
+                            function megaFolder(previous) {
+                                fs.readdirSync(filePath + '/real/' + previous).forEach(function(file,index){
+                                    var curPath = filePath + '/real/' + previous + '/' + file;
+                                    if (previous === '') {
+                                        curPath = filePath + '/real/' + file;
+                                    }
+                                    if(fs.lstatSync(curPath).isDirectory()) {
+                                        if (previous === '') {
+                                            megaFolder(file);
+                                        } else {
+                                            megaFolder(previous + '/' + file);
+                                        }
+                                    } else {
+                                        if (previous === '') {
+                                            playList.push(file);
+                                        } else {
+                                            playList.push(previous + '/' + file);
+                                        }
+                                    }
+                                });
+                            }
+                            console.log(playList);
+                            if (playList.length < 1) {
+                                util.deleteFolderRecursive(filePath);
+                                util.handleError({hoerror: 2, message: "mega empty"}, next, res);
+                            } else if (playList.length === 1) {
+                                var filename = path.basename(playList[0]);
+                                fs.rename(filePath + '/real/' + playList[0], filePath + '_t', function(err) {
+                                    if (err) {
+                                        util.deleteFolderRecursive(filePath);
+                                        util.handleError(err, next, res);
+                                    }
+                                    util.deleteFolderRecursive(filePath);
+                                    fs.rename(filePath + '_t', filePath, function(err) {
+                                        if (err) {
+                                            util.deleteFolderRecursive(filePath);
+                                            util.handleError(err, next, res);
+                                        }
+                                        streamClose(filename, ['mega upload'], []);
+                                    });
+                                });
+                            } else {
+                                var filename = path.basename(playList[0]);
+                                var tag_arr = ['mega upload', 'playlist', '播放列表'];
+                                var opt_arr = [];
+                                var mediaType = null, mediaTag = null;
+                                recur_media(0);
+                                function recur_media(index) {
+                                    var stream = fs.createReadStream(filePath + '/real/' + playList[index]);
+                                    stream.on('error', function(err){
+                                        util.deleteFolderRecursive(filePath);
+                                        console.log('save mega error!!!');
+                                        util.handleError(err, next, res);
+                                    });
+                                    stream.on('close', function() {
+                                        mediaType = mime.mediaType(playList[index]);
+                                        if (mediaType) {
+                                            mediaTag = mime.mediaTag(mediaType['type']);
+                                            for (var i in mediaTag.def) {
+                                                if (tag_arr.indexOf(mediaTag.def[i]) === -1) {
+                                                    tag_arr.push(mediaTag.def[i]);
+                                                }
+                                            }
+                                            for (var i in mediaTag.opt) {
+                                                if (tag_arr.indexOf(mediaTag.opt[i]) === -1 && opt_arr.indexOf(mediaTag.opt[i]) === -1) {
+                                                    opt_arr.push(mediaTag.opt[i]);
+                                                }
+                                            }
+                                        }
+                                        index++;
+                                        if (index < playList.length) {
+                                            recur_media(index)
+                                        } else {
+                                            util.deleteFolderRecursive(folderPath + '/mega');
+                                            streamClose(filename, tag_arr, opt_arr, {mega: encodeTorrent, playList: playList});
+                                        }
+                                    });
+                                    stream.pipe(fs.createWriteStream(filePath + '/' + index + '_complete'));
+                                }
+                            }
+                        }
+                    });
                 });
             } else {
                 api.xuiteDownload(url, filePath, function(err, pathname, filename) {
@@ -1507,7 +1656,6 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                                     var mediaType = null, mediaTag = null;
                                                     engine.on('ready', function() {
                                                         engine.files.forEach(function(file) {
-                                                            //if (file.name.match(/\.mp4$/i) || file.name.match(/\.mkv$/i)) {
                                                             playList.push(file.path);
                                                             console.log(file.name);
                                                             mediaType = mime.mediaType(file.name);
@@ -1524,7 +1672,6 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                                                     }
                                                                 }
                                                             }
-                                                            //}
                                                         });
                                                         //insert
                                                         if (playList.length <= 0) {
@@ -1593,7 +1740,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                 data['untag'] = 1;
                 data['first'] = 1;
             }
-            if (db_obj && db_obj['magnet']) {
+            if (db_obj && (db_obj['magnet'] || db_obj['mega'])) {
                 data['status'] = 9;//media type
             } else {
                 data['status'] = 0;//media type
@@ -1769,6 +1916,51 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                                     console.log('transcode done');
                                     console.log(new Date());
                                 });
+                            }
+                            if (db_obj && db_obj['mega'] && db_obj['playList']) {
+                                recur_mhandle(0);
+                                function recur_mhandle(index) {
+                                    var videoInfo = mime.isVideo(db_obj['playList'][index]);
+                                    if (videoInfo) {
+                                        var dbName = path.basename(db_obj['playList'][index]);
+                                        var dbPath = filePath + '/real/' + db_obj['playList'][index];
+                                        mediaHandleTool.handleTag(dbPath, {}, dbName, '', 0, function(err, mediaType, mediaTag, DBdata) {
+                                            if (err) {
+                                                util.handleError(err);
+                                            } else {
+                                                mediaType['fileIndex'] = index;
+                                                mediaType['realPath'] = db_obj['playList'][index];
+                                                DBdata['status'] = 9;
+                                                delete DBdata['mediaType'];
+                                                DBdata['mediaType.' + index] = mediaType;
+                                                console.log(DBdata);
+                                                mongo.orig("update", "storage", { _id: item[0]._id }, {$set: DBdata}, function(err, item2){
+                                                    if(err) {
+                                                        util.handleError(err);
+                                                    } else {
+                                                        var dbStats = fs.statSync(dbPath);
+                                                        mediaHandleTool.handleMediaUpload(mediaType, filePath, item[0]._id, dbName, dbStats['size'], req.user, function(err) {
+                                                            if(err) {
+                                                                util.handleError(err);
+                                                            }
+                                                            console.log('transcode done');
+                                                            console.log(new Date());
+                                                            index++;
+                                                            if (index < db_obj['playList'].length) {
+                                                                recur_mhandle(index);
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    } else {
+                                        index++;
+                                        if (index < db_obj['playList'].length) {
+                                            recur_mhandle(index);
+                                        }
+                                    }
+                                }
                             }
                         });
                     });
