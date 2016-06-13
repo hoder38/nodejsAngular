@@ -508,62 +508,56 @@ module.exports = {
                     var list = [];
                     if (json_data['html']) {
                         var raw_data = json_data['html'];
-                        var raw_list = raw_data.match(/<img src="[\s\S]+?<span class="year">[\s\S]+?\(\d\d\d\d\)/g);
+                        var raw_list = raw_data.match(/<img src="[\s\S]+?<i class="icon-playtime"[\s\S]+?(\d+(\.\d+)?万?|--)/g);
                         var data = null;
                         var tags = [];
                         var info_match = false;
                         var info_item = null;
                         if (raw_list) {
+                            var bDate = new Date('1970-01-01');
+                            bDate = bDate.getTime()/1000;
                             for (var i in raw_list) {
-                                info_match = raw_list[i].match(/href="[^\d]+(\d+)\/"[^>]*>[\s]+(.*)/);
+                                info_match = raw_list[i].match(/href="[^"]+?(av\d+)/);
                                 if (info_match) {
-                                    info_item = info_match[2].replace(/<[^<]+>/g,'');
-                                    data = {id: info_match[1], name: opencc.convertSync(info_item.trim()), count: 0};
-                                    info_match = raw_list[i].match(/<img src="([^"]+)/);
+                                    data = {id: info_match[1], date: bDate};
+                                    info_match = raw_list[i].match(/<img src="([^"]+)".*?title="([^"]+)/);
                                     if (info_match) {
+                                        data['name'] = opencc.convertSync(info_match[2]);
                                         data['thumb'] = info_match[1];
-                                        info_match = raw_list[i].match(/\((\d\d\d\d)/);
-                                        if (info_match) {
-                                            info_item = new Date(info_match[1] + '-01-01');
-                                            data['date'] = info_item.getTime()/1000;
-                                            tags = ['animation', '動畫'];
-                                            if (tags.indexOf(info_match[1]) === -1) {
-                                                tags.push(info_match[1]);
+                                        info_match = raw_list[i].match(/((\d+)(\.\d+)?(万)?|--)$/);
+                                        if (info_match && info_match[2]) {
+                                            info_item = info_match[2];
+                                            if (info_match[3]) {
+                                                info_item = info_item + info_match[3];
                                             }
-                                            data['tags'] = tags;
-                                            list.push(data);
+                                            info_item = Number(info_item);
+                                            if (info_match[4]) {
+                                                info_item = Math.round(info_item * 10000);
+                                            }
+                                            data['count'] = info_item;
+                                        } else {
+                                            data['count'] = 0;
                                         }
+                                        tags = ['movie', '電影'];
+                                        data['tags'] = tags;
+                                        list.push(data);
                                     }
                                 }
                             }
                         } else {
-                            raw_list = raw_data.match(/<img src="[\s\S]+?<i class="icon-playtime"[\s\S]+?(\d+(\.\d+)?万?|--)/g);
+                            raw_list = raw_data.match(/<a href="[\s\S]+?<img src="[^"]+/g);
                             if (raw_list) {
-                                var bDate = new Date('1970-01-01');
-                                bDate = bDate.getTime()/1000;
                                 for (var i in raw_list) {
-                                    info_match = raw_list[i].match(/href="[^"]+?(av\d+)/);
+                                    info_match = raw_list[i].match(/href="[^\d]+(\d+)\/".+?title="([^"]+)"/);
                                     if (info_match) {
-                                        data = {id: info_match[1], date: bDate};
-                                        info_match = raw_list[i].match(/<img src="([^"]+)".*?title="([^"]+)/);
+                                        info_item = info_match[2].replace(/<[^<]+>/g,'');
+                                        data = {id: info_match[1], name: opencc.convertSync(info_item.trim()), count: 0};
+                                        info_match = raw_list[i].match(/<img src="([^"]+)/);
                                         if (info_match) {
-                                            data['name'] = opencc.convertSync(info_match[2]);
                                             data['thumb'] = info_match[1];
-                                            info_match = raw_list[i].match(/((\d+)(\.\d+)?(万)?|--)$/);
-                                            if (info_match && info_match[2]) {
-                                                info_item = info_match[2];
-                                                if (info_match[3]) {
-                                                    info_item = info_item + info_match[3];
-                                                }
-                                                info_item = Number(info_item);
-                                                if (info_match[4]) {
-                                                    info_item = Math.round(info_item * 10000);
-                                                }
-                                                data['count'] = info_item;
-                                            } else {
-                                                data['count'] = 0;
-                                            }
-                                            tags = ['movie', '電影'];
+                                            info_item = new Date('1970-01-01');
+                                            data['date'] = info_item.getTime()/1000;
+                                            tags = ['animation', '動畫'];
                                             data['tags'] = tags;
                                             list.push(data);
                                         }
@@ -4412,6 +4406,7 @@ module.exports = {
                 if (!bili_id) {
                     util.handleError({hoerror: 2, message: 'bilibili id invalid'}, callback2, callback2);
                 }
+                var single = true;
                 api.xuiteDownload(url, '', function(err, raw_data) {
                     if (err) {
                         err.hoerror = 2;
@@ -4436,27 +4431,88 @@ module.exports = {
                             }
                         }
                     } else {
-                        raw_list = raw_data.match(/class="e-item("|-l")[\s\S]+?a href=".*?\/video\/[^>]+/g);
+                        raw_list = raw_data.match(/<a class="v1-long-text"[^>]+/g);
                         if (!raw_list) {
                             util.handleError({hoerror: 2, message: 'empty list'}, callback2, callback2);
                         }
                         for (var i in raw_list) {
-                            list_match = raw_list[i].match(/a href=".*?\/video\/(av\d+)\/(index_(\d+)\.html)?.*?title="([^"]*)/);
+                            list_match = raw_list[i].match(/href=".*?\/anime\/v\/(\d+)(\/index_(\d+)\.html)?.*?title="([^"]*)/);
                             if (list_match) {
                                 if (list_match[3]) {
-                                    list.splice(0, 0, {id: 'bil_' + list_match[1] + '_' + list_match[3], name: list_match[4]});
+                                    list.push({id: 'bil_' + list_match[1] + '_' + list_match[3], name: opencc.convertSync(list_match[4])});
                                 } else {
-                                    list.splice(0, 0, {id: 'bil_' + list_match[1], name: list_match[4]});
+                                    list.push({id: 'bil_' + list_match[1], name: opencc.convertSync(list_match[4])});
+                                }
+                            } else {
+                                list_match = raw_list[i].match(/href=".*?\/video\/(av\d+)\/(index_(\d+)\.html)?.*?title="([^"]*)/);
+                                if (list_match) {
+                                    if (list_match[3]) {
+                                        list.splice(0, 0, {id: 'bil_' + list_match[1] + '_' + list_match[3], name: list_match[4]});
+                                    } else {
+                                        list.splice(0, 0, {id: 'bil_' + list_match[1], name: list_match[4]});
+                                    }
                                 }
                             }
                         }
+                        var others = raw_data.match(/data-season-id="\d+/g);
+                        if (others.length > 1) {
+                            single = false;
+                            recur_getlist(1);
+                            function recur_getlist(sindex) {
+                                var ids = others[sindex].match(/\d+$/);
+                                var surl = 'http://bangumi.bilibili.com/anime/' + ids[0] + '/';
+                                console.log(surl);
+                                api.xuiteDownload(surl, '', function(err, raw_data) {
+                                    if (err) {
+                                        err.hoerror = 2;
+                                        util.handleError(err, callback2, callback2);
+                                    }
+                                    raw_list = raw_data.match(/<a class="v1-long-text"[^>]+/g);
+                                    if (raw_list) {
+                                        for (var i in raw_list) {
+                                            list_match = raw_list[i].match(/href=".*?\/anime\/v\/(\d+)(\/index_(\d+)\.html)?.*?title="([^"]*)/);
+                                            if (list_match) {
+                                                if (list_match[3]) {
+                                                    list.push({id: 'bil_' + list_match[1] + '_' + list_match[3], name: opencc.convertSync(list_match[4])});
+                                                } else {
+                                                    list.push({id: 'bil_' + list_match[1], name: opencc.convertSync(list_match[4])});
+                                                }
+                                            } else {
+                                                list_match = raw_list[i].match(/href=".*?\/video\/(av\d+)\/(index_(\d+)\.html)?.*?title="([^"]*)/);
+                                                if (list_match) {
+                                                    if (list_match[3]) {
+                                                        list.splice(0, 0, {id: 'bil_' + list_match[1] + '_' + list_match[3], name: list_match[4]});
+                                                    } else {
+                                                        list.splice(0, 0, {id: 'bil_' + list_match[1], name: list_match[4]});
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    sindex++;
+                                    if (others.length > sindex) {
+                                        recur_getlist(sindex);
+                                    } else {
+                                        if (!list[index-1]) {
+                                            util.handleError({hoerror: 2, message: 'index invaild'}, callback2, callback2);
+                                        }
+                                        console.log(list);
+                                        setTimeout(function(){
+                                            callback2(null, list);
+                                        }, 0);
+                                    }
+                                }, 60000, false, false, 'http://www.bilibili.com/', true);
+                            }
+                        }
                     }
-                    if (!list[index-1]) {
+                    if (!list[index-1] && single) {
                         util.handleError({hoerror: 2, message: 'index invaild'}, callback2, callback2);
                     }
-                    setTimeout(function(){
-                        callback2(null, list);
-                    }, 0);
+                    if (single) {
+                        setTimeout(function(){
+                            callback2(null, list);
+                        }, 0);
+                    }
                 }, 60000, false, false, 'http://www.bilibili.com/', true);
             }
             break;
@@ -5180,59 +5236,120 @@ module.exports = {
         }
     },
     bilibiliVideoUrl: function(url, callback) {
-        var id = url.match(/(\d+)\/(index_(\d+)\.html)?$/);
+        console.log(url);
+        var id = url.match(/(av)?(\d+)\/(index_(\d+)\.html)?$/);
         if (!id) {
             util.handleError({hoerror: 2, message: 'bilibili id invalid'}, callback, callback);
         }
         var page = 0;
-        if (id[2]) {
-            page = Number(id[3]);
+        if (id[3]) {
+            page = Number(id[4]);
             page--;
         }
-        id = id[1];
-        var infoUrl = 'http://api.bilibili.com/view?type=json&appkey=95acd7f6cc3392f3&id=' + id + '&page=1&batch=true';
-        api.xuiteDownload(infoUrl, '', function(err, raw_data) {
-            if (err) {
-                err.hoerror = 2;
-                util.handleError(err, callback, callback);
-            }
-            var json_data = null;
-            try {
-                json_data = JSON.parse(raw_data);
-            } catch (x) {
-                console.log(raw_data);
-                util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
-            }
-            if (!json_data.list) {
-                util.handleError({hoerror: 2, message: 'cannot get list'}, callback, callback);
-            }
-            var cid = json_data.list[page].cid;
-            if (!cid) {
-                util.handleError({hoerror: 2, message: 'cannot get cid'}, callback, callback);
-            }
-            var title = json_data.list[page].part;
-            var playUrl = 'http://interface.bilibili.com/playurl?platform=bilihelper&otype=json&appkey=95acd7f6cc3392f3&cid=' + cid + '&quality=4&type=mp4';
-            api.xuiteDownload(playUrl, '', function(err, raw_data_1) {
+        var ids = id[2];
+        if (id[1] === 'av') {
+            var infoUrl = 'http://api.bilibili.com/view?type=json&appkey=8e9fc618fbd41e28&id=' + ids + '&page=1&batch=true';
+            console.log(infoUrl);
+            api.xuiteDownload(infoUrl, '', function(err, raw_data) {
                 if (err) {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                var json_data_1 = null;
+                var json_data = null;
                 try {
-                    json_data_1 = JSON.parse(raw_data_1);
+                    json_data = JSON.parse(raw_data);
                 } catch (x) {
-                    console.log(raw_data_1);
+                    console.log(raw_data);
                     util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
                 }
-                if (!json_data_1.durl || !json_data_1.durl[0] || !json_data_1.durl[0].url) {
-                    console.log(json_data_1);
-                    util.handleError({hoerror: 2, message: 'cannot find videoUrl'}, callback, callback);
+                if (!json_data.list) {
+                    util.handleError({hoerror: 2, message: 'cannot get list'}, callback, callback);
                 }
-                setTimeout(function(){
-                    callback(null, title, json_data_1.durl[0].url);
-                }, 0);
-            }, 60000, false, false, 'http://interface.bilibili.com/', false, '220.181.111.228');
-        }, 60000, false, false, 'http://api.bilibili.com/');
+                var cid = json_data.list[page].cid;
+                if (!cid) {
+                    util.handleError({hoerror: 2, message: 'cannot get cid'}, callback, callback);
+                }
+                var title = json_data.list[page].part;
+                var playUrl = 'http://interface.bilibili.com/playurl?platform=bilihelper&otype=json&appkey=8e9fc618fbd41e28&cid=' + cid + '&quality=4&type=mp4';
+                api.xuiteDownload(playUrl, '', function(err, raw_data_1) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log(raw_data_1);
+                    var json_data_1 = null;
+                    try {
+                        json_data_1 = JSON.parse(raw_data_1);
+                    } catch (x) {
+                        console.log(raw_data_1);
+                        util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                    }
+                    if (!json_data_1.durl || !json_data_1.durl[0] || !json_data_1.durl[0].url) {
+                        console.log(json_data_1);
+                        util.handleError({hoerror: 2, message: 'cannot find videoUrl'}, callback, callback);
+                    }
+                    setTimeout(function(){
+                        callback(null, title, json_data_1.durl[0].url);
+                    }, 0);
+                }, 60000, false, false, 'http://interface.bilibili.com/', false, '220.181.111.228');
+            }, 60000, false, false, 'http://api.bilibili.com/');
+        } else {
+            api.xuiteDownload('http://bangumi.bilibili.com/anime/v/' + ids, '', function(err, raw_data) {
+                if (err) {
+                    err.hoerror = 2;
+                    util.handleError(err, callback, callback);
+                }
+                ids = raw_data.match(/>AV(\d+)</);
+                if (!ids) {
+                    util.handleError({hoerror: 2, message: 'cannot find av index'}, callback, callback);
+                }
+                ids = ids[1];
+                var infoUrl = 'http://api.bilibili.com/view?type=json&appkey=8e9fc618fbd41e28&id=' + ids + '&page=1&batch=true';
+                console.log(infoUrl);
+                api.xuiteDownload(infoUrl, '', function(err, raw_data) {
+                    if (err) {
+                        err.hoerror = 2;
+                        util.handleError(err, callback, callback);
+                    }
+                    var json_data = null;
+                    try {
+                        json_data = JSON.parse(raw_data);
+                    } catch (x) {
+                        console.log(raw_data);
+                        util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                    }
+                    if (!json_data.list) {
+                        util.handleError({hoerror: 2, message: 'cannot get list'}, callback, callback);
+                    }
+                    var cid = json_data.list[page].cid;
+                    if (!cid) {
+                        util.handleError({hoerror: 2, message: 'cannot get cid'}, callback, callback);
+                    }
+                    var title = json_data.list[page].part;
+                    var playUrl = 'http://interface.bilibili.com/playurl?platform=bilihelper&otype=json&appkey=8e9fc618fbd41e28&cid=' + cid + '&quality=4&type=mp4';
+                    api.xuiteDownload(playUrl, '', function(err, raw_data_1) {
+                        if (err) {
+                            err.hoerror = 2;
+                            util.handleError(err, callback, callback);
+                        }
+                        var json_data_1 = null;
+                        try {
+                            json_data_1 = JSON.parse(raw_data_1);
+                        } catch (x) {
+                            console.log(raw_data_1);
+                            util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                        }
+                        if (!json_data_1.durl || !json_data_1.durl[0] || !json_data_1.durl[0].url) {
+                            console.log(json_data_1);
+                            util.handleError({hoerror: 2, message: 'cannot find videoUrl'}, callback, callback);
+                        }
+                        setTimeout(function(){
+                            callback(null, title, json_data_1.durl[0].url);
+                        }, 0);
+                    }, 60000, false, false, 'http://interface.bilibili.com/', false, '220.181.111.228');
+                }, 60000, false, false, 'http://api.bilibili.com/');
+            }, 60000, false, false, 'http://bangumi.bilibili.com/');
+        }
     },
     save2Drive: function(type, obj, parent, callback) {
         switch (type) {

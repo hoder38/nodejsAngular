@@ -4015,7 +4015,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     }
                     return false;
                 }
-                if (!end) {
+                if (!end && video.currentTime < video.duration - 3) {
                     time = parseInt(video.currentTime);
                 }
                 if (is_playlist && this[type].playlist) {
@@ -4030,7 +4030,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         callback(null);
                     }, 0);
                 }
-                if (!end) {
+                if (!end && music.currentTime < music.duration - 3) {
                     time = parseInt(music.currentTime);
                 }
                 if (is_playlist && this[type].playlist) {
@@ -4048,7 +4048,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                     }
                     return;
                 }
-                if (!end || !this.torrent.complete) {
+                if ((!end && torrent.currentTime < torrent.duration - 3) || !this.torrent.complete) {
                     time = parseInt(torrent.currentTime) + '&' + this.torrent.index;
                 }
             } else if (this[type].iframeOffset) {
