@@ -5177,7 +5177,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 if (this.toolList.item.id.substr(4).match(/^av/)) {
                     url =  'http://www.bilibili.com/video/' + this.toolList.item.id.substr(4) + '/';
                 } else {
-                    url =  'http://www.bilibili.com/bangumi/i/' + this.toolList.item.id.substr(4) + '/';
+                    url =  'http://bangumi.bilibili.com/anime/' + this.toolList.item.id.substr(4) + '/';
                 }
             } else {
                 addAlert('not external video');
@@ -5203,7 +5203,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 if (id.substr(4).match(/^av/)) {
                     url =  'http://www.bilibili.com/video/' + id.substr(4) + '/';
                 } else {
-                    url =  'http://www.bilibili.com/bangumi/i/' + id.substr(4) + '/';
+                    url =  'http://bangumi.bilibili.com/anime/' + id.substr(4) + '/';
                 }
             } else {
                 addAlert('not external video');

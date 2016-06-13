@@ -1006,7 +1006,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                             streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
                         });
                     });
-                } else if (url.match(/^(https|http):\/\/www\.bilibili\.com\//)) {
+                } else if (url.match(/^(https|http):\/\/www\.bilibili\.com\//) || url.match(/^(https|http):\/\/bangumi\.bilibili\.com\//)) {
                     mongo.orig("find", "storage", {owner: 'bilibili', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
                         if (err) {
                             util.handleError(err, next, res);
@@ -1478,7 +1478,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
                         streamClose(media_name, tag_arr, [], {owner: owner, untag: 0, thumb: thumb, url: url});
                     });
                 });
-            } else if (url.match(/^(https|http):\/\/www\.bilibili\.com\//)) {
+            } else if (url.match(/^(https|http):\/\/www\.bilibili\.com\//) || url.match(/^(https|http):\/\/bangumi\.bilibili\.com\//)) {
                 mongo.orig("find", "storage", {owner: 'bilibili', url: encodeURIComponent(url)}, {limit: 1}, function(err, items){
                     if (err) {
                         util.handleError(err, next, res);

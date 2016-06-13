@@ -2037,14 +2037,14 @@ module.exports = {
             if (id.match(/^av/)) {
                 url = 'http://www.bilibili.com/video/' + id + '/';
             } else {
-                url = 'http://www.bilibili.com/bangumi/i/' + id + '/';
+                url = 'http://bangumi.bilibili.com/anime/' + id + '/';
             }
             api.xuiteDownload(url, '', function(err, raw_data) {
                 if (err) {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                var info_match = raw_data.match(/class="bangumi-preview".*?"([^"]+)" alt="([^"]+)/);
+                var info_match = raw_data.match(/class="bangumi-preview"[\s\S]+?"([^"]+)" alt="([^"]+)/);
                 var name = '';
                 var thumb = '';
                 var info_list = false;
@@ -2059,42 +2059,32 @@ module.exports = {
                     if (info_tag.indexOf('animation') === -1) {
                         info_tag.push('animation');
                     }
-                    info_match = raw_data.match(/info-detail-item-date">.*?(\d\d\d\d)年.*?"info-detail-item".*?<em>([^<]+)/);
+                    info_match = raw_data.match(/info-row info-update">[\s\S]+?(\d\d\d\d)年/);
                     if (info_match) {
                         if (info_tag.indexOf(info_match[1]) === -1) {
                             info_tag.push(info_match[1]);
                         }
-                        info_match[2] = opencc.convertSync(info_match[2]);
-                        if (info_tag.indexOf(info_match[2]) === -1) {
-                            info_tag.push(info_match[2]);
-                        }
                     }
-                    info_match = raw_data.match(/class="info-row info-cv".*/);
-                    if (info_match) {
-                        info_list = info_match[0].match(/class="separator">\/<\/span>[^<]+/g);
-                        if (info_list) {
-                            for (var i in info_list) {
-                                info_item = info_list[i].match(/[^<>]+$/);
-                                if (info_item) {
-                                    info_item[0] = info_item[0];
-                                    if (info_tag.indexOf(info_item[0]) === -1) {
-                                        info_tag.push(info_item[0]);
-                                    }
+                    info_list = raw_data.match(/class="info-cv-item">.*?<\/span>[^<]+<\/span>/g);
+                    if (info_list) {
+                        for (var i in info_list) {
+                            info_item = info_list[i].match(/<\/span>([^<]+)<\/span>/);
+                            if (info_item) {
+                                info_item[1] = opencc.convertSync(info_item[1]);
+                                if (info_tag.indexOf(info_item[1]) === -1) {
+                                    info_tag.push(info_item[1]);
                                 }
                             }
                         }
                     }
-                    info_match = raw_data.match(/class="info-row info-style".*/);
-                    if (info_match) {
-                        info_list = info_match[0].match(/class="info-style-item">[^<]+/g);
-                        if (info_list) {
-                            for (var i in info_list) {
-                                info_item = info_list[i].match(/[^<>]+$/);
-                                if (info_item) {
-                                    info_item[0] = opencc.convertSync(info_item[0]);
-                                    if (info_tag.indexOf(info_item[0]) === -1) {
-                                        info_tag.push(info_item[0]);
-                                    }
+                    info_list = raw_data.match(/<span class="info-style-item">[^<]+<\/span>/g);
+                    if (info_list) {
+                        for (var i in info_list) {
+                            info_item = info_list[i].match(/>([^<]+)</);
+                            if (info_item) {
+                                info_item[1] = opencc.convertSync(info_item[1]);
+                                if (info_tag.indexOf(info_item[1]) === -1) {
+                                    info_tag.push(info_item[1]);
                                 }
                             }
                         }
@@ -5276,7 +5266,6 @@ module.exports = {
                         err.hoerror = 2;
                         util.handleError(err, callback, callback);
                     }
-                    console.log(raw_data_1);
                     var json_data_1 = null;
                     try {
                         json_data_1 = JSON.parse(raw_data_1);
