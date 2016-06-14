@@ -3,17 +3,17 @@
     <div class="navbar-collapse">
         <div collapse="collapse.stock">
             <ul class="nav navbar-nav side-nav" id="inverse-nav">
-                <li>
-                    <a href="#" aria-expanded="true" ng-click="filterStock = true;filterTag = '';filterCondition = '';filterLimit='';filterTagFocus = true">
-                        Filter&nbsp;<i class="glyphicon glyphicon-play"></i>
-                    </a>
-                </li>
                 <li class="{{!$parent.isRight && 'active' || ''}}">
                     <a href="#" aria-expanded="true" ng-click="openChart()">
                         Chart&nbsp;<i class="glyphicon {{$parent.isRight && 'glyphicon-chevron-down' || 'glyphicon-chevron-up'}}"></i>
                     </a>
                     <a href="#" ng-hide="$parent.isRight">
                         <strong>{{stockName}}</strong>
+                    </a>
+                </li>
+                <li ng-show="$parent.isRight">
+                    <a href="#" aria-expanded="true" ng-click="filterStock = true;filterTag = '';filterCondition = '';filterLimit='';filterTagFocus = true">
+                        Filter&nbsp;<i class="glyphicon glyphicon-play"></i>
                     </a>
                 </li>
                 <li class="{{!bookmarkCollapse && 'active' || ''}}" ng-show="$parent.isRight">
