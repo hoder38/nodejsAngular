@@ -1217,7 +1217,7 @@ module.exports = {
             }, 60000, false, false);
             break;
             case 'tri':
-            url = 'http://www.tri.org.tw/index.html';
+            url = 'http://www.tri.org.tw';
             api.xuiteDownload(url, '', function(err, raw_data) {
                 if (err) {
                     err.hoerror = 2;
