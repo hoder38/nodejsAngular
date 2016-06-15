@@ -3661,7 +3661,7 @@ module.exports = {
                                 ret_obj.showId = index;
                             } else {
                                 ret_obj = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
-                                if (list[index-1].id.match(/^(yuk|soh)_/)) {
+                                if (list[index-1].id.match(/^(yuk|soh|tud)_/)) {
                                     ret_obj.index = ret_obj.showId = (index*1000 + sub_index)/1000;
                                 }
                             }
@@ -3754,7 +3754,7 @@ module.exports = {
                             if (!ret_list) {
                                 ret_list = youkuSource();
                                 if (!ret_list) {
-                                    ret_obj = otherSource();
+                                    ret_list = otherSource();
                                     if (!ret_list) {
                                         util.handleError({hoerror: 2, message: 'not flv'}, callback2, callback2);
                                     }
@@ -3826,14 +3826,14 @@ module.exports = {
                                 if (!flv_list) {
                                     return false;
                                 }
-                                var raw_list = flv_list[0].match(/\[[^\[\]]+\]/g);
+                                var raw_list = flv_list[0].match(/\[.+?\][\],]/g);
                                 if (!raw_list) {
                                     return false;
                                 }
                                 var list = [];
                                 var list_match = false;
                                 for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^\["([^"]+)","([^_]+)_wd1"/);
+                                    list_match = raw_list[i].match(/\["([^"]+)","([^_]+)_wd1"/);
                                     if (list_match) {
                                         list.push({name: list_match[1], id: 'yuk_' + list_match[2] + '_' + sub_index});
                                     }
@@ -3860,32 +3860,33 @@ module.exports = {
                                 var list_match = false;
                                 var raw_list = false;
                                 if (flv_list11) {
-                                    raw_list = flv_list11[0].match(/\[[^\[\]]+\]/g);
+                                    raw_list = flv_list11[0].match(/\[.+?\][\],]/g);
                                     if (raw_list) {
                                         for (var i in raw_list) {
-                                            list_match = raw_list[i].match(/^\["([^"]+)","fun10_([^\/]+)\/([^\/]+)\.[^"]+"/);
+                                            list_match = raw_list[i].match(/\["([^"]+)","fun10_([^"]+)"/);
                                             if (list_match) {
-                                                list11.push({name: list_match[1], id: 'tud_' + list_match[2] + '_' + list_match[3]});
+                                                list11.push({name: list_match[1], id: 'tud_' + list_match[2] + '_' + sub_index});
                                             }
                                         }
                                     }
                                 }
                                 if (flv_list6) {
-                                    raw_list = flv_list6[0].match(/\[[^\[\]]+\]/g);
+                                    raw_list = flv_list6[0].match(/\[.+?\][\],]/g);
                                     if (raw_list) {
                                         for (var i in raw_list) {
-                                            list_match = raw_list[i].match(/^\["([^"]+)","fun3_([^\/]+)\/([^\/]+)\/([^\.]+)\.[^"]+"/);
+                                            list_match = raw_list[i].match(/\["([^"]+)","fun3_([^"]+)"/);
                                             if (list_match) {
-                                                list6.push({name: list_match[1], id: 'vqq_' + list_match[2] + '_' + list_match[3] + '_' + list_match[4]});
+                                                list6.push({name: list_match[1], id: 'vqq_' + list_match[2]});
                                             }
                                         }
                                     }
                                 }
                                 if (flv_list5) {
-                                    raw_list = flv_list5[0].match(/\[[^\[\]]+\]/g);
+                                    raw_list = flv_list5[0].match(/\[.+?\][\],]/g);
+                                    console.log(raw_list);
                                     if (raw_list) {
                                         for (var i in raw_list) {
-                                            list_match = raw_list[i].match(/^\["([^"]+)","fun1_([^\.]+)\.[^"]+"/);
+                                            list_match = raw_list[i].match(/\["([^"]+)","fun1_([^"]+)"/);
                                             if (list_match) {
                                                 list5.push({name: list_match[1], id: 'let_' + list_match[2]});
                                             }
@@ -3893,29 +3894,28 @@ module.exports = {
                                     }
                                 }
                                 if (flv_list8) {
-                                    raw_list = flv_list8[0].match(/\[[^\[\]]+\]/g);
+                                    raw_list = flv_list8[0].match(/\[.+?\][\],]/g);
                                     if (raw_list) {
                                         for (var i in raw_list) {
-                                            list_match = raw_list[i].match(/^\["([^"]+)","fun9_([^\.]+)\.([^"]+)"/);
+                                            list_match = raw_list[i].match(/\["([^"]+)","fun9_([^"]+)"/);
                                             if (list_match) {
-                                                list8.push({name: list_match[1], id: 'fun_m_' + list_match[2] + '_' + list_match[3]});
+                                                list8.push({name: list_match[1], id: 'fun_m_' + list_match[2]});
                                             }
                                         }
                                     }
                                 }
                                 if (flv_list7) {
-                                    raw_list = flv_list7[0].match(/\[[^\[\]]+\]/g);
+                                    raw_list = flv_list7[0].match(/\[.+?\][\],]/g);
                                     if (raw_list) {
                                         for (var i in raw_list) {
-                                            list_match = raw_list[i].match(/^\["([^"]+)","fun5_(\d+)\/([^\.]+)\.[^"]+"/);
+                                            list_match = raw_list[i].match(/\["([^"]+)","fun5_([^"]+)"/);
                                             if (list_match) {
-                                                list7.push({name: list_match[1], id: 'soh_' + list_match[2] + '_' + list_match[3] + '_' + sub_index});
+                                                list7.push({name: list_match[1], id: 'soh_' + list_match[2] + '_' + sub_index});
                                             }
                                         }
                                     }
                                 }
                                 var list = list11;
-                                var is_sub = false;
                                 if (list6.length > list.length) {
                                     list = list6;
                                 }
@@ -3927,7 +3927,6 @@ module.exports = {
                                 }
                                 if (list7.length > list.length) {
                                     list = list7;
-                                    //is_sub = true;
                                 }
                                 console.log(list11.length);
                                 console.log(list6.length);

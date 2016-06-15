@@ -2287,17 +2287,16 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                 url = 'http://www.bilibili.com/video/' + id[2] + '/';
             }
         } else if (id[1] === 'soh') {
-            var idsub = id[2].match(/^([^_]+)_([^_]+)_(\d)$/);
-            subIndex = Number(idsub[3]);
-            url = 'http://tv.sohu.com/' + idsub[1] + '/' + idsub[2] + '.shtml';
+            var idsub = id[2].match(/^([^_]+)_(\d)$/);
+            subIndex = Number(idsub[2]);
+            url = 'http://tv.sohu.com/' + idsub[1];
         } else if (id[1] === 'let') {
-            url = 'http://www.letv.com/ptv/vplay/' + id[2] + '.html';
+            url = 'http://www.letv.com/ptv/vplay/' + id[2];
         } else if (id[1] === 'vqq') {
-            var idsub = id[2].match(/^([^_]+)_([^_]+)_([^_]+)$/);
-            url = 'http://v.qq.com/cover/' + idsub[1] + '/' + idsub[2] + '/' + idsub[3] + '.html';
+            url = 'http://v.qq.com/cover/' + id[2];
         } else if (id[1] === 'fun') {
-            var idsub = id[2].match(/^([^_]+)_([^_]+)_([^_]+)$/);
-            url = 'http://www.funshion.com/vplay/' + idsub[1] + '-' + idsub[2] + '.' + idsub[3];
+            var idsub = id[2].match(/^([^_]+)_([^_]+)$/);
+            url = 'http://www.funshion.com/vplay/' + idsub[1] + '-' + idsub[2];
         } else if (id[1] === 'kdr') {
             url = id[2];
         } else if (id[1] === 'yuk') {
@@ -2305,8 +2304,9 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
             url = 'http://v.youku.com/v_show/id_' + idsub[1] + '.html';
             subIndex = Number(idsub[2]);
         } else if (id[1] === 'tud') {
-            var idsub = id[2].match(/^([^_]+)_([^_]+)$/);
-            url = 'http://www.tudou.com/albumplay/' + idsub[1] +'/' + idsub[2] +'.html';
+            var idsub = id[2].match(/^([^_]+)_(\d+)$/);
+            url = 'http://www.tudou.com/albumplay/' + idsub[1] + '.html';
+            subIndex = Number(idsub[2]);
         } else {
             url = 'http://www.youtube.com/watch?v=' + id[2];
         }
