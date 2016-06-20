@@ -4221,6 +4221,20 @@ app.get('/views/homepage', function(req, res, next) {
     res.send(msg);
 });
 
+//webpack
+app.get('/webpack', function(req, res, next) {
+    "use strict";
+    console.log("webpack.html");
+    console.log(new Date());
+    console.log(req.url);
+    console.log(req.body);
+    var stream = fs.createReadStream(viewsPath + '/webpack.html');
+    stream.on('error', function(err){
+        util.handleError(err, next, res);
+    });
+    stream.pipe(res);
+});
+
 app.get('/views/:id(\\w+)', function(req, res) {
     "use strict";
     console.log("views id");
