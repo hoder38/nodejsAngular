@@ -3604,8 +3604,9 @@ module.exports = {
                         ret_obj.showId = index;
                     } else {
                         ret_obj = {index: index, showId: index, title: eItems[0].list[index-1].name, id: eItems[0].list[index-1].id};
-                        if (eItems[0].list[index-1].id.match(/^(yuk|soh)_/)) {
+                        if (eItems[0].list[index-1].id.match(/^(yuk|soh|tud)_/)) {
                             ret_obj.index = ret_obj.showId = (index*1000 + sub_index)/1000;
+                            ret_obj.id = ret_obj.id + '_' + sub_index;
                         }
                     }
                     setTimeout(function(){
@@ -3663,6 +3664,7 @@ module.exports = {
                                 ret_obj = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
                                 if (list[index-1].id.match(/^(yuk|soh|tud)_/)) {
                                     ret_obj.index = ret_obj.showId = (index*1000 + sub_index)/1000;
+                                    ret_obj.id = ret_obj.id + '_' + sub_index;
                                 }
                             }
                             setTimeout(function(){
@@ -3789,7 +3791,7 @@ module.exports = {
                                     for (var i in raw_list) {
                                         list_match = raw_list[i].match(/^\["([^"]+)","([^_]+)_wd1"/);
                                         if (list_match) {
-                                            list.push({name: list_match[1], id: 'yuk_' + list_match[2] + '_' + sub_index});
+                                            list.push({name: list_match[1], id: 'yuk_' + list_match[2]});
                                         }
                                     }
                                     if (list.length > 0) {
@@ -3835,7 +3837,7 @@ module.exports = {
                                 for (var i in raw_list) {
                                     list_match = raw_list[i].match(/\["([^"]+)","([^_]+)_wd1"/);
                                     if (list_match) {
-                                        list.push({name: list_match[1], id: 'yuk_' + list_match[2] + '_' + sub_index});
+                                        list.push({name: list_match[1], id: 'yuk_' + list_match[2]});
                                     }
                                 }
                                 if (!list[index-1]) {
@@ -3865,7 +3867,7 @@ module.exports = {
                                         for (var i in raw_list) {
                                             list_match = raw_list[i].match(/\["([^"]+)","fun10_([^"]+)"/);
                                             if (list_match) {
-                                                list11.push({name: list_match[1], id: 'tud_' + list_match[2] + '_' + sub_index});
+                                                list11.push({name: list_match[1], id: 'tud_' + list_match[2]});
                                             }
                                         }
                                     }
@@ -3910,7 +3912,7 @@ module.exports = {
                                         for (var i in raw_list) {
                                             list_match = raw_list[i].match(/\["([^"]+)","fun5_([^"]+)"/);
                                             if (list_match) {
-                                                list7.push({name: list_match[1], id: 'soh_' + list_match[2] + '_' + sub_index});
+                                                list7.push({name: list_match[1], id: 'soh_' + list_match[2]});
                                             }
                                         }
                                     }
