@@ -1,14 +1,14 @@
 const webpack = require('webpack');
 
 module.exports = {
-    entry: './src/front/app.jsx',
+    entry: './src/front/index.js',
     output: {
         path: './public',
         filename: 'app.bundle.js'
     },
     module: {
         loaders: [
-            { test: /\.css$/, loader: 'style!css' },
+            //{ test: /\.css$/, loader: 'style!css' },
             { test: /\.jsx?$/,
                 exclude: /node_modules/,
                 loader: 'babel'
