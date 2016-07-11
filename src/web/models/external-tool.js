@@ -5588,64 +5588,25 @@ module.exports = {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                var raw_list = raw_data.match(/href="([^"]+)".*?PDF Download of this month\'s report/);
-                if (!raw_list) {
-                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
-                }
-                if (!raw_list[1].match(/^(http|https):\/\//)) {
-                    if (raw_list[1].match(/^\//)) {
-                        raw_list[1] = 'https://www.instituteforsupplymanagement.org' + raw_list[1];
-                    } else {
-                        raw_list[1] = 'https://www.instituteforsupplymanagement.org/' + raw_list[1];
-                    }
-                }
-                var utime = Math.round(new Date().getTime() / 1000);
-                var filePath = util.getFileLocation(type, utime);
-                console.log(filePath);
-                var folderPath = path.dirname(filePath);
-                var ext = path.extname(raw_list[1]);
-                var driveName = obj.name + ' ' + obj.date + ext;
-                console.log(driveName);
-                if (!fs.existsSync(folderPath)) {
-                    mkdirp(folderPath, function(err) {
-                        if(err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        api.xuiteDownload(raw_list[1], filePath, function(err) {
-                            if (err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
-                            googleApi.googleApi('upload', data, function(err, metadata) {
-                                if (err) {
-                                    util.handleError(err, callback, callback);
-                                }
-                                console.log(metadata);
-                                console.log('done');
-                                setTimeout(function(){
-                                    callback(null);
-                                }, 0);
-                            });
-                        });
-                    });
+                var raw_list = raw_data.match(/class="title">([^<]+)/);
+                if (raw_list) {
+                    raw_list = raw_list[1];
                 } else {
-                    api.xuiteDownload(raw_list[1], filePath, function(err) {
-                        if (err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
-                        googleApi.googleApi('upload', data, function(err, metadata) {
-                            if (err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            console.log(metadata);
-                            console.log('done');
-                            setTimeout(function(){
-                                callback(null);
-                            }, 0);
-                        });
-                    });
+                    raw_list = 'ISM';
                 }
+                var driveName = obj.name + ' ' + obj.date + '.txt';
+                console.log(driveName);
+                var data = {type: 'auto', name: driveName, body: raw_list + '\n\n\r\r' + obj.url, parent: parent};
+                googleApi.googleApi('upload', data, function(err, metadata) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    console.log(metadata);
+                    console.log('done');
+                    setTimeout(function(){
+                        callback(null);
+                    }, 0);
+                });
             }, 60000, false, false);
             break;
             case 'cbo':
