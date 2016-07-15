@@ -1302,57 +1302,21 @@ module.exports = {
                 var data = null;
                 for (var i in json_data) {
                     if (json_data[i].date === docDate) {
-                        list_match = json_data[i].content.match(/href="([^"]+)".*title="(\d\d\d\d?年\d\d?月臺灣製造業採購經理人指數\(PMI\)完整報告)/);
-                        if (list_match) {
-                            if (!list_match[1].match(/^(http|https):\/\//)) {
-                                if (list_match[1].match(/^\//)) {
-                                    list_match[1] = 'http://index.ndc.gov.tw' + list_match[1];
-                                } else {
-                                    list_match[1] = 'http://index.ndc.gov.tw/' + list_match[1];
+                        list_match = json_data[i].content.match(/href="([^"]+pdf)".*title="(.*\d\d\d\d?年\d\d?月.*)/g);
+                        for (var i in list_match) {
+                            item_match = list_match[i].match(/href="([^"]+pdf)".*title="(.*\d\d\d\d?年\d\d?月.*)/);
+                            if (item_match) {
+                                if (!item_match[1].match(/^(http|https):\/\//)) {
+                                    if (item_match[1].match(/^\//)) {
+                                        item_match[1] = 'http://index.ndc.gov.tw' + item_match[1];
+                                    } else {
+                                        list_match[1] = 'http://index.ndc.gov.tw/' + item_match[1];
+                                    }
                                 }
+                                item_match[1] =  item_match[1].replace(/&amp;/g, '&');
+                                data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName(item_match[2]), url: item_match[1]};
+                                list.push(data);
                             }
-                            list_match[1] =  list_match[1].replace(/&amp;/g, '&');
-                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName(list_match[2]), url: list_match[1]};
-                            list.push(data);
-                        }
-                        list_match = json_data[i].content.match(/href="([^"]+)".*title="(\d\d\d\d?年\d\d?月臺灣非製造業經理人指數\(NMI\)完整報告)/);
-                        if (list_match) {
-                            if (!list_match[1].match(/^(http|https):\/\//)) {
-                                if (list_match[1].match(/^\//)) {
-                                    list_match[1] = 'http://index.ndc.gov.tw' + list_match[1];
-                                } else {
-                                    list_match[1] = 'http://index.ndc.gov.tw/' + list_match[1];
-                                }
-                            }
-                            list_match[1] =  list_match[1].replace(/&amp;/g, '&');
-                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName(list_match[2]), url: list_match[1]};
-                            list.push(data);
-                        }
-                        list_match = json_data[i].content.match(/href="([^"]+)".*title="([^"]+)">\d\d\d\d?年\d\d?月份景氣概況新聞稿\.pdf/);
-                        if (list_match) {
-                            if (!list_match[1].match(/^(http|https):\/\//)) {
-                                if (list_match[1].match(/^\//)) {
-                                    list_match[1] = 'http://index.ndc.gov.tw' + list_match[1];
-                                } else {
-                                    list_match[1] = 'http://index.ndc.gov.tw/' + list_match[1];
-                                }
-                            }
-                            list_match[1] =  list_match[1].replace(/&amp;/g, '&');
-                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName(list_match[2]), url: list_match[1]};
-                            list.push(data);
-                        }
-                        list_match = json_data[i].content.match(/href="([^"]+)".*title="([^"]+)">\d\d\d\d?年\d\d?月臺灣採購經理人指數新聞稿\.pdf/);
-                        if (list_match) {
-                            if (!list_match[1].match(/^(http|https):\/\//)) {
-                                if (list_match[1].match(/^\//)) {
-                                    list_match[1] = 'http://index.ndc.gov.tw' + list_match[1];
-                                } else {
-                                    list_match[1] = 'http://index.ndc.gov.tw/' + list_match[1];
-                                }
-                            }
-                            list_match[1] =  list_match[1].replace(/&amp;/g, '&');
-                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear(), name: util.toValidName(list_match[2]), url: list_match[1]};
-                            list.push(data);
                         }
                     }
                 }
