@@ -3172,7 +3172,7 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                                 sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
                                 util.handleError(err);
                             } else {
-                                if (per && stockPer > 0 && (per[1] === '>' && stockPer > per[2]) || (per[1] === '<' && stockPer < per[2])) {
+                                if (per && stockPer > 0 && (per[1] === '>' && stockPer > (per[2] * 2 / 3)) || (per[1] === '<' && stockPer < (per[2] * 4 /3))) {
                                     console.log(stockPer);
                                     console.log(first_stage[index].name);
                                     if (yield) {
@@ -3182,7 +3182,7 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                                                 sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
                                                 util.handleError(err);
                                             } else {
-                                                if (yield && stockYield > 0 && (yield[1] === '>' && stockYield > yield[2]) || (yield[1] === '<' && stockYield < yield[2])) {
+                                                if (yield && stockYield > 0 && (yield[1] === '>' && stockYield > (yield[2] * 2 / 3)) || (yield[1] === '<' && stockYield < (yield[2] * 4 /3))) {
                                                     console.log(stockYield);
                                                     first_stage[index].per = stockPer;
                                                     second_stage.push(first_stage[index]);
@@ -3249,7 +3249,7 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                                 sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
                                 util.handleError(err);
                             } else {
-                                if (yield && stockYield > 0 && (yield[1] === '>' && stockYield > yield[2]) || (yield[1] === '<' && stockYield < yield[2])) {
+                                if (yield && stockYield > 0 && (yield[1] === '>' && stockYield > (yield[2] * 2 / 3)) || (yield[1] === '<' && stockYield < (yield[2] * 4 /3))) {
                                     console.log(stockYield);
                                     console.log(first_stage[index].name);
                                     second_stage.push(first_stage[index]);
