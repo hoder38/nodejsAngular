@@ -3318,7 +3318,7 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                                 }
                                 if (con === 1) {
                                     if (second_stage[index].per) {
-                                        if (second_stage[index].per <= stockLine) {
+                                        if (second_stage[index].per <= (stockLine * 4 / 3)) {
                                             filterNum++;
                                             stockTagTool.addTag(second_stage[index]._id, name, req.user, next, function(err, add_result) {
                                                 if (err) {
@@ -3352,7 +3352,7 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                                                 sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
                                                 util.handleError(err);
                                             } else {
-                                                if (stockPer <= stockLine) {
+                                                if (stockPer <= (stockLine * 4 / 3)) {
                                                     filterNum++;
                                                     stockTagTool.addTag(second_stage[index]._id, name, req.user, next, function(err, add_result) {
                                                         if (err) {
@@ -3384,7 +3384,7 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                                     }
                                 } else if (con === 2) {
                                     if (second_stage[index].per) {
-                                        if (second_stage[index].per <= stockLine + 5) {
+                                        if (second_stage[index].per <= ((stockLine + 5) * 4 / 3)) {
                                             filterNum++;
                                             stockTagTool.addTag(second_stage[index]._id, name, req.user, next, function(err, add_result) {
                                                 if (err) {
@@ -3418,7 +3418,7 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                                                 sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
                                                 util.handleError(err);
                                             } else {
-                                                if (stockPer <= stockLine + 5) {
+                                                if (stockPer <= ((stockLine + 5) * 4 / 3)) {
                                                     filterNum++;
                                                     stockTagTool.addTag(second_stage[index]._id, name, req.user, next, function(err, add_result) {
                                                         if (err) {
