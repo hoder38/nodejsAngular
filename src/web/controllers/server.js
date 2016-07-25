@@ -38,7 +38,8 @@ var https = require('https'),
     //privateKey  = fs.readFileSync(config_type.privateKey, 'utf8'),
     //certificate = fs.readFileSync(config_type.certificate, 'utf8'),
     pfx = fs.readFileSync(config_type.pfx),
-    credentials = {pfx: pfx, passphrase: config_type.pfx_pwd, ciphers: [
+    ca = fs.readFileSync(config_type.ca),
+    credentials = {pfx: pfx, passphrase: config_type.pfx_pwd, ca: ca, ciphers: [
         "ECDHE-RSA-AES256-SHA384",
         "DHE-RSA-AES256-SHA384",
         "ECDHE-RSA-AES256-SHA256",
