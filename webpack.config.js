@@ -1,7 +1,8 @@
 const webpack = require('webpack');
+require('babel-polyfill');
 
 module.exports = {
-    entry: './src/front/index.js',
+    entry: ['babel-polyfill', './src/front/index.js'],
     output: {
         path: './public',
         filename: 'app.bundle.js'
@@ -23,6 +24,11 @@ module.exports = {
             output: {
                 comments: false,
             },
+        }),
+        new webpack.DefinePlugin({
+            'process.env': {
+                NODE_ENV: JSON.stringify("production")
+            }
         })
     ]
  };
