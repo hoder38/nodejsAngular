@@ -1150,6 +1150,7 @@ var exports = module.exports = {
         }, img_threshold);
     },
     setApiQueue: function(name, param) {
+        var this_obj = this;
         console.log(api_ing);
         if (api_ing >= config_glb.api_limit) {
             console.log('reach limit');
