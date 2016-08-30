@@ -4038,7 +4038,7 @@ app.get('/api/getUser', function(req, res, next){
         var level = 0;
         if (util.checkAdmin(1, req.user)) {
             level = 2;
-            nav = [{title: "Stock", hash: "/Stock", css: "fa fa-fw fa-line-chart"}];
+            nav = [{title: "Stock", hash: "/Stock", css: "glyphicon glyphicon-signal", key: 3}];
         } else if (util.checkAdmin(2, req.user)) {
             level = 1;
         }
@@ -4047,6 +4047,16 @@ app.get('/api/getUser', function(req, res, next){
             isAdult = true;
         }
         res.json({id: req.user.username, ws_url: 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port, level: level, nav: nav, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
+    });
+});
+
+app.get('/api/testLogin', function(req, res, next){
+    checkLogin(req, res, next, function(req, res, next) {
+        console.log('test login');
+        console.log(new Date());
+        console.log(req.url);
+        console.log(req.body);
+        res.json({apiOK: true});
     });
 });
 
@@ -4223,7 +4233,7 @@ app.get('/views/homepage', function(req, res, next) {
 });
 
 //webpack
-app.get('/webpack', function(req, res, next) {
+app.get('/webpack*', function(req, res, next) {
     "use strict";
     console.log("webpack.html");
     console.log(new Date());
