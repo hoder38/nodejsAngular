@@ -2314,6 +2314,7 @@ module.exports = {
             month_str = '0' + month_str;
         }
         var start_month = 0;
+        var p_start_month = 0;
         console.log(year);
         console.log(month_str);
         mongo.orig("find", "stock", {_id: id}, {limit: 1}, function(err, items){
@@ -2412,6 +2413,7 @@ module.exports = {
                             }
                             console.log(year);
                             console.log(month_str);
+                            p_start_month = start_month;
                             if (index >= 20 || sales_num.length > 11) {
                                 var diff = 0;
                                 var predict_sales_0 = 0;
@@ -2472,12 +2474,18 @@ module.exports = {
                                 var ret_str = '';
                                 var true_sales = 0;
                                 var previous_sales = 0;
-                                for (var i = sales_num.length-1; i >= 0; i--) {
+                                var p_true_sales = 0;
+                                var p_previous_sales = 0;
+                                for (var i = 0; i < sales_num.length; i++) {
                                     true_sales += sales_num[i];
                                     previous_sales += sales_pre[i];
+                                    if (p_start_month > 0) {
+                                        p_start_month--;
+                                        p_true_sales += sales_num[i];
+                                        p_previous_sales += sales_pre[i];
+                                    }
                                 }
-
-                                ret_str = start_month + 'th ' + Math.ceil(((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3)/true_sales-1)*1000)/10 + '% ' + Math.ceil(true_sales/previous_sales*1000 - 1000)/10 + '%(t)';
+                                ret_str = start_month + 'th ' + Math.ceil(p_true_sales/p_previous_sales*1000 - 1000)/10 + '% ' + Math.ceil(true_sales/previous_sales*1000 - 1000)/10 + '%(t)';
                                 if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) > 0) {
                                     var predict_profit = managementStatus.a + managementStatus.b * predict_sales_0 * 1000;
                                     predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_1 * 1000;
@@ -2683,7 +2691,7 @@ module.exports = {
                                 if (!start_month) {
                                     start_month = month;
                                 }
-                                if (data.length > 100) {
+                                if (data.length > 200) {
                                     var pattern = new RegExp(year_str + '\\/' + month_str + '.*', 'g');
                                     var data_list = data.match(pattern);
                                     if (data_list.length > 0) {
@@ -2803,7 +2811,7 @@ module.exports = {
                                             start_month = month;
                                         }
                                         type = 3;
-                                        if (data.length > 100) {
+                                        if (data.length > 200) {
                                             var pattern = new RegExp(year_str + '\\/' + month_str + '.*', 'g');
                                             var data_list = data.match(pattern);
                                             if (data_list.length > 0) {
