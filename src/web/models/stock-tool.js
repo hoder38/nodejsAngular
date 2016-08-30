@@ -2676,9 +2676,7 @@ module.exports = {
                                 rest_interval();
                             }, 10000, false, false);
                         } else if (type === 3) {
-                            url = 'http://www.twse.com.tw/ch/trading/exchange/STOCK_DAY/STOCK_DAY_print.php?genpage=genpage/Report' + year + month_str + '/' + year + month_str + '_F3_1_8_' + items[0].index + '.php&type=csv';
-                            console.log(url);
-                            api.xuiteDownload(url, '', function(err, data) {
+                            api.getTwseDay(items[0].index, year, month, function(err, data) {
                                 if (err) {
                                     util.handleError(err, callback, callback);
                                 }
@@ -2746,7 +2744,7 @@ module.exports = {
                                 } else {
                                     rest_interval(true);
                                 }
-                            }, 10000, false, false, 'http://www.twse.com.tw/',true);
+                            });
                         } else {
                             url = 'http://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/st43_result.php?l=zh-tw&d=' + year_str + '/' + month_str + '&stkno=' + items[0].index + '&_=' + new Date().getTime();
                             console.log(url);
@@ -2797,9 +2795,7 @@ module.exports = {
                                     new_interval_data[year][month_str] = {raw: tmp_interval, max: tmp_max, min: tmp_min};
                                     rest_interval();
                                 } else {
-                                    url = 'http://www.twse.com.tw/ch/trading/exchange/STOCK_DAY/STOCK_DAY_print.php?genpage=genpage/Report' + year + month_str + '/' + year + month_str + '_F3_1_8_' + items[0].index + '.php&type=csv';
-                                    console.log(url);
-                                    api.xuiteDownload(url, '', function(err, data) {
+                                    api.getTwseDay(items[0].index, year, month, function(err, data) {
                                         if (err) {
                                             util.handleError(err, callback, callback);
                                         }
@@ -2868,7 +2864,7 @@ module.exports = {
                                         } else {
                                             rest_interval(true);
                                         }
-                                    }, 10000, false, false, 'http://www.twse.com.tw/', true);
+                                    });
                                 }
                             }, 10000, false, false);
                         }
