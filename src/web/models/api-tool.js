@@ -919,6 +919,34 @@ module.exports = {
             }, 60000, false, false, 'http://doc.twse.com.tw/', true);
         }, 60000, false, false, 'http://doc.twse.com.tw/', true);
     },
+    getTwseDay: function(stockCode, year, month, callback) {
+        var url = 'http://www.twse.com.tw/ch/trading/exchange/STOCK_DAY/STOCK_DAYMAIN.php';
+        var urlParse = urlMod.parse(url);
+
+        // An object of options to indicate where to post to
+        var options = {
+            host: urlParse.hostname,
+            port: 80,
+            path: urlParse.path,
+            method: 'POST',
+            encoding : 'utf8'
+        };
+        var fields = {};
+        fields['download'] = 'csv';
+        fields['query_year'] = year.toString();
+        fields['query_month'] = month.toString();
+        fields['CO_ID'] = stockCode;
+        console.log(url);
+        console.log(fields);
+        postData(fields, null, options, {}, function(err, data) {
+            if (err) {
+                util.handleError(err, callback, callback);
+            }
+            setTimeout(function(){
+                callback(null, data.body);
+            }, 0);
+        }, null, true);
+    },
     getTwseXml: function(stockCode, year, quarter, filePath, callback) {
         var url = 'http://mops.twse.com.tw/server-java/FileDownLoad';
         var urlParse = urlMod.parse(url);
