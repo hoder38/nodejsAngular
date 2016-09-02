@@ -1125,6 +1125,7 @@ module.exports = {
         });
     },
     setApiQueue: function(name, param) {
+        console.log('aping');
         console.log(api_ing);
         if (api_ing >= config_glb.api_limit) {
             console.log('reach limit');
@@ -1152,6 +1153,7 @@ module.exports = {
         }
     },
     getApiQueue: function() {
+        console.log('aping');
         console.log(api_ing);
         api_duration = 0;
         var this_obj = this;

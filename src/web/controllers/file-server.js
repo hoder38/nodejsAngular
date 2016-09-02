@@ -6444,9 +6444,14 @@ var server0 = net.createServer(function(c) { //'connection' listener
         console.log('client disconnected');
     });
     c.on('data', function(data) {
-        var recvData = JSON.parse(data.toString());
-        console.log('websocket: ' + recvData.send);
-        sendWs(recvData.data, recvData.adultonly, recvData.auth);
+        try {
+            var recvData = JSON.parse(data.toString());
+            console.log('websocket: ' + recvData.send);
+            sendWs(recvData.data, recvData.adultonly, recvData.auth);
+        } else {
+            console.log('Json parse error!!!');
+            console.log(data);
+        }
     });
 }).listen(config_glb.com_port);
 
