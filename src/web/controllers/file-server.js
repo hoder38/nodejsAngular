@@ -6448,8 +6448,9 @@ var server0 = net.createServer(function(c) { //'connection' listener
             var recvData = JSON.parse(data.toString());
             console.log('websocket: ' + recvData.send);
             sendWs(recvData.data, recvData.adultonly, recvData.auth);
-        } else {
+        } catch(e) {
             console.log('Json parse error!!!');
+            console.log(e);
             console.log(data);
         }
     });
@@ -6461,8 +6462,13 @@ var wsServer = new WebSocketServer({
 
 function onWsConnMessage(message) {
     console.log(message);
-    var recvData = JSON.parse(message);
-    console.log(recvData);
+    try {
+        var recvData = JSON.parse(message);
+        console.log(recvData);
+    } catch(e) {
+        console.log('Json parse error!!!');
+        console.log(e);
+    }
     //sendWs(sendData, 1, 1);
 }
 
