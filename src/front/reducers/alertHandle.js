@@ -4,9 +4,12 @@ const initialState = []
 
 let key = 0
 
-function alertHandle (state = initialState, action) {
+export default function alertHandle (state = initialState, action) {
     switch (action.type) {
         case ALERT_PUSH:
+        if (action.msg.hasOwnProperty('message')) {
+            action.msg = action.msg.message
+        }
         if (action.msg.toString().trim()) {
             return [
                 ...state,
@@ -23,5 +26,3 @@ function alertHandle (state = initialState, action) {
         return state
     }
 }
-
-export default alertHandle

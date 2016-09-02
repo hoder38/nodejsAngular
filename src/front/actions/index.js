@@ -1,6 +1,5 @@
-import { COLLAPSE_TOGGLE, ALERT_PUSH, ALERT_POP, SET_MAIN_URL } from '../constants'
-import { browserHistory } from 'react-router'
-import { api } from '../utility'
+import { COLLAPSE_TOGGLE, ALERT_PUSH, ALERT_POP, SET_MAIN_URL, USER_INFO_ADD
+    , USER_INFO_POP } from '../constants'
 
 export const collapseToggle = index => ({
     type: COLLAPSE_TOGGLE,
@@ -20,4 +19,14 @@ export const alertPop = key => ({
 export const setMainUrl = url => ({
     type: SET_MAIN_URL,
     url,
+})
+
+export const userInfoAdd = user => ({
+    type: USER_INFO_ADD,
+    user,
+})
+
+export const userInfoPop = key => ({
+    type: USER_INFO_POP,
+    key,
 })

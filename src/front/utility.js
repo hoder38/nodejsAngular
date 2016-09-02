@@ -1,5 +1,6 @@
 import fetch from 'isomorphic-fetch'
 import { browserHistory } from 'react-router'
+import { LOGIN_PAGE } from './constants'
 
 const re_weburl = new RegExp(
     "^" +
@@ -65,7 +66,7 @@ function errorHandle(response, relogin) {
                 return response.text().then(err => {throw err})
             case 401:
                 if (relogin) {
-                    browserHistory.push('/webpack/login')
+                    browserHistory.push(LOGIN_PAGE)
                     throw Error('')
                 } else {
                     return response.text().then(err => {throw err})
@@ -119,3 +120,40 @@ export const doLogout = (url = '') => api(`${url}/api/logout`).then(info => {
 })
 
 export const testLogin = () => api('/api/testLogin', null, 'GET', false)
+
+export function handleInput(number, names, submit) {
+    let input = []
+    for (let i = 0; i < number; i++) {
+        let singleInput = {}
+        singleInput.ref = null
+        singleInput.getRef = ref => singleInput.ref = ref
+        singleInput.onenter = e => {
+            if (e.key === 'Enter') {
+                e.preventDefault()
+                for (let j = i + 1; j <= number; j++) {
+                    if (j === number) {
+                        submit()
+                        break;
+                    }
+                    if (input[j].ref !== null) {
+                        input[j].ref.focus()
+                        break;
+                    }
+                }
+            }
+        }
+        input.push(singleInput)
+    }
+    input.push(() => {
+        let value = {}
+        names.forEach((name, i) => {
+            if (input[i].ref !== null) {
+                value[name] = input[i].ref.value
+            } else {
+                value[name] = ''
+            }
+        })
+        return value
+    })
+    return input
+}

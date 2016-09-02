@@ -25,6 +25,7 @@ body {
     width: 100%;
     padding: 0;
     background-color: #fff;
+    min-height: 90vh;
 }
 
 .huge {
@@ -34,7 +35,7 @@ body {
 
 @media(min-width:768px) {
     #wrapper {
-        padding-left: 225px;
+        padding-left: 150px;
     }
 
     #page-wrapper {
@@ -117,19 +118,16 @@ ul.alert-dropdown {
         position: fixed;
         top: 51px;
         left: 225px;
-        width: 225px;
+        width: 150px;
         margin-left: -225px;
         border: none;
         border-radius: 0;
         overflow-y: auto;
         background-color: #222;
-        bottom: 0;
-        overflow-x: hidden;
-        padding-bottom: 40px;
     }
 
     .side-nav>li>a {
-        width: 225px;
+        width: 150px;
     }
 
     .side-nav li a:hover,
@@ -224,13 +222,4 @@ ul.alert-dropdown {
 
 .panel-yellow > a:hover {
     color: #df8a13;
-}
-
-#alert-section {
-    float:left;
-    position:fixed;
-    left: 0px;
-    width: 100%;
-    z-index: 100;
-    _position:absolute; /* position fixed for IE6 */
 }

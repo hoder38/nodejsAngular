@@ -1,5 +1,6 @@
 import React from 'react'
 import { IndexLink, browserHistory } from 'react-router'
+import { ROOT_PAGE, LOGIN_PAGE, USER_PAGE } from '../constants'
 import ReNavlist from '../containers/ReNavlist'
 import ReToggleNav from '../containers/ReToggleNav'
 import ReAlertlist from '../containers/ReAlertlist'
@@ -12,7 +13,7 @@ const App = React.createClass({
         return {
             id: 'guest',
             navlist: [
-                {title: "homepage", hash: "/webpack", css: "glyphicon glyphicon-home", key: 0},
+                {title: "homepage", hash: ROOT_PAGE, css: "glyphicon glyphicon-home", key: 0},
                 {title: "Storage", hash: "/webpack/foo", css: "glyphicon glyphicon-hdd", key: 1},
                 {title: "Password", hash: "/webpack/bar", css: "glyphicon glyphicon-lock", key: 2},
             ],
@@ -49,13 +50,13 @@ const App = React.createClass({
                 throw Error('Invalid user data!!!')
             }
         }).catch(err => {
-            this.props.addalert(err.message)
+            this.props.addalert(err)
             this._doLogout()
         })
         this._userDrop = [
             {title: 'Profile', className: 'glyphicon glyphicon-user', onclick: (e) => {
                 e.preventDefault()
-                browserHistory.push('/webpack/foo')
+                browserHistory.push(USER_PAGE)
             }, key: 0},
             {key: 1},
             {title: 'Log Out', className: 'glyphicon glyphicon-off', onclick: (e) => {
@@ -65,10 +66,12 @@ const App = React.createClass({
         ]
     },
     componentWillUnmount: function() {
-        this._ws.close()
+        if (this._ws) {
+            this._ws.close()
+        }
     },
     _doLogout: function() {
-        doLogout().then(() => browserHistory.push('/webpack/login')).catch(err => this.props.addalert(err.message))
+        doLogout().then(() => browserHistory.push(LOGIN_PAGE)).catch(err => this.props.addalert(err))
     },
     render: function() {
         return (
@@ -77,7 +80,7 @@ const App = React.createClass({
                 <nav className="navbar navbar-inverse navbar-fixed-top" role="navigation">
                     <div className="navbar-header">
                         <ReToggleNav inverse={true} index={0} />
-                        <IndexLink className="navbar-brand" to="/webpack">ANoMoPi</IndexLink>
+                        <IndexLink className="navbar-brand" to={ROOT_PAGE}>ANoMoPi</IndexLink>
                         <ReToggleNav inverse={false} index={1} />
                     </div>
                     <ul className="nav navbar-right top-nav">

@@ -1,14 +1,14 @@
 import React from 'react'
 import { Link, IndexLink } from 'react-router'
+import { ROOT_PAGE } from '../constants'
 
-//記得改為 /
 export default function Navlist({ navlist, collapse }) {
     let rows = []
     navlist.forEach(nav => {
-        if (nav.hash === '/webpack') {
+        if (nav.hash === ROOT_PAGE) {
             rows.push(
                 <li key={nav.key}>
-                    <IndexLink to="/webpack">
+                    <IndexLink to={ROOT_PAGE}>
                         <i className={nav.css}></i>&nbsp;{nav.title}
                     </IndexLink>
                 </li>

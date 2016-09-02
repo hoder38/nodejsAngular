@@ -1,14 +1,16 @@
-import React, { Component } from 'react'
+import React from 'react'
 import { Provider } from 'react-redux'
 import { Router, Route, IndexRoute, Redirect, browserHistory } from 'react-router'
 import { syncHistoryWithStore } from 'react-router-redux'
 import configureStore from '../configureStore'
+import { ROOT_PAGE, LOGIN_PAGE, USER_PAGE } from '../constants'
 import ReApp from './ReApp'
 import Homepage from '../components/Homepage'
+import ReUserlist from './ReUserlist'
 import Storage from './Storage'
 import Bar from '../components/Bar'
 import ReLogin from './ReLogin'
-import { api, testLogin } from '../utility'
+import { testLogin } from '../utility'
 
 const store = configureStore()
 
@@ -16,7 +18,7 @@ const history = syncHistoryWithStore(browserHistory, store)
 
 const isLogin = (nextState, replaceState, callback) => testLogin()
     .then(() => {
-        replaceState('/webpack')
+        replaceState(ROOT_PAGE)
         callback()
     }).catch(err => {
         console.log(err)
@@ -30,13 +32,14 @@ export default function Root() {
         <Provider store={store}>
             <div>
                 <Router history={history}>
-                    <Route path="/webpack/login" component={ReLogin} onEnter={isLogin} />
-                    <Route path="/webpack" component={ReApp}>
+                    <Route path={LOGIN_PAGE} component={ReLogin} onEnter={isLogin} />
+                    <Route path={ROOT_PAGE} component={ReApp}>
                         <IndexRoute component={Homepage} />
                         <Route path="foo" component={Storage} />
                         <Route path="bar" component={Bar} />
+                        <Route path={USER_PAGE} component={ReUserlist} />
                     </Route>
-                    <Redirect from="*" to="/webpack" />
+                    <Redirect from="*" to={ROOT_PAGE} />
                 </Router>
             </div>
         </Provider>
