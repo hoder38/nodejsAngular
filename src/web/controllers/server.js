@@ -3305,7 +3305,8 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                             console.log(second_stage[index].name);
                             console.log(result);
                             var pre_result = result.split(' ');
-                            if (pre_result.length > 3 && pre_result[3] <= (stockLine * 4 / 3)) {
+                            //if (pre_result.length > 3 && pre_result[3] <= (stockLine * 4 / 3)) {
+                            if (pre_result.length > 3) {
                                 var con = 0;
                                 var pre1 = pre_result[1].match(/^(\-)?\d+/);
                                 var pre2 = pre_result[2].match(/^(\-)?\d+/);
