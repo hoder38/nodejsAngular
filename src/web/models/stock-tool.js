@@ -2692,7 +2692,7 @@ module.exports = {
                                     start_month = month;
                                 }
                                 if (data.length > 200) {
-                                    var pattern = new RegExp(year_str + '\\/' + month_str + '.*', 'g');
+                                    var pattern = new RegExp('"' + year_str + '\\/' + month_str + '.*', 'g');
                                     var data_list = data.match(pattern);
                                     if (data_list.length > 0) {
                                         var tmp_interval = [];
@@ -2706,7 +2706,9 @@ module.exports = {
                                             tmp_list_1 = [];
                                             tmp_list = data_list[i].split(',');
                                             for (var j in tmp_list) {
-                                                if (tmp_list[j].match(/^"/)) {
+                                                if (tmp_list[j].match(/^".*"$/)) {
+                                                    tmp_list_1.push(tmp_list[j].replace(/"/g, ''));
+                                                } else if (tmp_list[j].match(/^"/)) {
                                                     tmp_index = j;
                                                     tmp_list[j] = tmp_list[j].replace(/"/g, '');
                                                 } else if (tmp_list[j].match(/"$/)) {
@@ -2812,7 +2814,7 @@ module.exports = {
                                         }
                                         type = 3;
                                         if (data.length > 200) {
-                                            var pattern = new RegExp(year_str + '\\/' + month_str + '.*', 'g');
+                                            var pattern = new RegExp('"' + year_str + '\\/' + month_str + '.*', 'g');
                                             var data_list = data.match(pattern);
                                             if (data_list.length > 0) {
                                                 var tmp_interval = [];
@@ -2826,7 +2828,9 @@ module.exports = {
                                                     tmp_list_1 = [];
                                                     tmp_list = data_list[i].split(',');
                                                     for (var j in tmp_list) {
-                                                        if (tmp_list[j].match(/^"/)) {
+                                                        if (tmp_list[j].match(/^".*"$/)) {
+                                                            tmp_list_1.push(tmp_list[j].replace(/"/g, ''));
+                                                        } else if (tmp_list[j].match(/^"/)) {
                                                             tmp_index = j;
                                                             tmp_list[j] = tmp_list[j].replace(/"/g, '');
                                                         } else if (tmp_list[j].match(/"$/)) {
