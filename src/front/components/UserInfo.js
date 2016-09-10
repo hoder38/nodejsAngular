@@ -1,83 +1,143 @@
 import React from 'react'
 import UserInput from './UserInput'
-import { isValidString, handleInput } from '../utility'
+import { isValidString, api } from '../utility'
 
 const UserInfo = React.createClass({
     getInitialState: function() {
-        this._input = handleInput(8, ['name', 'auto', 'perm', 'desc', 'unDay', 'unHit', 'newPwd', 'conPwd'], this._handleSubmit)
-        return Object.assign({}, {
-            edit: false,
-            newPwd: '',
-            conPwd: '',
-        }, this._setInitial())
+        this._input = new UserInput.Input(['name', 'auto', 'perm', 'desc', 'unDay', 'unHit', 'newPwd', 'conPwd'], this._handleSubmit, this._handleChange)
+        const edit = this.props.user.newable ? true : false
+        return Object.assign({edit}, this._input.initValue(this.props.user))
     },
-    _checkInput: function(name, orig_input, type) {
-        if (this.state[name] !== orig_input) {
-            if (isValidString(this.state[name], type)) {
-                return {[name]: this.state[name]}
+    componentDidUpdate: function(prevProps, prevState) {
+        if (this.state.edit && !prevState.edit) {
+            this._input.initFocus()
+        }
+    },
+    _checkInput: function(name, orig_input = '', type, confirm='') {
+        if (confirm) {
+            if (this.state[name].toString() !== orig_input.toString()) {
+                this.props.addalert(`${name} is not the same!!!`)
             } else {
-                this.props.addalert(`{$name} not vaild!!!`)
-                return false;
+                if (this.state[name]) {
+                    if (isValidString(this.state[name], type)) {
+                        return {
+                            [name]: this.state[name],
+                            [confirm]: orig_input,
+                        }
+                    } else {
+                        this.props.addalert(`${name} not vaild!!!`)
+                    }
+                }
+            }
+        } else {
+            if (this.state[name].toString() !== orig_input.toString()) {
+                if (isValidString(this.state[name], type)) {
+                    return {[name]: this.state[name]}
+                } else {
+                    this.props.addalert(`${name} not vaild!!!`)
+                }
             }
         }
-    }
+        return false
+    },
     _handleSubmit: function(e) {
         if (e) {
             e.preventDefault()
         }
-        console.log('submit');
-        let set_obj = Object.assign({},
+        const set_obj = Object.assign({},
             this._checkInput('name', this.props.user.name, 'name'),
-            this._checkInput('auto', this.props.user.auto, 'url')),
-            this._checkInput('newPwd', this.state.conPwd, 'passwd'))
-        console.log(set_obj);
+            this._checkInput('auto', this.props.user.auto, 'url'),
+            this._checkInput('perm', this.props.user.perm, 'perm'),
+            this._checkInput('desc', this.props.user.desc, 'desc'),
+            this._checkInput('unDay', this.props.user.unDay, 'int'),
+            this._checkInput('unHit', this.props.user.unHit, 'int'),
+            this._checkInput('newPwd', this.state.conPwd, 'passwd', 'conPwd'))
+        if (this.props.user.newable) {
+            console.log('new user');
+        } else {
+            if (Object.keys(set_obj).length > 0) {
+                this.props.sendglbpw(userPW => {
+                    if (!isValidString(userPW, 'passwd')) {
+                        this.props.addalert('User password not vaild!!!')
+                        return Promise.reject('User password not vaild!!!')
+                    } else {
+                        set_obj['userPW'] = userPW
+                        return api(`/api/edituser/${this.props.user.key}`, set_obj, 'PUT')
+                        .then(info => {
+                            if (info.hasOwnProperty('owner')) {
+                                this.props.setbasic(info.owner)
+                                delete info.owner
+                            }
+                            this.props.addUser(Object.assign({}, this.props.user, info))
+                            this.setState(Object.assign({
+                                edit: !this.state.edit
+                            }, this._input.initValue(this.props.user)))
+                        }).catch(err => {
+                            this.props.addalert(err)
+                            throw err
+                        })
+                    }
+                })
+            } else {
+                this.setState(Object.assign({
+                    edit: !this.state.edit
+                }, this._input.initValue(this.props.user)))
+            }
+        }
     },
     _handleChange: function() {
-        let input_value = this._input[8]()
-        if (this.state.edit) {
-            this.setState(Object.assign({}, this.state, input_value))
-        } else {
-            this.setState(Object.assign({}, this.state, {
-                newPwd: input_value.newPwd,
-                conPwd: input_value.conPwd,
-            }))
-        }
+        this.setState(Object.assign({}, this.state, this._input.getValue()))
     },
-    _setInitial: function() {
-        return {
-            name: this.props.user.name,
-            auto: this.props.user.auto,
-            perm: this.props.user.perm,
-            desc: this.props.user.desc,
-            unDay: this.props.user.unDay,
-            unHit: this.props.user.unHit,
-        }
+    _delUser: function() {
+        this.props.sendglbcf(() => this.props.sendglbpw(userPW => {
+            if (!isValidString(userPW, 'passwd')) {
+                this.props.addalert('User password not vaild!!!')
+                return Promise.reject('User password not vaild!!!')
+            } else {
+                return api(`/api/deluser/${this.props.user.key}`, {userPW}, 'PUT')
+                .then(info => {
+                    this.props.delUser(this.props.user.key)
+                }).catch(err => {
+                    this.props.addalert(err)
+                    throw err
+                })
+            }
+        }), `Would you sure to delete USER: ${this.props.user.name} ?`)
     },
     render: function() {
-        const remove_btn = this.props.user.delable ? (
-            <button className="btn btn-danger" type="button">
-                <i className="glyphicon glyphicon-remove"></i>
-            </button>
-        ) : ''
         const editClick = () => {
-            this.setState(Object.assign({}, this.state, {
+            this.setState(Object.assign({
                 edit: !this.state.edit
-            }, this._setInitial()))
+            }, this._input.initValue(this.props.user)))
+        }
+        const edit_btn = this.props.user.newable ? '' : (
+            <button className="btn btn-warning" type="button" onClick={editClick}>
+                <i className={this.state.edit ? 'glyphicon glyphicon-check' : 'glyphicon glyphicon-edit'}></i>
+            </button>
+        )
+        let remove_btn = ''
+        if (this.state.edit) {
+            remove_btn = (
+                <button className="btn btn-success" type="submit" >
+                    <i className="glyphicon glyphicon-ok"></i>
+                </button>
+            )
+        } else {
+            remove_btn = this.props.user.delable ? (
+                <button className="btn btn-danger" type="button" onClick={this._delUser}>
+                    <i className="glyphicon glyphicon-remove"></i>
+                </button>
+            ) : ''
         }
         return (
             <div className="col-xs-12 col-sm-12 col-md-10 col-lg-10 col-xs-offset-0 col-sm-offset-0 col-md-offset-1 col-lg-offset-1">
-                <div className="panel panel-primary">
+                <div className={this.props.user.newable ? 'panel panel-info' : 'panel panel-primary'}>
                     <div className="panel-heading">
                         <h3 className="panel-title">User profile</h3>
                     </div>
                     <form onSubmit={this._handleSubmit}>
                         <div className="panel-body">
-                            <button className="btn btn-success" type="submit" >
-                                <i className="glyphicon glyphicon-ok"></i>
-                            </button>
-                            <button className="btn btn-warning" type="button" onClick={editClick}>
-                                <i className={this.state.edit ? 'glyphicon glyphicon-check' : 'glyphicon glyphicon-edit'}></i>
-                            </button>
+                            {edit_btn}
                             {remove_btn}
                         </div>
                         <div className="panel-footer">
@@ -89,86 +149,88 @@ const UserInfo = React.createClass({
                                     <span>
                                         <UserInput
                                             val={this.state.name}
-                                            edit={this.state.edit}
-                                            getRef={this._input[0].getRef}
-                                            onenter={this._input[0].onenter}
-                                            onchange={this._handleChange}
-                                            headelement='strong'
-                                            topelement='section' />
+                                            getinput={this._input.getInput('name')}
+                                            edit={this.state.edit}>
+                                            <strong />
+                                        </UserInput>
                                         <br />
                                     </span>
                                     <table className="table table-user-information">
                                         <tbody>
                                             <UserInput
                                                 val={this.state.auto}
-                                                edit={this.state.edit}
-                                                getRef={this._input[1].getRef}
-                                                onenter={this._input[1].onenter}
-                                                onchange={this._handleChange}>
-                                                <td>Auto upload:</td>
+                                                getinput={this._input.getInput('auto')}
+                                                show={this.props.user.hasOwnProperty('auto')}
+                                                edit={this.state.edit}>
+                                                <tr>
+                                                    <td key="1">Auto upload:</td>
+                                                    <td key="2" />
+                                                </tr>
                                             </UserInput>
                                             <UserInput
                                                 val={this.state.perm}
-                                                edit={this.state.edit}
+                                                getinput={this._input.getInput('perm')}
                                                 show={this.props.user.hasOwnProperty('perm')}
-                                                getRef={this._input[2].getRef}
-                                                onenter={this._input[2].onenter}
-                                                onchange={this._handleChange}>
-                                                <td>User level:</td>
+                                                edit={this.state.edit}>
+                                                <tr>
+                                                    <td key="1">User level:</td>
+                                                    <td key="2" />
+                                                </tr>
                                             </UserInput>
                                             <UserInput
                                                 val={this.state.desc}
-                                                edit={this.state.edit}
+                                                getinput={this._input.getInput('desc')}
                                                 show={this.props.user.hasOwnProperty('desc')}
-                                                getRef={this._input[3].getRef}
-                                                onenter={this._input[3].onenter}
-                                                onchange={this._handleChange}>
-                                                <td>Description:</td>
+                                                edit={this.state.edit}>
+                                                <tr>
+                                                    <td key="1">Description:</td>
+                                                    <td key="2" />
+                                                </tr>
                                             </UserInput>
                                             <UserInput
                                                 val={this.state.unDay}
-                                                edit={this.state.edit}
+                                                getinput={this._input.getInput('unDay')}
                                                 show={this.props.user.hasOwnProperty('unDay')}
-                                                getRef={this._input[4].getRef}
-                                                onenter={this._input[4].onenter}
-                                                onchange={this._handleChange}>
-                                                <td>Unactive Day:</td>
+                                                edit={this.state.edit}>
+                                                <tr>
+                                                    <td key="1">Unactive Day:</td>
+                                                    <td key="2" />
+                                                </tr>
                                             </UserInput>
                                             <UserInput
                                                 val={this.state.unHit}
-                                                edit={this.state.edit}
+                                                getinput={this._input.getInput('unHit')}
                                                 show={this.props.user.hasOwnProperty('unHit')}
-                                                getRef={this._input[5].getRef}
-                                                onenter={this._input[5].onenter}
-                                                onchange={this._handleChange}>
-                                                <td>Unactive Hit:</td>
+                                                edit={this.state.edit}>
+                                                <tr>
+                                                    <td key="1">Unactive Hit:</td>
+                                                    <td key="2"/>
+                                                </tr>
                                             </UserInput>
-                                            <tr>
-                                                <td>New Password:</td>
-                                                <td>
-                                                    <input
-                                                        className="form-control"
-                                                        type="password"
-                                                        placeholder="6~20個英數、!、@、#、$、%"
-                                                        ref={ref => this._input[6].getRef(ref)}
-                                                        val={this.state.newPwd}
-                                                        onKeyPress={this._input[6].onenter}
-                                                        onChange={this._handleChange} />
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>Confirm Password:</td>
-                                                <td>
-                                                    <input
-                                                        className="form-control"
-                                                        type="password"
-                                                        placeholder="Confirm Password"
-                                                        val={this.state.conPwd}
-                                                        ref={ref => this._input[7].getRef(ref)}
-                                                        onKeyPress={this._input[7].onenter}
-                                                        onChange={this._handleChange} />
-                                                </td>
-                                            </tr>
+                                            <UserInput
+                                                val={this.state.newPwd}
+                                                getinput={this._input.getInput('newPwd')}
+                                                edit={this.state.edit}
+                                                show={this.state.edit}
+                                                type="password"
+                                                placeholder="6~20個英數、!、@、#、$、%">
+                                                <tr>
+                                                    <td key="1">New Password:</td>
+                                                    <td key="2" />
+                                                </tr>
+                                            </UserInput>
+                                            <UserInput
+                                                val={this.state.conPwd}
+                                                getinput={this._input.getInput('conPwd')}
+                                                edit={this.state.edit}
+                                                show={this.state.edit}
+                                                type="password"
+                                                placeholder="Confirm Password">
+                                                <tr>
+                                                    <td key="1" >Confirm Password:</td>
+                                                    <td key="2" />
+                                                </tr>
+                                            </UserInput>
                                         </tbody>
                                     </table>
                                 </div>

@@ -1,11 +1,12 @@
 import { connect } from 'react-redux'
-import { userInfoAdd, userInfoDel } from '../actions'
+import { alertPush, sendGlbPw, setBasic, sendGlbCf } from '../actions'
 import UserInfo from '../components/UserInfo'
 
 const mapDispatchToProps = dispatch => ({
-    addUser: user => dispatch(userInfoAdd(user)),
-    delUser: key => dispatch(userInfoDel(key)),
     addalert: msg => dispatch(alertPush(msg)),
+    sendglbpw: callback => dispatch(sendGlbPw(callback)),
+    setbasic: id => dispatch(setBasic(id)),
+    sendglbcf: (callback, text) => dispatch(sendGlbCf(callback, text)),
 })
 
 const ReUserInfo = connect(

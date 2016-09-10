@@ -167,7 +167,7 @@ app.get('/api/userinfo', function (req, res, next) {
                 if (users.length > 0 && users[0].auto) {
                     users[0].auto = 'https://drive.google.com/open?id=' + users[0].auto + '&authuser=0';
                 }
-                user_info.push({name: users[0].username, newable: false, auto: users[0].auto, editAuto: false});
+                user_info.push({name: users[0].username, key: users[0]._id, newable: false, auto: users[0].auto, editAuto: false});
                 res.json({user_info: user_info});
             });
         } else {
@@ -175,6 +175,7 @@ app.get('/api/userinfo', function (req, res, next) {
                 if(err) {
                     util.handleError(err, next, res);
                 }
+                user_info.push({name: '', perm: '', desc: '', newable: true, key: 0});
                 for (var i in users) {
                     if (users[i].auto) {
                         users[i].auto = 'https://drive.google.com/open?id=' + users[i].auto + '&authuser=0';
@@ -187,7 +188,6 @@ app.get('/api/userinfo', function (req, res, next) {
                         user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, delable: true, newable: false, editAuto: true, auto: users[i].auto});
                     }
                 }
-                user_info.push({name: '', perm: '', desc: '', newable: true});
                 res.json({user_info: user_info});
             });
         }

@@ -2,23 +2,19 @@ import React from 'react'
 import { isValidString } from '../utility'
 import ReAlertlist from '../containers/ReAlertlist'
 import { browserHistory } from 'react-router'
-import { doLogin, handleInput } from '../utility'
-
-const initial_state = {
-    username: '',
-    password: '',
-}
+import { doLogin } from '../utility'
+import UserInput from './UserInput'
 
 const Login = React.createClass({
     getInitialState: function() {
-        this._input = handleInput(2, ['username', 'password'], this._handleSubmit)
-        return initial_state
+        this._input = new UserInput.Input(['username', 'password'], this._handleSubmit, this._handleChange, 'form-control input-lg')
+        return this._input.initValue()
     },
     componentDidMount: function() {
-        this._loginInit()
+        this._input.initFocus()
     },
     _handleChange: function() {
-        this.setState(this._input[2]())
+        this.setState(this._input.getValue())
     },
     _handleSubmit: function(e) {
         if (e) {
@@ -27,21 +23,17 @@ const Login = React.createClass({
         if (isValidString(this.state.username, 'name') && isValidString(this.state.password, 'passwd')) {
             doLogin(this.state.username, this.state.password)
             .then(() => {
+                this.setState(this._input.initValue())
                 browserHistory.goBack()
-                this._loginInit()
             }).catch(err => {
                 this.props.addalert(err)
-                this._loginInit()
+                this.setState(this._input.initValue())
+                this._input.initFocus()
             })
         } else {
             this.props.addalert('user name or password is not vaild!!!')
-            this._loginInit()
-        }
-    },
-    _loginInit: function() {
-        this.setState(initial_state)
-        if (this._input[0].ref !== null) {
-            this._input[0].ref.focus()
+            this.setState(this._input.initValue())
+            this._input.initFocus()
         }
     },
     render: function() {
@@ -54,26 +46,19 @@ const Login = React.createClass({
                     </div>
                     <div className="modal-body">
                         <form className="form col-md-12 center-block" onSubmit={this._handleSubmit}>
-                            <div className="form-group">
-                                <input
-                                    type="text"
-                                    className="form-control input-lg"
-                                    placeholder="Username"
-                                    value={this.state.username}
-                                    ref={ref => this._input[0].getRef(ref)}
-                                    onChange={this._handleChange}
-                                    onKeyPress={this._input[0].onenter} />
-                            </div>
-                            <div className="form-group">
-                                <input
-                                    type="password"
-                                    className="form-control input-lg"
-                                    placeholder="Password"
-                                    value={this.state.password}
-                                    ref={ref => this._input[1].getRef(ref)}
-                                    onChange={this._handleChange}
-                                    onKeyPress={this._input[1].onenter} />
-                            </div>
+                            <UserInput
+                                val={this.state.username}
+                                getinput={this._input.getInput('username')}
+                                placeholder="Username">
+                                <div className="form-group" />
+                            </UserInput>
+                            <UserInput
+                                val={this.state.password}
+                                getinput={this._input.getInput('password')}
+                                placeholder="Password"
+                                type="password">
+                                <div className="form-group" />
+                            </UserInput>
                             <div className="form-group">
                                 <button type="submit" className="btn btn-primary btn-lg btn-block">
                                     Sign In

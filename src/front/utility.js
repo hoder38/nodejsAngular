@@ -5,7 +5,7 @@ import { LOGIN_PAGE } from './constants'
 const re_weburl = new RegExp(
     "^" +
     // protocol identifier
-    "(?:(?:https?|ftp)://)" +
+    "(?:(?:https?|ftp|wss?)://)" +
     // user:pass authentication
     "(?:\\S+(?::\\S*)?@)?" +
     "(?:" +
@@ -48,12 +48,20 @@ export function isValidString(str, type) {
         return str.match(/^[^\\\/\|\*\?"<:]{1,255}$/)
         case 'passwd':
         return str.match(/^[0-9a-zA-Z!@#$%]{2,30}$/)
+        case 'desc':
+        return str.match(/^[^\\\/\|\*\?\'"<>`:&]{0,250}$/)
+        case 'int':
+        if (Number(str) && Number(str) > 0) {
+            return true;
+        }
+        break
         case 'perm':
         if ((Number(str) || Number(str) === 0) && Number(str) < 32 && Number(str) >= 0) {
             return true
         }
+        break
         case 'url':
-        return str.match(re_weburl) || str.search(/^magnet:(\?xt=urn:btih:[a-z0-9]{20,50}|stop)/i)
+        return str.match(re_weburl) || str.match(/^magnet:(\?xt=urn:btih:[a-z0-9]{20,50}|stop)/i)
     }
     return false
 }
@@ -113,47 +121,12 @@ export const doLogin = (username, password, url = '') => api(`${url}/api`, {
     }
 })
 
-export const doLogout = (url = '') => api(`${url}/api/logout`).then(info => {
+export const doLogout = (clearData, url = '') => api(`${url}/api/logout`).then(info => {
     if (info.url) {
-        return doLogout(info.url)
+        return doLogout(clearData, info.url)
+    } else {
+        clearData()
     }
 })
 
 export const testLogin = () => api('/api/testLogin', null, 'GET', false)
-
-export function handleInput(number, names, submit) {
-    let input = []
-    for (let i = 0; i < number; i++) {
-        let singleInput = {}
-        singleInput.ref = null
-        singleInput.getRef = ref => singleInput.ref = ref
-        singleInput.onenter = e => {
-            if (e.key === 'Enter') {
-                e.preventDefault()
-                for (let j = i + 1; j <= number; j++) {
-                    if (j === number) {
-                        submit()
-                        break;
-                    }
-                    if (input[j].ref !== null) {
-                        input[j].ref.focus()
-                        break;
-                    }
-                }
-            }
-        }
-        input.push(singleInput)
-    }
-    input.push(() => {
-        let value = {}
-        names.forEach((name, i) => {
-            if (input[i].ref !== null) {
-                value[name] = input[i].ref.value
-            } else {
-                value[name] = ''
-            }
-        })
-        return value
-    })
-    return input
-}

@@ -5,13 +5,25 @@ import ReNavlist from '../containers/ReNavlist'
 import ReToggleNav from '../containers/ReToggleNav'
 import ReAlertlist from '../containers/ReAlertlist'
 import Dropdown from './Dropdown'
+import ReGlobalPassword from '../containers/ReGlobalPassword'
+import ReGlobalComfirm from '../containers/ReGlobalComfirm'
 import { collapseToggle } from '../actions'
 import { api, doLogout, isValidString } from '../utility'
 
 const App = React.createClass({
     getInitialState: function() {
+        this._userDrop = [
+            {title: 'Profile', className: 'glyphicon glyphicon-user', onclick: (e) => {
+                e.preventDefault()
+                browserHistory.push(USER_PAGE)
+            }, key: 0},
+            {key: 1},
+            {title: 'Log Out', className: 'glyphicon glyphicon-off', onclick: (e) => {
+                e.preventDefault()
+                this._doLogout()
+            }, key: 2},
+        ]
         return {
-            id: 'guest',
             navlist: [
                 {title: "homepage", hash: ROOT_PAGE, css: "glyphicon glyphicon-home", key: 0},
                 {title: "Storage", hash: "/webpack/foo", css: "glyphicon glyphicon-hdd", key: 1},
@@ -24,13 +36,12 @@ const App = React.createClass({
         .then(userInfo => {
             if (isValidString(userInfo.id, 'name') && isValidString(userInfo.main_url, 'url') && isValidString(userInfo.ws_url, 'url') && isValidString(userInfo.level, 'perm')) {
                 this.setState({
-                    id: userInfo.id,
                     navlist: [
                         ...this.state.navlist,
                         ...userInfo.nav,
                     ],
                 })
-                this.props.mainurlset(userInfo.main_url)
+                this.props.basicset(userInfo.id, userInfo.main_url)
                 if (window.MozWebSocket) {
                     window.WebSocket = window.MozWebSocket
                 }
@@ -53,17 +64,6 @@ const App = React.createClass({
             this.props.addalert(err)
             this._doLogout()
         })
-        this._userDrop = [
-            {title: 'Profile', className: 'glyphicon glyphicon-user', onclick: (e) => {
-                e.preventDefault()
-                browserHistory.push(USER_PAGE)
-            }, key: 0},
-            {key: 1},
-            {title: 'Log Out', className: 'glyphicon glyphicon-off', onclick: (e) => {
-                e.preventDefault()
-                this._doLogout()
-            }, key: 2},
-        ]
     },
     componentWillUnmount: function() {
         if (this._ws) {
@@ -71,12 +71,16 @@ const App = React.createClass({
         }
     },
     _doLogout: function() {
-        doLogout().then(() => browserHistory.push(LOGIN_PAGE)).catch(err => this.props.addalert(err))
+        doLogout(() => this.props.basicset('guest', '')).then(() => browserHistory.push(LOGIN_PAGE)).catch(err => this.props.addalert(err))
     },
     render: function() {
+        const glbPw = this.props.pwCallback.length > 0 ? <ReGlobalPassword callback={this.props.pwCallback[0]} delay={true} /> : ''
+        const glbCf = this.props.cfCallback.length > 0 ? <ReGlobalComfirm callback={this.props.cfCallback[0]} text={this.props.cfCallback[1]} /> : ''
         return (
             <div id="wrapper">
                 <ReAlertlist />
+                {glbPw}
+                {glbCf}
                 <nav className="navbar navbar-inverse navbar-fixed-top" role="navigation">
                     <div className="navbar-header">
                         <ReToggleNav inverse={true} index={0} />
@@ -86,7 +90,7 @@ const App = React.createClass({
                     <ul className="nav navbar-right top-nav">
                         <Dropdown headelement="li" droplist={this._userDrop}>
                             <a href="#">
-                                <i className="glyphicon glyphicon-user"></i>&nbsp;{this.state.id}<b className="caret"></b>
+                                <i className="glyphicon glyphicon-user"></i>&nbsp;{this.props.id}<b className="caret"></b>
                             </a>
                         </Dropdown>
                     </ul>

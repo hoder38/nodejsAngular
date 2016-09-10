@@ -1,14 +1,20 @@
 import { connect } from 'react-redux'
-import { alertPush, setMainUrl } from '../actions'
+import { alertPush, setBasic } from '../actions'
 import App from '../components/App'
+
+const mapStateToProps = state => ({
+    id: state.basicDataHandle.id,
+    pwCallback: state.glbPwHandle,
+    cfCallback: state.glbCfHandle,
+})
 
 const mapDispatchToProps = dispatch => ({
     addalert: msg => dispatch(alertPush(msg)),
-    mainurlset: url => dispatch(setMainUrl(url)),
+    basicset: (id,url) => dispatch(setBasic(id, url)),
 })
 
 const ReApp = connect(
-    null,
+    mapStateToProps,
     mapDispatchToProps
 )(App)
 

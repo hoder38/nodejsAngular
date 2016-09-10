@@ -2,15 +2,17 @@ import { combineReducers } from 'redux'
 import { routerReducer } from 'react-router-redux'
 import collapseHandle from './collapseHandle'
 import alertHandle from './alertHandle'
-import mainUrlHandle from './mainUrlHandle'
-import userInfoHandle from './userInfoHandle'
+import basicDataHandle from './basicDataHandle'
+import glbPwHandle from './glbPwHandle'
+import glbCfHandle from './glbCfHandle'
 
 const ANoMoPi = combineReducers({
     routing: routerReducer,
     collapseHandle,
     alertHandle,
-    mainUrlHandle,
-    userInfoHandle,
+    basicDataHandle,
+    glbPwHandle,
+    glbCfHandle,
 })
 
 export default ANoMoPi
