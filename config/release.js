@@ -33,6 +33,6 @@ module.exports = {
     updateStock: true,
     updateExternal: true,
     checkMedia: true,
-    api_limit: 10,
+    api_limit: 7,
     torrent_limit: 5
 };
