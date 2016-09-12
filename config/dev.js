@@ -34,5 +34,6 @@ module.exports = {
     checkMedia: false,
     autoDownload: false,
     api_limit: 10,
-    torrent_limit: 5
+    torrent_limit: 5,
+    stream_limit: 10
 };
