@@ -1,14 +1,15 @@
 import React from 'react'
 import { IndexLink, browserHistory } from 'react-router'
 import { ROOT_PAGE, LOGIN_PAGE, USER_PAGE } from '../constants'
+import { collapseToggle } from '../actions'
+import { api, doLogout, isValidString } from '../utility'
 import ReNavlist from '../containers/ReNavlist'
 import ReToggleNav from '../containers/ReToggleNav'
 import ReAlertlist from '../containers/ReAlertlist'
 import Dropdown from './Dropdown'
 import ReGlobalPassword from '../containers/ReGlobalPassword'
 import ReGlobalComfirm from '../containers/ReGlobalComfirm'
-import { collapseToggle } from '../actions'
-import { api, doLogout, isValidString } from '../utility'
+import FileUploader from './FileUploader'
 
 const App = React.createClass({
     getInitialState: function() {
@@ -78,6 +79,7 @@ const App = React.createClass({
         const glbCf = this.props.cfCallback.length > 0 ? <ReGlobalComfirm callback={this.props.cfCallback[0]} text={this.props.cfCallback[1]} /> : ''
         return (
             <div id="wrapper">
+                <FileUploader />
                 <ReAlertlist />
                 {glbPw}
                 {glbCf}

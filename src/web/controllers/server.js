@@ -175,7 +175,7 @@ app.get('/api/userinfo', function (req, res, next) {
                 if(err) {
                     util.handleError(err, next, res);
                 }
-                user_info.push({name: '', perm: '', desc: '', newable: true, key: 0});
+                user_info.push({name: '', perm: '', desc: '', editAuto: false, newable: true, key: 0});
                 for (var i in users) {
                     if (users[i].auto) {
                         users[i].auto = 'https://drive.google.com/open?id=' + users[i].auto + '&authuser=0';
@@ -404,10 +404,6 @@ app.post('/api/adduser', function(req, res, next){
                     util.handleError({hoerror: 2, message: 'password must equal!!!'}, next, res);
                 }
                 var data = {};
-                var item = {newable: false, delable: true, editAuto: true};
-                item['name'] = name;
-                item['desc'] = desc;
-                item['perm'] = perm;
                 data['username'] = name;
                 data['desc'] = desc;
                 data['perm'] = perm;
@@ -417,8 +413,15 @@ app.post('/api/adduser', function(req, res, next){
                     if(err) {
                         util.handleError(err, next, res);
                     }
-                    var ret = {item: item, newItem: {name: '', perm: '', desc: '', newable: true}};
-                    res.json(ret);
+                    var ret_user = {};
+                    if (user[0].perm === 1) {
+                        user[0].unDay = user[0].unDay ? user[0].unDay : tagTool.getUnactive('day');
+                        user[0].unHit = user[0].unHit ? user[0].unHit : tagTool.getUnactive('hit');
+                        ret_user = {name: user[0].username, perm: user[0].perm, desc: user[0].desc, key: user[0]._id, newable: false, unDay: user[0].unDay, unHit: user[0].unHit, editAuto: true, auto: user[0].auto};
+                    } else {
+                        ret_user = {name: user[0].username, perm: user[0].perm, desc: user[0].desc, key: user[0]._id, delable: true, newable: false, editAuto: true, auto: user[0].auto, editAuto: true, auto: user[0].auto};
+                    }
+                    res.json(ret_user);
                 });
             });
         } else {

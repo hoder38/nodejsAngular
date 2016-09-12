@@ -53,7 +53,32 @@ const UserInfo = React.createClass({
             this._checkInput('unHit', this.props.user.unHit, 'int'),
             this._checkInput('newPwd', this.state.conPwd, 'passwd', 'conPwd'))
         if (this.props.user.newable) {
-            console.log('new user');
+            if (!set_obj.hasOwnProperty('name')) {
+                this.props.addalert('Please input username!!!')
+            } else if (!set_obj.hasOwnProperty('perm')) {
+                this.props.addalert('Please input level!!!')
+            } else if (!set_obj.hasOwnProperty('desc')) {
+                this.props.addalert('Please input description!!!')
+            } else if (!set_obj.hasOwnProperty('newPwd')) {
+                this.props.addalert('Please input password!!!')
+            } else {
+                this.props.sendglbpw(userPW => {
+                    if (!isValidString(userPW, 'passwd')) {
+                        this.props.addalert('User password not vaild!!!')
+                        return Promise.reject('User password not vaild!!!')
+                    } else {
+                        set_obj['userPW'] = userPW
+                        return api('/api/adduser', set_obj, 'POST')
+                        .then(user => {
+                            this.props.addUser(user)
+                            this.setState(Object.assign(this.state, this._input.initValue(this.props.user)))
+                        }).catch(err => {
+                            this.props.addalert(err)
+                            throw err
+                        })
+                    }
+                })
+            }
         } else {
             if (Object.keys(set_obj).length > 0) {
                 this.props.sendglbpw(userPW => {
@@ -150,7 +175,8 @@ const UserInfo = React.createClass({
                                         <UserInput
                                             val={this.state.name}
                                             getinput={this._input.getInput('name')}
-                                            edit={this.state.edit}>
+                                            edit={this.state.edit}
+                                            placeholder="Username">
                                             <strong />
                                         </UserInput>
                                         <br />
@@ -160,8 +186,7 @@ const UserInfo = React.createClass({
                                             <UserInput
                                                 val={this.state.auto}
                                                 getinput={this._input.getInput('auto')}
-                                                show={this.props.user.hasOwnProperty('auto')}
-                                                edit={this.state.edit}>
+                                                edit={this.state.edit&&this.props.user.editAuto}>
                                                 <tr>
                                                     <td key="1">Auto upload:</td>
                                                     <td key="2" />
@@ -171,7 +196,8 @@ const UserInfo = React.createClass({
                                                 val={this.state.perm}
                                                 getinput={this._input.getInput('perm')}
                                                 show={this.props.user.hasOwnProperty('perm')}
-                                                edit={this.state.edit}>
+                                                edit={this.state.edit}
+                                                placeholder="Level">
                                                 <tr>
                                                     <td key="1">User level:</td>
                                                     <td key="2" />
@@ -181,7 +207,8 @@ const UserInfo = React.createClass({
                                                 val={this.state.desc}
                                                 getinput={this._input.getInput('desc')}
                                                 show={this.props.user.hasOwnProperty('desc')}
-                                                edit={this.state.edit}>
+                                                edit={this.state.edit}
+                                                placeholder="Description">
                                                 <tr>
                                                     <td key="1">Description:</td>
                                                     <td key="2" />

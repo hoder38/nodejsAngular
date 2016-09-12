@@ -36,7 +36,7 @@ const Userlist = React.createClass({
     },
     render: function() {
         let rows = []
-        this.state.user_info.forEach(user => rows.push(<ReUserInfo key={user.key} user={user} editUser={this._pushUser} delUser={this._popUser} />))
+        this.state.user_info.forEach(user => rows.push(<ReUserInfo key={user.key} user={user} addUser={this._pushUser} delUser={this._popUser} />))
         return (
             <div className="container" style={{width: 'auto'}}>
                 <div className="well col-xs-12 col-sm-12 col-md-12 col-lg-12">
