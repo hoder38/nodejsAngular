@@ -56,6 +56,8 @@ var torrent_duration = 172800000;
 
 var zip_duration = 21600000;
 
+var stream_count = 0;
+
 var media_time = 0;
 
 var torrent_pool = [];
@@ -5379,6 +5381,11 @@ app.get('/torrent/:index(\\d+|v)/:uid/:fresh(0+)?', function (req, res, next) {
                         });
                     }
                 } else {
+                    stream_count++;
+                    if (stream_count > config_glb.stream_limit && !util.checkAdmin(1, req.user)) {
+                        console.log(stream_count);
+                        util.handleError({hoerror: 2, message: "stream request too many!!!"}, next, res);
+                    }
                     if (fs.existsSync(comPath)) {
                         var total = fs.statSync(comPath).size;
                         console.log('complete');
@@ -5439,6 +5446,11 @@ app.get('/video/:uid', function (req, res, next) {
         var id = util.isValidString(req.params.uid, 'uid');
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
+        }
+        stream_count++;
+        if (stream_count > config_glb.stream_limit && !util.checkAdmin(1, req.user)) {
+            console.log(stream_count);
+            util.handleError({hoerror: 2, message: "stream request too many!!!"}, next, res);
         }
         mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
             if (err) {
@@ -6528,6 +6540,8 @@ if (config_glb.autoDownload) {
         setInterval(function(){
             console.log('loop Doc');
             console.log(doc_time);
+            //順便清stream count
+            stream_count = 0;
             var now_time = new Date().getTime();
             if (doc_time === 1 || (now_time - doc_time) > doc_interval) {
                 loopDoc();
