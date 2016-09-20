@@ -4496,7 +4496,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
             append = $scope.torrent.id + '/' + adjust + '/' + $scope.torrent.index;
         } else {
             if ($scope.video.playlist.obj.id) {
-                append = $scope.video.playlist.obj.id + '/' + adjust;
+                append = $scope.video.playlist.obj.id + '/' + adjust + '/v';
             } else {
                 append = $scope.video.id + '/' + adjust;
             }
