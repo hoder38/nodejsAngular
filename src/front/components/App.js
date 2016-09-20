@@ -9,7 +9,8 @@ import ReAlertlist from '../containers/ReAlertlist'
 import Dropdown from './Dropdown'
 import ReGlobalPassword from '../containers/ReGlobalPassword'
 import ReGlobalComfirm from '../containers/ReGlobalComfirm'
-import FileUploader from './FileUploader'
+import FileManage from './FileManage'
+import ReWidgetManage from '../containers/ReWidgetManage'
 
 const App = React.createClass({
     getInitialState: function() {
@@ -66,20 +67,42 @@ const App = React.createClass({
             this._doLogout()
         })
     },
+    componentDidMount: function() {
+        window.addEventListener("beforeunload", this._routerWillLeave)
+    },
     componentWillUnmount: function() {
+        window.removeEventListener("beforeunload", this._routerWillLeave)
         if (this._ws) {
             this._ws.close()
         }
     },
+    _routerWillLeave: function(e) {
+        let confirmationMessage = 'You have uploaded files. Are you sure you want to navigate away from this page?'
+        if (e) {
+            if (this.props.uploading) {
+                e.returnValue = confirmationMessage
+                return confirmationMessage
+            }
+        } else {
+            if (this.props.uploading) {
+                return confirm(confirmationMessage)
+            } else {
+                return true
+            }
+        }
+    },
     _doLogout: function() {
-        doLogout(() => this.props.basicset('guest', '')).then(() => browserHistory.push(LOGIN_PAGE)).catch(err => this.props.addalert(err))
+        if (this._routerWillLeave()) {
+            doLogout(() => this.props.basicset('guest', '')).then(() => browserHistory.push(LOGIN_PAGE)).catch(err => this.props.addalert(err))
+        }
     },
     render: function() {
         const glbPw = this.props.pwCallback.length > 0 ? <ReGlobalPassword callback={this.props.pwCallback[0]} delay={true} /> : ''
         const glbCf = this.props.cfCallback.length > 0 ? <ReGlobalComfirm callback={this.props.cfCallback[0]} text={this.props.cfCallback[1]} /> : ''
         return (
-            <div id="wrapper">
-                <FileUploader />
+            <div id="wrapper" onDrop={this.props.pushFile} onDragOver={e => e.preventDefault()}>
+                <FileManage />
+                <ReWidgetManage />
                 <ReAlertlist />
                 {glbPw}
                 {glbCf}

@@ -13,7 +13,7 @@ export default function UserInput({ val, getinput, edit=true, show=true, type='t
             ref={ref => getinput.getRef(ref)}
             onChange={getinput.onchange}
             onKeyPress={getinput.onenter} />
-    ): val
+    ) : val
     if (!children) {
         return content
     } else if (children.props.children) {

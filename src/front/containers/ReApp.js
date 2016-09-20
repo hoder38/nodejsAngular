@@ -6,6 +6,8 @@ const mapStateToProps = state => ({
     id: state.basicDataHandle.id,
     pwCallback: state.glbPwHandle,
     cfCallback: state.glbCfHandle,
+    pushFile: state.uploadDataHandle.pushFile,
+    uploading: state.uploadDataHandle.uploading,
 })
 
 const mapDispatchToProps = dispatch => ({

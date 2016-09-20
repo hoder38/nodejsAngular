@@ -314,7 +314,7 @@ app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
     });
 });
 
-app.post('/upload/file/:type(\\d)?', function(req, res, next){
+app.post('/upload/file', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('upload files');
         console.log(new Date());
@@ -548,7 +548,7 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                 data['count'] = 0;
                 data['first'] = 1;
                 data['recycle'] = 0;
-                if (util.checkAdmin(2 ,req.user) && Number(req.params.type) === 1) {
+                if (util.checkAdmin(2 ,req.user) && Number(req.body.type) === 1) {
                     data['adultonly'] = 1;
                 } else {
                     data['adultonly'] = 0;
@@ -641,10 +641,10 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                     }
                     if (req.body.path) {
                         var bodyPath = JSON.parse(req.body.path);
-                        if (bodyPath && bodyPath.path.length > 0) {
+                        if (bodyPath && bodyPath.length > 0) {
                             var is_d = false;
-                            for (var i in bodyPath.path) {
-                                normal = tagTool.normalizeTag(bodyPath.path[i]);
+                            for (var i in bodyPath) {
+                                normal = tagTool.normalizeTag(bodyPath[i]);
                                 is_d = tagTool.isDefaultTag(normal);
                                 if (!is_d) {
                                     if (mediaTag.def.indexOf(normal) === -1) {
@@ -727,7 +727,7 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
     });
 });
 
-app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
+app.post('/api/upload/url', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('upload url');
         console.log(new Date());
@@ -736,6 +736,115 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
         var url = util.isValidString(req.body.url, 'url');
         if (url === false) {
             util.handleError({hoerror: 2, message: "url is not vaild"}, next, res);
+        }
+        var addurl = url.match(/^url%3A(.*)/)
+        if (addurl) {
+            var url_name = util.toValidName(addurl[1]);
+            if (tagTool.isDefaultTag(tagTool.normalizeTag(url_name))) {
+                url_name = mime.addPost(url_name, '1');
+            }
+            var oOID = mongo.objectID();
+            var utime = Math.round(new Date().getTime() / 1000);
+            var oUser_id = req.user._id;
+            var data = {};
+            data['_id'] = oOID;
+            data['name'] = url_name;
+            data['owner'] = oUser_id;
+            data['utime'] = utime;
+            data['url'] = addurl[1];
+            data['size'] = 0;
+            data['count'] = 0;
+            data['first'] = 1;
+            data['recycle'] = 0;
+            if (util.checkAdmin(2 ,req.user) && Number(req.body.type) === 1) {
+                data['adultonly'] = 1;
+            } else {
+                data['adultonly'] = 0;
+            }
+            data['untag'] = 1;
+            data['status'] = 7;//media type
+            mediaHandleTool.handleTag('', data, url_name, '', 7, function(err, mediaType, mediaTag, DBdata) {
+                if (err) {
+                    util.handleError(err, next, res);
+                }
+                var normal = tagTool.normalizeTag(url_name);
+                if (mediaTag.def.indexOf(normal) === -1) {
+                    mediaTag.def.push(normal);
+                }
+                normal = tagTool.normalizeTag(req.user.username);
+                if (mediaTag.def.indexOf(normal) === -1) {
+                    mediaTag.def.push(normal);
+                }
+                if (req.body.path) {
+                    var is_d = false;
+                    for (var i in req.body.path) {
+                        normal = tagTool.normalizeTag(req.body.path[i]);
+                        is_d = tagTool.isDefaultTag(normal);
+                        if (!is_d) {
+                            if (mediaTag.def.indexOf(normal) === -1) {
+                                mediaTag.def.push(normal);
+                            }
+                        } else {
+                            if (is_d.index === 0) {
+                                DBdata['adultonly'] = 1;
+                            }
+                        }
+                    }
+                    var temp_tag = [];
+                    for (var j in mediaTag.opt) {
+                        normal = tagTool.normalizeTag(mediaTag.opt[j]);
+                        if (!tagTool.isDefaultTag(normal)) {
+                            if (mediaTag.def.indexOf(normal) === -1) {
+                                temp_tag.push(normal);
+                            }
+                        }
+                    }
+                    mediaTag.opt = temp_tag;
+                }
+                data['tags'] = mediaTag.def;
+                data[oUser_id] = mediaTag.def;
+                mongo.orig("insert", "storage", data, function(err, item){
+                    if(err) {
+                        util.handleError(err, next, res);
+                    }
+                    console.log(item);
+                    console.log('save end');
+                    sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
+                    tagTool.getRelativeTag(mediaTag.def[0], req.user, mediaTag.opt, next, function(err, relative) {
+                        if (err) {
+                            util.handleError(err, next, res);
+                        }
+                        var reli = 5;
+                        if (relative.length < reli) {
+                            reli = relative.length;
+                        }
+                        if (util.checkAdmin(2 ,req.user)) {
+                            if (item[0].adultonly === 1) {
+                                mediaTag.def.push('18+');
+                            } else {
+                                mediaTag.opt.push('18+');
+                            }
+                        }
+                        if (item[0].first === 1) {
+                            mediaTag.def.push('first item');
+                        } else {
+                            mediaTag.opt.push('first item');
+                        }
+                        var normal = '';
+                        for (var i = 0; i < reli; i++) {
+                            normal = tagTool.normalizeTag(relative[i]);
+                            if (!tagTool.isDefaultTag(normal)) {
+                                if (mediaTag.def.indexOf(normal) === -1 && mediaTag.opt.indexOf(normal) === -1) {
+                                    mediaTag.opt.push(normal);
+                                }
+                            }
+                        }
+                        mediaTag.opt = supplyTag(mediaTag.def, mediaTag.opt);
+                        res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                    });
+                });
+            });
+            return;
         }
         var hide = req.body.hide;
         var is_media = 0;
@@ -1731,7 +1840,7 @@ app.post('/api/upload/url/:type(\\d)?', function(req, res, next){
             }
             data['count'] = 0;
             data['recycle'] = 0;
-            if (util.checkAdmin(2 ,req.user) && Number(req.params.type) === 1) {
+            if (util.checkAdmin(2 ,req.user) && Number(req.body.type) === 1) {
                 data['adultonly'] = 1;
             } else {
                 data['adultonly'] = 0;

@@ -1,5 +1,5 @@
-import { COLLAPSE_TOGGLE, ALERT_PUSH, ALERT_POP, SET_BASIC, SEND_GLB_PW,
-    CLOSE_GLB_PW, SEND_GLB_CF, CLOSE_GLB_CF } from '../constants'
+import { COLLAPSE_TOGGLE, ALERT_PUSH, ALERT_POP, SET_BASIC, SET_UPLOAD, SEND_GLB_PW,
+    CLOSE_GLB_PW, SEND_GLB_CF, CLOSE_GLB_CF, WIDGET_TOGGLE } from '../constants'
 
 export const collapseToggle = index => ({
     type: COLLAPSE_TOGGLE,
@@ -22,6 +22,13 @@ export const setBasic = (id=null, url=null) => ({
     url,
 })
 
+export const setUpload = (progress=null, uploading=null, pushFile=null) => ({
+    type: SET_UPLOAD,
+    progress,
+    uploading,
+    pushFile,
+})
+
 export const sendGlbPw = callback => ({
     type: SEND_GLB_PW,
     callback,
@@ -39,4 +46,9 @@ export const sendGlbCf = (callback, text) => ({
 
 export const closeGlbCf = () => ({
     type: CLOSE_GLB_CF,
+})
+
+export const widgetToggle = widget => ({
+    type: WIDGET_TOGGLE,
+    widget,
 })

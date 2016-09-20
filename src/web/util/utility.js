@@ -11,7 +11,7 @@ var config_type = require('../../../ver.js');
 var pwCheck = {};
 
 var re_weburl = new RegExp(
-        "^" +
+        "^(url:)?" +
         // protocol identifier
         "(?:(?:https?|ftp)://)" +
         // user:pass authentication

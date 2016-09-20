@@ -3,7 +3,7 @@ import { browserHistory } from 'react-router'
 import { LOGIN_PAGE } from './constants'
 
 const re_weburl = new RegExp(
-    "^" +
+    "^(url:)?" +
     // protocol identifier
     "(?:(?:https?|ftp|wss?)://)" +
     // user:pass authentication

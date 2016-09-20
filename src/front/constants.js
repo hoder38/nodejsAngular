@@ -12,10 +12,17 @@ export const SEND_GLB_PW = 'SEND_GLB_PW'
 export const CLOSE_GLB_PW = 'CLOSE_GLB_PW'
 export const SEND_GLB_CF = 'SEND_GLB_CF'
 export const CLOSE_GLB_CF = 'CLOSE_GLB_CF'
+export const SET_UPLOAD = 'SET_UPLOAD'
+export const WIDGET_TOGGLE = 'WIDGET_TOGGLE'
 
 //z-index
 export const ALERT_ZINDEX = 1100
 export const BLOCK_ZINDEX = 1090
+export const WIDGET_ZINDEX = 1070
 
 //time
 export const AUTH_TIME = 60000
+
+//widget
+export const UPLOAD = 'UPLOAD'
+export const FEEDBACK = 'FEEDBACK'

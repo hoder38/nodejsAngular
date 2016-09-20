@@ -5,7 +5,6 @@ import ReUserInfo from '../containers/ReUserInfo'
 const Userlist = React.createClass({
     getInitialState: function() {
         return {
-            new_user: [],
             user_info: [],
         }
     },
