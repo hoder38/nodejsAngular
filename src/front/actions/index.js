@@ -48,7 +48,8 @@ export const closeGlbCf = () => ({
     type: CLOSE_GLB_CF,
 })
 
-export const widgetToggle = widget => ({
+export const widgetToggle = (widget, show=null) => ({
     type: WIDGET_TOGGLE,
     widget,
+    show,
 })

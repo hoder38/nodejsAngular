@@ -12,6 +12,9 @@ const FileAdd = React.createClass({
             type: false,
         }, this._input.initValue())
     },
+    componentWillUnmount: function() {
+        this.props.toggle(false)
+    },
     _setFiles: function(files) {
         if (this.state.files.length === 0 && files.length > 0) {
             this.props.toggle()
@@ -54,7 +57,7 @@ const FileAdd = React.createClass({
         const show = this.props.show ? {width: '205px', marginBottom: '0px'} : {width: '205px', marginBottom: '0px', display: 'none'}
         return (
             <section className="panel panel-info" style={show}>
-                <div className="panel-heading" onClick={this.props.toggle}>
+                <div className="panel-heading" onClick={() => this.props.toggle()}>
                     <h4 className="panel-title">
                         <a href="#" style={{textDecoration: 'none'}}>
                             Uploader<i className="pull-right glyphicon glyphicon-remove"></i>

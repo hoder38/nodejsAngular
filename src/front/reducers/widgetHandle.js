@@ -11,8 +11,9 @@ export default function widgetHandle (state = initialState, action) {
         switch (action.widget) {
             case UPLOAD:
             case FEEDBACK:
+            const show = action.show === null ? !state[action.widget] : action.show
             return Object.assign({}, state, {
-                [action.widget]: !state[action.widget],
+                [action.widget]: show,
             })
             default:
             return state

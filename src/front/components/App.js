@@ -75,6 +75,7 @@ const App = React.createClass({
         if (this._ws) {
             this._ws.close()
         }
+        this.props.basicset('guest', '')
     },
     _routerWillLeave: function(e) {
         let confirmationMessage = 'You have uploaded files. Are you sure you want to navigate away from this page?'
@@ -93,7 +94,7 @@ const App = React.createClass({
     },
     _doLogout: function() {
         if (this._routerWillLeave()) {
-            doLogout(() => this.props.basicset('guest', '')).then(() => browserHistory.push(LOGIN_PAGE)).catch(err => this.props.addalert(err))
+            doLogout().then(() => browserHistory.push(LOGIN_PAGE)).catch(err => this.props.addalert(err))
         }
     },
     render: function() {

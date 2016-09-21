@@ -121,11 +121,9 @@ export const doLogin = (username, password, url = '') => api(`${url}/api`, {
     }
 })
 
-export const doLogout = (clearData, url = '') => api(`${url}/api/logout`).then(info => {
+export const doLogout = (url = '') => api(`${url}/api/logout`).then(info => {
     if (info.url) {
-        return doLogout(clearData, info.url)
-    } else {
-        clearData()
+        return doLogout(info.url)
     }
 })
 

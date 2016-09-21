@@ -11,7 +11,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
     addalert: msg => dispatch(alertPush(msg)),
-    toggle: () => dispatch(widgetToggle(UPLOAD)),
+    toggle: show => dispatch(widgetToggle(UPLOAD, show)),
 })
 
 const ReFileAdd = connect(
