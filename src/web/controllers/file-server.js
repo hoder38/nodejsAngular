@@ -640,32 +640,37 @@ app.post('/upload/file/:type(\\d)?', function(req, res, next){
                         }
                     }
                     if (req.body.path) {
-                        var bodyPath = JSON.parse(req.body.path);
-                        if (bodyPath && bodyPath.path.length > 0) {
-                            var is_d = false;
-                            for (var i in bodyPath.path) {
-                                normal = tagTool.normalizeTag(bodyPath.path[i]);
-                                is_d = tagTool.isDefaultTag(normal);
-                                if (!is_d) {
-                                    if (mediaTag.def.indexOf(normal) === -1) {
-                                        mediaTag.def.push(normal);
-                                    }
-                                } else {
-                                    if (is_d.index === 0) {
-                                        DBdata['adultonly'] = 1;
-                                    }
-                                }
-                            }
-                            var temp_tag = [];
-                            for (var j in mediaTag.opt) {
-                                normal = tagTool.normalizeTag(mediaTag.opt[j]);
-                                if (!tagTool.isDefaultTag(normal)) {
-                                    if (mediaTag.def.indexOf(normal) === -1) {
-                                        temp_tag.push(normal);
+                        try {
+                            var bodyPath = JSON.parse(req.body.path);
+                            if (bodyPath && bodyPath.path.length > 0) {
+                                var is_d = false;
+                                for (var i in bodyPath.path) {
+                                    normal = tagTool.normalizeTag(bodyPath.path[i]);
+                                    is_d = tagTool.isDefaultTag(normal);
+                                    if (!is_d) {
+                                        if (mediaTag.def.indexOf(normal) === -1) {
+                                            mediaTag.def.push(normal);
+                                        }
+                                    } else {
+                                        if (is_d.index === 0) {
+                                            DBdata['adultonly'] = 1;
+                                        }
                                     }
                                 }
+                                var temp_tag = [];
+                                for (var j in mediaTag.opt) {
+                                    normal = tagTool.normalizeTag(mediaTag.opt[j]);
+                                    if (!tagTool.isDefaultTag(normal)) {
+                                        if (mediaTag.def.indexOf(normal) === -1) {
+                                            temp_tag.push(normal);
+                                        }
+                                    }
+                                }
+                                mediaTag.opt = temp_tag;
                             }
-                            mediaTag.opt = temp_tag;
+                        } catch (x) {
+                            console.log(req.body.path);
+                            util.handleError({hoerror: 2, message: 'json parse error'}, next, res);
                         }
                     }
                     DBdata['tags'] = mediaTag.def;
