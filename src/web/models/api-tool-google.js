@@ -942,30 +942,35 @@ var exports = module.exports = {
                         if (!music_json) {
                             util.handleError({hoerror: 2, message: 'get music info failed!!!'}, callback, callback);
                         }
-                        var music_info = JSON.parse(music_json[1]);
-                        var ts_create = music_info.ts_create;
-                        var r = encodeURIComponent(music_info.r);
-                        var h2 = music_info.h2;
-                        var download_url = '/get?video_id=' + youtube_id + '&ts_create=' + ts_create + '&r=' + r + '&h2=' + h2;
-                        siged = sig_url(download_url);
-                        console.log('http://www.youtube-mp3.org' + siged);
-                        api.xuiteDownload('http://www.youtube-mp3.org' + siged, filePath, function(err, pathname, filename) {
-                            if (err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            if (!filename) {
-                                filename = path.basename(pathname);
-                            }
-                            if (tag_arr.indexOf('audio') === -1) {
-                                tag_arr.push('audio');
-                            }
-                            if (tag_arr.indexOf('音頻') === -1) {
-                                tag_arr.push('音頻');
-                            }
-                            setTimeout(function(){
-                                callback(null, media_name + '.mp3', tag_arr);
-                            }, 0);
-                        });
+                        try {
+                            var music_info = JSON.parse(music_json[1]);
+                            var ts_create = music_info.ts_create;
+                            var r = encodeURIComponent(music_info.r);
+                            var h2 = music_info.h2;
+                            var download_url = '/get?video_id=' + youtube_id + '&ts_create=' + ts_create + '&r=' + r + '&h2=' + h2;
+                            siged = sig_url(download_url);
+                            console.log('http://www.youtube-mp3.org' + siged);
+                            api.xuiteDownload('http://www.youtube-mp3.org' + siged, filePath, function(err, pathname, filename) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                if (!filename) {
+                                    filename = path.basename(pathname);
+                                }
+                                if (tag_arr.indexOf('audio') === -1) {
+                                    tag_arr.push('audio');
+                                }
+                                if (tag_arr.indexOf('音頻') === -1) {
+                                    tag_arr.push('音頻');
+                                }
+                                setTimeout(function(){
+                                    callback(null, media_name + '.mp3', tag_arr);
+                                }, 0);
+                            });
+                        } catch (x) {
+                            console.log(music_json[1]);
+                            util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                        }
                     }, 60000, false, false);
                 }, 60000, false, false);
             } else {

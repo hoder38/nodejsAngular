@@ -202,7 +202,12 @@ module.exports = {
         }
     },
     clone: function (obj) {
-        return JSON.parse(JSON.stringify(obj));
+        try {
+            return JSON.parse(JSON.stringify(obj));
+        } catch (x) {
+            console.log(obj);
+            return {};
+        }
     },
     getFileLocation: function (owner, uid) {
         var owner_S = owner.toString();

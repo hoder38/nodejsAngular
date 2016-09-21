@@ -92,14 +92,19 @@ function sendAPI(data, method, callback) {
             str += chunk;
         });
         res.on('end', function () {
-            var result = JSON.parse(str);
-            if (!result.ok) {
-                console.log(result);
-                util.handleError({hoerror: 2, message: result.msg}, callback, callback, 400, null);
+            try {
+                var result = JSON.parse(str);
+                if (!result.ok) {
+                    console.log(result);
+                    util.handleError({hoerror: 2, message: result.msg}, callback, callback, 400, null);
+                }
+                setTimeout(function(){
+                    callback(null, result.rsp);
+                }, 0);
+            } catch (x) {
+                console.log(str);
+                util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback, 400, null);
             }
-            setTimeout(function(){
-                callback(null, result.rsp);
-            }, 0);
         });
     });
     req.on('error', function(e) {
@@ -292,17 +297,22 @@ module.exports = {
                 });
                 res.on('end', function () {
                     console.log(str);
-                    new_token = JSON.parse(str);
-                    mongo.orig("update", "accessToken", {api: "xuite"}, {$set: new_token}, function(err,token){
-                        if(err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        access_token = new_token["access_token"];
-                        expire_in = new_token["expire_in"];
-                        setTimeout(function(){
-                            callback(null);
-                        }, 0);
-                    });
+                    try {
+                        new_token = JSON.parse(str);
+                        mongo.orig("update", "accessToken", {api: "xuite"}, {$set: new_token}, function(err,token){
+                            if(err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            access_token = new_token["access_token"];
+                            expire_in = new_token["expire_in"];
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    } catch (x) {
+                        console.log(str);
+                        util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+                    }
                 });
             });
             req.on('error', function(e) {
@@ -609,13 +619,19 @@ module.exports = {
                 util.handleError({hoerror: 1, message: "error stream"}, callback, callback, null);
             }
             if (res) {
-                var result = JSON.parse(res.body);
-                if (!result.ok) {
-                    console.log(result);
+                try {
+                    var result = JSON.parse(res.body);
+                    if (!result.ok) {
+                        console.log(result);
+                        this_obj.getApiQueue();
+                        util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
+                    }
+                    start = result.rsp.file_info.total_filesize;
+                } catch (x) {
+                    console.log(res.body);
                     this_obj.getApiQueue();
-                    util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
+                    util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback, null);
                 }
-                start = result.rsp.file_info.total_filesize;
             }
             if (end < size) {
                 if (size < (end + chunk)) {
@@ -648,16 +664,22 @@ module.exports = {
                         this_obj.getApiQueue();
                         util.handleError(err, callback, callback, null);
                     }
-                    var result = JSON.parse(res.body);
-                    if (!result.ok) {
-                        console.log(result);
+                    try {
+                        var result = JSON.parse(res.body);
+                        if (!result.ok) {
+                            console.log(result);
+                            this_obj.getApiQueue();
+                            util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
+                        }
                         this_obj.getApiQueue();
-                        util.handleError({hoerror: 2, message: result.msg}, callback, callback, null);
+                        setTimeout(function(){
+                            callback(null, result.rsp);
+                        }, 0);
+                    } catch (x) {
+                        console.log(res.body);
+                        this_obj.getApiQueue();
+                        util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback, null);
                     }
-                    this_obj.getApiQueue();
-                    setTimeout(function(){
-                        callback(null, result.rsp);
-                    }, 0);
                 });
             }
         }
@@ -1059,10 +1081,15 @@ module.exports = {
             //console.log(filePath);
             //var stats = fs.statSync(filePath);
             //console.log(stats);
-            var result = JSON.parse(res.body);
-            setTimeout(function(){
-                callback(null, result);
-            }, 0);
+            try {
+                var result = JSON.parse(res.body);
+                setTimeout(function(){
+                    callback(null, result);
+                }, 0);
+            } catch (x) {
+                console.log(res.body);
+                util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
+            }
         });
     },
     madComicSearch: function(url, post, callback) {
