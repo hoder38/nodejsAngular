@@ -1,18 +1,18 @@
 import { connect } from 'react-redux'
-import { alertPush, setBasic } from '../actions'
+import { alertPush, setBasic, sendGlbCf, setFeedback } from '../actions'
 import App from '../components/App'
 
 const mapStateToProps = state => ({
     id: state.basicDataHandle.id,
     pwCallback: state.glbPwHandle,
     cfCallback: state.glbCfHandle,
-    pushFile: state.uploadDataHandle.pushFile,
-    uploading: state.uploadDataHandle.uploading,
 })
 
 const mapDispatchToProps = dispatch => ({
     addalert: msg => dispatch(alertPush(msg)),
-    basicset: (id,url) => dispatch(setBasic(id, url)),
+    basicset: (id, url, dir) => dispatch(setBasic(id, url, dir)),
+    sendglbcf: (callback, text) => dispatch(sendGlbCf(callback, text)),
+    feedbackset: feedback => dispatch(setFeedback(feedback)),
 })
 
 const ReApp = connect(

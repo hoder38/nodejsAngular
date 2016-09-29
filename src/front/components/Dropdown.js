@@ -18,9 +18,10 @@ const Dropdown = React.createClass({
         this.setState({open: false})
     },
     render: function() {
-        let ul = this.state.open ? <DropdownMenu droplist={this.props.droplist} globalClick={this._globalClick} /> : ''
+        let ul = this.state.open ? <DropdownMenu droplist={this.props.droplist} globalClick={this._globalClick} style={this.props.style} param={this.props.param} /> : ''
+        const className = this.props.className ? this.props.className + ' dropdown' : 'dropdown'
         return (
-            <this.props.headelement className={this.state.open ? 'dropdown open' : 'dropdown'} onClick={() => this.setState({open: !this.state.open})}>
+            <this.props.headelement className={this.state.open ? `${className} open` : className} onClick={() => this.setState({open: !this.state.open})}>
                 {this.props.children}
                 {ul}
             </this.props.headelement>

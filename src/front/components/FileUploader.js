@@ -9,19 +9,45 @@ const FileUploader = React.createClass({
         if (this.props.setClear) {
             this.props.setClear(this._clearFile)
         }
-        if (this.props.setPush) {
-            this.props.setPush(this._pushFile)
+    },
+    componentDidMount: function() {
+        if (this.props.drop) {
+            this._targetArr = Array.from(document.querySelectorAll('[data-drop]')).filter(node => node.getAttribute('data-drop') === this.props.drop)
         }
+        if (this._targetArr.length > 0) {
+            this._targetArr.forEach(target => {
+                target.addEventListener('dragover', this._preventDefault)
+                target.addEventListener('drop', this._pushFile)
+            })
+        }
+        window.addEventListener("beforeunload", this._routerWillLeave)
     },
     componentWillUnmount: function() {
         this._clearFile()
+        window.removeEventListener("beforeunload", this._routerWillLeave)
+        if (this._targetArr.length > 0) {
+            this._targetArr.forEach(target => {
+                target.removeEventListener('dragover', this._preventDefault)
+                target.removeEventListener('drop', this._pushFile)
+            })
+        }
+    },
+    _routerWillLeave: function(e) {
+        let confirmationMessage = 'You have uploaded files. Are you sure you want to navigate away from this page?'
+        if (this._uploading !== -1) {
+            e.returnValue = confirmationMessage
+            return confirmationMessage
+        }
     },
     _setState: function() {
         this.props.set(this._files)
         let progress = 0
         this._files.forEach(file => progress += file.progress)
         progress = progress > 0 ? Math.round(progress / this._files.length) : 0
-        this.props.setProgress(progress, this._uploading === -1 ? false : true)
+        this.props.setUpload(progress)
+    },
+    _preventDefault: function(e) {
+        e.preventDefault()
     },
     _pushFile: function(e) {
         e.preventDefault()
@@ -73,7 +99,7 @@ const FileUploader = React.createClass({
             this._setState()
         }
         if (this.props.beforeUpload) {
-            Promise.resolve(this.props.beforeUpload()).then(uploader)
+            Promise.resolve(this.props.beforeUpload()).then(uploader).catch(err => this.props.addalert(err))
         } else {
             uploader()
         }

@@ -1,5 +1,6 @@
 import React from 'react'
 import ReFileUploader from '../containers/ReFileUploader'
+import { UPLOAD } from '../constants'
 import UserInput from './UserInput'
 import { isValidString, api } from '../utility'
 
@@ -10,14 +11,30 @@ const FileAdd = React.createClass({
         return Object.assign({
             files: [],
             type: false,
+            show: false,
         }, this._input.initValue())
     },
+    componentDidMount: function() {
+        this._targetArr = Array.from(document.querySelectorAll('[data-widget]')).filter(node => node.getAttribute('data-widget') === UPLOAD)
+        if (this._targetArr.length > 0) {
+            this._targetArr.forEach(target => {
+                target.addEventListener('click', this._toggle)
+            })
+        }
+    },
     componentWillUnmount: function() {
-        this.props.toggle(false)
+        if (this._targetArr.length > 0) {
+            this._targetArr.forEach(target => {
+                target.removeEventListener('click', this._toggle)
+            })
+        }
+    },
+    _toggle: function() {
+        this.setState(Object.assign({}, this.state, {show: !this.state.show}))
     },
     _setFiles: function(files) {
         if (this.state.files.length === 0 && files.length > 0) {
-            this.props.toggle()
+            this.setState(Object.assign({}, this.state, {show: true}))
         }
         this.setState(Object.assign({}, this.state, {files}))
     },
@@ -25,7 +42,11 @@ const FileAdd = React.createClass({
         this._clearFiles = clear
     },
     _handleChange: function() {
-        this.setState(Object.assign({}, this.state, {type: this._ref.checked}, this._input.getValue()))
+        if (this._ref !== null) {
+            this.setState(Object.assign({}, this.state, {type: this._ref.checked}, this._input.getValue()))
+        } else {
+            this.setState(Object.assign({}, this.state, this._input.getValue()))
+        }
     },
     _handleSubmit: function(e) {
         if (e) {
@@ -34,8 +55,7 @@ const FileAdd = React.createClass({
         if (isValidString(this.state.url, 'url')) {
             const url = this.state.url
             this.setState(Object.assign({}, this.state, this._input.initValue()))
-            api('/api/getPath').catch(err => this.props.addalert(err))
-            .then(ret => api(`${this.props.mainUrl}/api/upload/url`, Object.assign({
+            api('/api/getPath').then(ret => api(`${this.props.mainUrl}/api/upload/url`, Object.assign({
                 type: this.state.type ? 1 : 0,
                 url: url,
             }, ret), 'POST')).then(result => {
@@ -54,10 +74,10 @@ const FileAdd = React.createClass({
         this.state.files.forEach(file => {
             rows.push(<div style={{color: '#31708f'}} key={file.key}>{file.name}<span className="badge">{file.progress + '%'}</span></div>)
         })
-        const show = this.props.show ? {width: '205px', marginBottom: '0px'} : {width: '205px', marginBottom: '0px', display: 'none'}
+        const show = this.state.show ? {} : {display: 'none'}
         return (
-            <section className="panel panel-info" style={show}>
-                <div className="panel-heading" onClick={() => this.props.toggle()}>
+            <section className="panel panel-info" style={Object.assign({width: '205px', marginBottom: '0px'}, show)}>
+                <div className="panel-heading" onClick={this._toggle}>
                     <h4 className="panel-title">
                         <a href="#" style={{textDecoration: 'none'}}>
                             Uploader<i className="pull-right glyphicon glyphicon-remove"></i>
@@ -94,7 +114,7 @@ const FileAdd = React.createClass({
                     <div className="btn-group">
                         <div className="btn btn-primary btn-file btn-s" style={{position: 'relative'}}>
                             <span className="glyphicon glyphicon-folder-open"></span>&nbsp;Choose
-                            <ReFileUploader url={this.props.mainUrl + '/upload/file'} set={this._setFiles} setClear={this._setClearFiles} params={{type: this.state.type ? 1 : 0}} beforeUpload={() => api('/api/getPath').catch(err => this.props.addalert(err))} />
+                            <ReFileUploader url={this.props.mainUrl + '/upload/file'} set={this._setFiles} setClear={this._setClearFiles} params={{type: this.state.type ? 1 : 0}} beforeUpload={() => api('/api/getPath')} drop={UPLOAD} />
                         </div>
                         <button className="btn btn-danger btn-s" disabled={!this.state.files.length} onClick={this._clearFiles}>
                             <span className="glyphicon glyphicon-trash"></span>Remove all

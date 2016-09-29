@@ -1,10 +1,10 @@
 import React from 'react'
 import { IndexLink, browserHistory } from 'react-router'
-import { ROOT_PAGE, LOGIN_PAGE, USER_PAGE } from '../constants'
+import { ROOT_PAGE, LOGIN_PAGE, USER_PAGE, LEFT, RIGHT, UPLOAD } from '../constants'
 import { collapseToggle } from '../actions'
 import { api, doLogout, isValidString } from '../utility'
-import ReNavlist from '../containers/ReNavlist'
-import ReToggleNav from '../containers/ReToggleNav'
+import Navlist from './Navlist'
+import ToggleNav from './ToggleNav'
 import ReAlertlist from '../containers/ReAlertlist'
 import Dropdown from './Dropdown'
 import ReGlobalPassword from '../containers/ReGlobalPassword'
@@ -59,49 +59,32 @@ const App = React.createClass({
                         }
                     }
                 }
+                return api(`${userInfo.main_url}/api/feedback`)
             } else {
                 throw Error('Invalid user data!!!')
             }
-        }).catch(err => {
+        }).then(result => {
+            this.props.feedbackset(result.feedbacks)
+            return api('/api/parent/list')
+        }).then(result => this.props.basicset(null, null, result.parentList.map((dir, j) => ({title: dir.show, key: j, onclick: tag => this.props.sendglbcf(() => api('/api/parent/add', {name: dir.name, tag: tag}, 'POST').then(result => console.log(result)).catch(err => this.props.addalert(err)), `Would you sure add ${tag} to ${dir.show}?`)})))).catch(err => {
             this.props.addalert(err)
             this._doLogout()
         })
     },
-    componentDidMount: function() {
-        window.addEventListener("beforeunload", this._routerWillLeave)
-    },
     componentWillUnmount: function() {
-        window.removeEventListener("beforeunload", this._routerWillLeave)
         if (this._ws) {
             this._ws.close()
         }
         this.props.basicset('guest', '')
     },
-    _routerWillLeave: function(e) {
-        let confirmationMessage = 'You have uploaded files. Are you sure you want to navigate away from this page?'
-        if (e) {
-            if (this.props.uploading) {
-                e.returnValue = confirmationMessage
-                return confirmationMessage
-            }
-        } else {
-            if (this.props.uploading) {
-                return confirm(confirmationMessage)
-            } else {
-                return true
-            }
-        }
-    },
     _doLogout: function() {
-        if (this._routerWillLeave()) {
-            doLogout().then(() => browserHistory.push(LOGIN_PAGE)).catch(err => this.props.addalert(err))
-        }
+        doLogout().then(() => browserHistory.push(LOGIN_PAGE)).catch(err => this.props.addalert(err))
     },
     render: function() {
-        const glbPw = this.props.pwCallback.length > 0 ? <ReGlobalPassword callback={this.props.pwCallback[0]} delay={true} /> : ''
+        const glbPw = this.props.pwCallback.length > 0 ? <ReGlobalPassword callback={this.props.pwCallback[0]} delay="user" /> : ''
         const glbCf = this.props.cfCallback.length > 0 ? <ReGlobalComfirm callback={this.props.cfCallback[0]} text={this.props.cfCallback[1]} /> : ''
         return (
-            <div id="wrapper" onDrop={this.props.pushFile} onDragOver={e => e.preventDefault()}>
+            <div id="wrapper" data-drop={UPLOAD}>
                 <FileManage />
                 <ReWidgetManage />
                 <ReAlertlist />
@@ -109,9 +92,9 @@ const App = React.createClass({
                 {glbCf}
                 <nav className="navbar navbar-inverse navbar-fixed-top" role="navigation">
                     <div className="navbar-header">
-                        <ReToggleNav inverse={true} index={0} />
+                        <ToggleNav inverse={true} collapse={LEFT} />
                         <IndexLink className="navbar-brand" to={ROOT_PAGE}>ANoMoPi</IndexLink>
-                        <ReToggleNav inverse={false} index={1} />
+                        <ToggleNav inverse={false} collapse={RIGHT} />
                     </div>
                     <ul className="nav navbar-right top-nav">
                         <Dropdown headelement="li" droplist={this._userDrop}>
@@ -120,7 +103,7 @@ const App = React.createClass({
                             </a>
                         </Dropdown>
                     </ul>
-                    <ReNavlist navlist={this.state.navlist} />
+                    <Navlist navlist={this.state.navlist} collapse={LEFT} />
                 </nav>
                 <section id="page-wrapper">{this.props.children}</section>
             </div>

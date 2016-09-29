@@ -2,9 +2,9 @@ import React from 'react'
 import { BLOCK_ZINDEX, AUTH_TIME } from '../constants'
 import UserInput from './UserInput'
 
-let global_password = null
+let global_password = {}
 
-let auth_timer = null
+let auth_timer = {}
 
 const GlobalPassword = React.createClass({
     getInitialState: function() {
@@ -20,13 +20,13 @@ const GlobalPassword = React.createClass({
         }
         Promise.resolve(this.props.callback(this.state.userPW)).then(() => {
             if (this.props.delay) {
-                global_password = 'goodboy'
-                auth_timer = setTimeout(() => global_password=null, AUTH_TIME)
+                global_password[this.props.delay] = 'goodboy'
+                auth_timer[this.props.delay] = setTimeout(() => global_password[this.props.delay] = null, AUTH_TIME)
             }
             this.props.onclose()
         }).catch(err => {
-            global_password = null
-            clearTimeout(auth_timer)
+            global_password[this.props.delay] = null
+            clearTimeout(auth_timer[this.props.delay])
             this.setState(this._input.initValue())
         })
     },
@@ -34,7 +34,7 @@ const GlobalPassword = React.createClass({
         this.setState(this._input.getValue())
     },
     render: function() {
-        if (global_password === null) {
+        if (global_password[this.props.delay] === null) {
             return (
                 <section style={{position: 'fixed', zIndex: BLOCK_ZINDEX, top: '0px', right: '0px', width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.3)'}}>
                     <form onSubmit={this._handleSubmit}>
@@ -59,11 +59,11 @@ const GlobalPassword = React.createClass({
                 </section>
             )
         } else {
-            Promise.resolve(this.props.callback(global_password))
+            Promise.resolve(this.props.callback(global_password[this.props.delay]))
             .then(() => this.props.onclose())
             .catch(err => {
-                global_password = null
-                clearTimeout(auth_timer)
+                global_password[this.props.delay] = null
+                clearTimeout(auth_timer[this.props.delay])
                 this.setState(this._input.initValue())
             })
             return null

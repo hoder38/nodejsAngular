@@ -82,15 +82,9 @@
                     <button type="button" ng-show="isLogin" class="btn btn-info" ng-click="toggleWidget('uploader')" tooltip="點選或拖曳檔案上傳" tooltip-trigger="mouseenter" tooltip-placement="right">
                         Uploader<span class="badge">{{uploader.progress}}%</span>
                     </button>
-                    <button type="button" ng-show="feedback.run" class="btn btn-default" ng-click="toggleWidget('feedback')" tooltip="點選儲存檔案TAG" tooltip-trigger="click" tooltip-placement="right">
+                    <button type="button" ng-show="feedback.run" class="btn btn-default" ng-click="toggleWidget('feedback')" tooltip="點選儲存檔案TAG" tooltip-trigger="mouseenter" tooltip-placement="right">
                         Feedback<span class="badge">{{feedback.queue.length+1}}</span>
                     </button>
-
-                    <div class="tooltip right in" style="top: -9px; left: 117px; display: block;">
-  <div class="tooltip-arrow"></div>
-  <div class="tooltip-inner">點選儲存檔案TAG</div>
-</div>
-
                     <button type="button" ng-show="image.list.length" class="btn btn-warning" ng-click="mediaToggle('image')">
                         Image<span class="badge">{{image.end && ' ' || '>'}}{{image.list.length}}</span>
                     </button>

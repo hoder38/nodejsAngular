@@ -1,10 +1,5 @@
-import { COLLAPSE_TOGGLE, ALERT_PUSH, ALERT_POP, SET_BASIC, SET_UPLOAD, SEND_GLB_PW,
-    CLOSE_GLB_PW, SEND_GLB_CF, CLOSE_GLB_CF, WIDGET_TOGGLE } from '../constants'
-
-export const collapseToggle = index => ({
-    type: COLLAPSE_TOGGLE,
-    index,
-})
+import { ALERT_PUSH, ALERT_POP, SET_BASIC, SET_UPLOAD, SEND_GLB_PW,
+    CLOSE_GLB_PW, SEND_GLB_CF, CLOSE_GLB_CF, SET_FEEDBACK, FEEDBACK_POP } from '../constants'
 
 export const alertPush = msg => ({
     type: ALERT_PUSH,
@@ -16,17 +11,16 @@ export const alertPop = key => ({
     key,
 })
 
-export const setBasic = (id=null, url=null) => ({
+export const setBasic = (id=null, url=null, dir=null) => ({
     type: SET_BASIC,
     id,
     url,
+    dir,
 })
 
-export const setUpload = (progress=null, uploading=null, pushFile=null) => ({
+export const setUpload = progress => ({
     type: SET_UPLOAD,
     progress,
-    uploading,
-    pushFile,
 })
 
 export const sendGlbPw = callback => ({
@@ -48,8 +42,12 @@ export const closeGlbCf = () => ({
     type: CLOSE_GLB_CF,
 })
 
-export const widgetToggle = (widget, show=null) => ({
-    type: WIDGET_TOGGLE,
-    widget,
-    show,
+export const setFeedback = feedback => ({
+    type: SET_FEEDBACK,
+    feedback,
+})
+
+export const feedbackPop = id => ({
+    type: FEEDBACK_POP,
+    id,
 })

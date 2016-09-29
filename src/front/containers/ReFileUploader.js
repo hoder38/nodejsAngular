@@ -1,10 +1,10 @@
 import { connect } from 'react-redux'
-import { setUpload } from '../actions'
+import { setUpload, alertPush } from '../actions'
 import FileUploader from '../components/FileUploader'
 
 const mapDispatchToProps = dispatch => ({
-    setPush: pushFile => dispatch(setUpload(null, null, pushFile)),
-    setProgress: (progress, uploading) => dispatch(setUpload(progress, uploading)),
+    setUpload: progress => dispatch(setUpload(progress)),
+    addalert: msg => dispatch(alertPush(msg)),
 })
 
 const ReFileUploader = connect(
