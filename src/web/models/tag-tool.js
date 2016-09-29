@@ -367,6 +367,10 @@ module.exports = function(collection) {
                         }
                     } else {
                         if (items[0][user._id.toString()].indexOf(tagType.tag.tags) === -1) {
+                            setTimeout(function(){
+                                callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: ''});
+                            }, 0);
+                        } else {
                             tagType.tag[user._id.toString()] = tagType.tag.tags;
                             mongo.orig("update", collection, { _id: id }, {$pull: tagType.tag}, function(err, item2){
                                 if(err) {
@@ -376,10 +380,6 @@ module.exports = function(collection) {
                                     callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: tagType.tag.tags});
                                 }, 0);
                             });
-                        } else {
-                            setTimeout(function(){
-                                callback(null, {id: items[0]._id, adultonly: items[0].adultonly, tag: ''});
-                            }, 0);
                         }
                     }
                 } else {
