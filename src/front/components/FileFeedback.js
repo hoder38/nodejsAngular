@@ -15,6 +15,7 @@ const FileFeedback = React.createClass({
             show: false,
             tags: [],
             selects: [],
+            historys: [],
         }, this._input.initValue())
     },
     componentWillMount: function() {
@@ -52,6 +53,10 @@ const FileFeedback = React.createClass({
                 ...props.option,
             ],
             selects: [
+                ...props.select.map(tag => true),
+                ...props.option.map(tag => false),
+            ],
+            history: [
                 ...props.select.map(tag => true),
                 ...props.option.map(tag => false),
             ],
@@ -109,7 +114,7 @@ const FileFeedback = React.createClass({
             api(`/api/sendTag/${this.props.id}`, {
                 tags: send_tag,
                 name: this.props.name,
-            }, 'PUT').then(result => console.log(result)).catch(err => this.props.addalert(err))
+            }, 'PUT').then(result => this._history = result.history).catch(err => this.props.addalert(err))
             this.props.handlefeedback(this.props.id)
         } else {
             this.props.addalert('Feedback name is not valid!!!')
@@ -136,7 +141,7 @@ const FileFeedback = React.createClass({
         const show = (this.state.show && this.props.id) ? {} : {display: 'none'}
         let rows = []
         this.state.tags.forEach((tag, i) => {
-            //const history = item.history ? 'form-control list-group-item-danger': 'form-control'
+            const history = this.state.historys[i] ? 'form-control list-group-item-danger': 'form-control'
             rows.push(
                 <div className="input-group" key={key++}>
                     <span className="input-group-addon">
@@ -146,7 +151,7 @@ const FileFeedback = React.createClass({
                             ref={ref => this._select[i] = ref}
                             onChange={this._handleSelect} />
                     </span>
-                    <span className="form-control" style={{wordBreak: 'break-all', wordWrap: 'break-word', height: 'auto'}}>{tag}</span>
+                    <span className={history} style={{wordBreak: 'break-all', wordWrap: 'break-word', height: 'auto'}}>{tag}</span>
                     <Dropdown headelement="span" className="input-group-btn" style={{left: 'auto', right: '0px', top: '0px'}} droplist={this.props.dirs} param={tag}>
                         <button type="button" className="btn btn-default">
                             <span className="caret"></span>
@@ -157,13 +162,13 @@ const FileFeedback = React.createClass({
         })
         let other_rows = []
         this.props.other.forEach(tag => {
-            //const history = item.history ? 'form-control list-group-item-danger': 'form-control'
+            const history = this.state.historys[i] ? 'form-control list-group-item-danger': 'form-control'
             rows.push(
                 <div className="input-group" key={key++}>
                     <span className="input-group-addon">
                         <input type="checkbox" disabled="true" />
                     </span>
-                    <span className="form-control" style={{wordBreak: 'break-all', wordWrap: 'break-word', height: 'auto'}}>{tag}</span>
+                    <span className={history} style={{wordBreak: 'break-all', wordWrap: 'break-word', height: 'auto'}}>{tag}</span>
                     <Dropdown headelement="span" className="input-group-btn" style={{left: 'auto', right: '0px', top: '0px'}} droplist={this.props.dirs} param={tag}>
                         <button type="button" className="btn btn-default">
                             <span className="caret"></span>
