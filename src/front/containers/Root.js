@@ -3,12 +3,13 @@ import { Provider } from 'react-redux'
 import { Router, Route, IndexRoute, Redirect, browserHistory } from 'react-router'
 import { syncHistoryWithStore } from 'react-router-redux'
 import configureStore from '../configureStore'
-import { ROOT_PAGE, LOGIN_PAGE, USER_PAGE } from '../constants'
+import { ROOT_PAGE, LOGIN_PAGE, USER_PAGE, STORAGE_PAGE, PASSWORD_PAGE, STOCK_PAGE } from '../constants'
 import ReApp from './ReApp'
 import Homepage from '../components/Homepage'
 import ReUserlist from './ReUserlist'
-import Storage from './Storage'
-import Bar from '../components/Bar'
+import Storage from '../components/Storage'
+import Password from '../components/Password'
+import Stock from '../components/Stock'
 import ReLogin from './ReLogin'
 import { testLogin } from '../utility'
 
@@ -35,8 +36,9 @@ export default function Root() {
                     <Route path={LOGIN_PAGE} component={ReLogin} onEnter={isLogin} />
                     <Route path={ROOT_PAGE} component={ReApp}>
                         <IndexRoute component={Homepage} />
-                        <Route path="foo" component={Storage} />
-                        <Route path="bar" component={Bar} />
+                        <Route path={STORAGE_PAGE} component={Storage} />
+                        <Route path={PASSWORD_PAGE} component={Password} />
+                        <Route path={STOCK_PAGE} component={Stock} />
                         <Route path={USER_PAGE} component={ReUserlist} />
                     </Route>
                     <Redirect from="*" to={ROOT_PAGE} />

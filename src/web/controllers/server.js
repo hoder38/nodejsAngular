@@ -4042,7 +4042,7 @@ app.get('/api/getUser', function(req, res, next){
         var level = 0;
         if (util.checkAdmin(1, req.user)) {
             level = 2;
-            nav = [{title: "Stock", hash: "/Stock", css: "glyphicon glyphicon-signal", key: 3}];
+            nav = [{title: "Stock", hash: "/webpack/Stock", css: "glyphicon glyphicon-signal", key: 3}];
         } else if (util.checkAdmin(2, req.user)) {
             level = 1;
         }

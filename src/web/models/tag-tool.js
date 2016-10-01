@@ -392,6 +392,7 @@ module.exports = function(collection) {
             tags.reverse();
             var this_obj = this;
             var history = [];
+            var select = [];
             var name = util.isValidString(objName, 'name');
             if (name === false) {
                 util.handleError({hoerror: 2, message: "name is not vaild"}, next, callback);
@@ -405,7 +406,8 @@ module.exports = function(collection) {
                             util.handleError(err, next);
                         } else {
                             if (result.tag !== normal) {
-                                history.push({tag: result.tag, select: true});
+                                history.push(result.tag);
+                                select.push(true);
                             }
                         }
                         index++;
@@ -427,7 +429,7 @@ module.exports = function(collection) {
                                         util.handleError(err, next, callback, null);
                                     }
                                     setTimeout(function(){
-                                        callback(null, {history: history, id: item1s[0]._id, adultonly: item1s[0].adultonly});
+                                        callback(null, {history: history, select: select, id: item1s[0]._id, adultonly: item1s[0].adultonly});
                                     }, 0);
                                 });
                             });
@@ -439,7 +441,8 @@ module.exports = function(collection) {
                             util.handleError(err, next);
                         } else {
                             if (result.tag !== normal) {
-                                history.push({tag: result.tag, select: false});
+                                history.push(result.tag);
+                                select.push(false);
                             }
                         }
                         index++;
@@ -461,7 +464,7 @@ module.exports = function(collection) {
                                         util.handleError(err, next, callback, null);
                                     }
                                     setTimeout(function(){
-                                        callback(null, {history: history, id: item1s[0]._id, adultonly: item1s[0].adultonly});
+                                        callback(null, {history: history, select: select, id: item1s[0]._id, adultonly: item1s[0].adultonly});
                                     }, 0);
                                 });
                             });

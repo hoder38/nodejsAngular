@@ -1,8 +1,9 @@
 import React from 'react'
 import ReFileUploader from '../containers/ReFileUploader'
 import { UPLOAD } from '../constants'
-import UserInput from './UserInput'
 import { isValidString, api } from '../utility'
+import UserInput from './UserInput'
+import Tooltip from './Tooltip'
 
 const FileAdd = React.createClass({
     getInitialState: function() {
@@ -66,7 +67,7 @@ const FileAdd = React.createClass({
                 }
             }).catch(err => this.props.addalert(err))
         } else {
-            this.props.addalert('Url not vaild!!!')
+            this.props.addalert('URL not vaild!!!')
         }
     },
     render: function() {
@@ -87,6 +88,7 @@ const FileAdd = React.createClass({
                 <form onSubmit={this._handleSubmit}>
                     <div className="input-group">
                         <span className="input-group-addon">
+                            <Tooltip tip="18+" place="top" />
                             <input
                                 type="checkbox"
                                 checked={this.state.type}
@@ -96,7 +98,7 @@ const FileAdd = React.createClass({
                         <UserInput
                             val={this.state.url}
                             getinput={this._input.getInput('url')}
-                            placeholder="URL Upload" />
+                            placeholder="Input URL..." />
                         <span className="input-group-btn">
                             <button className="btn btn-default" type="submit">
                                 <i className="glyphicon glyphicon-upload"></i>

@@ -1,5 +1,5 @@
 import { ALERT_PUSH, ALERT_POP, SET_BASIC, SET_UPLOAD, SEND_GLB_PW,
-    CLOSE_GLB_PW, SEND_GLB_CF, CLOSE_GLB_CF, SET_FEEDBACK, FEEDBACK_POP } from '../constants'
+    CLOSE_GLB_PW, SEND_GLB_CF, CLOSE_GLB_CF, SET_FEEDBACK, FEEDBACK_POP, FEEDBACK_PUSH } from '../constants'
 
 export const alertPush = msg => ({
     type: ALERT_PUSH,
@@ -50,4 +50,9 @@ export const setFeedback = feedback => ({
 export const feedbackPop = id => ({
     type: FEEDBACK_POP,
     id,
+})
+
+export const feedbackPush = feedback => ({
+    type: FEEDBACK_PUSH,
+    feedback,
 })

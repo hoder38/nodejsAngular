@@ -2,6 +2,9 @@
 export const ROOT_PAGE = '/webpack'
 export const LOGIN_PAGE = '/webpack/Login'
 export const USER_PAGE = '/webpack/User'
+export const STORAGE_PAGE = '/webpack/Storage'
+export const PASSWORD_PAGE = '/webpack/Password'
+export const STOCK_PAGE = '/webpack/Stock'
 
 //action
 export const ALERT_PUSH = 'ALERT_PUSH'
@@ -14,6 +17,7 @@ export const CLOSE_GLB_CF = 'CLOSE_GLB_CF'
 export const SET_UPLOAD = 'SET_UPLOAD'
 export const SET_FEEDBACK = 'SET_FEEDBACK'
 export const FEEDBACK_POP = 'FEEDBACK_POP'
+export const FEEDBACK_PUSH = 'FEEDBACK_PUSH'
 
 //z-index
 export const ALERT_ZINDEX = 1100
