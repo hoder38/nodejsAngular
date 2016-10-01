@@ -10824,7 +10824,7 @@ function StockCntl($route, $routeParams, $resource, $window, $cookies, $filter, 
     if (type === 'altpwd')
     {
         //if (str.search(/^(?=.*\d)(?=.*[a-zA-Z]).{6,20}$/) != -1)
-        if (str.search(/^[0-9a-zA-Z\.!@#$%\u4e00-\u9fa5]{2,30}$/) != -1)
+        if (str.search(/^[0-9a-zA-Z\._!@#$%\u4e00-\u9fa5]{2,30}$/) != -1)
         {
             return true;
         }
