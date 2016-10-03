@@ -2874,7 +2874,8 @@ module.exports = {
                                             }
                                             rest_interval();
                                         } else {
-                                            rest_interval(true);
+                                            type = 1;
+                                            rest_interval();
                                         }
                                     });
                                 }
@@ -2921,9 +2922,6 @@ module.exports = {
                                 var interval = null;
                                 for (var i = 19; i > 0; i--) {
                                     interval = group_interval(i, 5);
-                                    if (interval) {
-                                        break;
-                                    }
                                     if (interval) {
                                         break;
                                     }
