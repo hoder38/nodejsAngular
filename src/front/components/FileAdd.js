@@ -62,8 +62,8 @@ const FileAdd = React.createClass({
             }, ret), 'POST')).then(result => {
                 if (result.stop) {
                     this.props.addalert('Background upload was stoped')
-                } else {
-                    console.log(result);
+                } else if (result.name) {
+                    this.props.pushfeedback(result)
                 }
             }).catch(err => this.props.addalert(err))
         } else {

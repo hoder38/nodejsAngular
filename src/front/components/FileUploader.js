@@ -111,10 +111,11 @@ const FileUploader = React.createClass({
             this._setState()
         }
     },
-    _uploadFinish: function() {
+    _uploadFinish: function(e) {
         if (this._files[this._uploading]) {
             this._files[this._uploading].done = true
         }
+        this.props.pushfeedback(JSON.parse(e.currentTarget.response))
         this._uploading = -1
         this._uploadFile()
     },

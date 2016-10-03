@@ -715,7 +715,7 @@ app.post('/upload/file', function(req, res, next){
                                 }
                             }
                             mediaTag.opt = supplyTag(mediaTag.def, mediaTag.opt);
-                            res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                            res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt, other: []});
                             mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
                                 sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                                 if(err) {
@@ -845,7 +845,7 @@ app.post('/api/upload/url', function(req, res, next){
                             }
                         }
                         mediaTag.opt = supplyTag(mediaTag.def, mediaTag.opt);
-                        res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                        res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt, other: []});
                     });
                 });
             });
@@ -2020,7 +2020,7 @@ app.post('/api/upload/url', function(req, res, next){
                             }
                             if (DBdata['untag']) {
                                 mediaTag.opt = supplyTag(mediaTag.def, mediaTag.opt);
-                                res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                                res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt, other: []});
                             } else {
                                 res.json({id: item[0]._id});
                             }
@@ -2198,7 +2198,7 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
                         }
                     }
                     mediaTag.opt = supplyTag(mediaTag.def, mediaTag.opt);
-                    res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                    res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt, other: []});
                 });
             });
         });

@@ -1,5 +1,5 @@
 import { connect } from 'react-redux'
-import { alertPush } from '../actions'
+import { alertPush, feedbackPush } from '../actions'
 import FileAdd from '../components/FileAdd'
 
 const mapStateToProps = state => ({
@@ -9,6 +9,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
     addalert: msg => dispatch(alertPush(msg)),
+    pushfeedback: feedback => dispatch(feedbackPush(feedback)),
 })
 
 const ReFileAdd = connect(
