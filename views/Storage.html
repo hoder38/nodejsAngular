@@ -129,7 +129,7 @@
             </span>
         </div>
     </form>
-    <div class="input-group" ng-show="uploadSub" id="upload-sub">
+    <div class="input-group double-input" ng-show="uploadSub" id="upload-sub">
         <span class="input-group-btn">
             <button class="btn btn-warning" ng-click="uploadSub = false" type="button">
                 <i class="glyphicon glyphicon-remove"></i>
@@ -138,6 +138,10 @@
         <span class="form-control" class="progress">
             {{ miscUploader && miscUploader.progress || 0 }}% Complete
         </span>
+        <select class="form-control" ng-model="subLang">
+            <option value="ch">中文</option>
+            <option value="en">English</option>
+        </select>
         <span class="input-group-btn">
             <div class="btn btn-warning btn-file">
                 <span class="glyphicon glyphicon-folder-open"></span>&nbsp;Choose<input type="file" nv-file-select uploader="miscUploader" />

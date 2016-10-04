@@ -590,6 +590,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.tCD = false;
     $scope.relativeList = [];
     $scope.pageToken = '';
+    $scope.subLang = 'ch';
     //cookie
     $scope.fileSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
     $scope.dirSort = {name:'', mtime: '', count: '', sort: 'name/asc'};
@@ -610,16 +611,16 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     miscUploader.onAfterAddingFile = function(fileItem) {
         //console.info('onAfterAddingFile', fileItem);
         if ($scope.toolSub && $scope.toolList.item) {
-            fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.toolList.item.id;
+            fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.toolList.item.id + '/' + $scope.subLang;
             this.uploadAll();
         } else if ($scope.torrentSub && $scope.torrent.id) {
-            fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.torrent.id + '/' + + $scope.torrent.index;
+            fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.torrent.id + '/' + $scope.subLang + '/' + + $scope.torrent.index;
             this.uploadAll();
         } else if ($scope.videoSub && $scope.video.id) {
             if ($scope.video.playlist) {
-                fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.video.playlist.obj.id + '/v';
+                fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.video.playlist.obj.id + '/' + $scope.subLang + '/v';
             } else {
-                fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.video.id;
+                fileItem.url = $scope.main_url + '/upload/subtitle/' + $scope.video.id + '/' + $scope.subLang;
             }
             this.uploadAll();
         } else {
@@ -2043,7 +2044,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                                                                 videoId = this_obj.$parent[type].playlist.obj.id = result.id;
                                                                 this_obj.$parent[type].src = $scope.main_url + '/torrent/v/' + videoId;
                                                                 removeCue();
-                                                                this_obj.$parent[type].sub = '/subtitle/' + videoId + '/v';
+                                                                this_obj.$parent[type].sub = '/subtitle/' + videoId + '/ch/v';
                                                             }
                                                         }, function(errorResult) {
                                                             if (errorResult.status === 400) {
@@ -2127,7 +2128,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                         this_obj.$parent[type].maxId = item.present;
                         if (type === 'video') {
                             removeCue();
-                            this_obj.$parent[type].sub = '/subtitle/' + videoId + '/v';
+                            this_obj.$parent[type].sub = '/subtitle/' + videoId + '/ch/v';
                         }
                         var tempList = $filter("filter")(this_obj.itemList, {status: status});
                         this_obj.$parent[type].name = item.name;
@@ -2198,7 +2199,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
                 this_obj['torrent'].src = $scope.main_url + '/torrent/' + this_obj['torrent'].index + '/' + this_obj['torrent'].id;
                 this_obj['torrent'].type = this_obj['torrent'].list[this_obj['torrent'].index]['type'];
                 removeCue('torrent');
-                this_obj['torrent'].sub = '/subtitle/' + this_obj['torrent'].id + '/' + this_obj['torrent'].index;
+                this_obj['torrent'].sub = '/subtitle/' + this_obj['torrent'].id + '/ch/' + this_obj['torrent'].index;
                 this_obj.mediaToggle('torrent', true);
             } else {
                 addAlert('No preview file!!!');
@@ -2797,14 +2798,22 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
     }
     $scope.toggleSub = function(type) {
-        var obj = video;
         if (type === 'torrent') {
-            obj = torrent;
-        }
-        if (obj.textTracks[0].mode === 'showing') {
-            obj.textTracks[0].mode = "hidden";
+            removeCue('torrent');
+            var urlmatch = $scope.torrent.sub.match(/\/ch\//);
+            if (urlmatch) {
+                $scope.torrent.sub = $scope.torrent.sub.replace('/ch/', '/en/');
+            } else {
+                $scope.torrent.sub = $scope.torrent.sub.replace('/en/', '/ch/');
+            }
         } else {
-            obj.textTracks[0].mode = "showing";
+            var urlmatch = $scope.video.sub.match(/\/ch\//);
+            removeCue();
+            if (urlmatch) {
+                $scope.video.sub = $scope.video.sub.replace('/ch/', '/en/');
+            } else {
+                $scope.video.sub = $scope.video.sub.replace('/en/', '/ch/');
+            }
         }
     }
 
@@ -2941,12 +2950,26 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     function fixSubtitle(adjust, type) {
         var append = '';
         if (type === 'torrent') {
-            append = $scope.torrent.id + '/' + adjust + '/' + $scope.torrent.index;
-        } else {
-            if ($scope.video.playlist.obj.id) {
-                append = $scope.video.playlist.obj.id + '/' + adjust + '/v';
+            var urlmatch = $scope.video.sub.match(/\/ch\//);
+            if (urlmatch) {
+                append = $scope.torrent.id + '/ch/' + adjust + '/' + $scope.torrent.index;
             } else {
-                append = $scope.video.id + '/' + adjust;
+                append = $scope.torrent.id + '/en/' + adjust + '/' + $scope.torrent.index;
+            }
+        } else {
+            var urlmatch = $scope.video.sub.match(/\/ch\//);
+            if (urlmatch) {
+                if ($scope.video.playlist && $scope.video.playlist.obj && $scope.video.playlist.obj.id) {
+                    append = $scope.video.playlist.obj.id + '/ch/' + adjust + '/v';
+                } else {
+                    append = $scope.video.id + '/ch/' + adjust;
+                }
+            } else {
+                if ($scope.video.playlist && $scope.video.playlist.obj && $scope.video.playlist.obj.id) {
+                    append = $scope.video.playlist.obj.id + '/en/' + adjust + '/v';
+                } else {
+                    append = $scope.video.id + '/en/' + adjust;
+                }
             }
         }
         var subtitleApi = $resource($scope.main_url + '/api/subtitle/fix/' + append, {}, {
@@ -3995,7 +4018,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                 this.torrent.type = this.torrent.list[this.torrent.index]['type'];
                 this.torrent.src = $scope.main_url + '/torrent/' + this.torrent.index + '/' + this.torrent.id;
                 removeCue('torrent');
-                this.torrent.sub = '/subtitle/' + this.torrent.id + '/' + this.torrent.index;
+                this.torrent.sub = '/subtitle/' + this.torrent.id + '/ch/' + this.torrent.index;
             }
         }
     }
@@ -4306,7 +4329,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                     videoId = this_obj[type].playlist.obj.id = result.id;
                                                     this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
                                                     removeCue();
-                                                    this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                    this_obj[type].sub = '/subtitle/' + videoId + '/ch/v';
                                                 }
                                             }, function(errorResult) {
                                                 if (errorResult.status === 400) {
@@ -4382,7 +4405,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         }
                         if (type === 'video') {
                             removeCue();
-                            this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                            this_obj[type].sub = '/subtitle/' + videoId + '/ch/v';
                         }
                     }
                 }, function(errorResult) {
@@ -4804,7 +4827,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                                             this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
                                                                             isOri();
                                                                             removeCue();
-                                                                            this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                                            this_obj[type].sub = '/subtitle/' + videoId + '/ch/v';
                                                                         }
                                                                     }, function(errorResult) {
                                                                         if (errorResult.status === 400) {
@@ -4885,7 +4908,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     }
                                     if (type === 'video') {
                                         removeCue();
-                                        this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                        this_obj[type].sub = '/subtitle/' + videoId + '/ch/v';
                                     }
                                     this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
@@ -5101,7 +5124,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                                             this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
                                                                             isOri();
                                                                             removeCue();
-                                                                            this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                                            this_obj[type].sub = '/subtitle/' + videoId + '/ch/v';
                                                                         }
                                                                     }, function(errorResult) {
                                                                         if (errorResult.status === 400) {
@@ -5182,7 +5205,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     }
                                     if (type === 'video') {
                                         removeCue();
-                                        this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                        this_obj[type].sub = '/subtitle/' + videoId + '/ch/v';
                                     }
                                     this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                                     this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));
@@ -5357,7 +5380,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                                                 this_obj[type].src = $scope.main_url + '/torrent/v/' + videoId;
                                                                 isOri();
                                                                 removeCue();
-                                                                this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                                                                this_obj[type].sub = '/subtitle/' + videoId + '/ch/v';
                                                             }
                                                         }, function(errorResult) {
                                                             if (errorResult.status === 400) {
@@ -5438,7 +5461,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                         }
                         if (type === 'video') {
                             removeCue();
-                            this_obj[type].sub = '/subtitle/' + videoId + '/v';
+                            this_obj[type].sub = '/subtitle/' + videoId + '/ch/v';
                         }
                         this_obj[type].id = this_obj[type].list[this_obj[type].index + this_obj[type].back].id;
                         this_obj.$broadcast('latest', JSON.stringify({id: this_obj[type].bookmarkID, latest: this_obj[type].id}));

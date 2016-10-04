@@ -133,7 +133,7 @@ app.use(function(req, res, next) {
     }
 });
 
-app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
+app.post('/upload/subtitle/:uid/:lang/:index(\\d+|v)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('upload subtitle');
         console.log(new Date());
@@ -179,6 +179,7 @@ app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
                 util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
             filePath = util.getFileLocation(ex_type, id);
+            filePath = (req.params.lang === 'en') ? filePath + '.en' : filePath;
             var folderPath = path.dirname(filePath);
             if (!fs.existsSync(folderPath)) {
                 mkdirp(folderPath, function(err) {
@@ -239,6 +240,7 @@ app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
                     util.handleError({hoerror: 2, message: "external file, please open video"}, next, res);
                 }
                 filePath = util.getFileLocation(items[0].owner, items[0]._id);
+                filePath = (req.params.lang === 'en') ? filePath + '.en' : filePath;
                 if (items[0].status === 9 && req.params.index) {
                     if (req.params.index) {
                         if (req.params.index === 'v') {
@@ -2096,7 +2098,7 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
     });
 });
 
-app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, next) {
+app.get('/api/subtitle/fix/:uid/:lang/:adjust/:index(\\d+|v)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle fix');
         console.log(new Date());
@@ -2231,6 +2233,7 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, nex
                 util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
             filePath = util.getFileLocation(ex_type, id);
+            filePath = (req.params.lang === 'en') ? filePath + '.en' : filePath;
             fixSub(id);
         } else {
             id = util.isValidString(req.params.uid, 'uid');
@@ -2266,6 +2269,7 @@ app.get('/api/subtitle/fix/:uid/:adjust/:index(\\d+|v)?', function(req, res, nex
                 if (items[0].status === 9) {
                     filePath = filePath + '/' + fileIndex;
                 }
+                filePath = (req.params.lang === 'en') ? filePath + '.en' : filePath;
                 fixSub(id);
             });
         }
@@ -2696,8 +2700,11 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                     //imdbid: 'tt1638355'
                     //query: 'game of thrones s05e10'*/
                 OpenSubtitles.search(search).then(function (subtitles) {
-                    var sub_url = null;
+                    var sub_url = null, sub_en_url = null;
                     console.log(subtitles);
+                    if (subtitles.en) {
+                        sub_en_url = subtitles.en.url;
+                    }
                     if (subtitles.ze) {
                         sub_url = subtitles.ze.url;
                     } else if (subtitles.zt) {
@@ -2716,8 +2723,18 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                                     if (err) {
                                         util.handleError(err, next, res);
                                     }
-                                    sendWs({type: 'sub', data: id}, 0, 0);
-                                    res.json({apiOK: true});
+                                    if (sub_en_url) {
+                                        SUB2VTT(sub_en_url, filePath, false, function(err) {
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            sendWs({type: 'sub', data: id}, 0, 0);
+                                            res.json({apiOK: true});
+                                        }, 'en');
+                                    } else {
+                                        sendWs({type: 'sub', data: id}, 0, 0);
+                                        res.json({apiOK: true});
+                                    }
                                 });
                             });
                         } else {
@@ -2725,99 +2742,130 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                                 if (err) {
                                     util.handleError(err, next, res);
                                 }
-                                sendWs({type: 'sub', data: id}, 0, 0);
-                                res.json({apiOK: true});
-                            });
-                        }
-                    } else {
-                        util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
-                    }
-                }).catch(function(err) {
-                    console.log(err);
-                    res.send("open subtitle error!!!", 400);
-                });
-            } else {
-                if (episode_1) {
-                    subHd(name + episode_1, function(err, subtitles) {
-                        if (err) {
-                            util.handleError(err, next, res);
-                        }
-                        if (subtitles) {
-                            unzipSubHd(subtitles.url, function(err) {
-                                if (err) {
-                                    util.handleError(err, next, res);
-                                }
-                                sendWs({type: 'sub', data: id}, 0, 0);
-                                res.json({apiOK: true});
-                            });
-                        } else {
-                            subHd(name + episode_2, function(err, subtitles) {
-                                if (err) {
-                                    util.handleError(err, next, res);
-                                }
-                                if (subtitles) {
-                                    unzipSubHd(subtitles.url, function(err) {
+                                if (sub_en_url) {
+                                    SUB2VTT(sub_en_url, filePath, false, function(err) {
                                         if (err) {
                                             util.handleError(err, next, res);
                                         }
                                         sendWs({type: 'sub', data: id}, 0, 0);
                                         res.json({apiOK: true});
-                                    });
+                                    }, 'en');
                                 } else {
-                                    if (episode_3) {
-                                        subHd(name + episode_3, function(err, subtitles) {
+                                    sendWs({type: 'sub', data: id}, 0, 0);
+                                    res.json({apiOK: true});
+                                }
+                            });
+                        }
+                    } else if (sub_en_url) {
+                        var folderPath = path.dirname(filePath);
+                        if (!fs.existsSync(folderPath)) {
+                            mkdirp(folderPath, function(err) {
+                                if(err) {
+                                    util.handleError(err, next, res);
+                                }
+                                SUB2VTT(sub_en_url, filePath, false, function(err) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    sendWs({type: 'sub', data: id}, 0, 0);
+                                    res.json({apiOK: true});
+                                }, 'en');
+                            });
+                        } else {
+                            SUB2VTT(sub_en_url, filePath, false, function(err) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                sendWs({type: 'sub', data: id}, 0, 0);
+                                res.json({apiOK: true});
+                            }, 'en');
+                        }
+                    } else {
+                        util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                    }
+                }).catch(function(error) {
+                    console.log('error:', error);
+                    console.log('req headers:', error.req && error.req._header);
+                    console.log('res code:', error.res && error.res.statusCode);
+                    console.log('res body:', error.body);
+                    res.send("open subtitle error!!!", 400);
+                });
+            } else {
+                search.query = name;
+                if (episode) {
+                    search.episode = episode;
+                    search.season = season;
+                }
+                var OpenSubtitles = new openSubtitle('hoder agent v0.1');
+                OpenSubtitles.search(search).then(function (subtitles) {
+                    var sub_en_url = null;
+                    console.log(subtitles);
+                    if (subtitles.en) {
+                        sub_en_url = subtitles.en.url;
+                    }
+                    if (sub_en_url) {
+                        var folderPath = path.dirname(filePath);
+                        if (!fs.existsSync(folderPath)) {
+                            mkdirp(folderPath, function(err) {
+                                if(err) {
+                                    util.handleError(err, next, res);
+                                }
+                                SUB2VTT(sub_en_url, filePath, false, function(err) {
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    searchSubHd();
+                                }, 'en');
+                            });
+                        } else {
+                            SUB2VTT(sub_en_url, filePath, false, function(err) {
+                                if (err) {
+                                    util.handleError(err);
+                                }
+                                searchSubHd();
+                            }, 'en');
+                        }
+                    } else {
+                        searchSubHd();
+                    }
+                }).catch(function(error) {
+                    console.log('error:', error);
+                    console.log('req headers:', error.req && error.req._header);
+                    console.log('res code:', error.res && error.res.statusCode);
+                    console.log('res body:', error.body);
+                    util.handleError(error);
+                    searchSubHd();
+                });
+                function searchSubHd() {
+                    if (episode_1) {
+                        subHd(name + episode_1, function(err, subtitles) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (subtitles) {
+                                unzipSubHd(subtitles.url, function(err) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    sendWs({type: 'sub', data: id}, 0, 0);
+                                    res.json({apiOK: true});
+                                });
+                            } else {
+                                subHd(name + episode_2, function(err, subtitles) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (subtitles) {
+                                        unzipSubHd(subtitles.url, function(err) {
                                             if (err) {
                                                 util.handleError(err, next, res);
                                             }
-                                            if (subtitles) {
-                                                unzipSubHd(subtitles.url, function(err) {
-                                                    if (err) {
-                                                        util.handleError(err, next, res);
-                                                    }
-                                                    sendWs({type: 'sub', data: id}, 0, 0);
-                                                    res.json({apiOK: true});
-                                                });
-                                            } else {
-                                                subHd(name + episode_4, function(err, subtitles) {
-                                                    if (err) {
-                                                        util.handleError(err, next, res);
-                                                    }
-                                                    if (subtitles) {
-                                                        unzipSubHd(subtitles.url, function(err) {
-                                                        if (err) {
-                                                                util.handleError(err, next, res);
-                                                            }
-                                                            sendWs({type: 'sub', data: id}, 0, 0);
-                                                            res.json({apiOK: true});
-                                                        });
-                                                    } else {
-                                                        if (season === 1) {
-                                                            subHd(name, function(err, subtitles) {
-                                                                if (err) {
-                                                                    util.handleError(err, next, res);
-                                                                }
-                                                                if (subtitles) {
-                                                                    unzipSubHd(subtitles.url, function(err) {
-                                                                        if (err) {
-                                                                            util.handleError(err, next, res);
-                                                                        }
-                                                                        sendWs({type: 'sub', data: id}, 0, 0);
-                                                                        res.json({apiOK: true});
-                                                                    });
-                                                                } else {
-                                                                    util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
-                                                                }
-                                                            });
-                                                        } else {
-                                                            util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
-                                                        }
-                                                    }
-                                                });
-                                            }
+                                            sendWs({type: 'sub', data: id}, 0, 0);
+                                            res.json({apiOK: true});
                                         });
                                     } else {
-                                        if (season === 1) {
-                                            subHd(name, function(err, subtitles) {
+                                        if (episode_3) {
+                                            subHd(name + episode_3, function(err, subtitles) {
                                                 if (err) {
                                                     util.handleError(err, next, res);
                                                 }
@@ -2830,34 +2878,87 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                                                         res.json({apiOK: true});
                                                     });
                                                 } else {
-                                                    util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                                                    subHd(name + episode_4, function(err, subtitles) {
+                                                        if (err) {
+                                                            util.handleError(err, next, res);
+                                                        }
+                                                        if (subtitles) {
+                                                            unzipSubHd(subtitles.url, function(err) {
+                                                            if (err) {
+                                                                    util.handleError(err, next, res);
+                                                                }
+                                                                sendWs({type: 'sub', data: id}, 0, 0);
+                                                                res.json({apiOK: true});
+                                                            });
+                                                        } else {
+                                                            if (season === 1) {
+                                                                subHd(name, function(err, subtitles) {
+                                                                    if (err) {
+                                                                        util.handleError(err, next, res);
+                                                                    }
+                                                                    if (subtitles) {
+                                                                        unzipSubHd(subtitles.url, function(err) {
+                                                                            if (err) {
+                                                                                util.handleError(err, next, res);
+                                                                            }
+                                                                            sendWs({type: 'sub', data: id}, 0, 0);
+                                                                            res.json({apiOK: true});
+                                                                        });
+                                                                    } else {
+                                                                        util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                                                                    }
+                                                                });
+                                                            } else {
+                                                                util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                                                            }
+                                                        }
+                                                    });
                                                 }
                                             });
                                         } else {
-                                            util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                                            if (season === 1) {
+                                                subHd(name, function(err, subtitles) {
+                                                    if (err) {
+                                                        util.handleError(err, next, res);
+                                                    }
+                                                    if (subtitles) {
+                                                        unzipSubHd(subtitles.url, function(err) {
+                                                            if (err) {
+                                                                util.handleError(err, next, res);
+                                                            }
+                                                            sendWs({type: 'sub', data: id}, 0, 0);
+                                                            res.json({apiOK: true});
+                                                        });
+                                                    } else {
+                                                        util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                                                    }
+                                                });
+                                            } else {
+                                                util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                                            }
                                         }
                                     }
-                                }
-                            });
-                        }
-                    });
-                } else {
-                    subHd(name, function(err, subtitles) {
-                        if (err) {
-                            util.handleError(err, next, res);
-                        }
-                        if (subtitles) {
-                            unzipSubHd(subtitles.url, function(err) {
-                                if (err) {
-                                    util.handleError(err, next, res);
-                                }
-                                sendWs({type: 'sub', data: id}, 0, 0);
-                                res.json({apiOK: true});
-                            });
-                        } else {
-                            util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
-                        }
-                    });
+                                });
+                            }
+                        });
+                    } else {
+                        subHd(name, function(err, subtitles) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (subtitles) {
+                                unzipSubHd(subtitles.url, function(err) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    sendWs({type: 'sub', data: id}, 0, 0);
+                                    res.json({apiOK: true});
+                                });
+                            } else {
+                                util.handleError({hoerror: 2, message: "cannot find subtitle!!!"}, next, res);
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -3163,13 +3264,16 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                 }
             }, null, false, false);
         }
-        function SUB2VTT(choose_subtitle, subPath, is_file, callback) {
+        function SUB2VTT(choose_subtitle, subPath, is_file, callback, lang) {
             if (!choose_subtitle) {
                 util.handleError({hoerror: 2, message: "donot have sub!!!"}, next, callback);
             }
             var ext = mime.isSub(choose_subtitle);
             if (!ext) {
                 util.handleError({hoerror: 2, message: "is not sub!!!"}, next, callback);
+            }
+            if (lang === 'en') {
+                subPath = subPath + '.en';
             }
             if (fs.existsSync(subPath + '.srt')) {
                 fs.renameSync(subPath + '.srt', subPath + '.srt1');
@@ -4932,8 +5036,11 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                                         hash: hash_ret.movieHash,
                                         filesize: hash_ret.fileSize
                                     }).then(function (subtitles) {
-                                        var sub_url = null;
+                                        var sub_url = null, sub_en_url = null;
                                         console.log(subtitles);
+                                        if (subtitles.en) {
+                                            sub_en_url = subtitles.en.url;
+                                        }
                                         if (subtitles.ze) {
                                             sub_url = subtitles.ze.url;
                                         } else if (subtitles.zt) {
@@ -4941,21 +5048,59 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                                         } else if (subtitles.zh) {
                                             sub_url = subtitles.zh.url;
                                         }
+                                        function chsub(lang) {
+                                            lang = lang === 'en' ? '.en' : ''
+                                            if (fs.existsSync(bufferPath + lang + '.srt')) {
+                                                fs.renameSync(bufferPath + lang + '.srt', bufferPath + '.srt1');
+                                            }
+                                            if (fs.existsSync(bufferPath + lang + '.ass')) {
+                                                fs.renameSync(bufferPath + lang + '.ass', bufferPath + '.ass1');
+                                            }
+                                            if (fs.existsSync(bufferPath + lang + '.ssa')) {
+                                                fs.renameSync(bufferPath + lang + '.ssa', bufferPath + '.ssa1');
+                                            }
+                                        }
                                         if (sub_url) {
-                                            if (fs.existsSync(bufferPath + '.srt')) {
-                                                fs.renameSync(bufferPath + '.srt', bufferPath + '.srt1');
-                                            }
-                                            if (fs.existsSync(bufferPath + '.ass')) {
-                                                fs.renameSync(bufferPath + '.ass', bufferPath + '.ass1');
-                                            }
-                                            if (fs.existsSync(bufferPath + '.ssa')) {
-                                                fs.renameSync(bufferPath + '.ssa', bufferPath + '.ssa1');
-                                            }
+                                            chsub();
                                             api.xuiteDownload(sub_url, bufferPath + '.srt', function(err) {
                                                 if (err) {
                                                     util.handleError(err);
                                                 } else {
                                                     util.SRT2VTT(bufferPath, 'srt', function(err) {
+                                                        if (err) {
+                                                            util.handleError(err);
+                                                        } else {
+                                                            if (sub_en_url) {
+                                                                chsub('en');
+                                                                api.xuiteDownload(sub_en_url, bufferPath + '.en.srt', function(err) {
+                                                                    if (err) {
+                                                                        util.handleError(err);
+                                                                    } else {
+                                                                        util.SRT2VTT(bufferPath + '.en', 'srt', function(err) {
+                                                                            if (err) {
+                                                                                util.handleError(err);
+                                                                            } else {
+                                                                                sendWs({type: 'sub', data: id}, 0, 0);
+                                                                                console.log('sub end');
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                }, null, false);
+                                                            } else {
+                                                                sendWs({type: 'sub', data: id}, 0, 0);
+                                                                console.log('sub end');
+                                                            }
+                                                        }
+                                                    });
+                                                }
+                                            }, null, false);
+                                        } else if (sub_en_url) {
+                                            chsub('en');
+                                            api.xuiteDownload(sub_en_url, bufferPath + '.en.srt', function(err) {
+                                                if (err) {
+                                                    util.handleError(err);
+                                                } else {
+                                                    util.SRT2VTT(bufferPath + '.en', 'srt', function(err) {
                                                         if (err) {
                                                             util.handleError(err);
                                                         } else {
@@ -4966,8 +5111,12 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                                                 }
                                             }, null, false);
                                         }
-                                    }).catch(function (err) {
-                                        util.handleError(err);
+                                    }).catch(function (error) {
+                                        console.log('error:', error);
+                                        console.log('req headers:', error.req && error.req._header);
+                                        console.log('res code:', error.res && error.res.statusCode);
+                                        console.log('res body:', error.body);
+                                        util.handleError(error);
                                     });
                                     var fileStream = file.createReadStream();
                                     fileStream.pipe(fs.createWriteStream(bufferPath));
@@ -5510,7 +5659,7 @@ app.get('/video/:uid', function (req, res, next) {
     });
 });
 
-app.get('/subtitle/:uid/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
+app.get('/subtitle/:uid/:lang/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle');
         console.log(new Date());
@@ -5548,12 +5697,13 @@ app.get('/subtitle/:uid/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
             } else {
                 filePath = util.getFileLocation('youtube', id_valid);
             }
-            fs.exists(filePath + '.vtt', function (exists) {
+            var subPath = (req.params.lang === 'en') ? filePath + '.en' : filePath;
+            fs.exists(subPath + '.vtt', function (exists) {
                 res.writeHead(200, { 'Content-Type': 'text/vtt' });
                 if (!exists) {
                     var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
                 } else {
-                    var stream = fs.createReadStream(filePath + '.vtt').pipe(res);
+                    var stream = fs.createReadStream(subPath + '.vtt').pipe(res);
                 }
             });
         } else {
@@ -5573,12 +5723,13 @@ app.get('/subtitle/:uid/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
                 }
                 if (items[0].status === 3) {
                     var filePath = util.getFileLocation(items[0].owner, items[0]._id);
-                    fs.exists(filePath + '.vtt', function (exists) {
+                    var subPath = (req.params.lang === 'en') ? filePath + '.en' : filePath;
+                    fs.exists(subPath + '.vtt', function (exists) {
                         res.writeHead(200, { 'Content-Type': 'text/vtt' });
                         if (!exists) {
                             var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
                         } else {
-                            var stream = fs.createReadStream(filePath + '.vtt').pipe(res);
+                            var stream = fs.createReadStream(subPath + '.vtt').pipe(res);
                         }
                     });
                 } else if (items[0].status === 9) {
@@ -5596,12 +5747,13 @@ app.get('/subtitle/:uid/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
                         }
                     }
                     var filePath = util.getFileLocation(items[0].owner, items[0]._id);
-                    fs.exists(filePath + '/' + fileIndex + '.vtt', function (exists) {
+                    var subPath = (req.params.lang === 'en') ? filePath + '.en' : filePath;
+                    fs.exists(subPath + '/' + fileIndex + '.vtt', function (exists) {
                         res.writeHead(200, { 'Content-Type': 'text/vtt' });
                         if (!exists) {
                             var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
                         } else {
-                            var stream = fs.createReadStream(filePath + '/' + fileIndex + '.vtt').pipe(res);
+                            var stream = fs.createReadStream(subPath + '/' + fileIndex + '.vtt').pipe(res);
                         }
                     });
                 }

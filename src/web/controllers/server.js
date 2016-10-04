@@ -4051,13 +4051,13 @@ app.get('/api/getUser', function(req, res, next){
     });
 });
 
-app.get('/subtitle/:uid/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
+app.get('/subtitle/:uid/:lang/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var url = 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port + '/subtitle/' + req.params.uid;
+        var url = 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port + '/subtitle/' + req.params.uid + '/' + req.params.lang;
         if (req.params.index) {
             url = url + '/' + req.params.index;
         }
