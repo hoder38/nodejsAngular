@@ -240,7 +240,6 @@ app.post('/upload/subtitle/:uid/:lang/:index(\\d+|v)?', function(req, res, next)
                     util.handleError({hoerror: 2, message: "external file, please open video"}, next, res);
                 }
                 filePath = util.getFileLocation(items[0].owner, items[0]._id);
-                filePath = (req.params.lang === 'en') ? filePath + '.en' : filePath;
                 if (items[0].status === 9 && req.params.index) {
                     if (req.params.index) {
                         if (req.params.index === 'v') {
@@ -256,6 +255,7 @@ app.post('/upload/subtitle/:uid/:lang/:index(\\d+|v)?', function(req, res, next)
                     }
                     filePath = filePath + '/' + fileIndex;
                 }
+                filePath = (req.params.lang === 'en') ? filePath + '.en' : filePath;
                 var folderPath = path.dirname(filePath);
                 if (!fs.existsSync(folderPath)) {
                     mkdirp(folderPath, function(err) {
