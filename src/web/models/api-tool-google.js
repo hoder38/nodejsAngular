@@ -1207,7 +1207,7 @@ var exports = module.exports = {
 function downloadSubtitle (url, filePath, callback) {
     var sub_location = filePath + '_sub/youtube';
     var options = {
-        auto: false,
+        auto: true,
         all: false,
         lang: 'zh-TW,zh-Hant,zh-CN,zh-Hans,zh-HK,zh-SG,en',
     };
@@ -1218,7 +1218,7 @@ function downloadSubtitle (url, filePath, callback) {
             if (err) {
                 util.handleError(err, callback, callback);
             }
-            var choose = null, pri = 0, sub_match = null;
+            var choose = null, en = null, pri = 0, sub_match = null;
             fs.readdirSync(sub_location).forEach(function(file,index){
                 sub_match = file.match(/\.([a-zA-Z\-]+)\.[a-zA-Z]{3}$/);
                 if (sub_match) {
@@ -1260,51 +1260,139 @@ function downloadSubtitle (url, filePath, callback) {
                         }
                         break;
                         case 'en':
-                        if (pri < 1) {
-                            pri = 1;
-                            choose = file;
-                        }
+                        en = file;
                         break;
                     }
                 }
             });
-            if (!choose) {
+            if (!choose && !en) {
                 util.handleError({hoerror: 2, message: "sub donot have chinese and english!!!"}, callback, callback);
             }
-            var ext = mime.isSub(choose);
-            if (!ext) {
+            var ext = false, en_ext = false;
+            if (choose) {
+                ext = mime.isSub(choose);
+                if (ext) {
+                    if (fs.existsSync(filePath + '.srt')) {
+                        fs.renameSync(filePath + '.srt', filePath + '.srt1');
+                    }
+                    if (fs.existsSync(filePath + '.ass')) {
+                        fs.renameSync(filePath + '.ass', filePath + '.ass1');
+                    }
+                    if (fs.existsSync(filePath + '.ssa')) {
+                        fs.renameSync(filePath + '.ssa', filePath + '.ssa1');
+                    }
+                }
+            }
+            if (en) {
+                en_ext = mime.isSub(en);
+                if (en_ext) {
+                    if (fs.existsSync(filePath + '.en.srt')) {
+                        fs.renameSync(filePath + '.en.srt', filePath + '.en.srt1');
+                    }
+                    if (fs.existsSync(filePath + '.en.ass')) {
+                        fs.renameSync(filePath + '.en.ass', filePath + '.en.ass1');
+                    }
+                    if (fs.existsSync(filePath + '.en.ssa')) {
+                        fs.renameSync(filePath + '.en.ssa', filePath + '.en.ssa1');
+                    }
+                }
+            }
+            if (!ext && !en_ext) {
                 util.handleError({hoerror: 2, message: "sub ext not support!!!"}, callback, callback);
             }
-            if (fs.existsSync(filePath + '.srt')) {
-                fs.renameSync(filePath + '.srt', filePath + '.srt1');
-            }
-            if (fs.existsSync(filePath + '.ass')) {
-                fs.renameSync(filePath + '.ass', filePath + '.ass1');
-            }
-            if (fs.existsSync(filePath + '.ssa')) {
-                fs.renameSync(filePath + '.ssa', filePath + '.ssa1');
-            }
-            fs.rename(sub_location + '/' + choose, filePath + '.' + ext, function(err) {
-                if (err) {
-                    util.handleError(err, next, res);
-                }
-                if (ext === 'vtt') {
-                    util.deleteFolderRecursive(sub_location);
-                    setTimeout(function(){
-                        callback(null);
-                    }, 0);
-                } else {
-                    util.SRT2VTT(filePath, ext, function(err) {
-                        if (err) {
-                            util.handleError(err, next, res);
+            if (ext) {
+                fs.rename(sub_location + '/' + choose, filePath + '.' + ext, function(err) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (ext === 'vtt') {
+                        if (en_ext) {
+                            fs.rename(sub_location + '/' + en, filePath + '.en.' + en_ext, function(err) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                if (en_ext === 'vtt') {
+                                    util.deleteFolderRecursive(sub_location);
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                } else {
+                                    util.SRT2VTT(filePath + '.en', en_ext, function(err) {
+                                        if (err) {
+                                            util.handleError(err, next, res);
+                                        }
+                                        util.deleteFolderRecursive(sub_location);
+                                        setTimeout(function(){
+                                            callback(null);
+                                        }, 0);
+                                    });
+                                }
+                            });
+                        } else {
+                            util.deleteFolderRecursive(sub_location);
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
                         }
+                    } else {
+                        util.SRT2VTT(filePath, ext, function(err) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (en_ext) {
+                                fs.rename(sub_location + '/' + en, filePath + '.en.' + en_ext, function(err) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (en_ext === 'vtt') {
+                                        util.deleteFolderRecursive(sub_location);
+                                        setTimeout(function(){
+                                            callback(null);
+                                        }, 0);
+                                    } else {
+                                        util.SRT2VTT(filePath + '.en', en_ext, function(err) {
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            util.deleteFolderRecursive(sub_location);
+                                            setTimeout(function(){
+                                                callback(null);
+                                            }, 0);
+                                        });
+                                    }
+                                });
+                            } else {
+                                util.deleteFolderRecursive(sub_location);
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            }
+                        });
+                    }
+                });
+            } else {
+                fs.rename(sub_location + '/' + en, filePath + '.en.' + en_ext, function(err) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (en_ext === 'vtt') {
                         util.deleteFolderRecursive(sub_location);
                         setTimeout(function(){
                             callback(null);
                         }, 0);
-                    });
-                }
-            });
+                    } else {
+                        util.SRT2VTT(filePath + '.en', en_ext, function(err) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            util.deleteFolderRecursive(sub_location);
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    }
+                });
+            }
         });
     } else {
         mkdirp(sub_location, function(err) {
@@ -1316,7 +1404,7 @@ function downloadSubtitle (url, filePath, callback) {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                var choose = null, pri = 0, sub_match = null;
+                var choose = null, en = null, pri = 0, sub_match = null;
                 fs.readdirSync(sub_location).forEach(function(file,index){
                     sub_match = file.match(/\.([a-zA-Z\-]+)\.[a-zA-Z]{3}$/);
                     if (sub_match) {
@@ -1358,43 +1446,130 @@ function downloadSubtitle (url, filePath, callback) {
                             }
                             break;
                             case 'en':
-                            if (pri < 1) {
-                                pri = 1;
-                                choose = file;
-                            }
+                            en = file;
                             break;
                         }
                     }
                 });
-                if (!choose) {
+                if (!choose && !en) {
                     util.handleError({hoerror: 2, message: "sub donot have chinese and english!!!"}, callback, callback);
                 }
-                var ext = mime.isSub(choose);
-                if (!ext) {
+                var ext = false, en_ext = false;
+                if (choose) {
+                    ext = mime.isSub(choose);
+                    if (ext) {
+                        if (fs.existsSync(filePath + '.srt')) {
+                            fs.renameSync(filePath + '.srt', filePath + '.srt1');
+                        }
+                        if (fs.existsSync(filePath + '.ass')) {
+                            fs.renameSync(filePath + '.ass', filePath + '.ass1');
+                        }
+                        if (fs.existsSync(filePath + '.ssa')) {
+                            fs.renameSync(filePath + '.ssa', filePath + '.ssa1');
+                        }
+                    }
+                }
+                if (en) {
+                    en_ext = mime.isSub(en);
+                    if (en_ext) {
+                        if (fs.existsSync(filePath + '.en.srt')) {
+                            fs.renameSync(filePath + '.en.srt', filePath + '.en.srt1');
+                        }
+                        if (fs.existsSync(filePath + '.en.ass')) {
+                            fs.renameSync(filePath + '.en.ass', filePath + '.en.ass1');
+                        }
+                        if (fs.existsSync(filePath + '.en.ssa')) {
+                            fs.renameSync(filePath + '.en.ssa', filePath + '.en.ssa1');
+                        }
+                    }
+                }
+                if (!ext && !en_ext) {
                     util.handleError({hoerror: 2, message: "sub ext not support!!!"}, callback, callback);
                 }
-                if (fs.existsSync(filePath + '.srt')) {
-                    fs.renameSync(filePath + '.srt', filePath + '.srt1');
-                }
-                if (fs.existsSync(filePath + '.ass')) {
-                    fs.renameSync(filePath + '.ass', filePath + '.ass1');
-                }
-                if (fs.existsSync(filePath + '.ssa')) {
-                    fs.renameSync(filePath + '.ssa', filePath + '.ssa1');
-                }
+                if (ext) {
                 fs.rename(sub_location + '/' + choose, filePath + '.' + ext, function(err) {
                     if (err) {
-                        util.handleError(err, callback, callback);
+                        util.handleError(err, next, res);
                     }
                     if (ext === 'vtt') {
+                        if (en_ext) {
+                            fs.rename(sub_location + '/' + en, filePath + '.en.' + en_ext, function(err) {
+                                if (err) {
+                                    util.handleError(err, next, res);
+                                }
+                                if (en_ext === 'vtt') {
+                                    util.deleteFolderRecursive(sub_location);
+                                    setTimeout(function(){
+                                        callback(null);
+                                    }, 0);
+                                } else {
+                                    util.SRT2VTT(filePath + '.en', en_ext, function(err) {
+                                        if (err) {
+                                            util.handleError(err, next, res);
+                                        }
+                                        util.deleteFolderRecursive(sub_location);
+                                        setTimeout(function(){
+                                            callback(null);
+                                        }, 0);
+                                    });
+                                }
+                            });
+                        } else {
+                            util.deleteFolderRecursive(sub_location);
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        }
+                    } else {
+                        util.SRT2VTT(filePath, ext, function(err) {
+                            if (err) {
+                                util.handleError(err, next, res);
+                            }
+                            if (en_ext) {
+                                fs.rename(sub_location + '/' + en, filePath + '.en.' + en_ext, function(err) {
+                                    if (err) {
+                                        util.handleError(err, next, res);
+                                    }
+                                    if (en_ext === 'vtt') {
+                                        util.deleteFolderRecursive(sub_location);
+                                        setTimeout(function(){
+                                            callback(null);
+                                        }, 0);
+                                    } else {
+                                        util.SRT2VTT(filePath + '.en', en_ext, function(err) {
+                                            if (err) {
+                                                util.handleError(err, next, res);
+                                            }
+                                            util.deleteFolderRecursive(sub_location);
+                                            setTimeout(function(){
+                                                callback(null);
+                                            }, 0);
+                                        });
+                                    }
+                                });
+                            } else {
+                                util.deleteFolderRecursive(sub_location);
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            }
+                        });
+                    }
+                });
+            } else {
+                fs.rename(sub_location + '/' + en, filePath + '.en.' + en_ext, function(err) {
+                    if (err) {
+                        util.handleError(err, next, res);
+                    }
+                    if (en_ext === 'vtt') {
                         util.deleteFolderRecursive(sub_location);
                         setTimeout(function(){
                             callback(null);
                         }, 0);
                     } else {
-                        util.SRT2VTT(filePath, ext, function(err) {
+                        util.SRT2VTT(filePath + '.en', en_ext, function(err) {
                             if (err) {
-                                util.handleError(err, callback, callback);
+                                util.handleError(err, next, res);
                             }
                             util.deleteFolderRecursive(sub_location);
                             setTimeout(function(){
@@ -1403,6 +1578,7 @@ function downloadSubtitle (url, filePath, callback) {
                         });
                     }
                 });
+            }
             });
         });
     }

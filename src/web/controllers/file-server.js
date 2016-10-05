@@ -5747,13 +5747,13 @@ app.get('/subtitle/:uid/:lang/:index(\\d+|v)?/:fresh(0+)?', function(req, res, n
                         }
                     }
                     var filePath = util.getFileLocation(items[0].owner, items[0]._id);
-                    var subPath = (req.params.lang === 'en') ? filePath + '.en' : filePath;
-                    fs.exists(subPath + '/' + fileIndex + '.vtt', function (exists) {
+                    var subPath = (req.params.lang === 'en') ? filePath + '/' + fileIndex + '.en' : filePath + '/' + fileIndex;
+                    fs.exists(subPath + '.vtt', function (exists) {
                         res.writeHead(200, { 'Content-Type': 'text/vtt' });
                         if (!exists) {
                             var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
                         } else {
-                            var stream = fs.createReadStream(subPath + '/' + fileIndex + '.vtt').pipe(res);
+                            var stream = fs.createReadStream(subPath + '.vtt').pipe(res);
                         }
                     });
                 }
