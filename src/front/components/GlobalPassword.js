@@ -8,6 +8,9 @@ let auth_timer = {}
 
 const GlobalPassword = React.createClass({
     getInitialState: function() {
+        if (this.props.delay) {
+            global_password[this.props.delay] = null
+        }
         this._input = new UserInput.Input(['userPW'], this._handleSubmit, this._handleChange)
         return this._input.initValue()
     },

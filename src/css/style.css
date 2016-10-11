@@ -232,6 +232,14 @@ ul.alert-dropdown {
     right:0px;
 }
 
+#inverse-nav {
+    max-height: 70vh;
+}
+
+#top-section {
+    top: 100px;
+}
+
 @media(min-width:768px) {
     #file-manage-section {
         right:0px;
@@ -240,6 +248,19 @@ ul.alert-dropdown {
     #widget-manage-section {
         left:0px;
         right: auto;
+    }
+    #inverse-nav {
+        width: 225px;
+        max-height: 90%;
+    }
+    #inverse-nav>li>a {
+        width: 225px;
+    }
+    #top-section {
+        padding-left: 155px;
+        padding-right: 230px;
+        top: 50px;
+        border-top: 5px solid white;
     }
 }
 

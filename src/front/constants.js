@@ -15,11 +15,18 @@ export const CLOSE_GLB_PW = 'CLOSE_GLB_PW'
 export const SEND_GLB_CF = 'SEND_GLB_CF'
 export const CLOSE_GLB_CF = 'CLOSE_GLB_CF'
 export const SET_UPLOAD = 'SET_UPLOAD'
-export const SET_FEEDBACK = 'SET_FEEDBACK'
 export const FEEDBACK_POP = 'FEEDBACK_POP'
 export const FEEDBACK_PUSH = 'FEEDBACK_PUSH'
+export const BOOKMARK_POP = 'BOOKMARK_POP'
+export const BOOKMARK_PUSH = 'BOOKMARK_PUSH'
+export const SET_DIRS = 'SET_DIRS'
+export const DIR_POP = 'DIR_POP'
+export const DIR_PUSH = 'DIR_PUSH'
+export const USER_POP = 'USER_POP'
+export const USER_PUSH = 'USER_PUSH'
 
 //z-index
+export const RIGHT_SECTION_ZINDEX = 10
 export const ALERT_ZINDEX = 1100
 export const BLOCK_ZINDEX = 1090
 export const WIDGET_BUTTON_ZINDEX = 1070

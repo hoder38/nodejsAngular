@@ -24,7 +24,7 @@ module.exports = {
                 loader: 'url?mimetype=application/octet-stream'
             },
             { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
-                loader: 'file'
+                loader: 'url?mimetype=application/octet-stream'
             },
             { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
                 loader: 'url?mimetype=image/svg+xml'

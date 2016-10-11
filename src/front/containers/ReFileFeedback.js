@@ -1,5 +1,5 @@
 import { connect } from 'react-redux'
-import { alertPush, feedbackPop, setFeedback } from '../actions'
+import { alertPush, feedbackPop, feedbackPush } from '../actions'
 import FileFeedback from '../components/FileFeedback'
 
 const mapStateToProps = state => state.feedbackDataHandle.length > 0 ? {
@@ -22,7 +22,7 @@ const mapStateToProps = state => state.feedbackDataHandle.length > 0 ? {
 const mapDispatchToProps = dispatch => ({
     addalert: msg => dispatch(alertPush(msg)),
     handlefeedback: id => dispatch(feedbackPop(id)),
-    feedbackset: feedback => dispatch(setFeedback(feedback)),
+    feedbackset: feedback => dispatch(feedbackPush(feedback)),
 })
 
 const ReFileFeedback = connect(

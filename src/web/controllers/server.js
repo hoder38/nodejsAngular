@@ -167,7 +167,7 @@ app.get('/api/userinfo', function (req, res, next) {
                 if (users.length > 0 && users[0].auto) {
                     users[0].auto = 'https://drive.google.com/open?id=' + users[0].auto + '&authuser=0';
                 }
-                user_info.push({name: users[0].username, key: users[0]._id, newable: false, auto: users[0].auto, editAuto: false});
+                user_info.push({name: users[0].username, id: users[0]._id, newable: false, auto: users[0].auto, editAuto: false});
                 res.json({user_info: user_info});
             });
         } else {
@@ -175,7 +175,7 @@ app.get('/api/userinfo', function (req, res, next) {
                 if(err) {
                     util.handleError(err, next, res);
                 }
-                user_info.push({name: '', perm: '', desc: '', editAuto: false, newable: true, key: 0});
+                user_info.push({name: '', perm: '', desc: '', editAuto: false, newable: true, id: 0});
                 for (var i in users) {
                     if (users[i].auto) {
                         users[i].auto = 'https://drive.google.com/open?id=' + users[i].auto + '&authuser=0';
@@ -183,9 +183,9 @@ app.get('/api/userinfo', function (req, res, next) {
                     if (users[i].perm === 1) {
                         users[i].unDay = users[i].unDay ? users[i].unDay : tagTool.getUnactive('day');
                         users[i].unHit = users[i].unHit ? users[i].unHit : tagTool.getUnactive('hit');
-                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, newable: false, unDay: users[i].unDay, unHit: users[i].unHit, editAuto: true, auto: users[i].auto});
+                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, id: users[i]._id, newable: false, unDay: users[i].unDay, unHit: users[i].unHit, editAuto: true, auto: users[i].auto});
                     } else {
-                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, key: users[i]._id, delable: true, newable: false, editAuto: true, auto: users[i].auto});
+                        user_info.push({name: users[i].username, perm: users[i].perm, desc: users[i].desc, id: users[i]._id, delable: true, newable: false, editAuto: true, auto: users[i].auto});
                     }
                 }
                 res.json({user_info: user_info});
@@ -1592,11 +1592,7 @@ app.get('/api/parent/list/:lang?', function(req, res, next) {
         for (var i in list) {
             ret.push({'name':list[i].name, 'show':list[i][lang]});
         }
-        if (util.checkAdmin(1, req.user)) {
-            res.json({parentList: ret, isEdit: true});
-        } else {
-            res.json({parentList: ret, isEdit: false});
-        }
+        res.json({parentList: ret});
     });
 });
 
@@ -1776,7 +1772,7 @@ app.get('/api/parent/stock/query/:id/:single?', function(req, res, next) {
     });
 });
 
-app.get('/api/bookmark/getList/:sortName(name|mtime)/:sortType(desc|asc)', function (req, res, next) {
+app.get('/api/bookmark/getList/:sortName(name|mtime)/:sortType(desc|asc)/:page(0)?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get bookmark list");
         console.log(new Date());
@@ -4040,17 +4036,15 @@ app.get('/api/getUser', function(req, res, next){
         console.log(req.body);
         var nav = [];
         var level = 0;
+        var isEdit = false;
         if (util.checkAdmin(1, req.user)) {
             level = 2;
             nav = [{title: "Stock", hash: "/webpack/Stock", css: "glyphicon glyphicon-signal", key: 3}];
+            isEdit = true;
         } else if (util.checkAdmin(2, req.user)) {
             level = 1;
         }
-        var isAdult = false;
-        if (util.checkAdmin(2 ,req.user)) {
-            isAdult = true;
-        }
-        res.json({id: req.user.username, ws_url: 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port, level: level, nav: nav, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
+        res.json({id: req.user.username, ws_url: 'wss://' + config_glb.extent_ip + ':' + config_glb.ws_port, level: level, isEdit: isEdit, nav: nav, main_url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
     });
 });
 

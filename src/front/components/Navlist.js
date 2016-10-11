@@ -24,7 +24,7 @@ const Navlist = React.createClass({
         }
     },
     _toggle: function() {
-        this.setState(Object.assign({collapse: !this.state.collapse}))
+        this.setState({collapse: !this.state.collapse})
     },
     render: function() {
         let rows = []

@@ -3,7 +3,7 @@ import { SET_BASIC } from '../constants'
 const initialState = {
     id: 'guest',
     url: '',
-    dir: [],
+    edit: false,
 }
 
 export default function basicDataHandle (state = initialState, action) {
@@ -11,11 +11,11 @@ export default function basicDataHandle (state = initialState, action) {
         case SET_BASIC:
         const id = action.id === null ? state.id : action.id
         const url = action.url === null ? state.url : action.url
-        const dir = action.dir === null ? state.dir : action.dir
+        const edit = action.edit === null ? state.edit : action.edit
         return {
             id,
             url,
-            dir,
+            edit,
         }
         default:
         return state

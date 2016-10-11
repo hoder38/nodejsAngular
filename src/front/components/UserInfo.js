@@ -68,10 +68,10 @@ const UserInfo = React.createClass({
                         return Promise.reject('User password not vaild!!!')
                     } else {
                         set_obj['userPW'] = userPW
-                        return api('/api/adduser', set_obj, 'POST')
+                        return api('/api/adduser', set_obj)
                         .then(user => {
                             this.props.addUser(user)
-                            this.setState(Object.assign(this.state, this._input.initValue(this.props.user)))
+                            this.setState(Object.assign({}, this.state, this._input.initValue(this.props.user)))
                         }).catch(err => {
                             this.props.addalert(err)
                             throw err
@@ -87,7 +87,7 @@ const UserInfo = React.createClass({
                         return Promise.reject('User password not vaild!!!')
                     } else {
                         set_obj['userPW'] = userPW
-                        return api(`/api/edituser/${this.props.user.key}`, set_obj, 'PUT')
+                        return api(`/api/edituser/${this.props.user.id}`, set_obj, 'PUT')
                         .then(info => {
                             if (info.hasOwnProperty('owner')) {
                                 this.props.setbasic(info.owner)
@@ -119,9 +119,9 @@ const UserInfo = React.createClass({
                 this.props.addalert('User password not vaild!!!')
                 return Promise.reject('User password not vaild!!!')
             } else {
-                return api(`/api/deluser/${this.props.user.key}`, {userPW}, 'PUT')
+                return api(`/api/deluser/${this.props.user.id}`, {userPW}, 'PUT')
                 .then(info => {
-                    this.props.delUser(this.props.user.key)
+                    this.props.delUser(this.props.user.id)
                 }).catch(err => {
                     this.props.addalert(err)
                     throw err

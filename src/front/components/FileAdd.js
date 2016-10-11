@@ -35,9 +35,13 @@ const FileAdd = React.createClass({
     },
     _setFiles: function(files) {
         if (this.state.files.length === 0 && files.length > 0) {
-            this.setState(Object.assign({}, this.state, {show: true}))
+            this.setState(Object.assign({}, this.state, {
+                files,
+                show: true,
+            }))
+        } else {
+            this.setState(Object.assign({}, this.state, {files}))
         }
-        this.setState(Object.assign({}, this.state, {files}))
     },
     _setClearFiles: function(clear) {
         this._clearFiles = clear
@@ -59,7 +63,7 @@ const FileAdd = React.createClass({
             api('/api/getPath').then(ret => api(`${this.props.mainUrl}/api/upload/url`, Object.assign({
                 type: this.state.type ? 1 : 0,
                 url: url,
-            }, ret), 'POST')).then(result => {
+            }, ret))).then(result => {
                 if (result.stop) {
                     this.props.addalert('Background upload was stoped')
                 } else if (result.name) {

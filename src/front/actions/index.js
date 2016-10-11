@@ -1,5 +1,6 @@
-import { ALERT_PUSH, ALERT_POP, SET_BASIC, SET_UPLOAD, SEND_GLB_PW,
-    CLOSE_GLB_PW, SEND_GLB_CF, CLOSE_GLB_CF, SET_FEEDBACK, FEEDBACK_POP, FEEDBACK_PUSH } from '../constants'
+import { ALERT_PUSH, ALERT_POP, SET_BASIC, SET_UPLOAD, SEND_GLB_PW, CLOSE_GLB_PW, SEND_GLB_CF,
+    CLOSE_GLB_CF, FEEDBACK_POP, FEEDBACK_PUSH, BOOKMARK_POP, BOOKMARK_PUSH, SET_DIRS, DIR_POP,
+    DIR_PUSH, USER_POP, USER_PUSH } from '../constants'
 
 export const alertPush = msg => ({
     type: ALERT_PUSH,
@@ -11,11 +12,11 @@ export const alertPop = key => ({
     key,
 })
 
-export const setBasic = (id=null, url=null, dir=null) => ({
+export const setBasic = (id=null, url=null, edit=null) => ({
     type: SET_BASIC,
     id,
     url,
-    dir,
+    edit,
 })
 
 export const setUpload = progress => ({
@@ -42,17 +43,54 @@ export const closeGlbCf = () => ({
     type: CLOSE_GLB_CF,
 })
 
-export const setFeedback = feedback => ({
-    type: SET_FEEDBACK,
-    feedback,
-})
-
 export const feedbackPop = id => ({
     type: FEEDBACK_POP,
     id,
 })
 
-export const feedbackPush = feedback => ({
+export const feedbackPush = simple => ({
     type: FEEDBACK_PUSH,
-    feedback,
+    simple,
 })
+
+export const bookmarkPop = id => ({
+    type: BOOKMARK_POP,
+    id,
+})
+
+export const bookmarkPush = (bookmark, sortName=null, sortType=null) => ({
+    type: BOOKMARK_PUSH,
+    bookmark,
+    sortName,
+    sortType,
+})
+
+export const setDirs = dirs => ({
+    type: SET_DIRS,
+    dirs,
+})
+
+export const dirPop = (name, id) => ({
+    type: DIR_POP,
+    name,
+    id,
+})
+
+export const dirPush = (name, dir, sortName=null, sortType=null) => ({
+    type: DIR_PUSH,
+    name,
+    dir,
+    sortName,
+    sortType,
+})
+
+export const userPop = id => ({
+    type: USER_POP,
+    id,
+})
+
+export const userPush = simple => ({
+    type: USER_PUSH,
+    simple,
+})
+

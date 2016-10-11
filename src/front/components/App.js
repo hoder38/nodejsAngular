@@ -15,15 +15,9 @@ import ReWidgetManage from '../containers/ReWidgetManage'
 const App = React.createClass({
     getInitialState: function() {
         this._userDrop = [
-            {title: 'Profile', className: 'glyphicon glyphicon-user', onclick: (e) => {
-                e.preventDefault()
-                browserHistory.push(USER_PAGE)
-            }, key: 0},
+            {title: 'Profile', className: 'glyphicon glyphicon-user', onclick: () => browserHistory.push(USER_PAGE), key: 0},
             {key: 1},
-            {title: 'Log Out', className: 'glyphicon glyphicon-off', onclick: (e) => {
-                e.preventDefault()
-                this._doLogout()
-            }, key: 2},
+            {title: 'Log Out', className: 'glyphicon glyphicon-off', onclick: () => this._doLogout(), key: 2},
         ]
         return {
             navlist: [
@@ -43,7 +37,7 @@ const App = React.createClass({
                         ...userInfo.nav,
                     ],
                 })
-                this.props.basicset(userInfo.id, userInfo.main_url)
+                this.props.basicset(userInfo.id, userInfo.main_url, userInfo.isEdit)
                 if (window.MozWebSocket) {
                     window.WebSocket = window.MozWebSocket
                 }
@@ -66,7 +60,7 @@ const App = React.createClass({
         }).then(result => {
             this.props.feedbackset(result.feedbacks)
             return api('/api/parent/list')
-        }).then(result => this.props.basicset(null, null, result.parentList.map((dir, j) => ({title: dir.show, key: j, onclick: tag => this.props.sendglbcf(() => api('/api/parent/add', {name: dir.name, tag: tag}, 'POST').then(result => console.log(result)).catch(err => this.props.addalert(err)), `Would you sure add ${tag} to ${dir.show}?`)})))).catch(err => {
+        }).then(result => this.props.dirsset(result.parentList.map((dir, j) => ({title: dir.show, name: dir.name, key: j, onclick: tag => this.props.sendglbcf(() => api('/api/parent/add', {name: dir.name, tag: tag}).then(result => console.log(result)).catch(err => this.props.addalert(err)), `Would you sure add ${tag} to ${dir.show}?`)})))).catch(err => {
             this.props.addalert(err)
             this._doLogout()
         })
@@ -75,8 +69,11 @@ const App = React.createClass({
         if (this._ws) {
             this._ws.close()
         }
-        this.props.basicset('guest', '', [])
+        this.props.basicset('guest', '', false)
         this.props.feedbackset([])
+        this.props.userset([])
+        this.props.bookmarkset([], 'name', 'asc')
+        this.props.dirsset([])
     },
     _doLogout: function() {
         doLogout().then(() => browserHistory.push(LOGIN_PAGE)).catch(err => this.props.addalert(err))

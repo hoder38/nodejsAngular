@@ -1,13 +1,18 @@
 import { connect } from 'react-redux'
-import { alertPush } from '../actions'
+import { alertPush, userPush } from '../actions'
 import Userlist from '../components/Userlist'
+
+const mapStateToProps = state => ({
+    user_info: state.userDataHandle,
+})
 
 const mapDispatchToProps = dispatch => ({
     addalert: msg => dispatch(alertPush(msg)),
+    userset: user => dispatch(userPush(user)),
 })
 
 const ReUserlist = connect(
-    null,
+    mapStateToProps,
     mapDispatchToProps
 )(Userlist)
 

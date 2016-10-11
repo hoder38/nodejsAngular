@@ -103,7 +103,14 @@ export const api = (url, data = null, method = 'POST', relogin = true) => {
             body: JSON.stringify(data)
         }).then(resp => errorHandle(resp, relogin))
     } else {
-        return fetch(url, {credentials: 'include'}).then(resp => errorHandle(resp, relogin))
+        if (method === 'DELETE') {
+            return fetch(url, {
+                credentials: 'include',
+                method: method,
+            }).then(resp => errorHandle(resp, relogin))
+        } else {
+            return fetch(url, {credentials: 'include'}).then(resp => errorHandle(resp, relogin))
+        }
     }
 }
 
@@ -128,3 +135,51 @@ export const doLogout = (url = '') => api(`${url}/api/logout`).then(info => {
 })
 
 export const testLogin = () => api('/api/testLogin', null, 'GET', false)
+
+export const arrayObjectIncludes = (myArray, searchTerm, property) => {
+    for(let i of myArray) {
+        if (i[property] === searchTerm) {
+            return true
+        }
+    }
+    return false
+}
+
+export const arrayObjectIndexOf = (myArray, searchTerm, property) => {
+    for(let i of myArray.entries()) {
+        if (i[1][property] === searchTerm) {
+            return i[0]
+        }
+    }
+    return -1
+}
+
+export const arrayObjectPush = (myArray, pushTerm, property) => {
+    if (Array.isArray(pushTerm)) {
+        let new_list = myArray.map(item => {
+            for (let i of pushTerm.entries()) {
+                if (item[property] === i[1][property]) {
+                    pushTerm.splice(i[0], 1)
+                    return pushTerm
+                }
+            }
+            return item
+        })
+        pushTerm.forEach(item => new_list.push(item))
+        return new_list
+    } else {
+        let is_add = false
+        let new_list = myArray.map(item => {
+            if (item[property] === pushTerm[property]) {
+                is_add = true
+                return pushTerm
+            } else {
+                return item
+            }
+        })
+        if (!is_add) {
+            new_list.push(pushTerm)
+        }
+        return new_list
+    }
+}

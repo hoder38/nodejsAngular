@@ -160,9 +160,9 @@ const FileFeedback = React.createClass({
         }
         this._input.initFocus()
         if (!isValidString(this.state.url, 'url')) {
-            this.setState(Object.assign(this.state, this._input.initValue(), this._addTag([this.state.url])))
+            this.setState(Object.assign({}, this.state, this._input.initValue(), this._addTag([this.state.url])))
         } else {
-            api('/api/addTagUrl', {url: this.state.url}, 'POST').then(result => this.setState(Object.assign(this.state, this._input.initValue(), this._addTag(result.tags)))).catch(err => this.props.addalert(err))
+            api('/api/addTagUrl', {url: this.state.url}).then(result => this.setState(Object.assign({}, this.state, this._input.initValue(), this._addTag(result.tags)))).catch(err => this.props.addalert(err))
         }
     },
     render: function() {

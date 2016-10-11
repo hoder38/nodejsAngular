@@ -28,7 +28,7 @@ var bili_type = ['大陸', '日本', '歐美', '香港', '台灣', '韓國', '�
 
 var bili_index = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15, 16];
 
-var queryLimit = 20;
+var queryLimit = 5;
 
 var handleTime = 7200,
     unactive_day = 5,
