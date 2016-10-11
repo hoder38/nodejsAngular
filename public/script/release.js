@@ -3890,7 +3890,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             } else {
                 this.$parent.toolList.recover = false;
             }
-            if (item.status === 3) {
+            if (item.status === 3 && !item.thumb) {
                 this.$parent.toolList.upload = true;
                 this.$parent.toolList.searchSub = true;
             } else {
