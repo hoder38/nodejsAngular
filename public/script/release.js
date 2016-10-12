@@ -3851,7 +3851,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             this.$parent.toolList.convert = false;
             confirm_str = item;
         } else {
-            if (item.status === 7 || item.status === 8 || item.status === 9 || item.thumb) {
+            if (item.status === 7 || item.status === 8 || item.thumb) {
                 this.$parent.toolList.download = false;
             } else {
                 this.$parent.toolList.download = true;
@@ -5066,10 +5066,6 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                                     openModal('want to input password?').then(function () {
                                         openBlockPW($scope.zipPW, $scope, wsmsg.zip);
                                     }, function () {
-                                        openModal('unzip error want to download zip?').then(function () {
-                                            $window.location.href = $scope.main_url + '/download/' + wsmsg.zip + '/zip';
-                                        }, function () {
-                                        });
                                     });
                                 }
                                 break;
