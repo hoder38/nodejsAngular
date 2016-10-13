@@ -3666,7 +3666,7 @@ app.get('/api/download2drive/:uid', function(req, res, next){
     });
 });
 
-app.get('/download/:uid/:zip?', function(req, res, next){
+app.get('/download/:uid', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('download file');
         console.log(new Date());
@@ -3676,7 +3676,7 @@ app.get('/download/:uid/:zip?', function(req, res, next){
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err,items){
+        mongo.orig("find", "storage", {_id: id}, {limit: 1}, function(err, items){
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -3685,16 +3685,22 @@ app.get('/download/:uid/:zip?', function(req, res, next){
             }
             var filePath = util.getFileLocation(items[0].owner, items[0]._id);
             console.log(filePath);
-            if (req.params.zip) {
-                if (fs.existsSync(filePath + '_zip')) {
-                    filePath = filePath + '_zip';
-                } else if (fs.existsSync(filePath + '_7z')) {
-                    filePath = filePath + '_7z';
-                } else if (fs.existsSync(filePath + '.1.rar')) {
-                    filePath = filePath + '.1.rar';
+            console.log(items);
+            var ret_string = null;
+            if (items[0].status === 9) {
+                if (items[0].magnet) {
+                    ret_string = decodeURIComponent(items[0].magnet);
+                } else {
+                    if (fs.existsSync(filePath + '_7z')) {
+                        filePath = filePath + '_7z';
+                    } else if (fs.existsSync(filePath + '.1.rar')) {
+                        filePath = filePath + '.1.rar';
+                    } else {
+                        filePath = filePath + '_zip';
+                    }
                 }
             }
-            if (!fs.existsSync(filePath)) {
+            if (!fs.existsSync(filePath) && !ret_string) {
                 util.handleError({hoerror: 2, message: "cannot find file!!!"}, next, res);
             }
             tagTool.setLatest('', items[0]._id, req.session, function(err) {
@@ -3708,7 +3714,12 @@ app.get('/download/:uid/:zip?', function(req, res, next){
                     //sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
                 });
             });
-            res.download(filePath, unescape(encodeURIComponent(items[0].name)));
+            if (ret_string) {
+                res.writeHead(200, {'Content-Type': 'application/force-download','Content-disposition':'attachment; filename=' + unescape(encodeURIComponent(items[0].name)) + '.txt'});
+                res.end(ret_string);
+            } else {
+                res.download(filePath, unescape(encodeURIComponent(items[0].name)));
+            }
         });
     });
 });

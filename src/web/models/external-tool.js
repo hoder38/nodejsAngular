@@ -3716,20 +3716,17 @@ module.exports = {
                             }
                             eval(eval_data[1]);
                             var raw_multi_list = ff_urls;
-                            var ret_list = driveSource();
-                            if (!ret_list) {
-                                ret_list = youkuSource();
-                                if (!ret_list) {
-                                    ret_list = otherSource();
-                                    if (!ret_list) {
-                                        util.handleError({hoerror: 2, message: 'not flv'}, callback2, callback2);
-                                    }
-                                }
+                            var ret_list = [];
+                            driveSource(ret_list);
+                            youkuSource(ret_list);
+                            otherSource(ret_list);
+                            if (ret_list.length === 0 ) {
+                                util.handleError({hoerror: 2, message: 'not flv'}, callback2, callback2);
                             }
                             setTimeout(function(){
                                 callback2(null, ret_list, is_end);
                             }, 0);
-                            function driveSource() {
+                            function driveSource(list) {
                                 var flv_list = raw_multi_list.match(/"bj58".*?\}/);
                                 if (!flv_list) {
                                     return false;
@@ -3738,7 +3735,6 @@ module.exports = {
                                 if (!raw_list) {
                                     return false;
                                 }
-                                var list = [];
                                 var list_match = false;
                                 for (var i in raw_list) {
                                     list_match = raw_list[i].match(/^\["([^"]+)","fun58_([^"]+)"/);
@@ -3747,10 +3743,7 @@ module.exports = {
                                     }
                                 }
                                 if (list.length > 0) {
-                                    if (!list[index-1]) {
-                                        return false;
-                                    }
-                                    return list;
+                                    return true;
                                 } else {
                                     for (var i in raw_list) {
                                         list_match = raw_list[i].match(/^\["([^"]+)","([^_]+)_wd1"/);
@@ -3759,10 +3752,7 @@ module.exports = {
                                         }
                                     }
                                     if (list.length > 0) {
-                                        if (!list[index-1]) {
-                                            return false;
-                                        }
-                                        return list;
+                                        return true;
                                     } else {
                                         for (var i in raw_list) {
                                             list_match = raw_list[i].match(/^\["([^"]+)","fun23_video\/([^"]+)\/"/);
@@ -3771,23 +3761,20 @@ module.exports = {
                                             }
                                         }
                                         if (list.length > 0) {
-                                            if (!list[index-1]) {
-                                                return false;
-                                            }
-                                            return list;
+                                            return true;
                                         } else {
                                             for (var i in raw_list) {
                                                 list_match = raw_list[i].match(/^\["([^"]+)","FunCnd1_([^"]+)"/);
                                                 if (list_match) {
                                                     list.push({name: list_match[1], id: 'fc1_' + list_match[2]});
                                                 }
-                                                return list;
+                                                return true;
                                             }
                                         }
                                     }
                                 }
                             }
-                            function youkuSource() {
+                            function youkuSource(list) {
                                 var flv_list = raw_multi_list.match(/"bj".*?\}/);
                                 if (!flv_list) {
                                     return false;
@@ -3796,7 +3783,6 @@ module.exports = {
                                 if (!raw_list) {
                                     return false;
                                 }
-                                var list = [];
                                 var list_match = false;
                                 for (var i in raw_list) {
                                     list_match = raw_list[i].match(/\["([^"]+)","([^_]+)_wd1"/);
@@ -3804,12 +3790,9 @@ module.exports = {
                                         list.push({name: list_match[1], id: 'yuk_' + list_match[2]});
                                     }
                                 }
-                                if (!list[index-1]) {
-                                    return false;
-                                }
-                                return list;
+                                return true;
                             }
-                            function otherSource() {
+                            function otherSource(list) {
                                 var flv_list11 = raw_multi_list.match(/"bj11".*?\}/);
                                 var flv_list6 = raw_multi_list.match(/"bj6".*?\}/);
                                 var flv_list5 = raw_multi_list.match(/"bj5".*?\}/);
@@ -3818,11 +3801,6 @@ module.exports = {
                                 if (!flv_list11 && !flv_list6 && !flv_list5 && !flv_list8 && !flv_list7) {
                                     return false;
                                 }
-                                var list11 = [];
-                                var list6 = [];
-                                var list5 = [];
-                                var list8 = [];
-                                var list7 = [];
                                 var list_match = false;
                                 var raw_list = false;
                                 if (flv_list11) {
@@ -3831,7 +3809,7 @@ module.exports = {
                                         for (var i in raw_list) {
                                             list_match = raw_list[i].match(/\["([^"]+)","fun10_([^"]+)"/);
                                             if (list_match) {
-                                                list11.push({name: list_match[1], id: 'tud_' + list_match[2]});
+                                                list.push({name: list_match[1], id: 'tud_' + list_match[2]});
                                             }
                                         }
                                     }
@@ -3842,7 +3820,7 @@ module.exports = {
                                         for (var i in raw_list) {
                                             list_match = raw_list[i].match(/\["([^"]+)","fun3_([^"]+)"/);
                                             if (list_match) {
-                                                list6.push({name: list_match[1], id: 'vqq_' + list_match[2]});
+                                                list.push({name: list_match[1], id: 'vqq_' + list_match[2]});
                                             }
                                         }
                                     }
@@ -3854,7 +3832,7 @@ module.exports = {
                                         for (var i in raw_list) {
                                             list_match = raw_list[i].match(/\["([^"]+)","fun1_([^"]+)"/);
                                             if (list_match) {
-                                                list5.push({name: list_match[1], id: 'let_' + list_match[2]});
+                                                list.push({name: list_match[1], id: 'let_' + list_match[2]});
                                             }
                                         }
                                     }
@@ -3865,7 +3843,7 @@ module.exports = {
                                         for (var i in raw_list) {
                                             list_match = raw_list[i].match(/\["([^"]+)","fun9_([^"]+)"/);
                                             if (list_match) {
-                                                list8.push({name: list_match[1], id: 'fun_m_' + list_match[2]});
+                                                list.push({name: list_match[1], id: 'fun_m_' + list_match[2]});
                                             }
                                         }
                                     }
@@ -3876,33 +3854,12 @@ module.exports = {
                                         for (var i in raw_list) {
                                             list_match = raw_list[i].match(/\["([^"]+)","fun5_([^"]+)"/);
                                             if (list_match) {
-                                                list7.push({name: list_match[1], id: 'soh_' + list_match[2]});
+                                                list.push({name: list_match[1], id: 'soh_' + list_match[2]});
                                             }
                                         }
                                     }
                                 }
-                                var list = list11;
-                                if (list6.length > list.length) {
-                                    list = list6;
-                                }
-                                if (list5.length > list.length) {
-                                    list = list5;
-                                }
-                                if (list8.length > list.length) {
-                                    list = list8;
-                                }
-                                if (list7.length > list.length) {
-                                    list = list7;
-                                }
-                                console.log(list11.length);
-                                console.log(list6.length);
-                                console.log(list5.length);
-                                console.log(list8.length);
-                                console.log(list7.length);
-                                if (!list[index-1]) {
-                                    return false;
-                                }
-                                return list;
+                                return true;
                             }
                         }, 60000, false, false, 'http://www.123kubo.com/');
                     }
@@ -4314,7 +4271,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0) {
+                if (eItems.length > 0 && Array.isArray(eItems.list)) {
                     if (!eItems[0].list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }

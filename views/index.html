@@ -343,7 +343,7 @@
                                             <option ng-show="video.list[video.index].cid" value="4">訂閱{{video.list[video.index].ctitle}}</option>
                                         </select>
                                     </li>
-                                    <li ng-show="videoSwitch&&video.list[video.index].thumb">
+                                    <!--li ng-show="videoSwitch&&video.list[video.index].thumb">
                                         <select ng-model="video.hd">
                                             <option value="0">Very High</option>
                                             <option value="1">High</option>
@@ -351,7 +351,7 @@
                                             <option value="3">Low</option>
                                             <option value="4">Very Low</option>
                                         </select>
-                                    </li>
+                                    </li-->
                                 </ul>
                             </nav>
                             <video class="{{isFull && 'full-media-screen'||'media-screen'}}" ng-src="{{video.src | trusted}}" controls autoplay ng-video ng-ended="nextVideo('video')" ng-play="testLogin()" ng-pause="mediaRecord('video')" ng-click="videoToggle()" tabindex=1 id="video-tag">
