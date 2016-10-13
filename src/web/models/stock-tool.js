@@ -1346,6 +1346,9 @@ module.exports = {
         return profitStatus;
     },
     getProfitIndex: function(profitStatus, startYear, endYear) {
+        if (endYear - 4 > startYear) {
+            startYear = endYear - 4;
+        }
         var index = 0;
         var denominator = 1;
         for (var i = endYear; i >= startYear; i--) {
@@ -1360,15 +1363,23 @@ module.exports = {
     },
     getSafetyStatus: function(salesStatus, cashStatus, asset) {
         var safetyStatus = {};
+        var length = 0
         for (var i in salesStatus) {
-            safetyStatus[i] = [];
-            for (var j in salesStatus[i]) {
-                safetyStatus[i][j] = {prMinusProfit: Math.ceil(asset[i][j].payable/asset[i][j].receivable*1000 - 1000 + salesStatus[i][j].quarterProfit*10)/10, prRatio: Math.ceil(asset[i][j].payable/asset[i][j].receivable*1000)/10, shortCash: Math.ceil((asset[i][j].receivable - asset[i][j].payable*2 + asset[i][j].current_liabilities - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100 - cashStatus[i][j].invest * cashStatus[i][j].end / 100)/asset[i][j].cash*1000)/10, shortCashWithoutCL: Math.ceil((asset[i][j].receivable - asset[i][j].payable - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100 - cashStatus[i][j].invest * cashStatus[i][j].end / 100)/asset[i][j].cash*1000)/10, shortCashWithoutInvest: Math.ceil((asset[i][j].receivable - asset[i][j].payable*2 + asset[i][j].current_liabilities - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100)/asset[i][j].cash*1000)/10};
+            length++;
+        }
+        for (var i in salesStatus) {
+            if (length <= 5) {
+                safetyStatus[i] = [];
+                for (var j in salesStatus[i]) {
+                    safetyStatus[i][j] = {prMinusProfit: Math.ceil(asset[i][j].payable/asset[i][j].receivable*1000 - 1000 + salesStatus[i][j].quarterProfit*10)/10, prRatio: Math.ceil(asset[i][j].payable/asset[i][j].receivable*1000)/10, shortCash: Math.ceil((asset[i][j].receivable - asset[i][j].payable*2 + asset[i][j].current_liabilities - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100 - cashStatus[i][j].invest * cashStatus[i][j].end / 100)/asset[i][j].cash*1000)/10, shortCashWithoutCL: Math.ceil((asset[i][j].receivable - asset[i][j].payable - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100 - cashStatus[i][j].invest * cashStatus[i][j].end / 100)/asset[i][j].cash*1000)/10, shortCashWithoutInvest: Math.ceil((asset[i][j].receivable - asset[i][j].payable*2 + asset[i][j].current_liabilities - salesStatus[i][j].quarterProfit*asset[i][j].receivable/100)/asset[i][j].cash*1000)/10};
+                }
             }
+            length--;
         }
         return safetyStatus;
     },
     getSafetyIndex: function(safetyStatus) {
+        //console.log(safetyStatus);
         var index = 0;
         var multiple = 0;
         for (var i in safetyStatus) {
@@ -2326,11 +2337,9 @@ module.exports = {
             }
             switch(items[0].type) {
                 case 'twse':
-                var salesPath = '/mnt/stock/twse/' + items[0].index + '/sales';
                 var index = 0;
                 var sales_data = null;
                 var new_sales_data = null;
-
                 mongo.orig("find", "salesCache", {type: items[0].type, index: items[0].index}, {limit: 1}, function(err, eItems){
                     if (err) {
                         util.handleError(err, callback, callback);
@@ -2394,6 +2403,23 @@ module.exports = {
                                 }
                                 new_sales_data[year][month_str] = {num: sales_num[sales_num.length - 1], per: sales_per[sales_per.length - 1], pre: sales_pre[sales_pre.length - 1]};
                             } else if (data.length > 400) {
+                                console.log(data);
+                                if (is_insert) {
+                                    mongo.orig("update", "salesCache", {type: items[0].type, index: items[0].index}, {$set: new_sales_data}, function(err, item3){
+                                        if(err) {
+                                            util.handleError(err);
+                                        }
+                                    });
+                                } else {
+                                    new_sales_data['type'] = items[0].type;
+                                    new_sales_data['index'] = items[0].index;
+                                    mongo.orig("insert", "salesCache", new_sales_data, function(err, item3){
+                                        if(err) {
+                                            util.handleError(err);
+                                        }
+                                        console.log(item3);
+                                    });
+                                }
                                 util.handleError({hoerror: 2, message: items[0].type + items[0].index + " 稍後再查詢!!"}, callback, callback);
                             }
                             rest_predict();
@@ -2414,137 +2440,81 @@ module.exports = {
                             console.log(year);
                             console.log(month_str);
                             p_start_month = start_month;
-                            if (index >= 20 || sales_num.length > 11) {
-                                var diff = 0;
-                                var predict_sales_0 = 0;
-                                var predict_sales_1 = 0;
-                                var predict_sales_2 = 0;
-                                var predict_sales_3 = 0;
-                                for (var i = 0; i < sales_per.length; i++) {
-                                    diff = 0;
-                                    for (var j = 0; j < i; j++) {
-                                        diff += (sales_per[j] - sales_per[i]) / 12;
-                                    }
-                                    if (start_month > 1) {
-                                        start_month--;
-                                    } else {
-                                        start_month = 12;
-                                    }
-                                    switch (start_month) {
-                                        case 1:
-                                        case 2:
-                                        case 3:
-                                        predict_sales_0 += sales_num[i] * (sales_per[i] + 100 + diff) / 100;
-                                        break;
-                                        case 4:
-                                        case 5:
-                                        case 6:
-                                        predict_sales_1 += sales_num[i] * (sales_per[i] + 100 + diff) / 100;
-                                        break;
-                                        case 7:
-                                        case 8:
-                                        case 9:
-                                        predict_sales_2 += sales_num[i] * (sales_per[i] + 100 + diff) / 100;
-                                        break;
-                                        case 10:
-                                        case 11:
-                                        case 12:
-                                        predict_sales_3 += sales_num[i] * (sales_per[i] + 100 + diff) / 100;
-                                    }
+                            if (index >= 30 || sales_num.length >= 24) {
+                                var predict_index = 0;
+                                if (sales_num.length < 6) {
+                                    predict_index = -9999;
+                                } else {
+                                    var result = season_adjust(0, 11, []);
+                                    var season_list = result['list'];
+                                    var year_per = result.per;
+                                    season_list = season_adjust(12, 23, season_list).list;
+                                    var month_per = Math.round((sales_num[0] * (100+season_list[0]) / (sales_num[1] * (100+season_list[1])) - 1) *1000)/10;
+                                    var quarter_per = Math.round(((sales_num[0] * (100+season_list[0]) + sales_num[1] * (100+season_list[1]) + sales_num[2] * (100+season_list[2])) / (sales_num[3] * (100+season_list[3]) + sales_num[4] * (100+season_list[4]) + sales_num[5] * (100+season_list[5])) - 1) *1000)/10;
+                                    console.log(month_per);
+                                    console.log(quarter_per);
+                                    console.log(year_per);
+                                    var predict_index = (month_per - quarter_per > 0) ? Math.pow(month_per - quarter_per, 2) : -Math.pow(month_per - quarter_per, 2);
+                                    predict_index = (month_per - year_per > 0) ? predict_index + Math.pow(month_per - year_per, 2) : predict_index - Math.pow(month_per - year_per, 2);
+                                    predict_index = (year_per - quarter_per > 0) ? predict_index + Math.pow(year_per - quarter_per, 2) : predict_index - Math.pow(year_per - quarter_per, 2);
+                                    predict_index = (predict_index > 0) ? Math.round(Math.sqrt(predict_index)*10)/10 : -Math.round(Math.sqrt(-predict_index)*10)/10;
                                 }
-                                console.log(predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3);
-                                sales = items[0].sales;
-                                asset = items[0].asset;
-                                year = date.getFullYear();
-                                var y = date.getFullYear(), q = 3;
-                                for (var i = 0; i < 20; i++) {
-                                    if (asset[y] && asset[y][q]) {
-                                        break;
-                                    } else {
-                                        if (q > 0) {
-                                            q--;
-                                        } else {
-                                            y--;
-                                            q = 3;
+                                setTimeout(function(){
+                                    callback(null, predict_index, items[0].index);
+                                }, 0);
+                                function season_adjust(start, end, list) {
+                                    var year_sales = 0;
+                                    var previous_sales = 0;
+                                    var j = 0;
+                                    for (var i in sales_num) {
+                                        if (i < start) {
+                                            continue;
                                         }
+                                        if (i > end) {
+                                            break;
+                                        }
+                                        year_sales += sales_num[i];
+                                        previous_sales += sales_pre[i];
+                                        j++;
                                     }
+                                    console.log(j);
+                                    var year_diff = (year_sales - previous_sales)/(j*(j-1)/2);
+                                    var expect = 0;
+                                    var k = 0;
+                                    for (var i in sales_num) {
+                                        if (i < start) {
+                                            continue;
+                                        }
+                                        if (i > end) {
+                                            break;
+                                        }
+                                        expect = Math.round(previous_sales/j + year_diff * (j-1-i));
+                                        if (list[k]) {
+                                            list[k] = Math.round((list[k] + (sales_num[i] / expect - 1)*100) /2*10)/10;
+                                        } else {
+                                            list[k] = Math.round((sales_num[i] / expect - 1) * 1000)/10;
+                                        }
+                                        k++;
+                                    }
+                                    return {list: list, per: Math.round((year_sales/previous_sales - 1) * 1000)/10};
                                 }
-                                var salesStatus = this_obj.getSalesStatus(sales, asset);
-                                var managementStatus = this_obj.getManagementStatus(salesStatus, asset);
-                                var ret_str = '';
-                                var true_sales = 0;
-                                var previous_sales = 0;
-                                var p_true_sales = 0;
-                                var p_previous_sales = 0;
-                                for (var i = 0; i < sales_num.length; i++) {
-                                    true_sales += sales_num[i];
-                                    previous_sales += sales_pre[i];
-                                    if (p_start_month > 0) {
-                                        p_start_month--;
-                                        p_true_sales += sales_num[i];
-                                        p_previous_sales += sales_pre[i];
-                                    }
-                                }
-                                ret_str = start_month + 'th ' + Math.ceil(p_true_sales/p_previous_sales*1000 - 1000)/10 + '% ' + Math.ceil(true_sales/previous_sales*1000 - 1000)/10 + '%(t)';
-                                if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) > 0) {
-                                    var predict_profit = managementStatus.a + managementStatus.b * predict_sales_0 * 1000;
-                                    predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_1 * 1000;
-                                    predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_2 * 1000;
-                                    predict_profit = predict_profit + managementStatus.a + managementStatus.b * predict_sales_3 * 1000;
-                                    var predict_eps = predict_profit / asset[y][q].share * 10;
-                                    console.log(predict_eps);
-                                    if (predict_eps > 0) {
-                                        getStockPrice(items[0].type, items[0].index, function(err, price) {
-                                            if(err) {
-                                                util.handleError(err, callback, callback);
-                                            }
-                                            var per = Math.ceil(price/predict_eps*1000)/1000;
-                                            new_sales_data['return'] = ret_str + ' ' + per;
-                                            new_sales_data['time'] = new Date().getTime();
-                                            if (is_insert) {
-                                                mongo.orig("update", "salesCache", {type: items[0].type, index: items[0].index}, {$set: new_sales_data}, function(err, item3){
-                                                    if(err) {
-                                                        util.handleError(err);
-                                                    }
-                                                });
-                                            } else {
-                                                new_sales_data['type'] = items[0].type;
-                                                new_sales_data['index'] = items[0].index;
-                                                mongo.orig("insert", "salesCache", new_sales_data, function(err, item3){
-                                                    if(err) {
-                                                        util.handleError(err);
-                                                    }
-                                                    console.log(item3);
-                                                });
-                                            }
-                                            setTimeout(function(){
-                                                callback(null, ret_str + ' ' + per, items[0].index);
-                                            }, 0);
-                                        });
-                                    }
-                                }
-                                if ((predict_sales_0 + predict_sales_1 + predict_sales_2 + predict_sales_3) <= 0 || predict_eps <= 0) {
-                                    new_sales_data['return'] = ret_str;
-                                    new_sales_data['time'] = new Date().getTime();
-                                    if (is_insert) {
-                                        mongo.orig("update", "salesCache", {type: items[0].type, index: items[0].index}, {$set: new_sales_data}, function(err, item3){
-                                            if(err) {
-                                                util.handleError(err);
-                                            }
-                                        });
-                                    } else {
-                                        new_sales_data['type'] = items[0].type;
-                                        new_sales_data['index'] = items[0].index;
-                                        mongo.orig("insert", "salesCache", new_sales_data, function(err, item3){
-                                            if(err) {
-                                                util.handleError(err);
-                                            }
-                                            console.log(item3);
-                                        });
-                                    }
-                                    setTimeout(function(){
-                                        callback(null, ret_str, items[0].index);
-                                    }, 0);
+                                new_sales_data['return'] = predict_index;
+                                new_sales_data['time'] = new Date().getTime();
+                                if (is_insert) {
+                                    mongo.orig("update", "salesCache", {type: items[0].type, index: items[0].index}, {$set: new_sales_data}, function(err, item3){
+                                        if(err) {
+                                            util.handleError(err);
+                                        }
+                                    });
+                                } else {
+                                    new_sales_data['type'] = items[0].type;
+                                    new_sales_data['index'] = items[0].index;
+                                    mongo.orig("insert", "salesCache", new_sales_data, function(err, item3){
+                                        if(err) {
+                                            util.handleError(err);
+                                        }
+                                        console.log(item3);
+                                    });
                                 }
                                 console.log('done');
                             } else {
@@ -2603,14 +2573,14 @@ module.exports = {
                             console.log(intervalFile);
                             util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
                         }
-                        if (new Date().getTime() - interval_data['time'] < 604800000) {
+                        /*if (new Date().getTime() - interval_data['time'] < 604800000) {
                             setTimeout(function(){
                                 callback(null, interval_data['return'], items[0].index);
                             }, 0);
-                        } else {
+                        } else {*/
                             console.log(intervalFile.length);
                             recur_mi(1);
-                        }
+                        //}
                     });
                 } else {
                     recur_mi(1);
@@ -2897,7 +2867,7 @@ module.exports = {
                             }
                             console.log(year);
                             console.log(month_str);
-                            if (is_stop || index >= 70 || raw_arr.length > 1250) {
+                            if (is_stop || index >= 70 || raw_arr.length > 1150) {
                                 console.log(max);
                                 console.log(min);
                                 var final_arr = [];
