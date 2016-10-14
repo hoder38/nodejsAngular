@@ -275,3 +275,15 @@ ul.alert-dropdown {
     background:none repeat scroll 0 0 transparent;
     cursor:inherit;
 }
+
+.history-point:hover, .history-point:link, .history-point:visited, .history-point:active {
+    color: #777;
+}
+
+.item-point:hover, .item-point:link, .item-point:visited, .item-point:active {
+    color: black;
+}
+
+.relative-point:hover, .relative-point:link, .relative-point:visited, .relative-point:active {
+    color: #8B0000;
+}

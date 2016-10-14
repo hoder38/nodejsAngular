@@ -1,4 +1,5 @@
 import React from 'react'
+import TopInput from './TopInput'
 import { api } from '../utility'
 
 const Homepage = React.createClass({
@@ -17,7 +18,14 @@ const Homepage = React.createClass({
         }).catch(err => console.log(err))
     },
     render: function() {
-        return <div>{this.state.intro}</div>
+        return (
+            <div>
+                <section id="top-section" style={{float: 'left', position: 'fixed', left: '0px', width: '100%'}}>
+                    <TopInput />
+                </section>
+                <section style={{paddingTop: '40px'}}>{this.state.intro}</section>
+            </div>
+        )
     }
 })
 

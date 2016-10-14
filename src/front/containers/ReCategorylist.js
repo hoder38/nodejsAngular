@@ -1,11 +1,15 @@
 import { connect } from 'react-redux'
+import { createSelector } from 'reselect'
 import { bookmarkPush, bookmarkPop, dirPush, dirPop } from '../actions'
 import Categorylist from '../components/Categorylist'
 
+const getMemBookmark = createSelector(state => state.bookmarkDataHandle, bookmark => bookmark)
+const getMemDirs = createSelector(state => state.dirDataHandle, dirs => dirs)
+
 const mapStateToProps = state => ({
     edit: state.basicDataHandle.edit,
-    bookmark: state.bookmarkDataHandle,
-    dirs: state.dirDataHandle,
+    bookmark: getMemBookmark(state),
+    dirs: getMemDirs(state),
 })
 
 const mapDispatchToProps = dispatch => ({

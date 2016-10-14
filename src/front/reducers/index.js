@@ -7,6 +7,7 @@ import uploadDataHandle from './uploadDataHandle'
 import simpleDataHandle from './simpleDataHandle'
 import bookmarkDataHandle from './bookmarkDataHandle'
 import dirDataHandle from './dirDataHandle'
+import itemDataHandle from './itemDataHandle'
 import glbPwHandle from './glbPwHandle'
 import glbCfHandle from './glbCfHandle'
 
@@ -22,6 +23,7 @@ const ANoMoPi = combineReducers({
     userDataHandle,
     bookmarkDataHandle,
     dirDataHandle,
+    itemDataHandle,
     glbPwHandle,
     glbCfHandle,
 })

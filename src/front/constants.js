@@ -24,6 +24,8 @@ export const DIR_POP = 'DIR_POP'
 export const DIR_PUSH = 'DIR_PUSH'
 export const USER_POP = 'USER_POP'
 export const USER_PUSH = 'USER_PUSH'
+export const ITEM_PUSH = 'ITEM_PUSH'
+export const ITEM_POP = 'ITEM_POP'
 
 //z-index
 export const RIGHT_SECTION_ZINDEX = 10
