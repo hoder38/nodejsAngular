@@ -3581,6 +3581,8 @@ app.get('/download/:uid', function(req, res, next){
             if (items[0].status === 9) {
                 if (items[0].magnet) {
                     ret_string = decodeURIComponent(items[0].magnet);
+                } else if (items[0].mega) {
+                    ret_string = decodeURIComponent(items[0].mega);
                 } else {
                     if (fs.existsSync(filePath + '_7z')) {
                         filePath = filePath + '_7z';
