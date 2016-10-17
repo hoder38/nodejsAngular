@@ -73,6 +73,7 @@ var express = require('express'),
     sessionStore = require("../models/session-tool.js")(express_session);
 
 var stockFiltering = false;
+var stockFilterlimit = 100;
 
 app.use(express.favicon());
 app.use(express.cookieParser());
@@ -3115,100 +3116,177 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
             util.handleError({hoerror: 2, message: "there is another filter running"}, next, res);
         }
         stockFiltering = true;
-        stockTagTool.tagQuery(0, '', false, 0, sortName, sortType, req.user, req.session, next, function(err, result) {
-            if (err) {
-                stockFiltering = false;
-                util.handleError(err, next, res);
-            }
-            res.json({apiOK: true});
-            var filterNum = 0;
-            if (result.items.length > 0) {
-                var first_stage = [];
-                var pok = true;
-                var sok = true;
-                var mok = true;
-                for (var i in result.items) {
-                    pok = true;
-                    sok = true;
-                    mok = true;
-                    if (pp) {
-                        pok = false;
-                        if ((pp[1] === '>' && result.items[i].profitIndex > pp[2]) || (pp[1] === '<' && result.items[i].profitIndex < pp[2])) {
-                            pok = true;
-                        }
-                    }
-                    if (ss) {
-                        sok = false;
-                        if ((ss[1] === '>' && result.items[i].safetyIndex > ss[2]) || (ss[1] === '<' && result.items[i].safetyIndex < ss[2])) {
-                            sok = true;
-                        }
-                    }
-                    if (mm) {
-                        mok = false;
-                        if ((mm[1] === '>' && result.items[i].managementIndex > mm[2]) || (mm[1] === '<' && result.items[i].managementIndex < mm[2])) {
-                            mok = true;
-                        }
-                    }
-                    if (pok && sok && mok) {
-                        first_stage.push(result.items[i]);
-                    }
-                }
-                if (first_stage.length > 0) {
-                    //var second_stage = [];
-                    recur_per(0);
-                } else {
+        var first = true;
+        var last = false;
+        var queried = 0;
+        function recur_query() {
+            console.log(queried);
+            stockTagTool.tagQuery(queried, '', false, 0, sortName, sortType, req.user, req.session, next, function(err, result) {
+                if (err) {
                     stockFiltering = false;
-                    sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                    util.handleError(err, next, res);
                 }
-                function recur_per(index) {
-                    if (per) {
-                        stockTool.getStockPER(first_stage[index]._id, function(err, stockPer) {
-                            if (err) {
-                                stockFiltering = false;
-                                sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
-                                util.handleError(err);
-                            } else {
-                                if (per && stockPer > 0 && ((per[1] === '>' && stockPer > (per[2] * 2 / 3)) || (per[1] === '<' && stockPer < (per[2] * 4 /3)))) {
-                                    console.log(stockPer);
-                                    console.log(first_stage[index].name);
-                                    if (yield) {
-                                        stockTool.getStockYield(first_stage[index]._id, function(err, stockYield) {
-                                            if (err) {
-                                                stockFiltering = false;
-                                                sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
-                                                util.handleError(err);
-                                            } else {
-                                                if (yield && stockYield > 0 && ((yield[1] === '>' && stockYield > (yield[2] * 2 / 3)) || (yield[1] === '<' && stockYield < (yield[2] * 4 /3)))) {
-                                                    console.log(stockYield);
-                                                    filterNum++;
-                                                    stockTagTool.addTag(first_stage[index]._id, name, req.user, next, function(err, add_result) {
-                                                        if (err) {
-                                                            stockFiltering = false;
-                                                            sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
-                                                            util.handleError(err);
-                                                        } else {
-                                                            sendWs({type: 'stock', data: add_result.id}, 0, 1);
-                                                            index++;
-                                                            if (index < first_stage.length) {
-                                                                recur_per(index);
+                if (first) {
+                    res.json({apiOK: true});
+                }
+                if (result.items.length < limit) {
+                    last = true;
+                }
+                queried += result.items.length;
+                first = false;
+                var filterNum = 0;
+                if (result.items.length > 0) {
+                    var first_stage = [];
+                    var pok = true;
+                    var sok = true;
+                    var mok = true;
+                    for (var i in result.items) {
+                        pok = true;
+                        sok = true;
+                        mok = true;
+                        if (pp) {
+                            pok = false;
+                            if ((pp[1] === '>' && result.items[i].profitIndex > pp[2]) || (pp[1] === '<' && result.items[i].profitIndex < pp[2])) {
+                                pok = true;
+                            }
+                        }
+                        if (ss) {
+                            sok = false;
+                            if ((ss[1] === '>' && result.items[i].safetyIndex > ss[2]) || (ss[1] === '<' && result.items[i].safetyIndex < ss[2])) {
+                                sok = true;
+                            }
+                        }
+                        if (mm) {
+                            mok = false;
+                            if ((mm[1] === '>' && result.items[i].managementIndex > mm[2]) || (mm[1] === '<' && result.items[i].managementIndex < mm[2])) {
+                                mok = true;
+                            }
+                        }
+                        if (pok && sok && mok) {
+                            first_stage.push(result.items[i]);
+                        }
+                    }
+                    if (first_stage.length > 0) {
+                        //var second_stage = [];
+                        recur_per(0);
+                    } else {
+                        stockFiltering = false;
+                        sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                    }
+                    function recur_per(index) {
+                        if (per) {
+                            stockTool.getStockPER(first_stage[index]._id, function(err, stockPer) {
+                                if (err) {
+                                    stockFiltering = false;
+                                    sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                    util.handleError(err);
+                                } else {
+                                    if (per && stockPer > 0 && ((per[1] === '>' && stockPer > (per[2] * 2 / 3)) || (per[1] === '<' && stockPer < (per[2] * 4 /3)))) {
+                                        console.log(stockPer);
+                                        console.log(first_stage[index].name);
+                                        if (yield) {
+                                            stockTool.getStockYield(first_stage[index]._id, function(err, stockYield) {
+                                                if (err) {
+                                                    stockFiltering = false;
+                                                    sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                                    util.handleError(err);
+                                                } else {
+                                                    if (yield && stockYield > 0 && ((yield[1] === '>' && stockYield > (yield[2] * 2 / 3)) || (yield[1] === '<' && stockYield < (yield[2] * 4 /3)))) {
+                                                        console.log(stockYield);
+                                                        filterNum++;
+                                                        stockTagTool.addTag(first_stage[index]._id, name, req.user, next, function(err, add_result) {
+                                                            if (err) {
+                                                                stockFiltering = false;
+                                                                sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                                                util.handleError(err);
                                                             } else {
+                                                                sendWs({type: 'stock', data: add_result.id}, 0, 1);
+                                                                index++;
+                                                                if (filterNum >= limit) {
+                                                                    stockFiltering = false;
+                                                                    sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                                                } else {
+                                                                    if (index < first_stage.length) {
+                                                                        recur_per(index);
+                                                                    } else {
+                                                                        if (last) {
+                                                                            stockFiltering = false;
+                                                                            sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                                                        } else {
+                                                                            recur_query();
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        });
+                                                    } else {
+                                                        index++;
+                                                        if (index < first_stage.length) {
+                                                            recur_per(index);
+                                                        } else {
+                                                            if (last) {
                                                                 stockFiltering = false;
                                                                 sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                                            } else {
+                                                                recur_query();
                                                             }
                                                         }
-                                                    });
-                                                } else {
-                                                    index++;
-                                                    if (index < first_stage.length) {
-                                                        recur_per(index);
-                                                    } else {
-                                                        stockFiltering = false;
-                                                        sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
                                                     }
                                                 }
-                                            }
-                                        });
+                                            });
+                                        } else {
+                                            filterNum++;
+                                            stockTagTool.addTag(first_stage[index]._id, name, req.user, next, function(err, add_result) {
+                                                if (err) {
+                                                    stockFiltering = false;
+                                                    sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                                    util.handleError(err);
+                                                } else {
+                                                    sendWs({type: 'stock', data: add_result.id}, 0, 1);
+                                                    index++;
+                                                    if (filterNum >= limit) {
+                                                        stockFiltering = false;
+                                                        sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                                    } else {
+                                                        if (index < first_stage.length) {
+                                                            recur_per(index);
+                                                        } else {
+                                                            if (last) {
+                                                                stockFiltering = false;
+                                                                sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                                            } else {
+                                                                recur_query();
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            });
+                                        }
                                     } else {
+                                        index++;
+                                        if (index < first_stage.length) {
+                                            recur_per(index);
+                                        } else {
+                                            if (last) {
+                                                stockFiltering = false;
+                                                sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                            } else {
+                                                recur_query();
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        } else if (yield) {
+                            stockTool.getStockYield(first_stage[index]._id, function(err, stockYield) {
+                                if (err) {
+                                    stockFiltering = false;
+                                    sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                    util.handleError(err);
+                                } else {
+                                    if (yield && stockYield > 0 && ((yield[1] === '>' && stockYield > (yield[2] * 2 / 3)) || (yield[1] === '<' && stockYield < (yield[2] * 4 /3)))) {
+                                        console.log(stockYield);
+                                        console.log(first_stage[index].name);
                                         filterNum++;
                                         stockTagTool.addTag(first_stage[index]._id, name, req.user, next, function(err, add_result) {
                                             if (err) {
@@ -3218,89 +3296,73 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                                             } else {
                                                 sendWs({type: 'stock', data: add_result.id}, 0, 1);
                                                 index++;
-                                                if (index < first_stage.length) {
-                                                    recur_per(index);
-                                                } else {
+                                                if (filterNum >= limit) {
                                                     stockFiltering = false;
                                                     sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                                } else {
+                                                    if (index < first_stage.length) {
+                                                        recur_per(index);
+                                                    } else {
+                                                        if (last) {
+                                                            stockFiltering = false;
+                                                            sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                                        } else {
+                                                            recur_query();
+                                                        }
+                                                    }
                                                 }
                                             }
                                         });
-                                    }
-                                } else {
-                                    index++;
-                                    if (index < first_stage.length) {
-                                        recur_per(index);
                                     } else {
-                                        stockFiltering = false;
-                                        sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
-                                    }
-                                }
-                            }
-                        });
-                    } else if (yield) {
-                        stockTool.getStockYield(first_stage[index]._id, function(err, stockYield) {
-                            if (err) {
-                                stockFiltering = false;
-                                sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
-                                util.handleError(err);
-                            } else {
-                                if (yield && stockYield > 0 && ((yield[1] === '>' && stockYield > (yield[2] * 2 / 3)) || (yield[1] === '<' && stockYield < (yield[2] * 4 /3)))) {
-                                    console.log(stockYield);
-                                    console.log(first_stage[index].name);
-                                    filterNum++;
-                                    stockTagTool.addTag(first_stage[index]._id, name, req.user, next, function(err, add_result) {
-                                        if (err) {
-                                            stockFiltering = false;
-                                            sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
-                                            util.handleError(err);
+                                        index++;
+                                        if (index < first_stage.length) {
+                                            recur_per(index);
                                         } else {
-                                            sendWs({type: 'stock', data: add_result.id}, 0, 1);
-                                            index++;
-                                            if (index < first_stage.length) {
-                                                recur_per(index);
-                                            } else {
+                                            if (last) {
                                                 stockFiltering = false;
                                                 sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                            } else {
+                                                recur_query();
                                             }
                                         }
-                                    });
-                                } else {
-                                    index++;
-                                    if (index < first_stage.length) {
-                                        recur_per(index);
-                                    } else {
-                                        stockFiltering = false;
-                                        sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
                                     }
                                 }
-                            }
-                        });
-                    } else {
-                        filterNum++;
-                        stockTagTool.addTag(first_stage[index]._id, name, req.user, next, function(err, add_result) {
-                            if (err) {
-                                stockFiltering = false;
-                                sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
-                                util.handleError(err);
-                            } else {
-                                sendWs({type: 'stock', data: add_result.id}, 0, 1);
-                                index++;
-                                if (index < first_stage.length) {
-                                    recur_per(index);
-                                } else {
+                            });
+                        } else {
+                            filterNum++;
+                            stockTagTool.addTag(first_stage[index]._id, name, req.user, next, function(err, add_result) {
+                                if (err) {
                                     stockFiltering = false;
-                                    sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                    sendWs({type: req.user.username, data: 'Filter fail: ' + err.message}, 0);
+                                    util.handleError(err);
+                                } else {
+                                    sendWs({type: 'stock', data: add_result.id}, 0, 1);
+                                    index++;
+                                    if (filterNum >= limit) {
+                                        stockFiltering = false;
+                                        sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                    } else {
+                                        if (index < first_stage.length) {
+                                            recur_per(index);
+                                        } else {
+                                            if (last) {
+                                                stockFiltering = false;
+                                                sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
+                                            } else {
+                                                recur_query();
+                                            }
+                                        }
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
+                } else {
+                    stockFiltering = false;
+                    sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
                 }
-            } else {
-                stockFiltering = false;
-                sendWs({type: req.user.username, data: 'Filter ' + name + ': ' + filterNum}, 0);
-            }
-        }, limit);
+            }, stockFilterlimit);
+        }
     });
 });
 
