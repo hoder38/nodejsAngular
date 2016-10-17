@@ -3119,6 +3119,7 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
         var first = true;
         var last = false;
         var queried = 0;
+        var filterNum = 0;
         recur_query();
         function recur_query() {
             console.log(queried);
@@ -3130,12 +3131,11 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
                 if (first) {
                     res.json({apiOK: true});
                 }
-                if (result.items.length < limit) {
+                if (result.items.length < stockFilterlimit) {
                     last = true;
                 }
                 queried += result.items.length;
                 first = false;
-                var filterNum = 0;
                 if (result.items.length > 0) {
                     var first_stage = [];
                     var pok = true;
