@@ -74,11 +74,6 @@ var express = require('express'),
 
 var stockFiltering = false;
 
-var stockLine = 15;
-
-//var stockLinePer = 10;
-
-
 app.use(express.favicon());
 app.use(express.cookieParser());
 app.use(express.urlencoded());

@@ -2288,8 +2288,14 @@ module.exports = {
                         util.handleError(err, callback, callback);
                     }
                     var raw = data.match(/<TD align='right' [^&]+/g);
-                    if (raw.length < 2) {
-                        util.handleError({hoerror: 2, message: "can not find dividends!!!"}, callback, callback);
+                    if (!raw || raw.length < 2) {
+                        if (data.match(/不繼續公開發行/g)) {
+                            setTimeout(function(){
+                                callback(null, 0, items[0].index);
+                            }, 0);
+                        } else {
+                            util.handleError({hoerror: 2, message: "can not find dividends!!!"}, callback, callback);
+                        }
                     }
                     var dividends = Number(raw[0].match(/\d+(\.\d+)?/)[0]) + Number(raw[1].match(/\d+(\.\d+)?/)[0]);
                     getStockPrice(items[0].type, items[0].index, function(err, price) {
@@ -2573,14 +2579,14 @@ module.exports = {
                             console.log(intervalFile);
                             util.handleError({hoerror: 2, message: 'json parse error'}, callback, callback);
                         }
-                        /*if (new Date().getTime() - interval_data['time'] < 604800000) {
+                        if (new Date().getTime() - interval_data['time'] < 604800000) {
                             setTimeout(function(){
                                 callback(null, interval_data['return'], items[0].index);
                             }, 0);
-                        } else {*/
+                        } else {
                             console.log(intervalFile.length);
                             recur_mi(1);
-                        //}
+                        }
                     });
                 } else {
                     recur_mi(1);
@@ -3009,7 +3015,7 @@ function getBasicStockData(type, index, callback) {
             if (err) {
                 util.handleError(err, callback, callback);
             }
-            var raw = data.match(/>[^<]+<\/a>/g);
+            var raw = data.match(/>[^<]+(<\/a>|<br>撤)/g);
             if (raw.length < 1) {
                 util.handleError({hoerror: 2, message: "can not find basic data!!!"}, callback, callback);
             }

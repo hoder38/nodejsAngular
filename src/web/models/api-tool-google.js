@@ -1058,63 +1058,54 @@ var exports = module.exports = {
             if (err && !is_ok) {
                 util.handleError(err, callback, callback);
             }
-            youtubedl.getInfo('https://drive.google.com/open?id=' + key, [], function(err, info) {
+            youtubedl.exec('https://drive.google.com/open?id=' + key, ['-F'], {}, function(err, output) {
                 if (err) {
-                    util.handleError(err, callback, callback);
+                    util.handleError(err);
                 }
-                var media_location = null;
+                var info = [], row = null;
+                for (var i in output) {
+                    row = output[i].match(/^(\d+)\s+mp4\s+\d+x(\d+)/);
+                    if (row) {
+                        info.push({id: row[1], height: row[2]});
+                    }
+                }
+                console.log(info);
+                var media_id = null;
                 var currentHeight = 0;
-                if (info.formats) {
-                    for (var i in info.formats) {
-                        if (info.formats[i].format_note !== 'DASH video' && (info.formats[i].ext === 'mp4' || info.formats[i].ext === 'webm')) {
-                            if (hd === 1081 && info.formats[i].height >= 1080) {
-                                if (info.formats[i].height > currentHeight) {
-                                    media_location = info.formats[i].url;
-                                    currentHeight = info.formats[i].height;
-                                }
-                            } else if ((hd === 720 || hd === 1080) && info.formats[i].height >= 720) {
-                                if (info.formats[i].height > currentHeight) {
-                                    media_location = info.formats[i].url;
-                                    currentHeight = info.formats[i].height;
-                                }
-                            } else if (hd !== 1080 && hd !== 720 && hd !== 1081){
-                                if (info.formats[i].height > currentHeight) {
-                                    media_location = info.formats[i].url;
-                                    currentHeight = info.formats[i].height;
-                                }
-                            }
+                for (var i in info) {
+                    if (hd === 1081 && info[i].height >= 1080) {
+                        if (info[i].height > currentHeight) {
+                            media_id = info[i].id;
+                            currentHeight = info[i].height;
                         }
-                    }
-                } else {
-                    for (var i in info) {
-                        if (info[i].format_note !== 'DASH video' && (info[i].ext === 'mp4' || info[i].ext === 'webm')) {
-                            if (hd === 1081 && info[i].height >= 1080) {
-                                if (info[i].height > currentHeight) {
-                                    media_location = info[i].url;
-                                    currentHeight = info[i].height;
-                                }
-                            } else if ((hd === 720 || hd === 1080) && info[i].height >= 720) {
-                                if (info[i].height > currentHeight) {
-                                    media_location = info[i].url;
-                                    currentHeight = info[i].height;
-                                }
-                            } else if (hd !== 1080 && hd !== 720 && hd !== 1081) {
-                                if (info[i].height > currentHeight) {
-                                    media_location = info[i].url;
-                                    currentHeight = info[i].height;
-                                }
-                            }
+                    } else if ((hd === 720 || hd === 1080) && info[i].height >= 720) {
+                        if (info[i].height > currentHeight) {
+                            media_id = info[i].id;
+                            currentHeight = info[i].height;
+                        }
+                    } else if (hd !== 1080 && hd !== 720 && hd !== 1081) {
+                        if (info[i].height > currentHeight) {
+                            media_id = info[i].id;
+                            currentHeight = info[i].height;
                         }
                     }
                 }
-                if (!media_location) {
-                    util.handleError({hoerror: 2, message: 'timeout'}, callback, callback);
+                console.log(media_id);
+                if (!media_id) {
+                    util.handleError({hoerror: 2, message: 'no yet transcoded'}, callback, callback);
                 }
                 if (fs.existsSync(filePath)) {
-                    this_obj.googleDownload(media_location, filePath + '_t', function(err) {
-                        if (err) {
-                            util.handleError(err, callback, callback);
-                        }
+                    var stream = youtubedl('https://drive.google.com/open?id=' + key, ['--format=' + media_id], {});
+                    stream.on('info', function(info) {
+                      console.log('Download started');
+                      console.log('filename: ' + info.filename);
+                      console.log('size: ' + info.size);
+                    });
+                    stream.pipe(fs.createWriteStream(filePath + '_t'));
+                    stream.on('error', function(err){
+                        util.handleError(err, callback, callback);
+                    });
+                    stream.on('close', function() {
                         fs.unlink(filePath, function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
@@ -1134,12 +1125,19 @@ var exports = module.exports = {
                                 }
                             });
                         });
-                    }, threshold);
+                    });
                 } else {
-                    this_obj.googleDownload(media_location, filePath, function(err) {
-                        if (err) {
-                            util.handleError(err, callback, callback);
-                        }
+                    var stream = youtubedl('https://drive.google.com/open?id=' + key, ['--format=' + media_id], {});
+                    stream.on('info', function(info) {
+                      console.log('Download started');
+                      console.log('filename: ' + info.filename);
+                      console.log('size: ' + info.size);
+                    });
+                    stream.pipe(fs.createWriteStream(filePath));
+                    stream.on('error', function(err){
+                        util.handleError(err, callback, callback);
+                    });
+                    stream.on('close', function() {
                         if (hd === 1080 && currentHeight < 1080) {
                             setTimeout(function(){
                                 callback(null, true);
@@ -1149,7 +1147,7 @@ var exports = module.exports = {
                                 callback(null);
                             }, 0);
                         }
-                    }, threshold);
+                    });
                 }
             });
         }, img_threshold);
