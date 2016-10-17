@@ -3106,6 +3106,7 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
         var first = true;
         var last = false;
         var queried = 0;
+        recur_query();
         function recur_query() {
             console.log(queried);
             stockTagTool.tagQuery(queried, '', false, 0, sortName, sortType, req.user, req.session, next, function(err, result) {
