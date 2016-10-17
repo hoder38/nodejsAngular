@@ -38,6 +38,10 @@ body {
         padding-left: 150px;
     }
 
+    .storage-wrapper {
+        padding-right: 225px;
+    }
+
     #page-wrapper {
         padding: 10px;
     }

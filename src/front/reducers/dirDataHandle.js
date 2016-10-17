@@ -6,11 +6,13 @@ const initialState = []
 export default function dirDataHandle (state = initialState, action) {
     switch (action.type) {
         case SET_DIRS:
-        return action.dirs.map(dir => {
+        return action.dirs.map((dir, i) => {
+            dir = action.rest(dir, i)
             dir['list'] = []
             dir['sortName'] = 'name'
             dir['sortType'] = 'asc'
             dir['page'] = 0
+            dir['more'] = true
             return dir
         })
         case DIR_PUSH:
@@ -20,11 +22,13 @@ export default function dirDataHandle (state = initialState, action) {
                 sortName: action.sortName,
                 sortType: action.sortType,
                 page: action.dir.length,
+                more: (action.dir.length === 0) ? false : true,
             }) : dir)
         } else {
             return state.map(dir => dir.name === action.name ? Object.assign({}, dir, {
-                list: arrayObjectPush(dir.list, action.dir, 'id'),
                 page: action.dir.length ? dir.page + action.dir.length : dir.page,
+                more: (Array.isArray(action.dir) && action.dir.length === 0) ? false : true,
+                list: arrayObjectPush(dir.list, action.dir, 'id'),
             }) : dir)
         }
         case DIR_POP:

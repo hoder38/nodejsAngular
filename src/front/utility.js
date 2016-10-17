@@ -154,32 +154,39 @@ export const arrayObjectIndexOf = (myArray, searchTerm, property) => {
     return -1
 }
 
-export const arrayObjectPush = (myArray, pushTerm, property) => {
+export const arrayObjectPush = (myArray, pushTerm, property, rest=item=>item) => {
     if (Array.isArray(pushTerm)) {
         let new_list = myArray.map(item => {
             for (let i of pushTerm.entries()) {
                 if (item[property] === i[1][property]) {
                     pushTerm.splice(i[0], 1)
-                    return pushTerm
+                    return rest(i[1])
                 }
             }
             return item
         })
-        pushTerm.forEach(item => new_list.push(item))
+        pushTerm.forEach(item => new_list.push(rest(item)))
         return new_list
     } else {
         let is_add = false
         let new_list = myArray.map(item => {
             if (item[property] === pushTerm[property]) {
                 is_add = true
-                return pushTerm
+                return rest(pushTerm)
             } else {
                 return item
             }
         })
         if (!is_add) {
-            new_list.push(pushTerm)
+            new_list.push(rest(pushTerm))
         }
         return new_list
     }
+}
+
+export const getItemList = (name, type, page, pageToken, set, push=false) => {
+    Promise.all([
+        api(`/api/storage/get/${name}/${type}/${page}`).then(result => push ? set(result.itemList) : set(result.itemList, name, type)),
+        api(`/api/youtube/get/${pageToken}`),
+    ]).then(([result1, result2]) => set(result2.itemList, null, null, result2.pageToken ? result2.pageToken : ''))
 }

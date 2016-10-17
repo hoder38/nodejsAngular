@@ -65,9 +65,10 @@ export const bookmarkPush = (bookmark, sortName=null, sortType=null) => ({
     sortType,
 })
 
-export const setDirs = dirs => ({
+export const setDirs = (dirs, rest) => ({
     type: SET_DIRS,
     dirs,
+    rest,
 })
 
 export const dirPop = (name, id) => ({
@@ -99,8 +100,11 @@ export const itemPop = id => ({
     id,
 })
 
-export const itemPush = item => ({
+export const itemPush = (item, sortName=null, sortType=null, pageToken=null) => ({
     type: ITEM_PUSH,
     item,
+    sortName,
+    sortType,
+    pageToken,
 })
 

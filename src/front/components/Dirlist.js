@@ -7,50 +7,33 @@ const Dirlist = React.createClass({
             collapse: this.props.collapse,
             edit: false,
             loading: false,
-            more: this.props.more,
         }
     },
     componentWillMount: function() {
-        if (!this.props.more && this.props.dir.list.length === 0) {
-            this._getlist(this.props.dir.sortName, this.props.dir.sortType)
+        if (!this.props.collapse && this.props.dir.list.length === 0) {
+            this._getlist(this.props.dir.sortName, this.props.dir.sortType, this.props.dir.page)
         }
     },
     _changeSort: function(name) {
-        this.setState(Object.assign({}, this.state, {
-            more: this.props.more,
-        }), () => {
-            if (name === this.props.dir.sortName) {
-                (this.props.dir.sortType === 'asc') ? this._getlist(name, 'desc') : this._getlist(name, 'asc')
-            } else {
-                this._getlist(name, 'asc')
-            }
-        })
+        if (name === this.props.dir.sortName) {
+            (this.props.dir.sortType === 'asc') ? this._getlist(name, 'desc', 0) : this._getlist(name, 'asc', 0)
+        } else {
+            this._getlist(name, 'asc', 0)
+        }
     },
-    _getlist: function(name, type, push=false) {
-        this.setState(Object.assign({}, this.state, {loading: true}), () => api(`${this.props.listUrl}${name}/${type}/${this.props.dir.page}`).then(result => {
-            let more = this.state.more
+    _getlist: function(name, type, page, push=false) {
+        this.setState(Object.assign({}, this.state, {loading: true}), () => api(`${this.props.listUrl}${name}/${type}/${page}`).then(result => {
             let list = result.bookmarkList ? result.bookmarkList : result.taglist
-            if (this.props.more) {
-                if (list.length > 0) {
-                    push ? this.props.set(list) : this.props.set(list, name, type)
-                } else {
-                    more = false
-                }
-            } else {
-                push ? this.props.set(list) : this.props.set(list, name, type)
-            }
-            this.setState(Object.assign({}, this.state, {
-                loading: false,
-                more: more,
-            }))
+            push ? this.props.set(list) : this.props.set(list, name, type)
+            this.setState(Object.assign({}, this.state, {loading: false}))
         }).catch(err => this.props.addalert(err)))
     },
     _delItem: function(id, name) {
         this.props.sendglbcf(() => api(`${this.props.delUrl}${id}`, null, 'DELETE').then(result => this.props.del(result.id)).catch(err => this.props.addalert(err)), `Would you sure to delete ${name} from ${this.props.name}?`)
     },
     _openList: function() {
-        if (this.props.more && this.props.dir.list.length === 0) {
-            this.setState(Object.assign({}, this.state, {collapse: !this.state.collapse}), () => this._getlist(this.props.dir.sortName, this.props.dir.sortType))
+        if (this.props.dir.list.length === 0) {
+            this.setState(Object.assign({}, this.state, {collapse: !this.state.collapse}), () => this._getlist(this.props.dir.sortName, this.props.dir.sortType, this.props.dir.page))
         } else {
             this.setState(Object.assign({}, this.state, {collapse: !this.state.collapse}))
         }
@@ -79,10 +62,10 @@ const Dirlist = React.createClass({
                 <a style={{padding: '10px 15px'}} href="#">edit</a>
             </li>
         ) : null
-        const more = this.state.more ? (
+        const more = this.props.dir.more ? (
             <li>
                 <a>
-                    <button className="btn btn-default btn-xs" type="button" disabled={this.state.loading} onClick={() => this._getlist(this.props.dir.sortName, this.props.dir.sortType, true)}>More</button>
+                    <button className="btn btn-default btn-xs" type="button" disabled={this.state.loading} onClick={() => this._getlist(this.props.dir.sortName, this.props.dir.sortType, this.props.dir.page, true)}>More</button>
                 </a>
             </li>
         ) : null

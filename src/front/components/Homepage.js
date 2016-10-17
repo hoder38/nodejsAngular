@@ -1,4 +1,5 @@
 import React from 'react'
+import { TOP_SECTION_ZINDEX } from '../constants'
 import TopInput from './TopInput'
 import { api } from '../utility'
 
@@ -20,7 +21,7 @@ const Homepage = React.createClass({
     render: function() {
         return (
             <div>
-                <section id="top-section" style={{float: 'left', position: 'fixed', left: '0px', width: '100%'}}>
+                <section id="top-section" style={{float: 'left', position: 'fixed', left: '0px', width: '100%', zIndex: TOP_SECTION_ZINDEX}}>
                     <TopInput />
                 </section>
                 <section style={{paddingTop: '40px'}}>{this.state.intro}</section>

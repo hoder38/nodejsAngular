@@ -677,10 +677,8 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                                         if (metadata.nextPageToken) {
                                             retPageToken = retPageToken + metadata.nextPageToken;
                                             res.json({itemList: itemList, pageToken: retPageToken});
-                                        } else if (retPageToken) {
-                                            res.json({itemList: itemList, pageToken: retPageToken});
                                         } else {
-                                            res.json({itemList: itemList});
+                                            res.json({itemList: itemList, pageToken: retPageToken});
                                         }
                                     });
                                 } else {
@@ -688,10 +686,8 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                                     if (metadata.nextPageToken) {
                                         retPageToken = retPageToken + metadata.nextPageToken;
                                         res.json({itemList: itemList, pageToken: retPageToken});
-                                    } else if (retPageToken) {
-                                        res.json({itemList: itemList, pageToken: retPageToken});
                                     } else {
-                                        res.json({itemList: itemList});
+                                        res.json({itemList: itemList, pageToken: retPageToken});
                                     }
                                 }
                             });
@@ -704,10 +700,8 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                                 if (metadata.nextPageToken) {
                                     retPageToken = retPageToken + metadata.nextPageToken;
                                     res.json({itemList: itemList, pageToken: retPageToken});
-                                } else if (retPageToken) {
-                                    res.json({itemList: itemList, pageToken: retPageToken});
                                 } else {
-                                    res.json({itemList: itemList});
+                                    res.json({itemList: itemList, pageToken: retPageToken});
                                 }
                             });
                         }
@@ -715,19 +709,13 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
                         if (metadata.nextPageToken) {
                             retPageToken = retPageToken + metadata.nextPageToken;
                             res.json({itemList: itemList, pageToken: retPageToken});
-                        } else if (retPageToken) {
-                            res.json({itemList: itemList, pageToken: retPageToken});
                         } else {
-                            res.json({itemList: itemList});
+                            res.json({itemList: itemList, pageToken: retPageToken});
                         }
                     }
                 });
             } else {
-                if (retPageToken) {
-                    res.json({itemList: itemList, pageToken: retPageToken});
-                } else {
-                    res.json({itemList: itemList});
-                }
+                res.json({itemList: itemList, pageToken: retPageToken});
             }
         }
     });

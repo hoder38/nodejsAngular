@@ -28,7 +28,8 @@ export const ITEM_PUSH = 'ITEM_PUSH'
 export const ITEM_POP = 'ITEM_POP'
 
 //z-index
-export const RIGHT_SECTION_ZINDEX = 10
+export const RIGHT_SECTION_ZINDEX = 20
+export const TOP_SECTION_ZINDEX = 10
 export const ALERT_ZINDEX = 1100
 export const BLOCK_ZINDEX = 1090
 export const WIDGET_BUTTON_ZINDEX = 1070

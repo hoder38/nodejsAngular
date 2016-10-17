@@ -28,8 +28,7 @@ const App = React.createClass({
         }
     },
     componentWillMount: function() {
-        api('/api/getUser')
-        .then(userInfo => {
+        api('/api/getUser').then(userInfo => {
             if (isValidString(userInfo.id, 'name') && isValidString(userInfo.main_url, 'url') && isValidString(userInfo.ws_url, 'url') && isValidString(userInfo.level, 'perm')) {
                 this.setState({
                     navlist: [
@@ -60,7 +59,7 @@ const App = React.createClass({
         }).then(result => {
             this.props.feedbackset(result.feedbacks)
             return api('/api/parent/list')
-        }).then(result => this.props.dirsset(result.parentList.map((dir, j) => ({title: dir.show, name: dir.name, key: j, onclick: tag => this.props.sendglbcf(() => api('/api/parent/add', {name: dir.name, tag: tag}).then(result => console.log(result)).catch(err => this.props.addalert(err)), `Would you sure add ${tag} to ${dir.show}?`)})))).catch(err => {
+        }).then(result => this.props.dirsset(result.parentList, (dir, i) => ({title: dir.show, name: dir.name, key: i, onclick: tag => this.props.sendglbcf(() => api('/api/parent/add', {name: dir.name, tag: tag}).then(result => console.log(result)).catch(err => this.props.addalert(err)), `Would you sure add ${tag} to ${dir.show}?`)}))).catch(err => {
             this.props.addalert(err)
             this._doLogout()
         })
@@ -73,6 +72,7 @@ const App = React.createClass({
         this.props.feedbackset([])
         this.props.userset([])
         this.props.bookmarkset([], 'name', 'asc')
+        this.props.itemset([], 'name', 'asc')
         this.props.dirsset([])
     },
     _doLogout: function() {
@@ -82,7 +82,7 @@ const App = React.createClass({
         const glbPw = this.props.pwCallback.length > 0 ? <ReGlobalPassword callback={this.props.pwCallback[0]} delay="user" /> : ''
         const glbCf = this.props.cfCallback.length > 0 ? <ReGlobalComfirm callback={this.props.cfCallback[0]} text={this.props.cfCallback[1]} /> : ''
         return (
-            <div id="wrapper" data-drop={UPLOAD}>
+            <div id="wrapper" data-drop={UPLOAD} className="storage-wrapper">
                 <FileManage />
                 <ReWidgetManage />
                 <ReAlertlist />

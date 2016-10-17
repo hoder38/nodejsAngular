@@ -6,6 +6,7 @@ const initialState = {
     sortName: 'name',
     sortType: 'asc',
     page: 0,
+    more: false,
 }
 
 export default function bookmarkDataHandle (state = initialState, action) {
