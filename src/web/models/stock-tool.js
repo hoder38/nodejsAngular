@@ -2296,20 +2296,21 @@ module.exports = {
                         } else {
                             util.handleError({hoerror: 2, message: "can not find dividends!!!"}, callback, callback);
                         }
+                    } else {
+                        var dividends = Number(raw[0].match(/\d+(\.\d+)?/)[0]) + Number(raw[1].match(/\d+(\.\d+)?/)[0]);
+                        getStockPrice(items[0].type, items[0].index, function(err, price) {
+                            if(err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var yield = 0;
+                            if (dividends > 0) {
+                                yield = Math.ceil(price/dividends*1000)/1000;
+                            }
+                            setTimeout(function(){
+                                callback(null, yield, items[0].index);
+                            }, 0);
+                        });
                     }
-                    var dividends = Number(raw[0].match(/\d+(\.\d+)?/)[0]) + Number(raw[1].match(/\d+(\.\d+)?/)[0]);
-                    getStockPrice(items[0].type, items[0].index, function(err, price) {
-                        if(err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        var yield = 0;
-                        if (dividends > 0) {
-                            yield = Math.ceil(price/dividends*1000)/1000;
-                        }
-                        setTimeout(function(){
-                            callback(null, yield, items[0].index);
-                        }, 0);
-                    });
                 }, 10000, false, false);
                 break;
                 default:
