@@ -1095,35 +1095,70 @@ var exports = module.exports = {
                     util.handleError({hoerror: 2, message: 'no yet transcoded'}, callback, callback);
                 }
                 if (fs.existsSync(filePath)) {
-                    youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o ' + filePath + '_t'], {}, function(err, output) {
-                        if (err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        fs.unlink(filePath, function(err) {
+                    if (fs.existsSync(filePath + '_t')) {
+                        fs.unlink(filePath + '_t', function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
-                            fs.rename(filePath + '_t', filePath, function(err) {
+                            youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o', filePath + '_t'], {}, function(err, output) {
                                 if (err) {
                                     util.handleError(err, callback, callback);
                                 }
-                                if (hd === 1080 && currentHeight < 1080) {
-                                    setTimeout(function(){
-                                        callback(null, true);
-                                    }, 0);
-                                } else {
-                                    setTimeout(function(){
-                                        callback(null);
-                                    }, 0);
-                                }
+                                console.log(output);
+                                fs.unlink(filePath, function(err) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    fs.rename(filePath + '_t', filePath, function(err) {
+                                        if (err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        if (hd === 1080 && currentHeight < 1080) {
+                                            setTimeout(function(){
+                                                callback(null, true);
+                                            }, 0);
+                                        } else {
+                                            setTimeout(function(){
+                                                callback(null);
+                                            }, 0);
+                                        }
+                                    });
+                                });
                             });
                         });
-                    });
+                    } else {
+                        youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o', filePath + '_t'], {}, function(err, output) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            console.log(output);
+                            fs.unlink(filePath, function(err) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                fs.rename(filePath + '_t', filePath, function(err) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    if (hd === 1080 && currentHeight < 1080) {
+                                        setTimeout(function(){
+                                            callback(null, true);
+                                        }, 0);
+                                    } else {
+                                        setTimeout(function(){
+                                            callback(null);
+                                        }, 0);
+                                    }
+                                });
+                            });
+                        });
+                    }
                 } else {
-                    youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o ' + filePath], {}, function(err, output) {
+                    youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o', filePath], {}, function(err, output) {
                         if (err) {
                             util.handleError(err, callback, callback);
                         }
+                        console.log(output);
                         if (hd === 1080 && currentHeight < 1080) {
                             setTimeout(function(){
                                 callback(null, true);
