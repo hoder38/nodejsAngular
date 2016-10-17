@@ -1060,7 +1060,7 @@ var exports = module.exports = {
             }
             youtubedl.exec('https://drive.google.com/open?id=' + key, ['-F'], {}, function(err, output) {
                 if (err) {
-                    util.handleError(err);
+                    util.handleError(err, callback, callback);
                 }
                 var info = [], row = null;
                 for (var i in output) {
@@ -1095,12 +1095,10 @@ var exports = module.exports = {
                     util.handleError({hoerror: 2, message: 'no yet transcoded'}, callback, callback);
                 }
                 if (fs.existsSync(filePath)) {
-                    var stream = youtubedl('https://drive.google.com/open?id=' + key, ['--format=' + media_id], {});
-                    stream.pipe(fs.createWriteStream(filePath + '_t'));
-                    stream.on('error', function(err){
-                        util.handleError(err, callback, callback);
-                    });
-                    stream.on('close', function() {
+                    youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o ' + filePath + '_t'], {}, function(err, output) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
                         fs.unlink(filePath, function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
@@ -1122,12 +1120,10 @@ var exports = module.exports = {
                         });
                     });
                 } else {
-                    var stream = youtubedl('https://drive.google.com/open?id=' + key, ['--format=' + media_id], {});
-                    stream.pipe(fs.createWriteStream(filePath));
-                    stream.on('error', function(err){
-                        util.handleError(err, callback, callback);
-                    });
-                    stream.on('close', function() {
+                    youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o ' + filePath], {}, function(err, output) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
                         if (hd === 1080 && currentHeight < 1080) {
                             setTimeout(function(){
                                 callback(null, true);
