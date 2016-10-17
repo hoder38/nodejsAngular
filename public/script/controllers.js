@@ -4248,14 +4248,37 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
                             append = append + '/' + this[type].playlist.pageToken;
                         }
                     } else {
-                        append = '/' + this[type].playlist.obj.id;
-                        if (direction === 'previous') {
-                            if (this[type].playlist.pageP) {
-                                append = append + '/' + this[type].playlist.pageP + '/back';
+                        if (newIndex > this[type].playlist.obj_arr[0].index && newIndex < this[type].playlist.obj_arr[this[type].playlist.obj_arr.length - 1].index) {
+                            if (direction === 'previous') {
+                                while (newIndex > this[type].playlist.obj_arr[0].index && realIndex === -1) {
+                                    newIndex--;
+                                    realIndex = arrayObjectIndexOf(this[type].playlist.obj_arr, newIndex, 'index');
+                                }
+                            } else {
+                                while (newIndex < this[type].playlist.obj_arr[this[type].playlist.obj_arr.length - 1].index && realIndex === -1) {
+                                    newIndex++;
+                                    realIndex = arrayObjectIndexOf(this[type].playlist.obj_arr, newIndex, 'index');
+                                }
+                            }
+                            this[type].playlist.obj = this[type].playlist.obj_arr[realIndex];
+                            append = '/' + this[type].playlist.obj.id;
+                            if (this[type].playlist.pageToken) {
+                                append = append + '/' + this[type].playlist.pageToken;
                             }
                         } else {
-                            if (this[type].playlist.pageN) {
-                                append = append + '/' + this[type].playlist.pageN;
+                            append = '/' + this[type].playlist.obj.id;
+                            if (direction === 'previous') {
+                                if (this[type].playlist.pageP) {
+                                    append = append + '/' + this[type].playlist.pageP + '/back';
+                                }
+                            } else if (newIndex < this[type].playlist.obj_arr[0].index) {
+                                if (this[type].playlist.pageP) {
+                                    append = append + '/' + this[type].playlist.pageP + '/back';
+                                }
+                            } else {
+                                if (this[type].playlist.pageN) {
+                                    append = append + '/' + this[type].playlist.pageN;
+                                }
                             }
                         }
                     }

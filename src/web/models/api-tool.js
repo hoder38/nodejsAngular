@@ -262,6 +262,7 @@ function postData(fields, files, options, headers, callback, filePath, not_utf8)
     request.on('error', function(e) {
         console.log(post_options);
         if (e.code === 'HPE_INVALID_CONSTANT' || e.code === 'ECONNREFUSED' || e.code === 'ENOTFOUND' || e.code === 'ETIMEDOUT' || e.code === 'EAFNOSUPPORT') {
+            e.hoerror = 2;
             util.handleError(e, callback, callback, 400, null);
         } else {
             util.handleError(e);
@@ -561,6 +562,7 @@ module.exports = {
                         if (is_file) {
                             this_obj.getApiQueue();
                         }
+                        e.hoerror = 2;
                         util.handleError(e, callback, callback, 400, null);
                     }
                 });
@@ -1058,7 +1060,7 @@ module.exports = {
         setTimeout(function(){
             if (!is_end) {
                 is_end = true;
-                util.handleError({code: 'ETIMEDOUT', message: "xml time out"}, callback, callback);
+                util.handleError({hoerror:2, code: 'ETIMEDOUT', message: "xml time out"}, callback, callback);
             }
         }, 180000);
     },
