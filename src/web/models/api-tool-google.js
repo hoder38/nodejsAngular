@@ -1096,11 +1096,6 @@ var exports = module.exports = {
                 }
                 if (fs.existsSync(filePath)) {
                     var stream = youtubedl('https://drive.google.com/open?id=' + key, ['--format=' + media_id], {});
-                    stream.on('info', function(info) {
-                      console.log('Download started');
-                      console.log('filename: ' + info.filename);
-                      console.log('size: ' + info.size);
-                    });
                     stream.pipe(fs.createWriteStream(filePath + '_t'));
                     stream.on('error', function(err){
                         util.handleError(err, callback, callback);
@@ -1128,11 +1123,6 @@ var exports = module.exports = {
                     });
                 } else {
                     var stream = youtubedl('https://drive.google.com/open?id=' + key, ['--format=' + media_id], {});
-                    stream.on('info', function(info) {
-                      console.log('Download started');
-                      console.log('filename: ' + info.filename);
-                      console.log('size: ' + info.size);
-                    });
                     stream.pipe(fs.createWriteStream(filePath));
                     stream.on('error', function(err){
                         util.handleError(err, callback, callback);
