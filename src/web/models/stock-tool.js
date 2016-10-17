@@ -2289,13 +2289,9 @@ module.exports = {
                     }
                     var raw = data.match(/<TD align='right' [^&]+/g);
                     if (!raw || raw.length < 2) {
-                        if (data.match(/不繼續公開發行/g)) {
-                            setTimeout(function(){
-                                callback(null, 0, items[0].index);
-                            }, 0);
-                        } else {
-                            util.handleError({hoerror: 2, message: "can not find dividends!!!"}, callback, callback);
-                        }
+                        setTimeout(function(){
+                            callback(null, 0, items[0].index);
+                        }, 0);
                     } else {
                         var dividends = Number(raw[0].match(/\d+(\.\d+)?/)[0]) + Number(raw[1].match(/\d+(\.\d+)?/)[0]);
                         getStockPrice(items[0].type, items[0].index, function(err, price) {
