@@ -1092,7 +1092,7 @@ var exports = module.exports = {
                 }
                 console.log(media_id);
                 if (!media_id) {
-                    util.handleError({hoerror: 2, message: 'no yet transcoded'}, callback, callback);
+                    util.handleError({hoerror: 2, message: 'timeout'}, callback, callback);
                 }
                 if (fs.existsSync(filePath)) {
                     if (fs.existsSync(filePath + '_t')) {
