@@ -1,13 +1,8 @@
 import { connect } from 'react-redux'
-import { createSelector } from 'reselect'
 import { alertPush, userPush } from '../actions'
 import Userlist from '../components/Userlist'
 
-const getMemUser = createSelector(state => state.userDataHandle, user => user)
-
-const mapStateToProps = state => ({
-    user_info: getMemUser(state),
-})
+const mapStateToProps = state => ({user_info: state.userDataHandle})
 
 const mapDispatchToProps = dispatch => ({
     addalert: msg => dispatch(alertPush(msg)),

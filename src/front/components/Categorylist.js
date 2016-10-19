@@ -1,6 +1,7 @@
 import React from 'react'
 import ReDirlist from '../containers/ReDirlist'
 import { RIGHT_SECTION_ZINDEX } from '../constants'
+import { dirItemList, bookmarkItemList } from '../utility'
 
 const Categorylist = React.createClass({
     getInitialState: function() {
@@ -26,16 +27,22 @@ const Categorylist = React.createClass({
     _toggle: function() {
         this.setState({collapse: !this.state.collapse})
     },
+    _dirItem: function(id) {
+        dirItemList(this.props.sortName, this.props.sortType, this.props.set, id, this.props.multi).catch(err => this.props.addalert(err))
+    },
+    _bookmarkItem: function(id) {
+        bookmarkItemList(this.props.sortName, this.props.sortType, this.props.set, id).catch(err => this.props.addalert(err))
+    },
     render: function() {
         let rows = []
         this.props.dirs.forEach(dir => rows.push(
-            <ReDirlist name={dir.title} time="qtime" dir={dir} set={(item, sortName, sortType) => this.props.dirset(dir.name, item, sortName, sortType)} del={id => this.props.deldir(dir.name, id)} listUrl={`${this.props.dirUrl}${dir.name}/`} delUrl={this.props.dirDelUrl} edit={this.props.edit} collapse={true} key={dir.key} />
+            <ReDirlist name={dir.title} time="qtime" dir={dir} set={(item, sortName, sortType) => this.props.dirset(dir.name, item, sortName, sortType)} del={id => this.props.deldir(dir.name, id)} listUrl={`${this.props.dirUrl}${dir.name}/`} delUrl={this.props.dirDelUrl} edit={this.props.edit} collapse={true} dirItem={this._dirItem} key={dir.key} />
         ))
         return (
             <nav className="navbar-inverse" style={{width: '100%', position: 'fixed', zIndex: RIGHT_SECTION_ZINDEX}}>
                 <div className={this.state.collapse ? 'navbar-collapse collapse' : 'navbar-collapse collapse in'}>
                     <ul className="nav navbar-nav side-nav" id="inverse-nav" style={{right: '0px', left: 'auto', overflowX: 'hidden', overflowY: 'auto'}}>
-                        <ReDirlist name="Bookmark" time="mtime" dir={this.props.bookmark} set={this.props.bookmarkset} del={this.props.delbookmark} listUrl={this.props.bookUrl} delUrl={this.props.bookDelUrl} edit={true} collapse={false} />
+                        <ReDirlist name="Bookmark" time="mtime" dir={this.props.bookmark} set={this.props.bookmarkset} del={this.props.delbookmark} listUrl={this.props.bookUrl} delUrl={this.props.bookDelUrl} edit={true} collapse={false} dirItem={this._bookmarkItem} />
                         {rows}
                     </ul>
                 </div>

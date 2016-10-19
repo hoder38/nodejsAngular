@@ -48,7 +48,7 @@ const Dirlist = React.createClass({
             </li>
         ) : rows.push(
             <li key={item.id}>
-                <a href="#">{item.name}</a>
+                <a href="#" onClick={() => this.props.dirItem(item.id)}>{item.name}</a>
             </li>
         ))
         let nameSort = null, timeSort = null

@@ -136,6 +136,7 @@ export const doLogout = (url = '') => api(`${url}/api/logout`).then(info => {
 
 export const testLogin = () => api('/api/testLogin', null, 'GET', false)
 
+//array object
 export const arrayObjectIncludes = (myArray, searchTerm, property) => {
     for(let i of myArray) {
         if (i[property] === searchTerm) {
@@ -184,16 +185,40 @@ export const arrayObjectPush = (myArray, pushTerm, property, rest=item=>item) =>
     }
 }
 
-export const getItemList = (sortname, type, set, page=0, pageToken='', push=false, name=null, exact=false, multi=false, random=false) => {
+//itemlist
+const youtubeList = (pageToken, set) => api(`/api/youtube/get/${pageToken}`).then(result => set(result.itemList, null, null, null, result.pageToken))
+
+export const getItemList = (sortname, type, set, page=0, pageToken='', push=false, name=null, index=0, exact=false, multi=false, random=false) => {
     const rest = result => push ? set(result.itemList, result.parentList) : set(result.itemList, result.parentList, sortname, type)
     let queryItem = null
     if (name === null) {
-        queryItem = random ? api(`/api/storage/getRandom/${sortname}/${type}/${page}`).then(result => rest(result)) : api(`/api/storage/get/${sortname}/${type}/${page}`).then(result => rest(result))
+        queryItem = random ? api(`/api/storage/getRandom/${sortname}/${type}/${page}`) : api(`/api/storage/get/${sortname}/${type}/${page}`)
     } else {
-        queryItem = multi ? api(`/api/storage/get/${sortname}/${type}/${page}/${name}/${exact}`).then(result => rest(result)) : api(`/api/storage/getSingle/${sortname}/${type}/${page}/${name}/${exact}`).then(result => rest(result))
+        if (!isValidString(name, 'name')) {
+            return Promise.reject('search tag is not vaild!!!')
+        }
+        queryItem = (multi || index > 0) ? api(`/api/storage/get/${sortname}/${type}/${page}/${name}/${exact}/${index}`) : api(`/api/storage/getSingle/${sortname}/${type}/${page}/${name}/${exact}/${index}`)
     }
-    return Promise.all([
-        queryItem,
-        api(`/api/youtube/get/${pageToken}`),
-    ]).then(([result1, result2]) => set(result2.itemList, null, null, null, result2.pageToken))
+    return queryItem.then(result => {
+        rest(result)
+        return youtubeList(pageToken, set)
+    })
 }
+
+export const resetItemList = (sortname, type, set) => api('/api/storage/reset').then(result => {
+    set(result.itemList, result.parentList, sortname, type)
+    return youtubeList('', set)
+})
+
+export const dirItemList = (sortname, type, set, id, multi) => {
+    const queryItem = multi ? api(`/api/parent/query/${id}/${sortname}/${type}`) : api(`/api/parent/query/${id}/${sortname}/${type}/single`)
+    return queryItem.then(result => {
+        set(result.itemList, result.parentList, sortname, type)
+        return youtubeList('', set)
+    })
+}
+
+export const bookmarkItemList = (sortname, type, set, id) => api(`/api/bookmark/get/${id}/${sortname}/${type}`).then(result => {
+    set(result.itemList, result.parentList, sortname, type)
+    return youtubeList('', set)
+})

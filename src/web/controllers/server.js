@@ -499,7 +499,7 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
             }
             tags.setSingleArray(name);
         }
-        tagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+        tagTool.tagQuery(page, req.params.name, exactly, Number(req.params.index), req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -769,7 +769,7 @@ app.get('/api/storage/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(
             exactly = true;
         }
         var page = Number(req.params.page);
-        tagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+        tagTool.tagQuery(page, req.params.name, exactly, Number(req.params.index), req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -1700,7 +1700,7 @@ app.delete('/api/parent/stock/del/:id', function(req, res, next) {
     });
 });
 
-app.get('/api/parent/query/:id/:single?', function(req, res, next) {
+app.get('/api/parent/query/:id/:sortName(name|mtime|count)/:sortType(desc|asc)/:single?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("parent query");
         console.log(new Date());
@@ -1710,15 +1710,7 @@ app.get('/api/parent/query/:id/:single?', function(req, res, next) {
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        var sortName = 'name';
-        var sortType = 'desc';
-        if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
-            sortName = req.cookies.fileSortName;
-        }
-        if (req.cookies.fileSortType === 'asc') {
-            sortType = req.cookies.fileSortType;
-        }
-        tagTool.queryParentTag(id, req.params.single, sortName, sortType, req.user, req.session, next, function(err, result) {
+        tagTool.queryParentTag(id, req.params.single, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
             }
@@ -1836,7 +1828,7 @@ app.get('/api/bookmark/set/:id', function (req, res, next) {
     });
 });
 
-app.get('/api/bookmark/get/:id', function (req, res, next) {
+app.get('/api/bookmark/get/:id/:sortName(name|mtime|count)/:sortType(desc|asc)', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get bookmark");
         console.log(new Date());
@@ -1846,15 +1838,7 @@ app.get('/api/bookmark/get/:id', function (req, res, next) {
         if (id === false) {
             util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
-        var sortName = 'name';
-        var sortType = 'desc';
-        if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
-            sortName = req.cookies.fileSortName;
-        }
-        if (req.cookies.fileSortType === 'asc') {
-            sortType = req.cookies.fileSortType;
-        }
-        tagTool.getBookmark(id, sortName, sortType, req.user, req.session, next, function(err, result) {
+        tagTool.getBookmark(id, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
             }
@@ -1933,6 +1917,7 @@ app.post('/api/bookmark/subscipt', function(req, res, next) {
                 if (bid) {
                     result['bid'] = bid;
                     result['bname'] = bname;
+                    result['other'] = [];
                 }
                 if (select) {
                     result['select'] = select;
@@ -2183,6 +2168,7 @@ app.post('/api/bookmark/add', function (req, res, next) {
                 if (bid) {
                     result['bid'] = bid;
                     result['bname'] = bname;
+                    result['other'] = [];
                 }
                 if (select) {
                     result['select'] = select;

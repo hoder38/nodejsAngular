@@ -60,8 +60,12 @@ module.exports = {
     },
     isValidString: function(str, type) {
         if (typeof str === 'string' || typeof str === 'number') {
-            var buf = new Buffer(str, 'utf-8');
-            str = buf.toString();
+            if (typeof str === 'string') {
+                var buf = new Buffer(str, 'utf-8');
+                str = buf.toString();
+            } else {
+                str = str.toString();
+            }
             switch (type) {
                 case 'name':
                     var trim = str.trim();

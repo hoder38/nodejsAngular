@@ -1,12 +1,9 @@
 import { connect } from 'react-redux'
-import { createSelector } from 'reselect'
 import { alertPush, feedbackPop, feedbackPush } from '../actions'
 import FileFeedback from '../components/FileFeedback'
 
-const getMemDirs = createSelector(state => state.dirDataHandle, dirs => dirs)
-
 const mapStateToProps = state => state.feedbackDataHandle.length > 0 ? {
-        dirs: getMemDirs(state),
+        dirs: state.dirDataHandle,
         mainUrl: state.basicDataHandle.url,
         id: state.feedbackDataHandle[0].id,
         name: state.feedbackDataHandle[0].name,
@@ -14,7 +11,7 @@ const mapStateToProps = state => state.feedbackDataHandle.length > 0 ? {
         option: state.feedbackDataHandle[0].option,
         other: state.feedbackDataHandle[0].other,
     } : {
-        dirs: getMemDirs(state),
+        dirs: state.dirDataHandle,
         mainUrl: state.basicDataHandle.url,
         id: '',
         name: '',
