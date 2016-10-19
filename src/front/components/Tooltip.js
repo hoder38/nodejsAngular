@@ -23,22 +23,24 @@ const Tooltip = React.createClass({
     },
     render: function() {
         let place = 'right'
-        let show = {visibility: 'hidden'}
+        let show = {visibility: 'hidden', whiteSpace: 'nowrap'}
         switch(this.props.place) {
             case 'top':
             place = 'top'
             if (this._target && this.state.show) {
                 show = {
-                    top: `${-this._self.clientHeight}px`,
-                    left: `${Math.round((this._target.clientWidth - this._self.clientWidth) / 2)}px`
+                    top: `${-this._self.clientHeight + this._self.offsetTop}px`,
+                    left: `${Math.round((this._target.clientWidth - this._self.clientWidth) / 2) + this._self.offsetLeft}px`,
+                    whiteSpace: 'nowrap',
                 }
             }
             break
             default:
             if (this._target && this.state.show) {
                 show = {
-                    top: `${Math.round((this._target.clientHeight - this._self.clientHeight) / 2)}px`,
-                    left: `${this._target.clientWidth}px`,
+                    top: `${Math.round((this._target.clientHeight - this._self.clientHeight) / 2) + this._self.offsetTop}px`,
+                    left: `${this._target.clientWidth + this._self.offsetLeft}px`,
+                    whiteSpace: 'nowrap',
                 }
             }
             break

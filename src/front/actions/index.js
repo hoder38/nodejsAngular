@@ -100,9 +100,10 @@ export const itemPop = id => ({
     id,
 })
 
-export const itemPush = (item, sortName=null, sortType=null, pageToken=null) => ({
+export const itemPush = (item, path=null, sortName=null, sortType=null, pageToken=null) => ({
     type: ITEM_PUSH,
     item,
+    path,
     sortName,
     sortType,
     pageToken,

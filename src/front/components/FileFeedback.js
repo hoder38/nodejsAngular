@@ -149,7 +149,7 @@ const FileFeedback = React.createClass({
         }
     },
     _handleSelect: function() {
-        this.setState(Object.assign({}, this.state, {selects: this.state.selects.map((select, i) => this._select === null ? false : this._select[i].checked)}))
+        this.setState(Object.assign({}, this.state, {selects: this.state.selects.map((select, i) => this._select[i] === null ? false : this._select[i].checked)}))
     },
     _handleChange: function() {
         this.setState(Object.assign({}, this.state, this._input.getValue()))
@@ -158,7 +158,7 @@ const FileFeedback = React.createClass({
         if (e) {
             e.preventDefault()
         }
-        this._input.initFocus()
+        this._input.allBlur()
         if (!isValidString(this.state.url, 'url')) {
             this.setState(Object.assign({}, this.state, this._input.initValue(), this._addTag([this.state.url])))
         } else {

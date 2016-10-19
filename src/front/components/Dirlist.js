@@ -72,7 +72,7 @@ const Dirlist = React.createClass({
         return (
             <li className={this.state.collapse ? '' : 'active'}>
                 <a href="#" onClick={this._openList}>
-                    {this.props.name}&nbsp;<i className={this.state.collapse ? 'glyphicon glyphicon-chevron-up' : 'glyphicon glyphicon-chevron-down'}></i>
+                    {this.props.name}&nbsp;<i className={this.state.collapse ? 'glyphicon glyphicon-chevron-down' : 'glyphicon glyphicon-chevron-up'}></i>
                 </a>
                 <ul className={this.state.collapse ? 'nav nav-pills collapse' : 'nav nav-pills collapse in'}>
                     <li>

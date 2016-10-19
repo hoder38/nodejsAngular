@@ -94,4 +94,11 @@ UserInput.Input = class {
         }
         return obj
     }
+    allBlur() {
+        for (let value of this.ref.values()) {
+            if (value !== null) {
+                value.blur()
+            }
+        }
+    }
 }
