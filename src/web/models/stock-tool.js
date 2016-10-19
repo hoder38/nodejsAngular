@@ -1526,8 +1526,21 @@ module.exports = {
         return managementStatus;
     },
     getManagementIndex: function(managementStatus, year, quarter) {
+        var real_year = year;
         if (managementStatus) {
-            return Math.ceil((managementStatus[year][quarter-1].profitRelative+managementStatus[year][quarter-1].cashRelative+managementStatus[year][quarter-1].inventoriesRelative+managementStatus[year][quarter-1].receivableRelative+managementStatus[year][quarter-1].payableRelative)*1000)/1000;
+            while ((!managementStatus[real_year] || !managementStatus[real_year][quarter-1]) && real_year > (year - 5)) {
+                if (quarter === 1) {
+                    quarter = 4;
+                    real_year--;
+                } else {
+                    quarter--;
+                }
+            }
+            if (!managementStatus[real_year] || !managementStatus[real_year][quarter-1]) {
+                return -10;
+            } else {
+                return Math.ceil((managementStatus[real_year][quarter-1].profitRelative+managementStatus[real_year][quarter-1].cashRelative+managementStatus[real_year][quarter-1].inventoriesRelative+managementStatus[real_year][quarter-1].receivableRelative+managementStatus[real_year][quarter-1].payableRelative)*1000)/1000;
+            }
         } else {
             return -10;
         }
