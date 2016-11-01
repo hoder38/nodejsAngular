@@ -2843,7 +2843,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0) {
+                if (eItems.length > 0 && Array.isArray(eItems.list)) {
                     if (!eItems[0].raw_list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
@@ -3057,7 +3057,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0) {
+                if (eItems.length > 0 && Array.isArray(eItems.list)) {
                     if (!eItems[0].list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
@@ -3542,7 +3542,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0) {
+                if (eItems.length > 0 && Array.isArray(eItems.list)) {
                     if (!eItems[0].list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
@@ -3891,7 +3891,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0) {
+                if (eItems.length > 0 && Array.isArray(eItems.list)) {
                     var ret_obj = {index: 1, showId: 1, title: eItems[0].show_name, is_magnet: true, complete: false};
                     var encodeTorrent = util.isValidString(eItems[0].magnet, 'url');
                     if (encodeTorrent === false) {
@@ -3999,7 +3999,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0) {
+                if (eItems.length > 0 && Array.isArray(eItems.list)) {
                     if (!eItems[0].raw_list || !eItems[0].raw_list[eItems[0].raw_list.length - index]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
@@ -4119,7 +4119,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0) {
+                if (eItems.length > 0 && Array.isArray(eItems.list)) {
                     if (!eItems[0].raw_list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }

@@ -3941,16 +3941,23 @@ app.get('/subtitle/:uid/:lang/:index(\\d+|v)?/:fresh(0+)?', function(req, res, n
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var url = 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port + '/subtitle/' + req.params.uid + '/' + req.params.lang;
-        if (req.params.index) {
-            url = url + '/' + req.params.index;
-        }
-        var body = '302. Redirecting to ' + url;
-        res.header('Content-Type', 'text/plain');
-        // Respond
-        res.statusCode = 302;
-        res.header('Location', url);
-        res.end(body);
+        var req = https.request({
+            host: config_glb.file_ip,
+            port: config_glb.file_port,
+            path: '/subtitle/' + req.params.uid + '/' + req.params.lang,
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; rv:40.0) Gecko/20100101 Firefox/40.0',
+            }
+        }, function(sub) {
+            console.log(sub);
+            if (sub.statusCode === 200) {
+                res.writeHead(200, { 'Content-Type': 'text/vtt' });
+                sub.pipe(res);
+            }
+        });
+        req.end();
     });
 });
 
