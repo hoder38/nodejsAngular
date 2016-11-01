@@ -1,6 +1,6 @@
 import React from 'react'
-import { TOP_SECTION_ZINDEX } from '../constants'
-import ItemInput from './ItemInput'
+import { TOP_SECTION_ZINDEX, RIGHT_SECTION_ZINDEX } from '../constants'
+import ReItemInput from '../containers/ReItemInput'
 import { api } from '../utility'
 
 const Homepage = React.createClass({
@@ -21,8 +21,9 @@ const Homepage = React.createClass({
     render: function() {
         return (
             <div>
+                <section className="nav navbar-nav side-nav" id="inverse-nav" style={{right: '0px', left: 'auto', position: 'fixed', zIndex: RIGHT_SECTION_ZINDEX, height: '90%'}}></section>
                 <section id="top-section" style={{float: 'left', position: 'fixed', left: '0px', width: '100%', zIndex: TOP_SECTION_ZINDEX}}>
-                    <ItemInput />
+                    <ReItemInput />
                 </section>
                 <section style={{paddingTop: '40px'}}>{this.state.intro}</section>
             </div>

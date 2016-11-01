@@ -1,4 +1,4 @@
-import { ITEM_POP, ITEM_PUSH } from '../constants'
+import { ITEM_POP, ITEM_PUSH, SET_ITEM } from '../constants'
 import { arrayObjectPush } from '../utility'
 
 const initialState = {
@@ -9,7 +9,11 @@ const initialState = {
     more: true,
     pageToken: '',
     multi: false,
-    path: {},
+    path: {
+        cur: [],
+        exactly: [],
+        his: [],
+    },
 }
 
 const rest_item = item => {
@@ -21,6 +25,8 @@ const rest_item = item => {
 
 export default function itemDataHandle (state = initialState, action) {
     switch (action.type) {
+        case SET_ITEM:
+        return Object.assign({}, state, {list: action.item})
         case ITEM_PUSH:
         if (action.sortName !== null && action.sortType !== null) {
             return Object.assign({}, state, {

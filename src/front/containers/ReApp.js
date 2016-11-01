@@ -15,7 +15,7 @@ const mapDispatchToProps = dispatch => ({
     feedbackset: feedback => dispatch(feedbackPush(feedback)),
     userset: user => dispatch(userPush(user)),
     bookmarkset: (bookmark, sortName, sortType) => dispatch(bookmarkPush(bookmark, sortName, sortType)),
-    itemset: (item, sortName, sortType) => dispatch(itemPush(item, sortName, sortType)),
+    itemset: (item, path, sortName, sortType, pageToken) => dispatch(itemPush(item, path, sortName, sortType, pageToken)),
     dirsset: (dirs, rest) => dispatch(setDirs(dirs, rest)),
     pushdir: (name, dir) => dispatch(dirPush(name, dir)),
 })

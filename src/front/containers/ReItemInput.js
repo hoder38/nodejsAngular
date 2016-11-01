@@ -1,17 +1,14 @@
 import { connect } from 'react-redux'
-import { itemPush, alertPush } from '../actions'
+import { closeGlbIn, alertPush } from '../actions'
 import ItemInput from '../components/ItemInput'
 
 const mapStateToProps = state => ({
-    sortName: state.itemDataHandle.sortName,
-    sortType: state.itemDataHandle.sortType,
-    multi: state.itemDataHandle.multi,
-    pathLength: state.itemDataHandle.path.cur ? state.itemDataHandle.path.cur.length : 0,
+    glbIn: state.glbInHandle[0],
 })
 
 const mapDispatchToProps = dispatch => ({
+    inputclose: clear => dispatch(closeGlbIn(clear)),
     addalert: msg => dispatch(alertPush(msg)),
-    set: (item, path, sortName, sortType, pageToken) => dispatch(itemPush(item, path, sortName, sortType, pageToken)),
 })
 
 const ReItemInput = connect(

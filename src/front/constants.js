@@ -26,6 +26,9 @@ export const USER_POP = 'USER_POP'
 export const USER_PUSH = 'USER_PUSH'
 export const ITEM_PUSH = 'ITEM_PUSH'
 export const ITEM_POP = 'ITEM_POP'
+export const SET_ITEM = 'SET_ITEM'
+export const SEND_GLB_IN = 'SEND_GLB_IN'
+export const CLOSE_GLB_IN = 'CLOSE_GLB_IN'
 
 //z-index
 export const RIGHT_SECTION_ZINDEX = 20

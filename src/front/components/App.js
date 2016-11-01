@@ -72,7 +72,11 @@ const App = React.createClass({
         this.props.feedbackset([])
         this.props.userset([])
         this.props.bookmarkset([], 'name', 'asc')
-        this.props.itemset([], 'name', 'asc')
+        this.props.itemset([], {
+            cur: [],
+            exactly: [],
+            his: [],
+        }, 'name', 'asc', '')
         this.props.dirsset([])
     },
     _doLogout: function() {

@@ -1,23 +1,34 @@
 import React from 'react'
 import UserInput from './UserInput'
 import Tooltip from './Tooltip'
-import { getItemList } from '../utility'
 
 const ItemInput = React.createClass({
     getInitialState: function() {
-        this._input = new UserInput.Input(['name'], this._handleSubmit, this._handleChange)
+        this._input = new UserInput.Input(['input1'], this._handleSubmit, this._handleChange)
         return Object.assign({
             exact: false,
         }, this._input.initValue())
+    },
+    componentWillUnmount: function() {
+        this.props.inputclose(true)
+    },
+    componentDidUpdate: function() {
+        if (this.props.glbIn && this.props.glbIn.input !== 0) {
+            this._input.initFocus()
+        }
     },
     _handleSubmit: function(e) {
         if (e) {
             e.preventDefault()
         }
-        if (this.props.pathLength > 0 && !this.state.name) {
+        if (!this.props.glbIn) {
             return false
         }
-        getItemList(this.props.sortName, this.props.sortType, this.props.set, 0, '', false, (this.state.name ? this.state.name : null), 0, this.state.exact, this.props.multi, true).catch(err => this.props.addalert(err))
+        this.props.glbIn.callback(this.state.exact, this.state.input1).then(() => {
+            if (this.props.glbIn.input !== 0) {
+                this.props.inputclose(false)
+            }
+        }).catch(err => this.props.addalert(err))
         this.setState(this._input.initValue())
         this._input.allBlur()
     },
@@ -25,24 +36,41 @@ const ItemInput = React.createClass({
         this.setState(this._input.getValue())
     },
     render: function() {
-        const exactClass1 = this.state.exact ? 'btn btn-default' : 'btn active btn-primary'
+        if (!this.props.glbIn) {
+            return null
+        }
+        const exactClass1 = this.state.exact ? `btn btn-${this.props.glbIn.color}` : 'btn active btn-primary'
         const exactClass2 = this.state.exact ? 'glyphicon glyphicon-eye-open' : 'glyphicon glyphicon-eye-close'
+        const close = this.props.glbIn.input === 0 ? (
+            <button className={exactClass1} type="button" onClick={() => this.setState(Object.assign({}, this.state, {exact: !this.state.exact}))}>
+                <i className={exactClass2}></i>
+            </button>
+        ) : (
+            <button className={`btn btn-${this.props.glbIn.color}`} type="button" onClick={() => this.props.inputclose(false)}>
+                <i className="glyphicon glyphicon-remove"></i>
+            </button>
+        )
+        const tooltip = this.props.glbIn.input === 0 ? <Tooltip tip="嚴格比對" place="right" /> : null
+        let submitClass = 'glyphicon glyphicon-search'
+        switch(this.props.glbIn.input) {
+            case 1:
+            submitClass = 'glyphicon glyphicon-ok'
+            break;
+        }
         return (
             <form onSubmit={this._handleSubmit}>
                 <div className="input-group">
                     <span className="input-group-btn">
-                        <Tooltip tip="嚴格比對" />
-                        <button className={exactClass1} type="button" onClick={() => this.setState(Object.assign({}, this.state, {exact: !this.state.exact}))}>
-                            <i className={exactClass2}></i>
-                        </button>
+                        {tooltip}
+                        {close}
                     </span>
                     <UserInput
-                        val={this.state.name}
-                        getinput={this._input.getInput('name')}
-                        placeholder="Search Tag" />
+                        val={this.state.input1}
+                        getinput={this._input.getInput('input1')}
+                        placeholder={this.props.glbIn.value} />
                     <span className="input-group-btn">
-                        <button className="btn btn-default" type="submit">
-                            <span className="glyphicon glyphicon-search"></span>
+                        <button className={`btn btn-${this.props.glbIn.color}`} type="submit">
+                            <span className={submitClass}></span>
                         </button>
                     </span>
                 </div>

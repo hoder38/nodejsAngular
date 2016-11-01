@@ -1,6 +1,6 @@
 import { ALERT_PUSH, ALERT_POP, SET_BASIC, SET_UPLOAD, SEND_GLB_PW, CLOSE_GLB_PW, SEND_GLB_CF,
     CLOSE_GLB_CF, FEEDBACK_POP, FEEDBACK_PUSH, BOOKMARK_POP, BOOKMARK_PUSH, SET_DIRS, DIR_POP,
-    DIR_PUSH, USER_POP, USER_PUSH, ITEM_PUSH, ITEM_POP } from '../constants'
+    DIR_PUSH, USER_POP, USER_PUSH, ITEM_PUSH, ITEM_POP, SET_ITEM, SEND_GLB_IN, CLOSE_GLB_IN } from '../constants'
 
 export const alertPush = msg => ({
     type: ALERT_PUSH,
@@ -109,3 +109,20 @@ export const itemPush = (item, path=null, sortName=null, sortType=null, pageToke
     pageToken,
 })
 
+export const setItem = item => ({
+    type: SET_ITEM,
+    item,
+})
+
+export const sendGlbIn = (input, value, callback, color='default') => ({
+    type: SEND_GLB_IN,
+    input,
+    value,
+    callback,
+    color,
+})
+
+export const closeGlbIn = clear => ({
+    type: CLOSE_GLB_IN,
+    clear,
+})

@@ -14,38 +14,36 @@ const ItemPath = React.createClass({
     },
     _addBookmark: function(name) {
         if (this.props.current.length === 0) {
-            this.props.addalert('Empty parent list!!!')
-        } else {
-            if (!isValidString(name, 'name')) {
-                this.props.addalert('Bookmark name is not valid!!!')
-            } else {
-                api('/api/bookmark/add', {name: name}).then(result => {
-                    if (result.id) {
-                        this.props.pushbookmark({id: result.id, name: result.name})
-                    }
-                    if (result.bid) {
-                        result.id = result.bid
-                        result.name = result.bname
-                        if (result.name) {
-                            this.props.pushfeedback(result)
-                        }
-                    }
-                }).catch(err => this.props.addalert(err))
-            }
+            return Promise.reject('Empty parent list!!!')
         }
+        if (!name) {
+            return Promise.reject('')
+        }
+        return !isValidString(name, 'name') ? Promise.reject('Bookmark name is not valid!!!') : api('/api/bookmark/add', {name: name}).then(result => {
+            if (result.id) {
+                this.props.pushbookmark({id: result.id, name: result.name})
+            }
+            if (result.bid) {
+                result.id = result.bid
+                result.name = result.bname
+                if (result.name) {
+                    this.props.pushfeedback(result)
+                }
+            }
+        })
     },
     render: function() {
         let bookmarkList = [
             {
                 title: 'new...',
-                onclick: () => console.log('new bookmark'),
+                onclick: () => this.props.globalinput((exact, name) => this._addBookmark(name)),
                 key: 0,
             },
             {key: 1},
         ]
         this.props.bookmark.forEach(item => bookmarkList.push({
             title: item.name,
-            onclick: () => this._addBookmark(item.name),
+            onclick: () => this._addBookmark(item.name).catch(err => this.props.addalert(err)),
             key: item.id,
         }))
         let curRow = []
@@ -82,7 +80,7 @@ const ItemPath = React.createClass({
         return (
             <ol className="breadcrumb" style={{marginBottom: '0px', display: 'block', height: '56px'}}>
                 <li>
-                    <Tooltip tip="多重搜尋" />
+                    <Tooltip tip="多重搜尋" place="right" />
                     <input
                         type="checkbox"
                         checked={this.props.multi}

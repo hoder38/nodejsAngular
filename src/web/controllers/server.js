@@ -1179,7 +1179,7 @@ app.put('/api/addTag/:tag', function(req, res, next){
     });
 });
 
-app.post('/api/addTagUrl', function(req, res, next){
+app.put('/api/addTagUrl', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("addTagUrl");
         console.log(new Date());

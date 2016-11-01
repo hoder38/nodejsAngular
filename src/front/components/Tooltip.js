@@ -3,6 +3,7 @@ import { findDOMNode } from 'react-dom'
 
 const Tooltip = React.createClass({
     getInitialState: function() {
+        this._showed = false
         return {show: false}
     },
     componentDidMount: function() {
@@ -19,34 +20,38 @@ const Tooltip = React.createClass({
         this.setState({show: true})
     },
     _hideTooltip: function() {
+        this._showed = false
         this.setState({show: false})
     },
     render: function() {
-        let place = 'right'
-        let show = {visibility: 'hidden', whiteSpace: 'nowrap'}
-        switch(this.props.place) {
-            case 'top':
-            place = 'top'
-            if (this._target && this.state.show) {
-                show = {
-                    top: `${-this._self.clientHeight + this._self.offsetTop}px`,
-                    left: `${Math.round((this._target.clientWidth - this._self.clientWidth) / 2) + this._self.offsetLeft}px`,
-                    whiteSpace: 'nowrap',
-                }
+        if (!this._showed || !this.state.show) {
+            if (this.state.show) {
+                this._showed = true
             }
-            break
-            default:
-            if (this._target && this.state.show) {
-                show = {
-                    top: `${Math.round((this._target.clientHeight - this._self.clientHeight) / 2) + this._self.offsetTop}px`,
-                    left: `${this._target.clientWidth + this._self.offsetLeft}px`,
-                    whiteSpace: 'nowrap',
+            this._show = {visibility: 'hidden', whiteSpace: 'nowrap'}
+            switch(this.props.place) {
+                case 'top':
+                if (this._target && this.state.show) {
+                    this._show = {
+                        top: `${-this._self.clientHeight + this._self.offsetTop}px`,
+                        left: `${Math.round((this._target.clientWidth - this._self.clientWidth) / 2) + this._self.offsetLeft}px`,
+                        whiteSpace: 'nowrap',
+                    }
                 }
+                break
+                default:
+                if (this._target && this.state.show) {
+                    this._show = {
+                        top: `${Math.round((this._target.clientHeight - this._self.clientHeight) / 2) + this._self.offsetTop}px`,
+                        left: `${this._target.clientWidth + this._self.offsetLeft}px`,
+                        whiteSpace: 'nowrap',
+                    }
+                }
+                break
             }
-            break
         }
         return (
-            <div className={`tooltip in ${place}`} style={show}>
+            <div className={`tooltip in ${this.props.place}`} style={this._show}>
                 <div className="tooltip-arrow"></div>
                 <div className="tooltip-inner">{this.props.tip}</div>
             </div>

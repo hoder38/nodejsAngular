@@ -10,6 +10,7 @@ import dirDataHandle from './dirDataHandle'
 import itemDataHandle from './itemDataHandle'
 import glbPwHandle from './glbPwHandle'
 import glbCfHandle from './glbCfHandle'
+import glbInHandle from './glbInHandle'
 
 const feedbackDataHandle = simpleDataHandle(FEEDBACK_PUSH, FEEDBACK_POP)
 const userDataHandle = simpleDataHandle(USER_PUSH, USER_POP)
@@ -26,6 +27,7 @@ const ANoMoPi = combineReducers({
     itemDataHandle,
     glbPwHandle,
     glbCfHandle,
+    glbInHandle,
 })
 
 export default ANoMoPi
