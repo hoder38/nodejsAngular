@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link, IndexLink } from 'react-router'
 import { ROOT_PAGE } from '../constants'
+import { killEvent } from '../utility'
 
 const Navlist = React.createClass({
     getInitialState: function() {
@@ -23,8 +24,8 @@ const Navlist = React.createClass({
             })
         }
     },
-    _toggle: function() {
-        this.setState({collapse: !this.state.collapse})
+    _toggle: function(e) {
+        killEvent(e, this.setState({collapse: !this.state.collapse}))
     },
     render: function() {
         let rows = []

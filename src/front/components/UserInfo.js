@@ -1,6 +1,6 @@
 import React from 'react'
 import UserInput from './UserInput'
-import { isValidString, api } from '../utility'
+import { isValidString, api, killEvent } from '../utility'
 
 const UserInfo = React.createClass({
     getInitialState: function() {
@@ -40,10 +40,7 @@ const UserInfo = React.createClass({
         }
         return false
     },
-    _handleSubmit: function(e) {
-        if (e) {
-            e.preventDefault()
-        }
+    _handleSubmit: function() {
         const set_obj = Object.assign({},
             this._checkInput('name', this.props.user.name, 'name'),
             this._checkInput('auto', this.props.user.auto, 'url'),
@@ -160,7 +157,7 @@ const UserInfo = React.createClass({
                     <div className="panel-heading">
                         <h3 className="panel-title">User profile</h3>
                     </div>
-                    <form onSubmit={this._handleSubmit}>
+                    <form onSubmit={e => killEvent(e, this._handleSubmit)}>
                         <div className="panel-body">
                             {edit_btn}
                             {remove_btn}

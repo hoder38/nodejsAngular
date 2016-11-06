@@ -7,7 +7,7 @@ import { getItemList } from '../utility'
 
 const TopSection = React.createClass({
     componentWillMount: function() {
-        this.props.globalinput((exact, name) => (this.props.pathLength > 0 && !name) ? Promise.reject('') : getItemList(this.props.sortName, this.props.sortType, this.props.set, 0, '', false, (name ? name : null), 0, exact, this.props.multi, true))
+        this.props.globalinput((name, exact) => (this.props.pathLength > 0 && !name) ? Promise.reject('') : getItemList(this.props.sortName, this.props.sortType, this.props.set, 0, '', false, (name ? name : null), 0, exact, this.props.multi, true))
     },
     render: function() {
         return (

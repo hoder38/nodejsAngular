@@ -33,8 +33,17 @@ const Tooltip = React.createClass({
                 case 'top':
                 if (this._target && this.state.show) {
                     this._show = {
-                        top: `${-this._self.clientHeight + this._self.offsetTop}px`,
-                        left: `${Math.round((this._target.clientWidth - this._self.clientWidth) / 2) + this._self.offsetLeft}px`,
+                        top: `${-this._self.offsetHeight + this._self.offsetTop + 6}px`,
+                        left: `${Math.round((this._target.offsetWidth - this._self.offsetWidth) / 2) + this._self.offsetLeft}px`,
+                        whiteSpace: 'nowrap',
+                    }
+                }
+                break
+                case 'left':
+                if (this._target && this.state.show) {
+                    this._show = {
+                        top: `${Math.round((this._target.offsetHeight - this._self.offsetHeight) / 2) + this._self.offsetTop}px`,
+                        right: `${this._target.offsetWidth - this._self.offsetLeft}px`,
                         whiteSpace: 'nowrap',
                     }
                 }
@@ -42,8 +51,8 @@ const Tooltip = React.createClass({
                 default:
                 if (this._target && this.state.show) {
                     this._show = {
-                        top: `${Math.round((this._target.clientHeight - this._self.clientHeight) / 2) + this._self.offsetTop}px`,
-                        left: `${this._target.clientWidth + this._self.offsetLeft}px`,
+                        top: `${Math.round((this._target.offsetHeight - this._self.offsetHeight) / 2) + this._self.offsetTop}px`,
+                        left: `${this._target.offsetWidth + this._self.offsetLeft - 6}px`,
                         whiteSpace: 'nowrap',
                     }
                 }

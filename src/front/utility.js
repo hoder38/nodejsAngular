@@ -66,6 +66,12 @@ export function isValidString(str, type) {
     return false
 }
 
+export function killEvent(e, func) {
+    e.preventDefault()
+    e.stopPropagation()
+    func()
+}
+
 //api
 function errorHandle(response, relogin) {
     if (!response.ok) {
@@ -161,7 +167,7 @@ export const arrayObjectPush = (myArray, pushTerm, property, rest=item=>item) =>
             for (let i of pushTerm.entries()) {
                 if (item[property] === i[1][property]) {
                     pushTerm.splice(i[0], 1)
-                    return rest(i[1])
+                    return rest(i[1], item)
                 }
             }
             return item
@@ -173,7 +179,7 @@ export const arrayObjectPush = (myArray, pushTerm, property, rest=item=>item) =>
         let new_list = myArray.map(item => {
             if (item[property] === pushTerm[property]) {
                 is_add = true
-                return rest(pushTerm)
+                return rest(pushTerm, item)
             } else {
                 return item
             }
@@ -186,10 +192,10 @@ export const arrayObjectPush = (myArray, pushTerm, property, rest=item=>item) =>
 }
 
 //itemlist
-const youtubeList = (pageToken, set) => api(`/api/youtube/get/${pageToken}`).then(result => set(result.itemList, null, null, null, result.pageToken))
+const youtubeList = (pageToken, set, parentList) => api(`/api/youtube/get/${pageToken}`).then(result => set(result.itemList, parentList, null, null, null, null, result.pageToken))
 
 export const getItemList = (sortname, type, set, page=0, pageToken='', push=false, name=null, index=0, exact=false, multi=false, random=false) => {
-    const rest = result => push ? set(result.itemList, result.parentList) : set(result.itemList, result.parentList, sortname, type)
+    const rest = result => push ? set(result.itemList, result.parentList, result.bookmarkID, result.latest) : set(result.itemList, result.parentList, result.bookmarkID, result.latest, sortname, type)
     let queryItem = null
     if (name === null) {
         queryItem = random ? api(`/api/storage/getRandom/${sortname}/${type}/${page}`) : api(`/api/storage/get/${sortname}/${type}/${page}`)
@@ -201,24 +207,24 @@ export const getItemList = (sortname, type, set, page=0, pageToken='', push=fals
     }
     return queryItem.then(result => {
         rest(result)
-        return youtubeList(pageToken, set)
+        return youtubeList(pageToken, set, result.parentList)
     })
 }
 
 export const resetItemList = (sortname, type, set) => api('/api/storage/reset').then(result => {
-    set(result.itemList, result.parentList, sortname, type)
-    return youtubeList('', set)
+    set(result.itemList, result.parentList, result.bookmarkID, result.latest, sortname, type)
+    return youtubeList('', set, result.parentList)
 })
 
 export const dirItemList = (sortname, type, set, id, multi) => {
     const queryItem = multi ? api(`/api/parent/query/${id}/${sortname}/${type}`) : api(`/api/parent/query/${id}/${sortname}/${type}/single`)
     return queryItem.then(result => {
-        set(result.itemList, result.parentList, sortname, type)
-        return youtubeList('', set)
+        set(result.itemList, result.parentList, result.bookmarkID, result.latest, sortname, type)
+        return youtubeList('', set, result.parentList)
     })
 }
 
 export const bookmarkItemList = (sortname, type, set, id) => api(`/api/bookmark/get/${id}/${sortname}/${type}`).then(result => {
-    set(result.itemList, result.parentList, sortname, type)
-    return youtubeList('', set)
+    set(result.itemList, result.parentList, result.bookmarkID, result.latest, sortname, type)
+    return youtubeList('', set, result.parentList)
 })

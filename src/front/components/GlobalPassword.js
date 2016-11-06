@@ -1,6 +1,7 @@
 import React from 'react'
 import { BLOCK_ZINDEX, AUTH_TIME } from '../constants'
 import UserInput from './UserInput'
+import { killEvent } from '../utility'
 
 let global_password = {}
 
@@ -17,10 +18,7 @@ const GlobalPassword = React.createClass({
     componentDidMount: function() {
         this._input.initFocus()
     },
-    _handleSubmit: function(e) {
-        if (e) {
-            e.preventDefault()
-        }
+    _handleSubmit: function() {
         Promise.resolve(this.props.callback(this.state.userPW)).then(() => {
             if (this.props.delay) {
                 global_password[this.props.delay] = 'goodboy'
@@ -40,7 +38,7 @@ const GlobalPassword = React.createClass({
         if (global_password[this.props.delay] === null) {
             return (
                 <section style={{position: 'fixed', zIndex: BLOCK_ZINDEX, top: '0px', right: '0px', width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.3)'}}>
-                    <form onSubmit={this._handleSubmit}>
+                    <form onSubmit={e => killEvent(e, this._handleSubmit)}>
                         <div className="input-group" style={{top: '150px', margin: '0px auto', width: '500px'}}>
                             <span className="input-group-btn">
                                 <button className="btn btn-danger" type="button" onClick={this.props.onclose}>

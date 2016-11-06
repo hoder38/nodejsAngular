@@ -1071,7 +1071,7 @@ app.get('/api/storage/single/:uid', function(req, res, next){
                 res.json(result);
             } else {
                 var itemList = getStorageItem(req.user, [result.item], result.mediaHadle);
-                res.json({item: itemList[0], latest: result.latest, bookmarkID: result.bookmark});
+                res.json({item: itemList[0]});
             }
         });
     });
@@ -1091,7 +1091,7 @@ app.get('/api/stock/single/:uid', function(req, res, next){
                 res.json(result);
             } else {
                 var itemList = getStockItem(req.user, [result.item]);
-                res.json({item: itemList[0], latest: result.latest, bookmarkID: result.bookmark});
+                res.json({item: itemList[0]});
             }
         });
     });
@@ -1828,7 +1828,7 @@ app.get('/api/bookmark/set/:id', function (req, res, next) {
     });
 });
 
-app.get('/api/bookmark/get/:id/:sortName(name|mtime|count)/:sortType(desc|asc)', function (req, res, next) {
+app.get('/api/bookmark/get/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get bookmark");
         console.log(new Date());
@@ -1838,6 +1838,8 @@ app.get('/api/bookmark/get/:id/:sortName(name|mtime|count)/:sortType(desc|asc)',
         if (id === false) {
             util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
+        req.params.sortName = req.params.sortName ? req.params.sortName : 'name';
+        req.params.sortType = req.params.sortType ? req.params.sortType : 'desc';
         tagTool.getBookmark(id, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
@@ -3534,7 +3536,7 @@ app.get('/api/password/single/:uid', function(req, res, next){
                 res.json(result);
             } else {
                 var itemList = getPasswordItem(req.user, [result.item]);
-                res.json({item: itemList[0], latest: result.latest, bookmarkID: result.bookmark});
+                res.json({item: itemList[0]});
             }
         });
     });

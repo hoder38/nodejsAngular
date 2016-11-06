@@ -100,26 +100,30 @@ export const itemPop = id => ({
     id,
 })
 
-export const itemPush = (item, path=null, sortName=null, sortType=null, pageToken=null) => ({
+export const itemPush = (item, path=null, bookmark=null, latest=null, sortName=null, sortType=null, pageToken=null) => ({
     type: ITEM_PUSH,
     item,
     path,
+    bookmark,
+    latest,
     sortName,
     sortType,
     pageToken,
 })
 
-export const setItem = item => ({
+export const setItem = (item, latest=null) => ({
     type: SET_ITEM,
     item,
+    latest,
 })
 
-export const sendGlbIn = (input, value, callback, color='default') => ({
+export const sendGlbIn = (input, placeholder, callback, color=null, value=null) => ({
     type: SEND_GLB_IN,
     input,
-    value,
+    placeholder,
     callback,
     color,
+    value,
 })
 
 export const closeGlbIn = clear => ({

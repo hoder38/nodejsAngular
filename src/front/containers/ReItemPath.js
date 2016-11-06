@@ -15,7 +15,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
     multiToggle: item => dispatch(itemPush(item)),
     addalert: msg => dispatch(alertPush(msg)),
-    set: (item, path, sortName, sortType, pageToken) => dispatch(itemPush(item, path, sortName, sortType, pageToken)),
+    set: (item, path, bookmark, latest, sortName, sortType, pageToken) => dispatch(itemPush(item, path, bookmark, latest, sortName, sortType, pageToken)),
     pushbookmark: bookmark => dispatch(bookmarkPush(bookmark)),
     pushfeedback: feedback => dispatch(feedbackPush(feedback)),
     globalinput: callback => dispatch(sendGlbIn(1, 'New Bookmark...', callback)),

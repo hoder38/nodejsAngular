@@ -1,5 +1,5 @@
 import React from 'react'
-import { api } from '../utility'
+import { api, killEvent } from '../utility'
 
 const Dirlist = React.createClass({
     getInitialState: function() {
@@ -42,13 +42,13 @@ const Dirlist = React.createClass({
         let rows = []
         this.props.dir.list.forEach(item => this.state.edit ? rows.push(
             <li key={item.id}>
-                <a href="#" onClick={() => this._delItem(item.id, item.name)}>
+                <a href="#" onClick={e => killEvent(e, () => this._delItem(item.id, item.name))}>
                     <i className="glyphicon glyphicon-remove"></i>{item.name}
                 </a>
             </li>
         ) : rows.push(
             <li key={item.id}>
-                <a href="#" onClick={() => this.props.dirItem(item.id)}>{item.name}</a>
+                <a href="#" onClick={e => killEvent(e, () => this.props.dirItem(item.id))}>{item.name}</a>
             </li>
         ))
         let nameSort = null, timeSort = null
@@ -58,8 +58,8 @@ const Dirlist = React.createClass({
             timeSort = (this.props.dir.sortType === 'asc') ? <i className="glyphicon glyphicon-chevron-up"></i> : <i className="glyphicon glyphicon-chevron-down"></i>
         }
         const edit = this.props.edit ? (
-            <li className={this.state.edit ? 'active' : ''} onClick={() => this.setState(Object.assign({}, this.state, {edit: !this.state.edit}))}>
-                <a style={{padding: '10px 15px'}} href="#">edit</a>
+            <li className={this.state.edit ? 'active' : ''}>
+                <a style={{padding: '10px 15px'}} href="#" onClick={e => killEvent(e, () => this.setState(Object.assign({}, this.state, {edit: !this.state.edit})))}>edit</a>
             </li>
         ) : null
         const more = this.props.dir.more ? (
@@ -71,17 +71,17 @@ const Dirlist = React.createClass({
         ) : null
         return (
             <li className={this.state.collapse ? '' : 'active'}>
-                <a href="#" onClick={this._openList}>
+                <a href="#" onClick={e => killEvent(e, this._openList)}>
                     {this.props.name}&nbsp;<i className={this.state.collapse ? 'glyphicon glyphicon-chevron-down' : 'glyphicon glyphicon-chevron-up'}></i>
                 </a>
                 <ul className={this.state.collapse ? 'nav nav-pills collapse' : 'nav nav-pills collapse in'}>
                     <li>
-                        <a style={{padding: '10px 15px'}} href="#" onClick={() => this._changeSort('name')}>
+                        <a style={{padding: '10px 15px'}} href="#" onClick={e => killEvent(e, () => this._changeSort('name'))}>
                             name&nbsp;{nameSort}
                         </a>
                     </li>
                     <li>
-                        <a style={{padding: '10px 15px'}} href="#" onClick={() => this._changeSort('mtime')}>
+                        <a style={{padding: '10px 15px'}} href="#" onClick={e => killEvent(e, () => this._changeSort('mtime'))}>
                             {this.props.time}&nbsp;{timeSort}
                         </a>
                     </li>

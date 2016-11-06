@@ -16,7 +16,7 @@ const mapDispatchToProps = dispatch => ({
     delbookmark: id => dispatch(bookmarkPop(id)),
     dirset: (name, dir, sortName, sortType) => dispatch(dirPush(name, dir, sortName, sortType)),
     deldir: (name, id) => dispatch(dirPop(name, id)),
-    set: (item, path, sortName, sortType, pageToken) => dispatch(itemPush(item, path, sortName, sortType, pageToken)),
+    set: (item, path, bookmark, latest, sortName, sortType, pageToken) => dispatch(itemPush(item, path, bookmark, latest, sortName, sortType, pageToken)),
 })
 
 const ReCategorylist = connect(

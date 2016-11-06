@@ -1,7 +1,7 @@
 import React from 'react'
 import ReFileUploader from '../containers/ReFileUploader'
 import { UPLOAD } from '../constants'
-import { isValidString, api } from '../utility'
+import { isValidString, api, killEvent } from '../utility'
 import UserInput from './UserInput'
 import Tooltip from './Tooltip'
 
@@ -30,8 +30,8 @@ const FileAdd = React.createClass({
             })
         }
     },
-    _toggle: function() {
-        this.setState(Object.assign({}, this.state, {show: !this.state.show}))
+    _toggle: function(e) {
+        killEvent(e, () => this.setState(Object.assign({}, this.state, {show: !this.state.show})))
     },
     _setFiles: function(files) {
         if (this.state.files.length === 0 && files.length > 0) {
@@ -53,10 +53,7 @@ const FileAdd = React.createClass({
             this.setState(Object.assign({}, this.state, this._input.getValue()))
         }
     },
-    _handleSubmit: function(e) {
-        if (e) {
-            e.preventDefault()
-        }
+    _handleSubmit: function() {
         if (isValidString(this.state.url, 'url')) {
             const url = this.state.url
             this.setState(Object.assign({}, this.state, this._input.initValue()))
@@ -89,7 +86,7 @@ const FileAdd = React.createClass({
                         </a>
                     </h4>
                 </div>
-                <form onSubmit={this._handleSubmit}>
+                <form onSubmit={e => killEvent(e, this._handleSubmit)}>
                     <div className="input-group">
                         <span className="input-group-addon">
                             <Tooltip tip="18+" place="top" />

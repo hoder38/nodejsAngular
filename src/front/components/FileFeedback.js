@@ -1,6 +1,6 @@
 import React from 'react'
 import { FEEDBACK } from '../constants'
-import { isValidString, api } from '../utility'
+import { isValidString, api, killEvent } from '../utility'
 import Tooltip from './Tooltip'
 import UserInput from './UserInput'
 import Dropdown from './Dropdown'
@@ -66,8 +66,8 @@ const FileFeedback = React.createClass({
         }
         return (this._history.length > 0) ? Object.assign(tmp_list, this._addTag(this._history, props, tmp_list, this._historySelect)) : tmp_list
     },
-    _toggle: function() {
-        this.setState(Object.assign({}, this.state, {show: !this.state.show}))
+    _toggle: function(e) {
+        killEvent(e, () => this.setState(Object.assign({}, this.state, {show: !this.state.show})))
     },
     _addTag: function(tags, props=this.props, state=this.state, historySelect=[]) {
         let ret = {}
@@ -154,10 +154,7 @@ const FileFeedback = React.createClass({
     _handleChange: function() {
         this.setState(Object.assign({}, this.state, this._input.getValue()))
     },
-    _handleSubmit: function(e) {
-        if (e) {
-            e.preventDefault()
-        }
+    _handleSubmit: function() {
         this._input.allBlur()
         if (!isValidString(this.state.url, 'url')) {
             this.setState(Object.assign({}, this.state, this._input.initValue(), this._addTag([this.state.url])))
@@ -181,6 +178,7 @@ const FileFeedback = React.createClass({
                     </span>
                     <span className={history} style={{wordBreak: 'break-all', wordWrap: 'break-word', height: 'auto'}}>{tag}</span>
                     <Dropdown headelement="span" className="input-group-btn" style={{left: 'auto', right: '0px', top: '0px'}} droplist={this.props.dirs} param={tag}>
+                        <Tooltip tip="加到預設分類" place="left" />
                         <button type="button" className="btn btn-default">
                             <span className="caret"></span>
                         </button>
@@ -197,6 +195,7 @@ const FileFeedback = React.createClass({
                     </span>
                     <span className="form-control" style={{wordBreak: 'break-all', wordWrap: 'break-word', height: 'auto'}}>{tag}</span>
                     <Dropdown headelement="span" className="input-group-btn" style={{left: 'auto', right: '0px', top: '0px'}} droplist={this.props.dirs} param={tag}>
+                        <Tooltip tip="加到預設分類" place="left" />
                         <button type="button" className="btn btn-default">
                             <span className="caret"></span>
                         </button>
@@ -215,7 +214,7 @@ const FileFeedback = React.createClass({
                     {rows}
                     {other_rows}
                 </div>
-                <form onSubmit={this._handleSubmit}>
+                <form onSubmit={e => killEvent(e, this._handleSubmit)}>
                     <div className="input-group">
                         <span className="input-group-btn">
                             <Tooltip tip="儲存至後台" place="top" />

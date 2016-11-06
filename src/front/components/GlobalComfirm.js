@@ -1,5 +1,6 @@
 import React from 'react'
 import { BLOCK_ZINDEX } from '../constants'
+import { killEvent } from '../utility'
 
 const toggle = function*() {
     let text1, text2
@@ -11,10 +12,7 @@ const toggle = function*() {
 toggle.next()
 
 const GlobalComfirm = React.createClass({
-    _handleSubmit: function(e) {
-        if (e) {
-            e.preventDefault()
-        }
+    _handleSubmit: function() {
         this.props.callback()
         this.props.onclose()
     },
@@ -22,7 +20,7 @@ const GlobalComfirm = React.createClass({
         const text_show = toggle.next(this.props.text).value
         return (
             <section style={{position: 'fixed', zIndex: BLOCK_ZINDEX, top: '0px', right: '0px', width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.3)'}}>
-                <form onSubmit={this._handleSubmit}>
+                <form onSubmit={e => killEvent(e, this._handleSubmit)}>
                     <div className="modal-dialog">
                         <div className="modal-content">
                             <div className="modal-header">

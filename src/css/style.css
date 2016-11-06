@@ -291,3 +291,35 @@ ul.alert-dropdown {
 .relative-point:hover, .relative-point:link, .relative-point:visited, .relative-point:active {
     color: #8B0000;
 }
+
+.recycling .item-point:hover,.recycling .item-point:link,.recycling .item-point:visited,.recycling .item-point:active {
+    color: #FFBF00;
+}
+
+.recycling {
+    color: #FFBF00;
+}
+
+.outside .item-point:hover,.outside .item-point:link,.outside .item-point:visited,.outside .item-point:active {
+    color: blue;
+}
+
+.outside {
+    color: blue;
+}
+
+.external .item-point:hover,.external .item-point:link,.external .item-point:visited,.external .item-point:active {
+    color: red;
+}
+
+.external {
+    color: red;
+}
+
+.recycled .item-point:hover,.recycled .item-point:link,.recycled .item-point:visited,.recycled .item-point:active {
+    color: #B40404;
+}
+
+.recycled {
+    color: #B40404;
+}

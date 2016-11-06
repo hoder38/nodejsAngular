@@ -1,7 +1,7 @@
 import React from 'react'
 import ReDirlist from '../containers/ReDirlist'
 import { RIGHT_SECTION_ZINDEX } from '../constants'
-import { dirItemList, bookmarkItemList } from '../utility'
+import { dirItemList, bookmarkItemList, killEvent } from '../utility'
 
 const Categorylist = React.createClass({
     getInitialState: function() {
@@ -24,8 +24,8 @@ const Categorylist = React.createClass({
             })
         }
     },
-    _toggle: function() {
-        this.setState({collapse: !this.state.collapse})
+    _toggle: function(e) {
+        killEvent(e, () => this.setState({collapse: !this.state.collapse}))
     },
     _dirItem: function(id) {
         dirItemList(this.props.sortName, this.props.sortType, this.props.set, id, this.props.multi).catch(err => this.props.addalert(err))

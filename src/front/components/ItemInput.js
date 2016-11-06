@@ -1,6 +1,7 @@
 import React from 'react'
 import UserInput from './UserInput'
 import Tooltip from './Tooltip'
+import { killEvent } from '../utility'
 
 const ItemInput = React.createClass({
     getInitialState: function() {
@@ -12,19 +13,21 @@ const ItemInput = React.createClass({
     componentWillUnmount: function() {
         this.props.inputclose(true)
     },
+    componentWillReceiveProps: function(nextProps) {
+        if (nextProps.glbIn && nextProps.glbIn.input !== 0) {
+            this.setState(this._input.initValue({input1: nextProps.glbIn.value}))
+        }
+    },
     componentDidUpdate: function() {
         if (this.props.glbIn && this.props.glbIn.input !== 0) {
             this._input.initFocus()
         }
     },
-    _handleSubmit: function(e) {
-        if (e) {
-            e.preventDefault()
-        }
+    _handleSubmit: function() {
         if (!this.props.glbIn) {
             return false
         }
-        this.props.glbIn.callback(this.state.exact, this.state.input1).then(() => {
+        this.props.glbIn.callback(this.state.input1, this.state.exact).then(() => {
             if (this.props.glbIn.input !== 0) {
                 this.props.inputclose(false)
             }
@@ -58,7 +61,7 @@ const ItemInput = React.createClass({
             break;
         }
         return (
-            <form onSubmit={this._handleSubmit}>
+            <form onSubmit={e => killEvent(e, this._handleSubmit)}>
                 <div className="input-group">
                     <span className="input-group-btn">
                         {tooltip}
@@ -67,7 +70,7 @@ const ItemInput = React.createClass({
                     <UserInput
                         val={this.state.input1}
                         getinput={this._input.getInput('input1')}
-                        placeholder={this.props.glbIn.value} />
+                        placeholder={this.props.glbIn.placeholder} />
                     <span className="input-group-btn">
                         <button className={`btn btn-${this.props.glbIn.color}`} type="submit">
                             <span className={submitClass}></span>

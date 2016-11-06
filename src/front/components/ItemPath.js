@@ -1,7 +1,7 @@
 import React from 'react'
 import Tooltip from './Tooltip'
 import Dropdown from './Dropdown'
-import { getItemList, resetItemList, isValidString, api } from '../utility'
+import { getItemList, resetItemList, isValidString, api, killEvent } from '../utility'
 
 let key = 0
 
@@ -36,7 +36,7 @@ const ItemPath = React.createClass({
         let bookmarkList = [
             {
                 title: 'new...',
-                onclick: () => this.props.globalinput((exact, name) => this._addBookmark(name)),
+                onclick: () => this.props.globalinput(name => this._addBookmark(name)),
                 key: 0,
             },
             {key: 1},
@@ -51,7 +51,7 @@ const ItemPath = React.createClass({
             const exactClass = this.props.exact[i] ? 'glyphicon glyphicon-eye-open' : 'glyphicon glyphicon-eye-close'
             curRow.push(
                 <li key={key++}>
-                    <a href="#" onClick={() => this._gotoPath(item, i + 1, this.props.exact[i])}>
+                    <a href="#" onClick={e => killEvent(e, () => this._gotoPath(item, i + 1, this.props.exact[i]))}>
                         <i className={exactClass}></i>&nbsp;{item}
                     </a>
                 </li>
@@ -62,7 +62,7 @@ const ItemPath = React.createClass({
             const exactClass = this.props.exact[this.props.current.length + i] ? 'glyphicon glyphicon-eye-open' : 'glyphicon glyphicon-eye-close'
             hisRow.push(
                 <li className="active" key={key++}>
-                    <a href="#" className="history-point" onClick={() => this._gotoPath(item, this.props.current.length + i + 1, this.props.exact[this.props.current.length + i])}>
+                    <a href="#" className="history-point" onClick={e => killEvent(e, () => this._gotoPath(item, this.props.current.length + i + 1, this.props.exact[this.props.current.length + i]))}>
                         <i className={exactClass}></i>&nbsp;{item}
                     </a>
                 </li>
@@ -88,7 +88,7 @@ const ItemPath = React.createClass({
                         onChange={() => this.props.multiToggle(!this.props.multi)} />
                 </li>
                 <li>
-                    <a href="#" onClick={this._resetPath}>
+                    <a href="#" onClick={e => killEvent(e, this._resetPath)}>
                         <i className="glyphicon glyphicon-home"></i>
                     </a>
                 </li>

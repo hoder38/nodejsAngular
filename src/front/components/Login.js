@@ -2,7 +2,7 @@ import React from 'react'
 import { isValidString } from '../utility'
 import ReAlertlist from '../containers/ReAlertlist'
 import { browserHistory } from 'react-router'
-import { doLogin } from '../utility'
+import { doLogin, killEvent } from '../utility'
 import UserInput from './UserInput'
 
 const Login = React.createClass({
@@ -16,10 +16,7 @@ const Login = React.createClass({
     _handleChange: function() {
         this.setState(this._input.getValue())
     },
-    _handleSubmit: function(e) {
-        if (e) {
-            e.preventDefault()
-        }
+    _handleSubmit: function() {
         if (isValidString(this.state.username, 'name') && isValidString(this.state.password, 'passwd')) {
             doLogin(this.state.username, this.state.password)
             .then(() => {
@@ -45,7 +42,7 @@ const Login = React.createClass({
                         <h1 className="text-center">Login</h1>
                     </div>
                     <div className="modal-body">
-                        <form className="form col-md-12 center-block" onSubmit={this._handleSubmit}>
+                        <form className="form col-md-12 center-block" onSubmit={e => killEvent(e, this._handleSubmit)}>
                             <UserInput
                                 val={this.state.username}
                                 getinput={this._input.getInput('username')}

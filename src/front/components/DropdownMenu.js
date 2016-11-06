@@ -1,4 +1,5 @@
 import React from 'react'
+import { killEvent } from '../utility'
 
 const DropdownMenu = React.createClass({
     componentDidMount: function() {
@@ -13,7 +14,7 @@ const DropdownMenu = React.createClass({
             if (drop.title) {
                 rows.push(
                     <li key={drop.key}>
-                        <a href="#" onClick={() => drop.onclick(this.props.param)}>
+                        <a href="#" onClick={e => killEvent(e, () => drop.onclick(this.props.param))}>
                             <i className={drop.className}></i>&nbsp;{drop.title}
                         </a>
                     </li>

@@ -17,7 +17,7 @@ const App = React.createClass({
         this._userDrop = [
             {title: 'Profile', className: 'glyphicon glyphicon-user', onclick: () => browserHistory.push(USER_PAGE), key: 0},
             {key: 1},
-            {title: 'Log Out', className: 'glyphicon glyphicon-off', onclick: () => this._doLogout(), key: 2},
+            {title: 'Log Out', className: 'glyphicon glyphicon-off', onclick: this._doLogout, key: 2},
         ]
         return {
             navlist: [
@@ -43,10 +43,16 @@ const App = React.createClass({
                 this._ws = new WebSocket(userInfo.ws_url)
                 this._level = userInfo.level
                 this._ws.onopen = () => console.log(userInfo.ws_url + ": Socket has been opened!")
-                this._ws.onmessage = (message) => {
+                this._ws.onmessage = message => {
                     const wsmsg = JSON.parse(message.data)
                     if (this._level >= wsmsg.level) {
                         switch (wsmsg.type) {
+                            case 'file':
+                            api(`/api/storage/single/${wsmsg.data}`).then(result => result.empty ? this.props.itemdel(wsmsg.data) : this.props.itemset(result.item)).catch(err => this.props.addalert(err))
+                            break
+                            case userInfo.id:
+                            this.props.addalert(wsmsg.data)
+                            break
                             default:
                             console.log(wsmsg);
                         }
@@ -76,7 +82,7 @@ const App = React.createClass({
             cur: [],
             exactly: [],
             his: [],
-        }, 'name', 'asc', '')
+        }, '', '', 'name', 'asc', '')
         this.props.dirsset([])
     },
     _doLogout: function() {

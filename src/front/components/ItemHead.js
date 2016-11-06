@@ -1,6 +1,6 @@
 import React from 'react'
 import Tooltip from './Tooltip'
-import { getItemList, isValidString, api } from '../utility'
+import { getItemList, isValidString, api, killEvent } from '../utility'
 
 const ItemHead = React.createClass({
     _changeSort: function(name) {
@@ -46,7 +46,7 @@ const ItemHead = React.createClass({
                 url: name,
             }, 'PUT')
         } else {
-            return Promise.reject('Please inputs new tag!!!')
+            return Promise.reject('Tag is not valid!!!')
         }
     },
     render: function() {
@@ -63,15 +63,15 @@ const ItemHead = React.createClass({
         let selectClass3 = 'glyphicon glyphicon-cog'
         let selectClass4 = 'pull-right active'
         let tooltip = null
-        let addTag = null
+        let addTag = () => {}
         for (var i of this.props.item.list) {
             if (i.select) {
                 selectClass1 = 'glyphicon glyphicon-remove-sign'
                 selectClass2 = 'text-right'
                 selectClass3 = 'glyphicon glyphicon-plus'
                 selectClass4 = 'pull-right'
-                tooltip = <Tooltip tip="增加共同TAG" place="top" />
-                addTag = () => this.props.globalinput((exact, name) => this._addTag(name))
+                tooltip = <Tooltip tip="增加共同TAG" place="left" />
+                addTag = () => this.props.globalinput(name => this._addTag(name))
                 break
             }
         }
@@ -79,30 +79,30 @@ const ItemHead = React.createClass({
             <ul className="nav nav-pills" style={{backgroundColor: 'white', borderBottom: '2px solid #ddd'}}>
                 <li className={selectClass2} style={{width: '56px'}}>
                     <Tooltip tip="全選 / 取消" place="right" />
-                    <a href="#" onClick={this._selectAll}>
+                    <a href="#" onClick={e => killEvent(e, this._selectAll)}>
                         <i className={selectClass1}></i>
                     </a>
                 </li>
                 <li>
-                    <a href="#" onClick={() => this._changeSort('name')}>
+                    <a href="#" onClick={e => killEvent(e, () => this._changeSort('name'))}>
                         name&nbsp;
                         {nameSort}
                     </a>
                 </li>
                 <li className={selectClass4} style={{width: '50px'}}>
                     {tooltip}
-                    <a href="#" onClick={addTag}>
+                    <a href="#" onClick={e => killEvent(e, addTag)}>
                         <i className={selectClass3}></i>
                     </a>
                 </li>
-                <li className="pull-right" style={{width: '10%', minWidth: '68px'}} onClick={() => this._changeSort('count')}>
-                    <a href="#" style={{padding: '10px 5px'}}>
+                <li className="pull-right" style={{width: '10%', minWidth: '68px'}}>
+                    <a href="#" onClick={e => killEvent(e, () => this._changeSort('count'))} style={{padding: '10px 5px'}}>
                         count&nbsp;
                         {countSort}
                     </a>
                 </li>
-                <li className="pull-right" style={{width: '15%', minWidth: '68px'}} onClick={() => this._changeSort('mtime')}>
-                    <a href="#" style={{padding: '10px 5px'}}>
+                <li className="pull-right" style={{width: '15%', minWidth: '68px'}}>
+                    <a href="#" onClick={e => killEvent(e, () => this._changeSort('mtime'))} style={{padding: '10px 5px'}}>
                         time&nbsp;
                         {timeSort}
                     </a>
