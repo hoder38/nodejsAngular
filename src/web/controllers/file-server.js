@@ -2305,7 +2305,9 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
         } else if (id[1] === 'let') {
             url = 'http://www.letv.com/ptv/vplay/' + id[2];
         } else if (id[1] === 'vqq') {
-            url = 'http://v.qq.com/cover/' + id[2];
+            var idsub = id[2].match(/^([^_]+)_(\d)$/);
+            subIndex = Number(idsub[2]);
+            url = 'http://v.qq.com/' + idsub[1];
         } else if (id[1] === 'fun') {
             var idsub = id[2].match(/^([^_]+)_([^_]+)$/);
             url = 'http://www.funshion.com/vplay/' + idsub[1] + '-' + idsub[2];
@@ -2375,6 +2377,7 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                     if (list.length > 1) {
                         ret_obj['sub'] = list.length;
                     }
+                    console.log(ret_obj);
                     res.json(ret_obj);
                 }
             }, 60000, false, false, 'http://888blb1.flvapi.com/');
