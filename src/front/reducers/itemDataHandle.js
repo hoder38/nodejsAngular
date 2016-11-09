@@ -54,9 +54,6 @@ export default function itemDataHandle (state = initialState, action) {
                         page: action.item.length ? state.page + action.item.length : state.page,
                         more: (Array.isArray(action.item) && action.item.length === 0) ? false : true,
                         list: arrayObjectPush(state.list, action.item, 'id', rest_item),
-                        path: action.path === null ? state.path : action.path,
-                        latest: action.latest === null ? '' : action.latest,
-                        bookmark: action.bookmark === null ? '' : action.bookmark,
                     })
                 } else {
                     return (action.path === state.path) ? Object.assign({}, state, {
@@ -68,7 +65,7 @@ export default function itemDataHandle (state = initialState, action) {
             }
         }
         case ITEM_POP:
-        return Object.assign({}, state, {list: state.list.filter(item => item.id !== item.id)})
+        return Object.assign({}, state, {list: state.list.filter(item => item.id !== action.id)})
         default:
         return state
     }

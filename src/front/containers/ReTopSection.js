@@ -10,7 +10,7 @@ const mapStateToProps = state => ({
 })
 
 const mapDispatchToProps = dispatch => ({
-    globalinput: callback => dispatch(sendGlbIn(0, 'Search Tag...', callback)),
+    globalinput: callback => dispatch(sendGlbIn(0, callback, 'default', 'Search Tag...')),
     set: (item, path, bookmark, latest, sortName, sortType, pageToken) => dispatch(itemPush(item, path, bookmark, latest, sortName, sortType, pageToken)),
 })
 

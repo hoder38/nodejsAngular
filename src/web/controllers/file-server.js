@@ -133,12 +133,13 @@ app.use(function(req, res, next) {
     }
 });
 
-app.post('/upload/subtitle/:uid/:lang/:index(\\d+|v)?', function(req, res, next) {
+app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('upload subtitle');
         console.log(new Date());
         console.log(req.url);
         console.log(req.files);
+        console.log(req.body);
         if (req.files.file.size > (10 * 1024 * 1024)) {
             util.handleError({hoerror: 2, message: "size too large!!!"}, next, res);
         }
@@ -179,7 +180,7 @@ app.post('/upload/subtitle/:uid/:lang/:index(\\d+|v)?', function(req, res, next)
                 util.handleError({hoerror: 2, message: "external is not vaild"}, next, res);
             }
             filePath = util.getFileLocation(ex_type, id);
-            filePath = (req.params.lang === 'en') ? filePath + '.en' : filePath;
+            filePath = (JSON.parse(req.body.lang) === 'en') ? filePath + '.en' : filePath;
             var folderPath = path.dirname(filePath);
             if (!fs.existsSync(folderPath)) {
                 mkdirp(folderPath, function(err) {
@@ -255,7 +256,7 @@ app.post('/upload/subtitle/:uid/:lang/:index(\\d+|v)?', function(req, res, next)
                     }
                     filePath = filePath + '/' + fileIndex;
                 }
-                filePath = (req.params.lang === 'en') ? filePath + '.en' : filePath;
+                filePath = (JSON.parse(req.body.lang) === 'en') ? filePath + '.en' : filePath;
                 var folderPath = path.dirname(filePath);
                 if (!fs.existsSync(folderPath)) {
                     mkdirp(folderPath, function(err) {
@@ -550,7 +551,7 @@ app.post('/upload/file', function(req, res, next){
                 data['count'] = 0;
                 data['first'] = 1;
                 data['recycle'] = 0;
-                if (util.checkAdmin(2 ,req.user) && Number(req.body.type) === 1) {
+                if (util.checkAdmin(2 ,req.user) && JSON.parse(req.body.type) === 1) {
                     data['adultonly'] = 1;
                 } else {
                     data['adultonly'] = 0;
@@ -763,7 +764,7 @@ app.post('/api/upload/url', function(req, res, next){
             data['count'] = 0;
             data['first'] = 1;
             data['recycle'] = 0;
-            if (util.checkAdmin(2 ,req.user) && Number(req.body.type) === 1) {
+            if (util.checkAdmin(2 ,req.user) && JSON.parse(req.body.type) === 1) {
                 data['adultonly'] = 1;
             } else {
                 data['adultonly'] = 0;
@@ -1847,7 +1848,7 @@ app.post('/api/upload/url', function(req, res, next){
             }
             data['count'] = 0;
             data['recycle'] = 0;
-            if (util.checkAdmin(2 ,req.user) && Number(req.body.type) === 1) {
+            if (util.checkAdmin(2 ,req.user) && JSON.parse(req.body.type) === 1) {
                 data['adultonly'] = 1;
             } else {
                 data['adultonly'] = 0;
@@ -4501,6 +4502,8 @@ app.get('/api/torrent/all/download/:uid', function(req, res, next) {
                         setTimeout(function(){
                             recur_queue(index, 2);
                         }, 1000);
+                    } else {
+                        sendWs({type: req.user.username, data: 'download complete!!!'}, 0);
                     }
                 }
             } else {

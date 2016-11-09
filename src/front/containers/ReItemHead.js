@@ -10,7 +10,7 @@ const mapDispatchToProps = dispatch => ({
     addalert: msg => dispatch(alertPush(msg)),
     set: (item, path, bookmark, latest, sortName, sortType, pageToken) => dispatch(itemPush(item, path, bookmark, latest, sortName, sortType, pageToken)),
     select: item => dispatch(setItem(item)),
-    globalinput: callback => dispatch(sendGlbIn(1, 'New Tag...', callback, 'danger')),
+    globalinput: callback => dispatch(sendGlbIn(1, callback, 'danger', 'New Tag...')),
 })
 
 const ReItemHead = connect(

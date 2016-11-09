@@ -98,8 +98,9 @@ function errorHandle(response, relogin) {
     return response.json()
 }
 
-export const api = (url, data = null, method = 'POST', relogin = true) => {
+export const api = (url, data = null, method = 'GET', relogin = true) => {
     if (data) {
+        method = method === 'GET' ? 'POST' : method
         let myHeaders = new Headers()
         myHeaders.append('Content-Type', 'application/json')
         return fetch(url, {
@@ -109,14 +110,10 @@ export const api = (url, data = null, method = 'POST', relogin = true) => {
             body: JSON.stringify(data)
         }).then(resp => errorHandle(resp, relogin))
     } else {
-        if (method === 'DELETE') {
-            return fetch(url, {
-                credentials: 'include',
-                method: method,
-            }).then(resp => errorHandle(resp, relogin))
-        } else {
-            return fetch(url, {credentials: 'include'}).then(resp => errorHandle(resp, relogin))
-        }
+        return fetch(url, {
+            credentials: 'include',
+            method: method,
+        }).then(resp => errorHandle(resp, relogin))
     }
 }
 
@@ -185,7 +182,7 @@ export const arrayObjectPush = (myArray, pushTerm, property, rest=item=>item) =>
             }
         })
         if (!is_add) {
-            new_list.push(rest(pushTerm))
+            new_list.splice(0, 0, rest(pushTerm))
         }
         return new_list
     }
@@ -195,7 +192,7 @@ export const arrayObjectPush = (myArray, pushTerm, property, rest=item=>item) =>
 const youtubeList = (pageToken, set, parentList) => api(`/api/youtube/get/${pageToken}`).then(result => set(result.itemList, parentList, null, null, null, null, result.pageToken))
 
 export const getItemList = (sortname, type, set, page=0, pageToken='', push=false, name=null, index=0, exact=false, multi=false, random=false) => {
-    const rest = result => push ? set(result.itemList, result.parentList, result.bookmarkID, result.latest) : set(result.itemList, result.parentList, result.bookmarkID, result.latest, sortname, type)
+    const rest = result => push ? set(result.itemList) : set(result.itemList, result.parentList, result.bookmarkID, result.latest, sortname, type)
     let queryItem = null
     if (name === null) {
         queryItem = random ? api(`/api/storage/getRandom/${sortname}/${type}/${page}`) : api(`/api/storage/get/${sortname}/${type}/${page}`)
@@ -224,7 +221,7 @@ export const dirItemList = (sortname, type, set, id, multi) => {
     })
 }
 
-export const bookmarkItemList = (sortname, type, set, id) => api(`/api/bookmark/get/${id}/${sortname}/${type}`).then(result => {
-    set(result.itemList, result.parentList, result.bookmarkID, result.latest, sortname, type)
+export const bookmarkItemList = (type, sortname, sorttype, set, id) => api(`/api/bookmark/${type}/${id}/${sortname}/${sorttype}`).then(result => {
+    set(result.itemList, result.parentList, result.bookmarkID, result.latest, sortname, sorttype)
     return youtubeList('', set, result.parentList)
 })

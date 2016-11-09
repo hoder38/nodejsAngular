@@ -117,13 +117,14 @@ export const setItem = (item, latest=null) => ({
     latest,
 })
 
-export const sendGlbIn = (input, placeholder, callback, color=null, value=null) => ({
+export const sendGlbIn = (input, callback, color, placeholder, value=null, placeholder2=null) => ({
     type: SEND_GLB_IN,
     input,
-    placeholder,
     callback,
     color,
+    placeholder,
     value,
+    placeholder2,
 })
 
 export const closeGlbIn = clear => ({

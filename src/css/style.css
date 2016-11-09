@@ -323,3 +323,12 @@ ul.alert-dropdown {
 .recycled {
     color: #B40404;
 }
+
+.double-input .form-control {
+    width: 50%;
+    border-right-width: 0px;
+}
+
+.double-input .form-control:focus {
+    border-right-width: 1px;
+}

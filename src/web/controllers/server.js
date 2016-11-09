@@ -1782,7 +1782,7 @@ app.get('/api/bookmark/stock/getList/:sortName(name|mtime)/:sortType(desc|asc)',
     });
 });
 
-app.get('/api/bookmark/set/:id', function (req, res, next) {
+app.get('/api/bookmark/set/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("set bookmark");
         console.log(new Date());
@@ -1792,14 +1792,6 @@ app.get('/api/bookmark/set/:id', function (req, res, next) {
         if (id === false) {
             util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
-        var sortName = 'name';
-        var sortType = 'desc';
-        if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
-            sortName = req.cookies.fileSortName;
-        }
-        if (req.cookies.fileSortType === 'asc') {
-            sortType = req.cookies.fileSortType;
-        }
         mongo.orig("find", "storage", {_id: id, status: 8}, {limit: 1}, function(err, items){
             if(err) {
                 util.handleError(err, next, res);
@@ -1807,7 +1799,7 @@ app.get('/api/bookmark/set/:id', function (req, res, next) {
             if (items.length < 1 || !items[0].btag || !items[0].bexactly) {
                 util.handleError({hoerror: 2, message: 'can not find object!!!'}, next, res);
             }
-            tagTool.setBookmark(items[0].btag, items[0].bexactly, sortName, sortType, req.user, req.session, next, function(err, result) {
+            tagTool.setBookmark(items[0].btag, items[0].bexactly, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
                 if(err) {
                     util.handleError(err, next, res);
                 }

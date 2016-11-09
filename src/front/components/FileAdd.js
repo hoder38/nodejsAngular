@@ -1,5 +1,5 @@
 import React from 'react'
-import ReFileUploader from '../containers/ReFileUploader'
+import FileUploader from './FileUploader'
 import { UPLOAD } from '../constants'
 import { isValidString, api, killEvent } from '../utility'
 import UserInput from './UserInput'
@@ -117,7 +117,10 @@ const FileAdd = React.createClass({
                     <div className="btn-group">
                         <div className="btn btn-primary btn-file btn-s" style={{position: 'relative'}}>
                             <span className="glyphicon glyphicon-folder-open"></span>&nbsp;Choose
-                            <ReFileUploader url={this.props.mainUrl + '/upload/file'} set={this._setFiles} setClear={this._setClearFiles} params={{type: this.state.type ? 1 : 0}} beforeUpload={() => api('/api/getPath')} drop={UPLOAD} />
+                            <FileUploader url={`${this.props.mainUrl}/upload/file`} setUpload={this.props.setUpload} callback={this.props.pushfeedback} set={this._setFiles} setClear={this._setClearFiles} params={{type: this.state.type ? 1 : 0}} beforeUpload={() => api('/api/getPath').catch(err => {
+                                this.props.addalert(err)
+                                Promise.reject('')
+                            })} drop={UPLOAD} />
                         </div>
                         <button className="btn btn-danger btn-s" disabled={!this.state.files.length} onClick={this._clearFiles}>
                             <span className="glyphicon glyphicon-trash"></span>Remove all

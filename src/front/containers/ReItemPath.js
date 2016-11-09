@@ -18,7 +18,7 @@ const mapDispatchToProps = dispatch => ({
     set: (item, path, bookmark, latest, sortName, sortType, pageToken) => dispatch(itemPush(item, path, bookmark, latest, sortName, sortType, pageToken)),
     pushbookmark: bookmark => dispatch(bookmarkPush(bookmark)),
     pushfeedback: feedback => dispatch(feedbackPush(feedback)),
-    globalinput: callback => dispatch(sendGlbIn(1, 'New Bookmark...', callback)),
+    globalinput: callback => dispatch(sendGlbIn(1, callback, 'default', 'New Bookmark...')),
 })
 
 const ReItemPath = connect(

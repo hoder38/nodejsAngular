@@ -6,8 +6,13 @@ const FileUploader = React.createClass({
         this._files = []
         this._uploading = -1
         this._request = null
+        this._multi = false
+        this._targetArr = []
         if (this.props.setClear) {
             this.props.setClear(this._clearFile)
+        }
+        if (this.props.set) {
+            this._multi = true
         }
     },
     componentDidMount: function() {
@@ -40,11 +45,15 @@ const FileUploader = React.createClass({
         }
     },
     _setState: function() {
-        this.props.set(this._files)
-        let progress = 0
-        this._files.forEach(file => progress += file.progress)
-        progress = progress > 0 ? Math.round(progress / this._files.length) : 0
-        this.props.setUpload(progress)
+        if (this._multi) {
+            this.props.set(this._files)
+            let progress = 0
+            this._files.forEach(file => progress += file.progress)
+            progress = progress > 0 ? Math.round(progress / this._files.length) : 0
+            this.props.setUpload(progress)
+        } else {
+            this.props.setUpload(this._files.length > 0 ? this._files[0].progress : 0)
+        }
     },
     _preventDefault: function(e) {
         e.preventDefault()
@@ -52,12 +61,23 @@ const FileUploader = React.createClass({
     _pushFile: function(e) {
         e.preventDefault()
         const droppedFiles = e.dataTransfer ? e.dataTransfer.files : e.target.files
-        Array.from(droppedFiles).forEach(file => this._files.push(Object.assign(file, {
-            key: key++,
-            progress: 0,
-            params: false,
-            done: false,
-        })))
+        if (this._multi) {
+            Array.from(droppedFiles).forEach(file => this._files.push(Object.assign(file, {
+                key: key++,
+                progress: 0,
+                params: false,
+                done: false,
+            })))
+        } else {
+            if (this._files.length === 0 && Array.from(droppedFiles).length > 0) {
+                this._files.push(Object.assign(Array.from(droppedFiles)[0], {
+                    key: key++,
+                    progress: 0,
+                    params: false,
+                    done: false,
+                }))
+            }
+        }
         this._setState()
         if (this._files.length > 0) {
             this._uploadFile()
@@ -99,7 +119,7 @@ const FileUploader = React.createClass({
             this._setState()
         }
         if (this.props.beforeUpload) {
-            Promise.resolve(this.props.beforeUpload()).then(uploader).catch(err => this.props.addalert(err))
+            Promise.resolve(this.props.beforeUpload()).then(uploader).catch(err => {})
         } else {
             uploader()
         }
@@ -115,7 +135,7 @@ const FileUploader = React.createClass({
         if (this._files[this._uploading]) {
             this._files[this._uploading].done = true
         }
-        this.props.pushfeedback(JSON.parse(e.currentTarget.response))
+        this.props.callback(JSON.parse(e.currentTarget.response))
         this._uploading = -1
         this._uploadFile()
     },

@@ -31,7 +31,7 @@ const Categorylist = React.createClass({
         dirItemList(this.props.sortName, this.props.sortType, this.props.set, id, this.props.multi).catch(err => this.props.addalert(err))
     },
     _bookmarkItem: function(id) {
-        bookmarkItemList(this.props.sortName, this.props.sortType, this.props.set, id).catch(err => this.props.addalert(err))
+        bookmarkItemList('get', this.props.sortName, this.props.sortType, this.props.set, id).catch(err => this.props.addalert(err))
     },
     render: function() {
         let rows = []
