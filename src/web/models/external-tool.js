@@ -2843,7 +2843,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0 && Array.isArray(eItems.list)) {
+                if (eItems.length > 0 && Array.isArray(eItems[0].list)) {
                     if (!eItems[0].raw_list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
@@ -3057,7 +3057,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0 && Array.isArray(eItems.list)) {
+                if (eItems.length > 0 && Array.isArray(eItems[0].list)) {
                     if (!eItems[0].list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
@@ -3542,7 +3542,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0 && Array.isArray(eItems.list)) {
+                if (eItems.length > 0 && Array.isArray(eItems[0].list)) {
                     if (!eItems[0].list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
@@ -3568,7 +3568,7 @@ module.exports = {
                         ret_obj.showId = index;
                     } else {
                         ret_obj = {index: index, showId: index, title: eItems[0].list[index-1].name, id: eItems[0].list[index-1].id};
-                        if (eItems[0].list[index-1].id.match(/^(yuk|soh|tud)_/)) {
+                        if (eItems[0].list[index-1].id.match(/^(yuk|soh|tud|vqq)_/)) {
                             ret_obj.index = ret_obj.showId = (index*1000 + sub_index)/1000;
                             ret_obj.id = ret_obj.id + '_' + sub_index;
                         }
@@ -3626,7 +3626,7 @@ module.exports = {
                                 ret_obj.showId = index;
                             } else {
                                 ret_obj = {index: index, showId: index, title: list[index-1].name, id: list[index-1].id};
-                                if (list[index-1].id.match(/^(yuk|soh|tud)_/)) {
+                                if (list[index-1].id.match(/^(yuk|soh|tud|vqq)_/)) {
                                     ret_obj.index = ret_obj.showId = (index*1000 + sub_index)/1000;
                                     ret_obj.id = ret_obj.id + '_' + sub_index;
                                 }
@@ -3891,7 +3891,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0 && Array.isArray(eItems.list)) {
+                if (eItems.length > 0 && Array.isArray(eItems[0].list)) {
                     var ret_obj = {index: 1, showId: 1, title: eItems[0].show_name, is_magnet: true, complete: false};
                     var encodeTorrent = util.isValidString(eItems[0].magnet, 'url');
                     if (encodeTorrent === false) {
@@ -3999,7 +3999,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0 && Array.isArray(eItems.list)) {
+                if (eItems.length > 0 && Array.isArray(eItems[0].list)) {
                     if (!eItems[0].raw_list || !eItems[0].raw_list[eItems[0].raw_list.length - index]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
@@ -4119,7 +4119,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0 && Array.isArray(eItems.list)) {
+                if (eItems.length > 0 && Array.isArray(eItems[0].list)) {
                     if (!eItems[0].raw_list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
@@ -4271,7 +4271,7 @@ module.exports = {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
-                if (eItems.length > 0 && Array.isArray(eItems.list)) {
+                if (eItems.length > 0 && Array.isArray(eItems[0].list)) {
                     if (!eItems[0].list[index-1]) {
                         util.handleError({hoerror: 2, message: 'cannot find external index'}, callback, callback);
                     }
