@@ -2,7 +2,7 @@ import React from 'react'
 import Dropdown from './Dropdown'
 import { api, isValidString, killEvent, bookmarkItemList } from '../utility'
 
-const ItemdFile = React.createClass({
+const ItemFile = React.createClass({
     _download: function(id, name) {
         this.props.sendglbcf(() => {
             if (this.props.bookmark) {
@@ -304,4 +304,4 @@ const ItemdFile = React.createClass({
     }
 })
 
-export default ItemdFile
+export default ItemFile

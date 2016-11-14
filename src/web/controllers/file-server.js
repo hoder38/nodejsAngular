@@ -103,6 +103,7 @@ var express = require('express'),
     openSubtitle = require('opensubtitles-api'),
     oth = require('os-torrent-hash'),
     app = express(),
+    url = require('url'),
     youtubedl = require('youtube-dl'),
     server = https.createServer(credentials, app),
     mkdirp = require('mkdirp'),
@@ -6894,7 +6895,11 @@ if (config_glb.checkMedia) {
 }
 
 function checkLogin(req, res, next, callback) {
-    if(!req.isAuthenticated()){
+    var parseUrl = url.parse(req.headers['referer']);
+    if (!req.headers['host'].match(/^[^:]+/) || parseUrl['hostname'] !== req.headers['host'].match(/^[^:]+/)[0]) {
+        console.log(parseUrl);
+        next();
+    } else if(!req.isAuthenticated()){
         if (util.isMobile(req.headers['user-agent']) || req.headers['user-agent'].match(/Firefox/i)|| req.headers['user-agent'].match(/armv7l/i)) {
             if (/^\/video\//.test(req.path) || /^\/subtitle\//.test(req.path) || /^\/torrent\//.test(req.path)) {
                 console.log("mobile or firefox");

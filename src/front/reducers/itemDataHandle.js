@@ -3,11 +3,6 @@ import { arrayObjectPush } from '../utility'
 
 const initialState = {
     list: [],
-    sortName: 'name',
-    sortType: 'asc',
-    page: 0,
-    more: true,
-    pageToken: '',
     multi: false,
     path: {
         cur: [],
@@ -15,7 +10,16 @@ const initialState = {
         his: [],
     },
     latest: '',
-    bookmark: '',
+    item: {
+        ids: new Set(),
+        sortName: 'name',
+        sortType: 'asc',
+        bookmark: '',
+        page: 0,
+        more: true,
+        pageToken: '',
+    },
+    select: new Set(),
 }
 
 const rest_item = (item, orig=null) => {
@@ -43,7 +47,13 @@ export default function itemDataHandle (state = initialState, action) {
                 more: (action.item.length === 0) ? false : true,
                 path: action.path === null ? state.path : action.path,
                 latest: action.latest === null ? '' : action.latest,
-                bookmark: action.bookmark === null ? '' : action.bookmark,
+                item: action.bookmark === null ? {
+                    ids: state.item.ids,
+                    bookmark: '',
+                } : {
+                    ids: state.item.ids,
+                    bookmark: action.bookmark,
+                }
             })
         } else {
             if (action.item === true || action.item === false) {

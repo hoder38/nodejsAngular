@@ -35,8 +35,9 @@ export const RIGHT_SECTION_ZINDEX = 20
 export const TOP_SECTION_ZINDEX = 10
 export const ALERT_ZINDEX = 1100
 export const BLOCK_ZINDEX = 1090
-export const WIDGET_BUTTON_ZINDEX = 1070
-export const WIDGET_ZINDEX = 1080
+export const WIDGET_BUTTON_ZINDEX = 1060
+export const FILE_ZINDEX = 1070
+export const MEDIA_ZINDEX = 1080
 
 //time
 export const AUTH_TIME = 60000
@@ -44,6 +45,7 @@ export const AUTH_TIME = 60000
 //widget
 export const UPLOAD = 'UPLOAD'
 export const FEEDBACK = 'FEEDBACK'
+export const MUSIC = 'MUSIC'
 
 //collapse
 export const LEFT = 'LEFT'

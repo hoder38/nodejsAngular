@@ -68,6 +68,7 @@ var express = require('express'),
     server = https.createServer(credentials, app),
     //port = 443,
     encode = "utf8",
+    url = require('url'),
     viewsPath = path.join(__dirname, "../../../views"),
     staticPath = path.join(__dirname, "../../../public"),
     sessionStore = require("../models/session-tool.js")(express_session);
@@ -3942,6 +3943,7 @@ app.get('/subtitle/:uid/:lang/:index(\\d+|v)?/:fresh(0+)?', function(req, res, n
             method: 'GET',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
+                'Referer' : req.headers['referer'],
                 'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; rv:40.0) Gecko/20100101 Firefox/40.0',
             }
         }, function(sub) {
@@ -4201,7 +4203,11 @@ function sendWs(data, adultonly, auth) {
 server.listen(config_glb.port, config_glb.ip);
 
 function checkLogin(req, res, next, callback) {
-    if(!req.isAuthenticated()){
+    var parseUrl = url.parse(req.headers['referer']);
+    if (parseUrl['host'] !== req.headers['host']) {
+        console.log(parseUrl);
+        next();
+    } else if(!req.isAuthenticated()){
         if (util.isMobile(req.headers['user-agent']) || req.headers['user-agent'].match(/Firefox/i)) {
             if (/^\/video\//.test(req.path)) {
                 console.log("mobile or firefox");

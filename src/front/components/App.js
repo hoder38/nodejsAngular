@@ -11,6 +11,7 @@ import ReGlobalPassword from '../containers/ReGlobalPassword'
 import ReGlobalComfirm from '../containers/ReGlobalComfirm'
 import FileManage from './FileManage'
 import ReWidgetManage from '../containers/ReWidgetManage'
+import MediaManage from './MediaManage'
 
 const App = React.createClass({
     getInitialState: function() {
@@ -95,6 +96,7 @@ const App = React.createClass({
             <div id="wrapper" data-drop={UPLOAD} className="storage-wrapper">
                 <FileManage />
                 <ReWidgetManage />
+                <MediaManage />
                 <ReAlertlist />
                 {glbPw}
                 {glbCf}
