@@ -7037,16 +7037,16 @@ function loopUpdateExternal() {
     external_time = new Date().getTime();
     console.log('complete tag');
     tagTool.completeMimeTag(1);
-    console.log('lovetv');
-    externalTool.getList('lovetv', function(err) {
+    console.log('eztv');
+    externalTool.getList('eztv', function(err) {
         if (err) {
             util.handleError(err);
             external_time = 1;
             console.log('loopUpdateExternal end');
         } else {
-            console.log('eztv');
+            console.log('lovetv');
             console.log(new Date());
-            externalTool.getList('eztv', function(err) {
+            externalTool.getList('lovetv', function(err) {
                 if (err) {
                     util.handleError(err);
                     external_time = 1;
