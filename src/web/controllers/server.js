@@ -489,16 +489,7 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
-            var name = false;
-            if (tagTool.isDefaultTag(req.params.name).index === 31) {
-                name = req.params.name;
-            } else {
-                name = util.isValidString(req.params.name, 'name');
-            }
-            if (name === false) {
-                util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
-            }
-            tags.setSingleArray(name);
+            tags.resetArray();
         }
         tagTool.tagQuery(page, req.params.name, exactly, Number(req.params.index), req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
@@ -736,16 +727,7 @@ app.get('/api/stock/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/:p
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
-            var name = false;
-            if (stockTagTool.isDefaultTag(req.params.name).index === 31) {
-                name = req.params.name;
-            } else {
-                name = util.isValidString(req.params.name, 'name');
-            }
-            if (name === false) {
-                util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
-            }
-            tags.setSingleArray(name);
+            tags.resetArray();
         }
         stockTagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
@@ -3494,16 +3476,7 @@ app.get('/api/password/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)
             if (!tags) {
                 util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
             }
-            var name = false;
-            if (pwTagTool.isDefaultTag(req.params.name).index === 31) {
-                name = req.params.name;
-            } else {
-                name = util.isValidString(req.params.name, 'name');
-            }
-            if (name === false) {
-                util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
-            }
-            tags.setSingleArray(name);
+            tags.resetArray();
         }
         pwTagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {

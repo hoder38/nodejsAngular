@@ -2185,10 +2185,12 @@ module.exports = {
                                             list_match[1] = 'http://jp.jplovetv.com' + list_match[1];
                                         }
                                     }
-                                    if (list_match[3]) {
-                                        list.push({name: list_match[2], type: list_match[3], year: list_year, url: list_match[1]});
-                                    } else {
-                                        list.push({name: list_match[2], year: list_year, url: list_match[1]});
+                                    if (!list_match[2].match(/�/)) {
+                                        if (list_match[3]) {
+                                            list.push({name: list_match[2], type: list_match[3], year: list_year, url: list_match[1]});
+                                        } else {
+                                            list.push({name: list_match[2], year: list_year, url: list_match[1]});
+                                        }
                                     }
                                 }
                             }
@@ -2479,7 +2481,7 @@ module.exports = {
                                         if (index < list_arr.length) {
                                             setTimeout(function(){
                                                 recur_save(type, index, list_arr);
-                                            }, 30000);
+                                            }, 10000);
                                         } else {
                                             setTimeout(function(){
                                                 callback(null);
@@ -2492,7 +2494,7 @@ module.exports = {
                                 if (index < list_arr.length) {
                                     setTimeout(function(){
                                         recur_save(type, index, list_arr);
-                                    }, 30000);
+                                    }, 0);
                                 } else {
                                     setTimeout(function(){
                                         callback(null);
