@@ -50,7 +50,7 @@ module.exports = {
     toValidName: function(str) {
         var buf = new Buffer(str, 'utf-8');
         str = buf.toString();
-        str = str.replace(/[(&#\d+;)]+/g, ' ');
+        str = str.replace(/&#\d+;/g, ' ');
         str = str.trim();
         if (str.replace(/[\s　]+/g, '') === '') {
             str = 'empty';
