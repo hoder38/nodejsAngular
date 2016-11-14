@@ -2481,7 +2481,7 @@ module.exports = {
                                         if (index < list_arr.length) {
                                             setTimeout(function(){
                                                 recur_save(type, index, list_arr);
-                                            }, 10000);
+                                            }, 30000);
                                         } else {
                                             setTimeout(function(){
                                                 callback(null);
