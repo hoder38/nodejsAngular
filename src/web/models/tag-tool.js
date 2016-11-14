@@ -209,29 +209,6 @@ module.exports = function(collection) {
                         return false;
                     }
                     return {tags: search[name].save[saveName].tags, exactly: search[name].save[saveName].exactly, bookmark: search[name].save[saveName].bookmark, sortName: search[name].save[saveName].sortName, sortType: search[name].save[saveName].sortType};
-                },
-                setSingleArray: function(value) {
-                    var normal = normalize(value);
-                    var defau = isDefaultTag(normal);
-                    if (defau.index === 0 || defau.index === 5 || defau.index === 6 || defau.index === 7 || defau.index === 8 || defau.index === 9 || defau.index === 10 || defau.index === 11 || defau.index === 13 || defau.index === 14 || defau.index === 15 || defau.index === 16 || defau.index === 17 || defau.index === 18 || defau.index === 19 || defau.index === 20 || defau.index === 21 || defau.index === 22 || defau.index === 30 || defau.index === 31) {
-                        return true;
-                    } else {
-                        for (var i = 0; i < search[name].index; i++) {
-                            normal = search[name].tags[i];
-                            defau = isDefaultTag(normal);
-                            if (defau.index !== 0 && defau.index !== 5 && defau.index !== 6 && defau.index !== 7 && defau.index !== 8 && defau.index !== 9 && defau.index !== 10 && defau.index !== 11 &&defau.index !== 13 && defau.index !== 14 && defau.index !== 15 && defau.index !== 16 && defau.index !== 17 && defau.index !== 18 && defau.index !== 19 && defau.index !== 20 && defau.index !== 21 && defau.index !== 22 && defau.index !== 30 && defau.index !== 31) {
-                                search[name].tags = search[name].tags.slice(0, i);
-                                search[name].exactly = search[name].exactly.slice(0, i);
-                                search[name].index = search[name].tags.length;
-                                break;
-                            }
-                        }
-                        if (search[name].index < search[name].markIndex) {
-                            search[name].bookmark = '';
-                            search[name].markIndex = 0;
-                        }
-                        return true;
-                    }
                 }
             };
         },
@@ -949,7 +926,7 @@ module.exports = function(collection) {
                         if (!tags) {
                             util.handleError({hoerror: 2, message: 'error search var!!!'}, next, callback);
                         }
-                        tags.setSingleArray(parents[0].name);
+                        tags.resetArray();
                     }
                     this_obj.tagQuery(0, parents[0].name, true, null, sortName, sortType, user, session, next, function(err, result) {
                         if (err) {
