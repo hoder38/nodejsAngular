@@ -5,17 +5,13 @@ import { api, isValidString, killEvent, bookmarkItemList } from '../utility'
 const ItemFile = React.createClass({
     _download: function(id, name) {
         this.props.sendglbcf(() => {
-            if (this.props.bookmark) {
-                this.props.setLatest(id)
-            }
+            this.props.setLatest(id, this.props.bookmark)
             window.location.href = `${this.props.mainUrl}/download/${id}`
         }, `Would you sure to download ${name}?`)
     },
     _save2drive: function(id, name) {
         this.props.sendglbcf(() => api(`${this.props.mainUrl}/api/download2drive/${id}`).then(result => {
-            if (this.props.bookmark) {
-                this.props.setLatest(id)
-            }
+            this.props.setLatest(id, this.props.bookmark)
             this.props.addalert('start saving to drive')
         }).catch(err => this.props.addalert(err)) , `Would you sure to download ${name} to drive?`)
     },
@@ -108,13 +104,7 @@ const ItemFile = React.createClass({
     },
     _join: function() {
         this.props.sendglbcf(() => {
-            let uids = []
-            this.props.list.forEach(item => {
-                if (item.select) {
-                    uids.push(item.id)
-                }
-            })
-            uids.length > 1 ? api(`${this.props.mainUrl}/api/joinFile`, {uids: uids}, 'PUT').then(result => this.props.addalert('joining completed')).catch(err => this.props.addalert(err)) : this.props.addalert('Please selects multiple items!!!')
+            (this.props.select.size > 1) ? api(`${this.props.mainUrl}/api/joinFile`, {uids: [...this.props.select]}, 'PUT').then(result => this.props.addalert('joining completed')).catch(err => this.props.addalert(err)) : this.props.addalert('Please selects multiple items!!!')
         }, 'Would you sure to join the split zips?')
     },
     _searchSub: function(id) {
@@ -131,11 +121,7 @@ const ItemFile = React.createClass({
     },
     _showUrl: function(id, url) {
         window.open(decodeURIComponent(url))
-        api(`/api/media/setTime/${id}/url`).then(result => {
-            if (this.props.bookmark) {
-                this.props.setLatest(id)
-            }
-        }).catch(err => this.props.addalert(err))
+        api(`/api/media/setTime/${id}/url`).then(result => this.props.setLatest(id, this.props.bookmark)).catch(err => this.props.addalert(err))
     },
     _bookmark: function(id) {
         bookmarkItemList('set', this.props.sortName, this.props.sortType, this.props.set, id).catch(err => this.props.addalert(err))
@@ -236,6 +222,10 @@ const ItemFile = React.createClass({
                         <i className="glyphicon glyphicon-headphones" style={{height: '42px', width: '42px', fontSize: '35px'}}></i>{item.name}
                     </a>
                 )
+                click = () => this.props.setMedia(4, item.id, {
+                    save2local: this._save2local,
+                    subscript: this._subscript,
+                })
                 break
                 case 7:
                 content = (
@@ -283,7 +273,7 @@ const ItemFile = React.createClass({
                 <td className="text-center" style={{width: '56px'}}>
                     <input
                         type="checkbox"
-                        checked={item.select}
+                        checked={this.props.check}
                         ref={ref => this.props.getRef(ref)}
                         onChange={this.props.onchange} />
                 </td>

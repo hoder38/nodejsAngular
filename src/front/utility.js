@@ -72,6 +72,10 @@ export function killEvent(e, func) {
     func()
 }
 
+export function randomFloor(min,max) {
+    return Math.floor(Math.random()*(max-min+1)+min)
+}
+
 //api
 function errorHandle(response, relogin) {
     if (!response.ok) {
@@ -140,53 +144,47 @@ export const doLogout = (url = '') => api(`${url}/api/logout`).then(info => {
 export const testLogin = () => api('/api/testLogin', null, 'GET', false)
 
 //array object
-export const arrayObjectIncludes = (myArray, searchTerm, property) => {
-    for(let i of myArray) {
-        if (i[property] === searchTerm) {
-            return true
-        }
+export const arrayObject = (action, myArray, term, property=null, rest=item=>item) => {
+    let newList = new Map(myArray)
+    switch(action) {
+        case 'push':
+        Array.isArray(term) ? term.forEach(item => newList.set(item[property], rest(item))) : newList.set(term[property], rest(term))
+        break
+        case 'pop':
+        newList.delete(term)
+        break
     }
-    return false
+    return newList
+}
+
+export const arrayId = (action, myArray, term, property=null) => {
+    let newList = new Set(myArray)
+    switch(action) {
+        case 'push':
+        Array.isArray(term) ? term.forEach(item => newList.add(item[property])) : newList.add(term[property])
+        break
+        case 'pop':
+        newList.delete(term)
+        break
+    }
+    return newList
+}
+
+export const arrayMerge = (arrId, arrObj) => {
+    let newList = new Map()
+    arrId.forEach(id => newList.set(id, arrObj.get(id)))
+    return newList
 }
 
 export const arrayObjectIndexOf = (myArray, searchTerm, property) => {
-    for(let i of myArray.entries()) {
-        if (i[1][property] === searchTerm) {
-            return i[0]
+    for(let i in myArray) {
+        if (myArray[i][property] === searchTerm) {
+            return i
         }
     }
     return -1
 }
 
-export const arrayObjectPush = (myArray, pushTerm, property, rest=item=>item) => {
-    if (Array.isArray(pushTerm)) {
-        let new_list = myArray.map(item => {
-            for (let i of pushTerm.entries()) {
-                if (item[property] === i[1][property]) {
-                    pushTerm.splice(i[0], 1)
-                    return rest(i[1], item)
-                }
-            }
-            return item
-        })
-        pushTerm.forEach(item => new_list.push(rest(item)))
-        return new_list
-    } else {
-        let is_add = false
-        let new_list = myArray.map(item => {
-            if (item[property] === pushTerm[property]) {
-                is_add = true
-                return rest(pushTerm, item)
-            } else {
-                return item
-            }
-        })
-        if (!is_add) {
-            new_list.splice(0, 0, rest(pushTerm))
-        }
-        return new_list
-    }
-}
 
 //itemlist
 const youtubeList = (pageToken, set, parentList) => api(`/api/youtube/get/${pageToken}`).then(result => set(result.itemList, parentList, null, null, null, null, result.pageToken))

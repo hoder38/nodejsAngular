@@ -1,14 +1,14 @@
-import { arrayObjectPush } from '../utility'
+import { arrayObject } from '../utility'
 
-const initialState = []
+const initialState = new Map()
 
 export default function simpleDataHandle (push, pop) {
     return (state = initialState, action) => {
         switch (action.type) {
             case push:
-            return Array.isArray(action.simple) ? action.simple : arrayObjectPush(state, action.simple, 'id')
+            return arrayObject('push', Array.isArray(action.simple) ? [] : state, action.simple, 'id')
             case pop:
-            return state.filter(simple => simple.id !== action.id)
+            return arrayObject('pop', state, action.id)
             default:
             return state
         }

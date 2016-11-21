@@ -4,7 +4,7 @@ import ReUserInfo from '../containers/ReUserInfo'
 
 const Userlist = React.createClass({
     componentWillMount: function() {
-        if (this.props.user_info.length === 0) {
+        if (this.props.user_info.size === 0) {
             api('/api/userinfo').then(result => this.props.userset(result.user_info)).catch(err => this.props.addalert(err))
         }
     },

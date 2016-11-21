@@ -2267,7 +2267,7 @@ app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, re
     });
 });
 
-app.post('/api/media/saveParent', function(req, res, next) {
+app.post('/api/media/saveParent/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('saveParent');
         console.log(new Date());
@@ -2281,18 +2281,12 @@ app.post('/api/media/saveParent', function(req, res, next) {
         if (!tags) {
             util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
         }
-        var sortName = 'name';
-        var sortType = 'desc';
-        if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
-            sortName = req.cookies.fileSortName;
-            if (sortName === 'mtime') {
-                sortName = 'utime';
-            }
+        req.params.sortName = req.params.sortName ? req.params.sortName : 'name';
+        req.params.sortType = req.params.sortType ? req.params.sortType : 'desc';
+        if (req.params.sortName === 'mtime') {
+            sortName = 'utime';
         }
-        if (req.cookies.fileSortType === 'asc') {
-            sortType = req.cookies.fileSortType;
-        }
-        tags.saveArray(name, sortName, sortType);
+        tags.saveArray(name, req.params.sortName, req.params.sortType);
         res.json({apiOK: true});
     });
 });

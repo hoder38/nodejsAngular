@@ -2,22 +2,25 @@ import { connect } from 'react-redux'
 import { alertPush, feedbackPop, feedbackPush } from '../actions'
 import FileFeedback from '../components/FileFeedback'
 
-const mapStateToProps = state => state.feedbackDataHandle.length > 0 ? {
-    dirs: state.dirDataHandle,
-    mainUrl: state.basicDataHandle.url,
-    id: state.feedbackDataHandle[0].id,
-    name: state.feedbackDataHandle[0].name,
-    select: state.feedbackDataHandle[0].select,
-    option: state.feedbackDataHandle[0].option,
-    other: state.feedbackDataHandle[0].other,
-} : {
-    dirs: state.dirDataHandle,
-    mainUrl: state.basicDataHandle.url,
-    id: '',
-    name: '',
-    select: [],
-    option: [],
-    other: [],
+const mapStateToProps = state => {
+    let tmp = state.feedbackDataHandle.values().next().value
+    return tmp ? {
+        dirs: state.dirDataHandle,
+        mainUrl: state.basicDataHandle.url,
+        id: tmp.id,
+        name: tmp.name,
+        select: tmp.select,
+        option: tmp.option,
+        other: tmp.other,
+    } : {
+        dirs: state.dirDataHandle,
+        mainUrl: state.basicDataHandle.url,
+        id: '',
+        name: '',
+        select: [],
+        option: [],
+        other: [],
+    }
 }
 
 const mapDispatchToProps = dispatch => ({

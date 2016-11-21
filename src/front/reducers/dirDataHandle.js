@@ -1,5 +1,5 @@
 import { SET_DIRS, DIR_POP, DIR_PUSH } from '../constants'
-import { arrayObjectPush } from '../utility'
+import { arrayObject } from '../utility'
 
 const initialState = []
 
@@ -8,7 +8,7 @@ export default function dirDataHandle (state = initialState, action) {
         case SET_DIRS:
         return action.dirs.map((dir, i) => {
             dir = action.rest(dir, i)
-            dir['list'] = []
+            dir['list'] = new Map()
             dir['sortName'] = 'name'
             dir['sortType'] = 'asc'
             dir['page'] = 0
@@ -18,7 +18,7 @@ export default function dirDataHandle (state = initialState, action) {
         case DIR_PUSH:
         if (action.sortName !== null && action.sortType !== null) {
             return state.map(dir => dir.name === action.name ? Object.assign({}, dir, {
-                list: action.dir,
+                list: arrayObject('push', [], action.dir, 'id'),
                 sortName: action.sortName,
                 sortType: action.sortType,
                 page: action.dir.length,
@@ -28,12 +28,12 @@ export default function dirDataHandle (state = initialState, action) {
             return state.map(dir => dir.name === action.name ? Object.assign({}, dir, {
                 page: action.dir.length ? dir.page + action.dir.length : dir.page,
                 more: (Array.isArray(action.dir) && action.dir.length === 0) ? false : true,
-                list: arrayObjectPush(dir.list, action.dir, 'id'),
+                list: arrayObject('push', dir.list, action.dir, 'id'),
             }) : dir)
         }
         case DIR_POP:
         return state.map(dir => dir.name === action.name ? Object.assign({}, dir, {
-            list: dir.list.filter(item => item.id !== action.id),
+            list: arrayObject('pop', dir.list, action.id),
             page: dir.page - 1,
         }) : dir)
         default:

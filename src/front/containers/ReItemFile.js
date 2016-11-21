@@ -3,15 +3,16 @@ import { setItem, alertPush, sendGlbIn, feedbackPush, sendGlbCf, bookmarkPush, i
 import ItemFile from '../components/ItemFile'
 
 const mapStateToProps = state => ({
-    list: state.itemDataHandle.list,
-    sortName: state.itemDataHandle.sortName,
-    sortType: state.itemDataHandle.sortType,
+    select: state.itemDataHandle.select,
+    sortName: state.itemDataHandle.item.sortName,
+    sortType: state.itemDataHandle.item.sortType,
+    bookmark: state.itemDataHandle.item.bookmark,
     mainUrl: state.basicDataHandle.url,
-    bookmark: state.itemDataHandle.bookmark,
 })
 
 const mapDispatchToProps = dispatch => ({
-    setLatest: id => dispatch(setItem(null, id)),
+    setLatest: (id, bookmark) => dispatch(setItem(null, id, bookmark)),
+    setMedia: (type, id, opt) => dispatch(setItem(null, null, null, null, type, id, opt)),
     addalert: msg => dispatch(alertPush(msg)),
     globalinput: (type, callback, color, placeholder, value, placeholder2) => dispatch(sendGlbIn(type, callback, color, placeholder, value, placeholder2)),
     pushfeedback: feedback => dispatch(feedbackPush(feedback)),

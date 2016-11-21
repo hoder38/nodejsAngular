@@ -3,8 +3,8 @@ import { sendGlbIn, itemPush } from '../actions'
 import TopSection from '../components/TopSection'
 
 const mapStateToProps = state => ({
-    sortName: state.itemDataHandle.sortName,
-    sortType: state.itemDataHandle.sortType,
+    sortName: state.itemDataHandle.item.sortName,
+    sortType: state.itemDataHandle.item.sortType,
     multi: state.itemDataHandle.multi,
     pathLength: state.itemDataHandle.path.cur ? state.itemDataHandle.path.cur.length : 0,
 })

@@ -4,7 +4,7 @@ import { getItemList, isValidString, api, killEvent } from '../utility'
 
 const ItemHead = React.createClass({
     _changeSort: function(name) {
-        const type = (name === this.props.item.sortName && this.props.item.sortType === 'asc') ? 'desc' : 'asc'
+        const type = (name === this.props.sortName && this.props.sortType === 'asc') ? 'desc' : 'asc'
         getItemList(name, type, this.props.set).then(() => {
             if (typeof(Storage) !== "undefined") {
                 localStorage.setItem("fileSortName", name)
@@ -13,36 +13,20 @@ const ItemHead = React.createClass({
         }).catch(err => this.props.addalert(err))
     },
     _selectAll: function() {
-        let select = true
-        for (var i of this.props.item.list) {
-            if (i.select) {
-                select = false
-                break
-            }
-        }
-        this.props.select(this.props.item.list.map(item => {
-            item.select = select
-            return item
-        }))
+        this.props.select.size === 0 ? this.props.setSelect('All') : this.props.setSelect(new Set())
     },
     _addTag: function(name) {
         if (!name) {
             return Promise.reject('')
         }
-        let uids = []
-        this.props.item.list.forEach(item => {
-            if (item.select) {
-                uids.push(item.id)
-            }
-        })
-        if (uids.length === 0) {
+        if (this.props.select.size === 0) {
             return Promise.reject('Please selects item!!!')
         }
         if (isValidString(name, 'name')) {
-            return api(`/api/addTag/${name}`, {uids: uids}, 'PUT')
+            return api(`/api/addTag/${name}`, {uids: [...this.props.select]}, 'PUT')
         } else if (isValidString(name, 'url')) {
             return api('/api/addTagUrl', {
-                uids: uids,
+                uids: [...this.props.select],
                 url: name,
             }, 'PUT')
         } else {
@@ -51,12 +35,12 @@ const ItemHead = React.createClass({
     },
     render: function() {
         let nameSort = null, timeSort = null, countSort = null
-        if (this.props.item.sortName === 'name') {
-            nameSort = (this.props.item.sortType === 'asc') ? <i className="glyphicon glyphicon-chevron-up"></i> : <i className="glyphicon glyphicon-chevron-down"></i>
-        } else if (this.props.item.sortName === 'mtime') {
-            timeSort = (this.props.item.sortType === 'asc') ? <i className="glyphicon glyphicon-chevron-up"></i> : <i className="glyphicon glyphicon-chevron-down"></i>
+        if (this.props.sortName === 'name') {
+            nameSort = (this.props.sortType === 'asc') ? <i className="glyphicon glyphicon-chevron-up"></i> : <i className="glyphicon glyphicon-chevron-down"></i>
+        } else if (this.props.sortName === 'mtime') {
+            timeSort = (this.props.sortType === 'asc') ? <i className="glyphicon glyphicon-chevron-up"></i> : <i className="glyphicon glyphicon-chevron-down"></i>
         } else {
-            countSort = (this.props.item.sortType === 'asc') ? <i className="glyphicon glyphicon-chevron-up"></i> : <i className="glyphicon glyphicon-chevron-down"></i>
+            countSort = (this.props.sortType === 'asc') ? <i className="glyphicon glyphicon-chevron-up"></i> : <i className="glyphicon glyphicon-chevron-down"></i>
         }
         let selectClass1 = 'glyphicon glyphicon-ok'
         let selectClass2 = 'text-right active'
@@ -64,16 +48,13 @@ const ItemHead = React.createClass({
         let selectClass4 = 'pull-right active'
         let tooltip = null
         let addTag = () => {}
-        for (var i of this.props.item.list) {
-            if (i.select) {
-                selectClass1 = 'glyphicon glyphicon-remove-sign'
-                selectClass2 = 'text-right'
-                selectClass3 = 'glyphicon glyphicon-plus'
-                selectClass4 = 'pull-right'
-                tooltip = <Tooltip tip="增加共同TAG" place="left" />
-                addTag = () => this.props.globalinput(name => this._addTag(name))
-                break
-            }
+        if (this.props.select.size > 0) {
+            selectClass1 = 'glyphicon glyphicon-remove-sign'
+            selectClass2 = 'text-right'
+            selectClass3 = 'glyphicon glyphicon-plus'
+            selectClass4 = 'pull-right'
+            tooltip = <Tooltip tip="增加共同TAG" place="left" />
+            addTag = () => this.props.globalinput(name => this._addTag(name))
         }
         return (
             <ul className="nav nav-pills" style={{backgroundColor: 'white', borderBottom: '2px solid #ddd'}}>

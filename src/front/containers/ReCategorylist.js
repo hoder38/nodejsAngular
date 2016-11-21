@@ -3,8 +3,8 @@ import { bookmarkPush, bookmarkPop, dirPush, dirPop, itemPush } from '../actions
 import Categorylist from '../components/Categorylist'
 
 const mapStateToProps = state => ({
-    sortName: state.itemDataHandle.sortName,
-    sortType: state.itemDataHandle.sortType,
+    sortName: state.itemDataHandle.item.sortName,
+    sortType: state.itemDataHandle.item.sortType,
     multi: state.itemDataHandle.multi,
     edit: state.basicDataHandle.edit,
     bookmark: state.bookmarkDataHandle,

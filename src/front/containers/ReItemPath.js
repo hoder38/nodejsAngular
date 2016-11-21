@@ -1,19 +1,19 @@
 import { connect } from 'react-redux'
-import { itemPush, alertPush, bookmarkPush, feedbackPush, sendGlbIn } from '../actions'
+import { itemPush, alertPush, bookmarkPush, feedbackPush, sendGlbIn, setItem } from '../actions'
 import ItemPath from '../components/ItemPath'
 
 const mapStateToProps = state => ({
     current: state.itemDataHandle.path.cur,
     history: state.itemDataHandle.path.his,
     exact: state.itemDataHandle.path.exactly,
-    sortName: state.itemDataHandle.sortName,
-    sortType: state.itemDataHandle.sortType,
+    sortName: state.itemDataHandle.item.sortName,
+    sortType: state.itemDataHandle.item.sortType,
     multi: state.itemDataHandle.multi,
     bookmark: state.bookmarkDataHandle.list,
 })
 
 const mapDispatchToProps = dispatch => ({
-    multiToggle: item => dispatch(itemPush(item)),
+    multiToggle: item => dispatch(setItem(null, null, null, item)),
     addalert: msg => dispatch(alertPush(msg)),
     set: (item, path, bookmark, latest, sortName, sortType, pageToken) => dispatch(itemPush(item, path, bookmark, latest, sortName, sortType, pageToken)),
     pushbookmark: bookmark => dispatch(bookmarkPush(bookmark)),

@@ -8,6 +8,7 @@ export default function UserInput({ val, getinput, edit=true, show=true, type='t
         <input
             type={type}
             className={getinput.className}
+            style={getinput.style}
             placeholder={placeholder}
             value={val}
             ref={ref => getinput.getRef(ref)}
@@ -34,10 +35,11 @@ export default function UserInput({ val, getinput, edit=true, show=true, type='t
 }
 
 UserInput.Input = class {
-    constructor(names, submit, change, className='form-control') {
+    constructor(names, submit, change, className='form-control', style={}) {
         this.submit = submit
         this.change = change
         this.className = className
+        this.style = style
         this.ref = new Map()
         names.forEach(name => this.ref.set(name, null))
     }
@@ -64,6 +66,7 @@ UserInput.Input = class {
             },
             onchange: this.change,
             className: this.className,
+            style: this.style,
         }
     }
     initFocus() {

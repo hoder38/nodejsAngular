@@ -100,7 +100,7 @@ export const itemPop = id => ({
     id,
 })
 
-export const itemPush = (item, path=null, bookmark=null, latest=null, sortName=null, sortType=null, pageToken=null) => ({
+export const itemPush = (item, path=null, bookmark=null, latest=null, sortName=null, sortType=null, pageToken=null, list='item') => ({
     type: ITEM_PUSH,
     item,
     path,
@@ -109,12 +109,18 @@ export const itemPush = (item, path=null, bookmark=null, latest=null, sortName=n
     sortName,
     sortType,
     pageToken,
+    list,
 })
 
-export const setItem = (item, latest=null) => ({
+export const setItem = (select, latest=null, bookmark=null, multi=null, list=null, id=null, opt=null) => ({
     type: SET_ITEM,
-    item,
+    select,
     latest,
+    bookmark,
+    multi,
+    list,
+    id,
+    opt,
 })
 
 export const sendGlbIn = (input, callback, color, placeholder, value=null, placeholder2=null) => ({

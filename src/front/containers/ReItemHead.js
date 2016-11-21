@@ -3,13 +3,15 @@ import { itemPush, alertPush, setItem, sendGlbIn } from '../actions'
 import ItemHead from '../components/ItemHead'
 
 const mapStateToProps = state => ({
-    item: state.itemDataHandle,
+    select: state.itemDataHandle.select,
+    sortName: state.itemDataHandle.item.sortName,
+    sortType: state.itemDataHandle.item.sortType,
 })
 
 const mapDispatchToProps = dispatch => ({
     addalert: msg => dispatch(alertPush(msg)),
     set: (item, path, bookmark, latest, sortName, sortType, pageToken) => dispatch(itemPush(item, path, bookmark, latest, sortName, sortType, pageToken)),
-    select: item => dispatch(setItem(item)),
+    setSelect: item => dispatch(setItem(item)),
     globalinput: callback => dispatch(sendGlbIn(1, callback, 'danger', 'New Tag...')),
 })
 

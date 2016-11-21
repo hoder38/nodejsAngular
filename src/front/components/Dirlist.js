@@ -10,7 +10,7 @@ const Dirlist = React.createClass({
         }
     },
     componentWillMount: function() {
-        if (!this.props.collapse && this.props.dir.list.length === 0) {
+        if (!this.props.collapse && this.props.dir.list.size === 0) {
             this._getlist(this.props.dir.sortName, this.props.dir.sortType, this.props.dir.page)
         }
     },
@@ -32,7 +32,7 @@ const Dirlist = React.createClass({
         this.props.sendglbcf(() => api(`${this.props.delUrl}${id}`, null, 'DELETE').then(result => this.props.del(result.id)).catch(err => this.props.addalert(err)), `Would you sure to delete ${name} from ${this.props.name}?`)
     },
     _openList: function() {
-        if (this.props.dir.list.length === 0) {
+        if (this.props.dir.list.size === 0) {
             this.setState(Object.assign({}, this.state, {collapse: !this.state.collapse}), () => this._getlist(this.props.dir.sortName, this.props.dir.sortType, this.props.dir.page))
         } else {
             this.setState(Object.assign({}, this.state, {collapse: !this.state.collapse}))
