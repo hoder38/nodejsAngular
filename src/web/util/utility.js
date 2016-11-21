@@ -102,7 +102,7 @@ module.exports = {
                     }
                     break;
                 case 'altpwd':
-                    if (str.match(/^[0-9a-zA-Z\._!@#$%\u4e00-\u9fa5]{2,30}$/)) {
+                    if (str.match(/^[0-9a-zA-Z\._!@#$%;\u4e00-\u9fa5]{2,30}$/)) {
                         return str;
                     }
                     break;
