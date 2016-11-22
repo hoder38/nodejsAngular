@@ -5365,7 +5365,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                 } else {
                     var cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip ' + realPath + ' "' + filename.replace(/"/g, '\\"') + '"';
                     if (zipPwd) {
-                        cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip ' + realPath + ' "' + filename.replace(/"/g, '\\"') + '" ' + zipPwd;
+                        cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip ' + realPath + ' "' + filename.replace(/"/g, '\\"') + '" \'' + zipPwd + '\'';
                     }
                     if (zip_type === 2) {
                         if (zipPwd) {
@@ -5381,7 +5381,7 @@ function queueTorrent(action, user, torrent, fileIndex, id, owner, pType, pwd) {
                         }
                     } else if (zip_type === 4) {
                         if (zipPwd) {
-                            cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip_c ' + realPath + ' "' + filename.replace(/"/g, '\\"') + '" ' + zipPwd;
+                            cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip_c ' + realPath + ' "' + filename.replace(/"/g, '\\"') + '" \'' + zipPwd + '\'';
                         } else {
                             cmdline = path.join(__dirname, "../util/myuzip.py") + ' ' + filePath + '_zip_c ' + realPath + ' "' + filename.replace(/"/g, '\\"') + '"';
                         }
