@@ -5,6 +5,7 @@ const mapStateToProps = state => ({
     uploadProgress: state.uploadDataHandle,
     feedbackNumber: state.feedbackDataHandle.size,
     musicNumber: state.itemDataHandle[4] ? state.itemDataHandle[4].list.size : 0,
+    musicMore: state.itemDataHandle[4] ? state.itemDataHandle[4].more : false,
 })
 
 const ReWidgetManage = connect(

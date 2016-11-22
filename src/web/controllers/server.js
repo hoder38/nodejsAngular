@@ -2261,7 +2261,7 @@ app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, re
                     util.handleError(err, next, res);
                 }
                 var itemList = getStorageItem(req.user, items);
-                res.json({itemList: itemList});
+                res.json({itemList: itemList, parentList: sql.parentList});
             });
         }
     });

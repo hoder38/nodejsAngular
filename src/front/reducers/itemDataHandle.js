@@ -98,14 +98,19 @@ export default function itemDataHandle (state = initialState, action) {
                     }),
                 })
             } else {
-                return (action.list !== 'item' || action.path === state.path) ? Object.assign({}, state, {
+                for (let i in action.path.cur) {
+                    if (action.path.cur[i] !== state.path.cur[i]) {
+                        return state
+                    }
+                }
+                return Object.assign({}, state, {
                     list: arrayObject('push', state.list, action.item, 'id', rest_item),
                     [action.list]: Object.assign({}, state[action.list], {
                         pageToken: action.pageToken,
                         more: (!state[action.list].more && action.item.length === 0) ? false : true,
                         list: arrayId('push', state[action.list].list, action.item, 'id', rest_item),
                     }),
-                }) : state
+                })
             }
         }
         case ITEM_POP:

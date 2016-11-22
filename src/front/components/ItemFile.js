@@ -215,6 +215,7 @@ const ItemFile = React.createClass({
                         {item.name}
                     </a>
                 )
+                click = () => this.props.setMedia(3, item.id, {})
                 break
                 case 4:
                 content = (

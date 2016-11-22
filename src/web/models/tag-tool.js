@@ -780,6 +780,7 @@ module.exports = function(collection) {
                 return false;
             }
             var save = tags.loadArray(saveName);
+            var parentList = {cur: save.tags, his: [], exactly: save.exactly, bookmark: save.bookmark};
             if (!save) {
                 return false;
             }
@@ -804,7 +805,7 @@ module.exports = function(collection) {
                 if (sql.select) {
                     select = sql.select;
                 }
-                return {nosql: sql.nosql, options: options, select: select};
+                return {nosql: sql.nosql, options: options, select: select, parentList: parentList};
             } else {
                 return {empty: true};
             }

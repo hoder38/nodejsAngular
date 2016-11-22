@@ -46,6 +46,7 @@ export const AUTH_TIME = 60000
 export const UPLOAD = 'UPLOAD'
 export const FEEDBACK = 'FEEDBACK'
 export const MUSIC = 'MUSIC'
+export const VIDEO = 'VIDEO'
 
 //collapse
 export const LEFT = 'LEFT'
