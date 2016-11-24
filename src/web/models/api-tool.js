@@ -329,9 +329,7 @@ module.exports = {
         threshold = typeof threshold !== 'undefined' ? threshold : null;
         is_check = typeof is_check !== 'undefined' ? is_check : true;
         is_file = typeof is_file !== 'undefined' ? is_file : true;
-        console.log(url);
         var urlParse = urlMod.parse(url);
-        console.log(urlParse);
         var options = {
             host: urlParse.hostname,
             port: 80,
@@ -466,8 +464,13 @@ module.exports = {
                         if (!res.headers.location) {
                             console.log(res.headers);
                             util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
+                        } else {
+                            if (res.headers.location)
+                            var prefix = res.headers.location.match(/^((http|https):\/\/[^\/]+)\//);
+                            if (!prefix) {
+                                res.headers.location = options.protocol + '://' + options.host + res.headers.location
+                            }
                         }
-                        console.log(res.headers);
                         is_move = true;
                         setTimeout(function(){
                             this_obj.xuiteDownload(res.headers.location, filePath, callback, threshold, is_check, is_file, referer, not_utf8);
