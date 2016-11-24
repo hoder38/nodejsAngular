@@ -464,6 +464,12 @@ module.exports = {
                         if (!res.headers.location) {
                             console.log(res.headers);
                             util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
+                        } else {
+                            if (res.headers.location)
+                            var prefix = res.headers.location.match(/^((http|https):\/\/[^\/]+)\//);
+                            if (!prefix) {
+                                res.headers.location = options.protocol + '://' + options.host + res.headers.location
+                            }
                         }
                         is_move = true;
                         setTimeout(function(){
