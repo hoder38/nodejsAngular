@@ -9,7 +9,7 @@ const ItemInput = React.createClass({
         this._input = new UserInput.Input(['input1', 'input2'], this._handleSubmit, this._handleChange)
         return Object.assign({
             exact: false,
-            lang: 0,
+            lang: 'ch',
             progress: 0,
         }, this._input.initValue())
     },
@@ -91,7 +91,7 @@ const ItemInput = React.createClass({
             submit = (
                 <div className={`btn btn-${this.props.color} btn-file`}>
                     <span className="glyphicon glyphicon-folder-open"></span>&nbsp;Choose
-                    <FileUploader url={this.props.placeholder} setUpload={this._setUpload} callback={this._handleSubmit} params={{lang: this.state.lang}} />
+                    <FileUploader url={this.props.placeholder} setUpload={this._setUpload} callback={(ret, e) => e ? this.props.addalert(e) : this._handleSubmit(ret)} params={{lang: this.state.lang}} />
                 </div>
             )
             break

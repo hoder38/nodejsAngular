@@ -135,13 +135,22 @@ const FileUploader = React.createClass({
         if (this._files[this._uploading]) {
             this._files[this._uploading].done = true
         }
-        this.props.callback(JSON.parse(e.currentTarget.response))
-        this._uploading = -1
-        this._uploadFile()
+        let result = e.currentTarget.response
+        try {
+            result = JSON.parse(e.currentTarget.response)
+        } catch(x) {
+            console.log(x);
+        }
+        if (this._request.status === 200) {
+            this.props.callback(result)
+            this._uploading = -1
+            this._uploadFile()
+        } else {
+            this._uploadError(result)
+        }
     },
     _uploadError: function(e) {
-        console.log('error');
-        console.log(e);
+        this.props.callback(null, e)
         if (this._files[this._uploading]) {
             this._files[this._uploading].done = true
         }

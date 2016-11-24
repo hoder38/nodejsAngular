@@ -51,6 +51,9 @@ const App = React.createClass({
                             case 'file':
                             api(`/api/storage/single/${wsmsg.data}`).then(result => result.empty ? this.props.itemdel(wsmsg.data) : this.props.itemset(result.item)).catch(err => this.props.addalert(err))
                             break
+                            case 'sub':
+                            this.props.sub.forEach(item => item())
+                            break
                             case userInfo.id:
                             this.props.addalert(wsmsg.data)
                             break
@@ -75,7 +78,7 @@ const App = React.createClass({
         if (this._ws) {
             this._ws.close()
         }
-        this.props.basicset('guest', '', false)
+        this.props.basicset('guest', '', false, [])
         this.props.feedbackset([])
         this.props.userset([])
         this.props.bookmarkset([], 'name', 'asc')

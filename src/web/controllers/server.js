@@ -3897,15 +3897,15 @@ app.get('/api/homepage', function(req, res, next) {
     });
 });
 
-app.get('/subtitle/:uid/:lang/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
+app.get('/subtitle/:uid/:lang/:index(\\d+)?/:fresh(0+)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var req = https.request({
-            host: config_glb.file_ip,
-            port: config_glb.file_port,
+            host: config_glb.extent_file_ip,
+            port: config_glb.extent_file_port,
             path: req.params.index ? '/subtitle/' + req.params.uid + '/' + req.params.lang + '/' + req.params.index : '/subtitle/' + req.params.uid + '/' + req.params.lang,
             method: 'GET',
             headers: {

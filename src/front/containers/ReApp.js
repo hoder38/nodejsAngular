@@ -4,6 +4,7 @@ import App from '../components/App'
 
 const mapStateToProps = state => ({
     id: state.basicDataHandle.id,
+    sub: state.basicDataHandle.sub,
     pwCallback: state.glbPwHandle,
     cfCallback: state.glbCfHandle,
 })

@@ -134,7 +134,7 @@ app.use(function(req, res, next) {
     }
 });
 
-app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
+app.post('/upload/subtitle/:uid/:index(\\d+)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('upload subtitle');
         console.log(new Date());
@@ -242,20 +242,21 @@ app.post('/upload/subtitle/:uid/:index(\\d+|v)?', function(req, res, next) {
                     util.handleError({hoerror: 2, message: "external file, please open video"}, next, res);
                 }
                 filePath = util.getFileLocation(items[0].owner, items[0]._id);
-                if (items[0].status === 9 && req.params.index) {
+                if (items[0].status === 9) {
                     if (req.params.index) {
-                        if (req.params.index === 'v') {
-                            for (var i in items[0]['playList']) {
-                                if (mime.isVideo(items[0]['playList'][i])) {
-                                    fileIndex = i;
-                                    break;
-                                }
+                        fileIndex = Number(req.params.index);
+                    } else {
+                        for (var i in items[0]['playList']) {
+                            if (mime.isVideo(items[0]['playList'][i])) {
+                                fileIndex = i;
+                                break;
                             }
-                        } else {
-                            fileIndex = Number(req.params.index);
                         }
                     }
                     filePath = filePath + '/' + fileIndex;
+                    if (!mime.isVideo(items[0]['playList'][fileIndex])) {
+                        util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+                    }
                 }
                 filePath = (JSON.parse(req.body.lang) === 'en') ? filePath + '.en' : filePath;
                 var folderPath = path.dirname(filePath);
@@ -2209,7 +2210,7 @@ app.post('/api/addurl/:type(\\d)?', function(req, res, next){
     });
 });
 
-app.get('/api/subtitle/fix/:uid/:lang/:adjust/:index(\\d+|v)?', function(req, res, next) {
+app.get('/api/subtitle/fix/:uid/:lang/:adjust/:index(\\d+)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle fix');
         console.log(new Date());
@@ -2361,20 +2362,20 @@ app.get('/api/subtitle/fix/:uid/:lang/:adjust/:index(\\d+|v)?', function(req, re
                 if (items[0].status !== 3 && items[0].status !== 9) {
                     util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
                 }
-                if (req.params.index) {
-                    if (req.params.index === 'v') {
+                if (items[0].status === 9) {
+                    if (req.params.index) {
+                        fileIndex = Number(req.params.index);
+                    } else {
                         for (var i in items[0]['playList']) {
                             if (mime.isVideo(items[0]['playList'][i])) {
                                 fileIndex = i;
                                 break;
                             }
                         }
-                    } else {
-                        fileIndex = Number(req.params.index);
                     }
-                }
-                if (items[0].status === 9 && !mime.isVideo(items[0]['playList'][fileIndex])) {
-                    util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+                    if (!mime.isVideo(items[0]['playList'][fileIndex])) {
+                        util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+                    }
                 }
                 filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 if (items[0].status === 9) {
@@ -2663,7 +2664,7 @@ app.get('/api/external/getSubtitle/:uid', function(req, res, next) {
     });
 });
 
-app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
+app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle search');
         console.log(new Date());
@@ -2774,20 +2775,20 @@ app.post('/api/subtitle/search/:uid/:index(\\d+|v)?', function(req, res, next) {
                 if (items[0].thumb) {
                     util.handleError({hoerror: 2, message: "external file, please open video"}, next, res);
                 }
-                if (req.params.index) {
-                    if (req.params.index === 'v') {
+                if (items[0].status === 9) {
+                    if (req.params.index) {
+                        fileIndex = Number(req.params.index);
+                    } else {
                         for (var i in items[0]['playList']) {
                             if (mime.isVideo(items[0]['playList'][i])) {
                                 fileIndex = i;
                                 break;
                             }
                         }
-                    } else {
-                        fileIndex = Number(req.params.index);
                     }
-                }
-                if (items[0].status === 9 && !mime.isVideo(items[0]['playList'][fileIndex])) {
-                    util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+                    if (!mime.isVideo(items[0]['playList'][fileIndex])) {
+                        util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
+                    }
                 }
                 filePath = util.getFileLocation(items[0].owner, items[0]._id);
                 if (items[0].status === 9) {
@@ -5788,7 +5789,7 @@ app.get('/video/:uid', function (req, res, next) {
     });
 });
 
-app.get('/subtitle/:uid/:lang/:index(\\d+|v)?/:fresh(0+)?', function(req, res, next){
+app.get('/subtitle/:uid/:lang/:index(\\d+)?/:fresh(0+)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log('subtitle');
         console.log(new Date());
@@ -5864,16 +5865,17 @@ app.get('/subtitle/:uid/:lang/:index(\\d+|v)?/:fresh(0+)?', function(req, res, n
                 } else if (items[0].status === 9) {
                     var fileIndex = 0;
                     if (req.params.index) {
-                        if (req.params.index === 'v') {
-                            for (var i in items[0]['playList']) {
-                                if (mime.isVideo(items[0]['playList'][i])) {
-                                    fileIndex = i;
-                                    break;
-                                }
+                        fileIndex = Number(req.params.index);
+                    } else {
+                        for (var i in items[0]['playList']) {
+                            if (mime.isVideo(items[0]['playList'][i])) {
+                                fileIndex = i;
+                                break;
                             }
-                        } else {
-                            fileIndex = Number(req.params.index);
                         }
+                    }
+                    if (!mime.isVideo(items[0]['playList'][fileIndex])) {
+                        util.handleError({hoerror: 2, message: "file type error!!!"}, next, res);
                     }
                     var filePath = util.getFileLocation(items[0].owner, items[0]._id);
                     var subPath = (req.params.lang === 'en') ? filePath + '/' + fileIndex + '.en' : filePath + '/' + fileIndex;
@@ -6898,6 +6900,7 @@ function checkLogin(req, res, next, callback) {
     var parseUrl = url.parse(req.headers['referer']);
     if (!req.headers['host'].match(/^[^:]+/) || parseUrl['hostname'] !== req.headers['host'].match(/^[^:]+/)[0]) {
         console.log(parseUrl);
+        console.log(req.headers);
         next();
     } else if(!req.isAuthenticated()){
         if (util.isMobile(req.headers['user-agent']) || req.headers['user-agent'].match(/Firefox/i)|| req.headers['user-agent'].match(/armv7l/i)) {

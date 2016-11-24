@@ -28,6 +28,8 @@ const rest_item = item => {
     return item
 }
 
+let key = 0
+
 export default function itemDataHandle (state = initialState, action) {
     switch (action.type) {
         case SET_ITEM:
@@ -55,6 +57,7 @@ export default function itemDataHandle (state = initialState, action) {
                     list: newList,
                     page,
                     index,
+                    count: key++,
                     opt: action.opt,
                 })
             })

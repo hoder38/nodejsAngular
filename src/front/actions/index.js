@@ -12,11 +12,12 @@ export const alertPop = key => ({
     key,
 })
 
-export const setBasic = (id=null, url=null, edit=null) => ({
+export const setBasic = (id=null, url=null, edit=null, sub=null) => ({
     type: SET_BASIC,
     id,
     url,
     edit,
+    sub,
 })
 
 export const setUpload = progress => ({
