@@ -467,6 +467,7 @@ module.exports = {
                             console.log(res.headers);
                             util.handleError({hoerror: 1, message: res.statusCode + ': download do not complete'}, callback, callback);
                         }
+                        console.log(res.headers);
                         is_move = true;
                         setTimeout(function(){
                             this_obj.xuiteDownload(res.headers.location, filePath, callback, threshold, is_check, is_file, referer, not_utf8);
