@@ -329,7 +329,9 @@ module.exports = {
         threshold = typeof threshold !== 'undefined' ? threshold : null;
         is_check = typeof is_check !== 'undefined' ? is_check : true;
         is_file = typeof is_file !== 'undefined' ? is_file : true;
+        console.log(url);
         var urlParse = urlMod.parse(url);
+        console.log(urlParse);
         var options = {
             host: urlParse.hostname,
             port: 80,
