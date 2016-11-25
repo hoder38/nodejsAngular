@@ -103,7 +103,7 @@ var express = require('express'),
     openSubtitle = require('opensubtitles-api'),
     oth = require('os-torrent-hash'),
     app = express(),
-    url = require('url'),
+    urlMod = require('url'),
     youtubedl = require('youtube-dl'),
     server = https.createServer(credentials, app),
     mkdirp = require('mkdirp'),
@@ -6897,7 +6897,7 @@ if (config_glb.checkMedia) {
 }
 
 function checkLogin(req, res, next, callback) {
-    var parseUrl = url.parse(req.headers['referer']);
+    var parseUrl = req.headers['referer'] ? urlMod.parse(req.headers['referer']) : urlMod.parse(req.headers['origin']);
     if (!req.headers['host'].match(/^[^:]+/) || parseUrl['hostname'] !== req.headers['host'].match(/^[^:]+/)[0]) {
         console.log(parseUrl);
         console.log(req.headers);

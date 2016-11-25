@@ -68,7 +68,7 @@ var express = require('express'),
     server = https.createServer(credentials, app),
     //port = 443,
     encode = "utf8",
-    url = require('url'),
+    urlMod = require('url'),
     viewsPath = path.join(__dirname, "../../../views"),
     staticPath = path.join(__dirname, "../../../public"),
     sessionStore = require("../models/session-tool.js")(express_session);
@@ -4170,7 +4170,7 @@ function sendWs(data, adultonly, auth) {
 server.listen(config_glb.port, config_glb.ip);
 
 function checkLogin(req, res, next, callback) {
-    var parseUrl = url.parse(req.headers['referer']);
+    var parseUrl = req.headers['referer'] ? urlMod.parse(req.headers['referer']) : urlMod.parse(req.headers['origin']);
     if (parseUrl['host'] !== req.headers['host']) {
         console.log(parseUrl);
         next();
