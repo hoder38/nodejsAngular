@@ -204,6 +204,9 @@ const ItemFile = React.createClass({
                         {item.name}
                     </a>
                 )
+                click = () => this.props.setMedia(2, item.id, {
+                    save2local: this._save2local,
+                })
                 break
                 case 3:
                 content = (

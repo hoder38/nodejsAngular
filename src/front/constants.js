@@ -47,6 +47,7 @@ export const UPLOAD = 'UPLOAD'
 export const FEEDBACK = 'FEEDBACK'
 export const MUSIC = 'MUSIC'
 export const VIDEO = 'VIDEO'
+export const IMAGE = 'IMAGE'
 
 //collapse
 export const LEFT = 'LEFT'

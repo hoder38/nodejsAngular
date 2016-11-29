@@ -80,7 +80,7 @@ const ItemPath = React.createClass({
         return (
             <ol className="breadcrumb" style={{marginBottom: '0px', display: 'block', height: '56px'}}>
                 <li>
-                    <Tooltip tip="多重搜尋" place="right" />
+                    <Tooltip tip="多重搜尋" place="top" />
                     <input
                         type="checkbox"
                         checked={this.props.multi}
