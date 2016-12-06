@@ -10,6 +10,7 @@ const mapStateToProps = state => ({
     videoMore: state.itemDataHandle[3] ? state.itemDataHandle[3].more : false,
     musicNumber: state.itemDataHandle[4] ? state.itemDataHandle[4].list.size : 0,
     musicMore: state.itemDataHandle[4] ? state.itemDataHandle[4].more : false,
+    playlistNumber: state.itemDataHandle[9] ? state.itemDataHandle[9].list.length : 0,
 })
 
 const ReWidgetManage = connect(

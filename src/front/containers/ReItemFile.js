@@ -12,7 +12,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
     setLatest: (id, bookmark) => dispatch(setItem(null, id, bookmark)),
-    setMedia: (type, id, opt) => dispatch(setItem(null, null, null, null, type, id, opt)),
+    setMedia: (type, id, opt, time=null) => dispatch(setItem(null, null, null, null, type, id, opt, time)),
     addalert: msg => dispatch(alertPush(msg)),
     globalinput: (type, callback, color, placeholder, value, placeholder2) => dispatch(sendGlbIn(type, callback, color, placeholder, value, placeholder2)),
     pushfeedback: feedback => dispatch(feedbackPush(feedback)),

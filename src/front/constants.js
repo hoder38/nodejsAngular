@@ -48,6 +48,7 @@ export const FEEDBACK = 'FEEDBACK'
 export const MUSIC = 'MUSIC'
 export const VIDEO = 'VIDEO'
 export const IMAGE = 'IMAGE'
+export const PLAYLIST = 'PLAYLIST'
 
 //collapse
 export const LEFT = 'LEFT'

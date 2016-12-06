@@ -2424,10 +2424,12 @@ app.get('/api/torrent/query/preview/:id', function (req, res,next) {
                 for (var i in items[0].playList) {
                     if (mime.isImage(items[0].playList[i])) {
                         list.push({name: items[0].playList[i], type: 2});
-                    } else if (mime.isVideo(items[0].playList[i]) || mime.isMusic(items[0].playList[i])) {
-                        list.push({name: items[0].playList[i], type: 1});
-                    } else {
+                    } else if (mime.isVideo(items[0].playList[i])) {
                         list.push({name: items[0].playList[i], type: 3});
+                    } else if (mime.isMusic(items[0].playList[i])) {
+                        list.push({name: items[0].playList[i], type: 4});
+                    } else {
+                        list.push({name: items[0].playList[i], type: 1});
                     }
                 }
                 if (items2.length === 0) {

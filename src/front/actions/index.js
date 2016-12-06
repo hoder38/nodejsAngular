@@ -113,7 +113,7 @@ export const itemPush = (item, path=null, bookmark=null, latest=null, sortName=n
     list,
 })
 
-export const setItem = (select, latest=null, bookmark=null, multi=null, list=null, id=null, opt=null) => ({
+export const setItem = (select, latest=null, bookmark=null, multi=null, list=null, id=null, opt=null, time=null) => ({
     type: SET_ITEM,
     select,
     latest,
@@ -122,6 +122,7 @@ export const setItem = (select, latest=null, bookmark=null, multi=null, list=nul
     list,
     id,
     opt,
+    time,
 })
 
 export const sendGlbIn = (input, callback, color, placeholder, value=null, placeholder2=null) => ({

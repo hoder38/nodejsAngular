@@ -4441,7 +4441,7 @@ app.post('/api/torrent/copy/:uid/:index(\\d+)', function(req, res, next) {
                                 }
                             }
                             mediaTag.opt = supplyTag(mediaTag.def, mediaTag.opt);
-                            res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt});
+                            res.json({id: item[0]._id, name: item[0].name, select: mediaTag.def, option: mediaTag.opt, other: []});
                             mediaHandleTool.handleMediaUpload(mediaType, filePath, DBdata['_id'], DBdata['name'], DBdata['size'], req.user, function(err) {
                                 sendWs({type: 'file', data: item[0]._id}, item[0].adultonly);
                                 if(err) {

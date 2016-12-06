@@ -11,6 +11,7 @@ const ItemInput = React.createClass({
             exact: false,
             lang: 'ch',
             progress: 0,
+            loading: false,
         }, this._input.initValue())
     },
     componentWillUnmount: function() {
@@ -30,13 +31,22 @@ const ItemInput = React.createClass({
         if (this.props.index === -1) {
             return false
         }
-        this.props.callback(this.state.input1, this.state.exact, this.state.input2).then(() => {
-            if (this.props.input !== 0) {
-                this.props.inputclose(false)
-            }
-        }).catch(err => this.props.addalert(err))
-        this.setState(this._input.initValue())
-        this._input.allBlur()
+        if (this.state.loading) {
+            return true
+        }
+        this.setState(Object.assign({}, this.state,{loading: true}), () => {
+            this.props.callback(this.state.input1, this.state.exact, this.state.input2).then(() => {
+                if (this.props.input !== 0) {
+                    this.props.inputclose(false)
+                }
+                this.setState(Object.assign({}, this.state,{loading: false}))
+            }).catch(err => {
+                this.props.addalert(err)
+                this.setState(Object.assign({}, this.state,{loading: false}))
+            })
+            this.setState(Object.assign({}, this.state, this._input.initValue()))
+            this._input.allBlur()
+        })
     },
     _handleChange: function() {
         this.setState(Object.assign({}, this.state, this._input.getValue()))
@@ -70,7 +80,7 @@ const ItemInput = React.createClass({
         let input2 = null
         let fromClass = 'input-group'
         let submit = (
-            <button className={`btn btn-${this.props.color}`} type="submit">
+            <button className={`btn btn-${this.props.color}`} type="submit" disabled={this.state.loading}>
                 <span className="glyphicon glyphicon-search"></span>
             </button>
         )
@@ -103,7 +113,7 @@ const ItemInput = React.createClass({
             fromClass = 'input-group double-input'
             case 1:
             submit = (
-                <button className={`btn btn-${this.props.color}`} type="submit">
+                <button className={`btn btn-${this.props.color}`} type="submit" disabled={this.state.loading}>
                     <span className="glyphicon glyphicon-ok"></span>
                 </button>
             )

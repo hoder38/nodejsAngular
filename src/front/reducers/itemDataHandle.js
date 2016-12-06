@@ -37,18 +37,30 @@ export default function itemDataHandle (state = initialState, action) {
             let newList = new Set()
             let page = 0
             let index = 0
-            state.item.list.forEach(item => {
-                let tmp = state.list.get(item)
-                if (tmp.status === action.list) {
-                    newList.add(item)
-                    if (item === action.id) {
-                        index = newList.size
+            let more = state.item.more
+            if (Array.isArray(action.list)) {
+                newList = action.list.map(i => {
+                    i.id = action.id
+                    i.complete = false
+                    return i
+                })
+                index = action.time
+                action.list = 9
+                more = false
+            } else {
+                state.item.list.forEach(item => {
+                    let tmp = state.list.get(item)
+                    if (tmp.status === action.list) {
+                        newList.add(item)
+                        if (item === action.id) {
+                            index = newList.size
+                        }
+                        if (!tmp.noDb) {
+                            page++
+                        }
                     }
-                    if (!tmp.noDb) {
-                        page++
-                    }
-                }
-            })
+                })
+            }
             return Object.assign({}, state, {
                 select: action.select === null ? state.select : (typeof action.select === 'string') ? state.item.list : action.select,
                 latest: (action.bookmark && action.latest) ? (action.bookmark === state.item.bookmark) ? action.latest : state.latest : state.latest,
@@ -59,6 +71,7 @@ export default function itemDataHandle (state = initialState, action) {
                     index,
                     count: key++,
                     opt: action.opt,
+                    more,
                 })
             })
         } else {
@@ -122,7 +135,15 @@ export default function itemDataHandle (state = initialState, action) {
             item: Object.assign({}, state.item, {
                 list: arrayId('pop', state.item.list, action.id),
             }),
-        }, state[4] ? {
+        }, state[2] ? {
+            2: Object.assign({}, state[2], {
+                list: arrayId('pop', state[2].list, action.id),
+            }),
+        } : {}, state[3] ? {
+            3: Object.assign({}, state[3], {
+                list: arrayId('pop', state[3].list, action.id),
+            }),
+        } : {}, state[4] ? {
             4: Object.assign({}, state[4], {
                 list: arrayId('pop', state[4].list, action.id),
             }),

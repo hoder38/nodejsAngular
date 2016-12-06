@@ -258,6 +258,11 @@ const ItemFile = React.createClass({
                         <i className="glyphicon glyphicon-th-list" style={{height: '42px', width: '42px', fontSize: '35px'}}></i>{item.name}
                     </a>
                 )
+                click = () => api(`/api/torrent/query/preview/${item.id}`).then(result => this.props.setMedia(result.list, item.id, {
+                    save2local: this._save2local,
+                    searchSub: this._searchSub,
+                    uploadSub: this._uploadSub,
+                }, result.time ? result.time : 0)).catch(err => this.props.addalert(err))
                 break
             }
         }
