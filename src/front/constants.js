@@ -6,6 +6,10 @@ export const STORAGE_PAGE = '/webpack/Storage'
 export const PASSWORD_PAGE = '/webpack/Password'
 export const STOCK_PAGE = '/webpack/Stock'
 
+//item type
+export const STORAGE = 'storage'
+export const PASSWORD = 'password'
+
 //action
 export const ALERT_PUSH = 'ALERT_PUSH'
 export const ALERT_POP = 'ALERT_POP'
@@ -27,8 +31,16 @@ export const USER_PUSH = 'USER_PUSH'
 export const ITEM_PUSH = 'ITEM_PUSH'
 export const ITEM_POP = 'ITEM_POP'
 export const SET_ITEM = 'SET_ITEM'
+export const PASS_PUSH = 'PASS_PUSH'
+export const PASS_POP = 'PASS_POP'
+export const SET_PASS = 'SET_PASS'
 export const SEND_GLB_IN = 'SEND_GLB_IN'
 export const CLOSE_GLB_IN = 'CLOSE_GLB_IN'
+export const SET_PDIRS = 'SET_PDIRS'
+export const PDIR_POP = 'PDIR_POP'
+export const PDIR_PUSH = 'PDIR_PUSH'
+export const PBOOKMARK_POP = 'PBOOKMARK_POP'
+export const PBOOKMARK_PUSH = 'PBOOKMARK_PUSH'
 
 //z-index
 export const RIGHT_SECTION_ZINDEX = 20
@@ -53,3 +65,5 @@ export const PLAYLIST = 'PLAYLIST'
 //collapse
 export const LEFT = 'LEFT'
 export const RIGHT = 'RIGHT'
+
+export const COPY_HERE = 'Copy Here'

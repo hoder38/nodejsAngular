@@ -1,14 +1,20 @@
 import React from 'react'
-import { RIGHT } from '../constants'
+import { RIGHT, TOP_SECTION_ZINDEX } from '../constants'
 import ReCategorylist from '../containers/ReCategorylist'
-import ReTopSection from '../containers/ReTopSection'
 import ReItemlist from '../containers/ReItemlist'
+import ReItemInput from '../containers/ReItemInput'
+import ReItemPath from '../containers/ReItemPath'
+import ReItemHead from '../containers/ReItemHead'
 
 export default function Storage() {
     return (
         <div>
-            <ReCategorylist collapse={RIGHT} bookUrl="/api/bookmark/getlist/" bookDelUrl="/api/bookmark/del/" dirUrl="/api/parent/taglist/" dirDelUrl="/api/parent/del/" />
-            <ReTopSection />
+            <ReCategorylist collapse={RIGHT} bookUrl="/api/bookmark/storage/getlist/" bookDelUrl="/api/bookmark/storage/del/" dirUrl="/api/parent/storage/taglist/" dirDelUrl="/api/parent/storage/del/" />
+            <section id="top-section" style={{float: 'left', position: 'fixed', left: '0px', width: '100%', zIndex: TOP_SECTION_ZINDEX}}>
+                <ReItemInput />
+                <ReItemPath />
+                <ReItemHead />
+            </section>
             <ReItemlist />
         </div>
     )

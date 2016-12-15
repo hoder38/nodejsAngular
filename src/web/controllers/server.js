@@ -77,7 +77,6 @@ var stockFiltering = false;
 var stockFilterlimit = 100;
 
 app.use(express.favicon());
-app.use(express.cookieParser());
 app.use(express.urlencoded());
 app.use(express.json());
 app.use(express_session(sessionStore.config));
@@ -145,7 +144,6 @@ app.get('/api/logout', function(req, res, next) {
         //req.logout();
         req.session.destroy();
     }
-    //res.clearCookie('id');
     res.json({apiOK: true, url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
 });
 
@@ -478,8 +476,6 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
         console.log(req.url);
         console.log(req.body);
         var exactly = false;
-        res.cookie('fileSortName', req.params.sortName);
-        res.cookie('fileSortType', req.params.sortType);
         if (req.params.exactly === 'true') {
             exactly = true;
         }
@@ -501,7 +497,7 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
     });
 });
 
-app.get('/api/youtube/get/:pageToken?', function(req, res, next){
+app.get('/api/youtube/get/:sortName(name|mtime|count)?/:pageToken?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("youtube get");
         console.log(new Date());
@@ -512,10 +508,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
             util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
         }
         var parentList = tags.getArray();
-        var sortName = 'name';
-        if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
-            sortName = req.cookies.fileSortName;
-        }
+        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
         var index = 1;
         var pageToken = false;
         if (req.params.pageToken) {
@@ -526,7 +519,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
         nextIndex = nextIndex.toString();
         var itemList = [];
         var retPageToken = '';
-        var query = tagTool.getKuboQuery(parentList.cur, sortName, index);
+        var query = tagTool.getKuboQuery(parentList.cur, req.params.sortName, index);
         if (query) {
             externalTool.getSingleList('kubo', query, function(err, list) {
                 if (err) {
@@ -540,7 +533,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
             yifyQuery();
         }
         function biliQuery() {
-            var query = tagTool.getBiliQuery(parentList.cur, sortName, index);
+            var query = tagTool.getBiliQuery(parentList.cur, req.params.sortName, index);
             if (query) {
                 externalTool.getSingleList('bilibili', query, function(err, list) {
                     if (err) {
@@ -555,7 +548,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
             }
         }
         function yifyQuery() {
-            var query = tagTool.getYifyQuery(parentList.cur, sortName, index);
+            var query = tagTool.getYifyQuery(parentList.cur, req.params.sortName, index);
             if (query) {
                 externalTool.getSingleList('yify', query, function(err, list) {
                     if (err) {
@@ -570,7 +563,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
             }
         }
         function madQuery() {
-            var query = tagTool.getMadQuery(parentList.cur, sortName, index);
+            var query = tagTool.getMadQuery(parentList.cur, req.params.sortName, index);
             if (query) {
                 if (query.post) {
                     externalTool.getSingleList('cartoonmad', query.url, function(err, list) {
@@ -596,7 +589,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
             }
         }
         function c99Query() {
-            var query = tagTool.getC99Query(parentList.cur, sortName, index);
+            var query = tagTool.getC99Query(parentList.cur, req.params.sortName, index);
             if (query) {
                 externalTool.getSingleList('comic99', query, function(err, list) {
                     if (err) {
@@ -611,7 +604,7 @@ app.get('/api/youtube/get/:pageToken?', function(req, res, next){
             }
         }
         function youtubeQuery() {
-            query = tagTool.getYoutubeQuery(parentList.cur, sortName, pageToken);
+            query = tagTool.getYoutubeQuery(parentList.cur, req.params.sortName, pageToken);
             if (query) {
                 googleApi.googleApi('y search', query, function(err, metadata) {
                     if (err) {
@@ -716,8 +709,6 @@ app.get('/api/stock/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/:p
         console.log(req.url);
         console.log(req.body);
         var exactly = false;
-        res.cookie('stockSortName', req.params.sortName);
-        res.cookie('stockSortType', req.params.sortType);
         if (req.params.exactly === 'true') {
             exactly = true;
         }
@@ -729,7 +720,7 @@ app.get('/api/stock/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/:p
             }
             tags.resetArray();
         }
-        stockTagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+        stockTagTool.tagQuery(page, req.params.name, exactly, Number(req.params.index), req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -746,8 +737,6 @@ app.get('/api/storage/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(
         console.log(req.url);
         console.log(req.body);
         var exactly = false;
-        res.cookie('fileSortName', req.params.sortName);
-        res.cookie('fileSortType', req.params.sortType);
         if (req.params.exactly === 'true') {
             exactly = true;
         }
@@ -994,8 +983,6 @@ app.get('/api/storage/getRandom/:sortName(name|mtime|count)/:sortType(desc|asc)/
                     random_tag = ['music','youtube music playlist', 'no local'];
                 }
             }
-            res.cookie('fileSortName', req.params.sortName);
-            res.cookie('fileSortType', req.params.sortType);
             var page = Number(req.params.page);
             var tags = tagTool.searchTags(req.session);
             if (!tags) {
@@ -1024,13 +1011,11 @@ app.get('/api/stock/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page(\\
         console.log(req.url);
         console.log(req.body);
         var exactly = false;
-        res.cookie('stockSortName', req.params.sortName);
-        res.cookie('stockSortType', req.params.sortType);
         if (req.params.exactly === 'true') {
             exactly = true;
         }
         var page = Number(req.params.page);
-        stockTagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+        stockTagTool.tagQuery(page, req.params.name, exactly, Number(req.params.index), req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -1080,21 +1065,15 @@ app.get('/api/stock/single/:uid', function(req, res, next){
     });
 });
 
-app.get('/api/storage/reset', function(req, res, next){
+app.get('/api/storage/reset/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("resetStorage");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var sortName = 'name';
-        var sortType = 'desc';
-        if (req.cookies.fileSortName === 'count' || req.cookies.fileSortName === 'mtime') {
-            sortName = req.cookies.fileSortName;
-        }
-        if (req.cookies.fileSortType === 'asc') {
-            sortType = req.cookies.fileSortType;
-        }
-        tagTool.resetQuery(sortName, sortType, req.user, req.session, next, function(err, result) {
+        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
+        req.params.sortType = req.params.sortType ? req.params.sortType : 'asc'
+        tagTool.resetQuery(req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -1104,21 +1083,15 @@ app.get('/api/storage/reset', function(req, res, next){
     });
 });
 
-app.get('/api/stock/reset', function(req, res, next){
+app.get('/api/stock/reset/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("resetStock");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var sortName = 'name';
-        var sortType = 'desc';
-        if (req.cookies.stockSortName === 'name' || req.cookies.stockSortName === 'mtime') {
-            sortName = req.cookies.stockSortName;
-        }
-        if (req.cookies.stockSortType === 'desc' || req.cookies.stockSortType === 'asc') {
-            sortType = req.cookies.stockSortType;
-        }
-        stockTagTool.resetQuery(sortName, sortType, req.user, req.session, next, function(err, result) {
+        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
+        req.params.sortType = req.params.sortType ? req.params.sortType : 'asc'
+        stockTagTool.resetQuery(req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -1128,7 +1101,7 @@ app.get('/api/stock/reset', function(req, res, next){
     });
 });
 
-app.put('/api/addTag/:tag', function(req, res, next){
+app.put('/api/storage/addTag/:tag', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("addTag");
         console.log(new Date());
@@ -1162,7 +1135,7 @@ app.put('/api/addTag/:tag', function(req, res, next){
     });
 });
 
-app.put('/api/addTagUrl', function(req, res, next){
+app.put('/api/storage/addTagUrl', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("addTagUrl");
         console.log(new Date());
@@ -1442,7 +1415,7 @@ app.put('/api/sendTag/:uid', function(req, res, next){
     });
 });
 
-app.put('/api/delTag/:tag', function(req, res, next){
+app.put('/api/storage/delTag/:tag', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("delTag");
         console.log(new Date());
@@ -1544,7 +1517,7 @@ app.put('/api/recoverFile/:uid', function(req, res, next){
     });
 });
 
-app.get('/api/parent/list/:lang?', function(req, res, next) {
+app.get('/api/parent/storage/list/:lang?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('parent list');
         console.log(new Date());
@@ -1579,15 +1552,13 @@ app.get('/api/parent/stock/list/:lang?', function(req, res, next) {
     });
 });
 
-app.get('/api/parent/taglist/:name/:sortName(name|mtime)/:sortType(desc|asc)/:page(\\d+)', function(req, res, next) {
+app.get('/api/parent/storage/taglist/:name/:sortName(name|mtime)/:sortType(desc|asc)/:page(\\d+)', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("showTaglist");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var page = Number(req.params.page);
-        res.cookie('dir' + req.params.name + 'SortName', req.params.sortName);
-        res.cookie('dir' + req.params.name + 'SortType', req.params.sortType);
         tagTool.parentQuery(req.params.name, req.params.sortName, req.params.sortType, page, req.user, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
@@ -1604,8 +1575,6 @@ app.get('/api/parent/stock/taglist/:name/:sortName(name|mtime)/:sortType(desc|as
         console.log(req.url);
         console.log(req.body);
         var page = Number(req.params.page);
-        res.cookie('dirStock' + req.params.name + 'SortName', req.params.sortName);
-        res.cookie('dirStock' + req.params.name + 'SortType', req.params.sortType);
         stockTagTool.parentQuery(req.params.name, req.params.sortName, req.params.sortType, page, req.user, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
@@ -1615,7 +1584,7 @@ app.get('/api/parent/stock/taglist/:name/:sortName(name|mtime)/:sortType(desc|as
     });
 });
 
-app.post('/api/parent/add', function(req, res,next) {
+app.post('/api/parent/storage/add', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("parentAdd");
         console.log(new Date());
@@ -1645,7 +1614,7 @@ app.post('/api/parent/stock/add', function(req, res,next) {
     });
 });
 
-app.delete('/api/parent/del/:id', function(req, res, next) {
+app.delete('/api/parent/storage/del/:id', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("parentDel");
         console.log(new Date());
@@ -1683,7 +1652,7 @@ app.delete('/api/parent/stock/del/:id', function(req, res, next) {
     });
 });
 
-app.get('/api/parent/query/:id/:sortName(name|mtime|count)/:sortType(desc|asc)/:single?', function(req, res, next) {
+app.get('/api/parent/storage/query/:id/:sortName(name|mtime|count)/:sortType(desc|asc)/:single?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("parent query");
         console.log(new Date());
@@ -1703,7 +1672,7 @@ app.get('/api/parent/query/:id/:sortName(name|mtime|count)/:sortType(desc|asc)/:
     });
 });
 
-app.get('/api/parent/stock/query/:id/:single?', function(req, res, next) {
+app.get('/api/parent/stock/query/:id/:sortName(name|mtime|count)/:sortType(desc|asc)/:single?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("stock parent query");
         console.log(new Date());
@@ -1713,15 +1682,7 @@ app.get('/api/parent/stock/query/:id/:single?', function(req, res, next) {
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        var sortName = 'name';
-        var sortType = 'desc';
-        if (req.cookies.stockSortName === 'name' || req.cookies.stockSortName === 'mtime') {
-            sortName = req.cookies.stockSortName;
-        }
-        if (req.cookies.stockSortType === 'desc' || req.cookies.stockSortType === 'asc') {
-            sortType = req.cookies.stockSortType;
-        }
-        stockTagTool.queryParentTag(id, req.params.single, sortName, sortType, req.user, req.session, next, function(err, result) {
+        stockTagTool.queryParentTag(id, req.params.single, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
             }
@@ -1731,14 +1692,12 @@ app.get('/api/parent/stock/query/:id/:single?', function(req, res, next) {
     });
 });
 
-app.get('/api/bookmark/getList/:sortName(name|mtime)/:sortType(desc|asc)/:page(0)?', function (req, res, next) {
+app.get('/api/bookmark/storage/getList/:sortName(name|mtime)/:sortType(desc|asc)/:page(0)?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get bookmark list");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        res.cookie('bookmarkSortName', req.params.sortName);
-        res.cookie('bookmarkSortType', req.params.sortType);
         tagTool.getBookmarkList(req.params.sortName, req.params.sortType, req.user, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
@@ -1754,8 +1713,6 @@ app.get('/api/bookmark/stock/getList/:sortName(name|mtime)/:sortType(desc|asc)',
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        res.cookie('bookmarkStockSortName', req.params.sortName);
-        res.cookie('bookmarkStockSortType', req.params.sortType);
         stockTagTool.getBookmarkList(req.params.sortName, req.params.sortType, req.user, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
@@ -1765,7 +1722,7 @@ app.get('/api/bookmark/stock/getList/:sortName(name|mtime)/:sortType(desc|asc)',
     });
 });
 
-app.get('/api/bookmark/set/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)', function (req, res, next) {
+app.get('/api/bookmark/storage/set/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("set bookmark");
         console.log(new Date());
@@ -1775,6 +1732,8 @@ app.get('/api/bookmark/set/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)'
         if (id === false) {
             util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
+        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
+        req.params.sortType = req.params.sortType ? req.params.sortType : 'asc'
         mongo.orig("find", "storage", {_id: id, status: 8}, {limit: 1}, function(err, items){
             if(err) {
                 util.handleError(err, next, res);
@@ -1803,7 +1762,7 @@ app.get('/api/bookmark/set/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)'
     });
 });
 
-app.get('/api/bookmark/get/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function (req, res, next) {
+app.get('/api/bookmark/storage/get/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get bookmark");
         console.log(new Date());
@@ -1813,8 +1772,8 @@ app.get('/api/bookmark/get/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?
         if (id === false) {
             util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
-        req.params.sortName = req.params.sortName ? req.params.sortName : 'name';
-        req.params.sortType = req.params.sortType ? req.params.sortType : 'desc';
+        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
+        req.params.sortType = req.params.sortType ? req.params.sortType : 'desc'
         tagTool.getBookmark(id, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
@@ -1825,7 +1784,7 @@ app.get('/api/bookmark/get/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?
     });
 });
 
-app.get('/api/bookmark/stock/get/:id', function (req, res, next) {
+app.get('/api/bookmark/stock/get/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get stock bookmark");
         console.log(new Date());
@@ -1835,15 +1794,9 @@ app.get('/api/bookmark/stock/get/:id', function (req, res, next) {
         if (id === false) {
             util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
-        var sortName = 'name';
-        var sortType = 'desc';
-        if (req.cookies.stockSortName === 'name' || req.cookies.stockSortName === 'mtime') {
-            sortName = req.cookies.stockSortName;
-        }
-        if (req.cookies.stockSortType === 'desc' || req.cookies.stockSortType === 'asc') {
-            sortType = req.cookies.stockSortType;
-        }
-        stockTagTool.getBookmark(id, sortName, sortType, req.user, req.session, next, function(err, result) {
+        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
+        req.params.sortType = req.params.sortType ? req.params.sortType : 'asc'
+        stockTagTool.getBookmark(id, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
             }
@@ -1853,7 +1806,7 @@ app.get('/api/bookmark/stock/get/:id', function (req, res, next) {
     });
 });
 
-app.post('/api/bookmark/subscipt', function(req, res, next) {
+app.post('/api/bookmark/storage/subscipt', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("subscipt bookmark");
         console.log(new Date());
@@ -2116,7 +2069,7 @@ function newBookmarkItem(name, user, session, bpath, bexactly, callback) {
     });
 }
 
-app.post('/api/bookmark/add', function (req, res, next) {
+app.post('/api/bookmark/storage/add', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("addbookmark");
         console.log(new Date());
@@ -2178,7 +2131,7 @@ app.post('/api/bookmark/stock/add', function (req, res, next) {
     });
 });
 
-app.delete('/api/bookmark/del/:id', function (req, res, next) {
+app.delete('/api/bookmark/storage/del/:id', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("del bookmark");
         console.log(new Date());
@@ -2283,9 +2236,6 @@ app.post('/api/media/saveParent/:sortName(name|mtime|count)?/:sortType(desc|asc)
         }
         req.params.sortName = req.params.sortName ? req.params.sortName : 'name';
         req.params.sortType = req.params.sortType ? req.params.sortType : 'desc';
-        if (req.params.sortName === 'mtime') {
-            sortName = 'utime';
-        }
         tags.saveArray(name, req.params.sortName, req.params.sortType);
         res.json({apiOK: true});
     });
@@ -2993,12 +2943,14 @@ app.get('/api/stock/getPoint/:uid/:price?', function(req, res, next) {
     });
 });
 
-app.put('/api/stock/filter/:tag', function(req, res, next) {
+app.put('/api/stock/filter/:tag/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('stock filter');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
+        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
+        req.params.sortType = req.params.sortType ? req.params.sortType : 'asc'
         var name = util.isValidString(req.params.tag, 'name');
         if (name === false) {
             util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
@@ -3050,14 +3002,6 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
             }
             mm[2] = Number(mm[2]);
         }
-        var sortName = 'name';
-        var sortType = 'desc';
-        if (req.cookies.stockSortName === 'count' || req.cookies.stockSortName === 'mtime') {
-            sortName = req.cookies.stockSortName;
-        }
-        if (req.cookies.stockSortType === 'asc') {
-            sortType = req.cookies.stockSortType;
-        }
         if (stockFiltering) {
             util.handleError({hoerror: 2, message: "there is another filter running"}, next, res);
         }
@@ -3069,7 +3013,7 @@ app.put('/api/stock/filter/:tag', function(req, res, next) {
         recur_query();
         function recur_query() {
             console.log(queried);
-            stockTagTool.tagQuery(queried, '', false, 0, sortName, sortType, req.user, req.session, next, function(err, result) {
+            stockTagTool.tagQuery(queried, '', false, 0, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
                 if (err) {
                     stockFiltering = false;
                     util.handleError(err, next, res);
@@ -3385,15 +3329,15 @@ app.post('/api/getOptionTag', function(req, res, next) {
     });
 });
 
-app.get('/api/stock/getOptionTag/:tag?', function(req, res,next) {
+app.post('/api/stock/getOptionTag', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get stock option tag');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var optionList = ['important'];
-        if (req.params.tag) {
-            stockTagTool.getRelativeTag(req.params.tag, req.user, optionList, next, function(err, relative) {
+        if (req.body.tags.length > 0) {
+            stockTagTool.getRelativeTag(req.body.tags[0], req.user, optionList, next, function(err, relative) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
@@ -3438,13 +3382,11 @@ app.get('/api/password/get/:sortName(name|mtime|count)/:sortType(desc|asc)/:page
         console.log(req.url);
         console.log(req.body);
         var exactly = false;
-        res.cookie('passwordSortName', req.params.sortName);
-        res.cookie('passwordSortType', req.params.sortType);
         if (req.params.exactly === 'true') {
             exactly = true;
         }
         var page = Number(req.params.page);
-        pwTagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+        pwTagTool.tagQuery(page, req.params.name, exactly, Number(req.params.index), req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -3461,8 +3403,6 @@ app.get('/api/password/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)
         console.log(req.url);
         console.log(req.body);
         var exactly = false;
-        res.cookie('passwordSortName', req.params.sortName);
-        res.cookie('passwordSortType', req.params.sortType);
         if (req.params.exactly === 'true') {
             exactly = true;
         }
@@ -3474,7 +3414,7 @@ app.get('/api/password/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)
             }
             tags.resetArray();
         }
-        pwTagTool.tagQuery(page, req.params.name, exactly, req.params.index, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
+        pwTagTool.tagQuery(page, req.params.name, exactly, Number(req.params.index), req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -3504,38 +3444,35 @@ app.get('/api/password/single/:uid', function(req, res, next){
     });
 });
 
-app.get('/api/bookmark/password/getList/:sortName(name|mtime)/:sortType(desc|asc)', function (req, res, next) {
+app.get('/api/bookmark/password/get/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
-        console.log("password get bookmark list");
+        console.log("password get bookmark");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        res.cookie('bookmarkPasswordSortName', req.params.sortName);
-        res.cookie('bookmarkPasswordSortType', req.params.sortType);
-        pwTagTool.getBookmarkList(req.params.sortName, req.params.sortType, req.user, next, function(err, result) {
+        var id = util.isValidString(req.params.id, 'uid');
+        if (id === false) {
+            util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
+        }
+        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
+        req.params.sortType = req.params.sortType ? req.params.sortType : 'desc'
+        pwTagTool.getBookmark(id, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
             }
-            res.json({bookmarkList: result.bookmarkList});
+            var itemList = getStorageItem(req.user, result.items, result.mediaHadle);
+            res.json({itemList: itemList, parentList: result.parentList, latest: result.latest, bookmarkID: result.bookmark});
         });
     });
 });
 
-app.get('/api/password/reset', function(req, res, next){
+app.get('/api/password/reset/:sortName(name|mtime|count)/:sortType(desc|asc)', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("reset password");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        var sortName = 'name';
-        var sortType = 'desc';
-        if (req.cookies.passwordSortName === 'name' || req.cookies.passwordSortName === 'mtime') {
-            sortName = req.cookies.passwordSortName;
-        }
-        if (req.cookies.passwordSortType === 'desc' || req.cookies.passwordSortType === 'asc') {
-            sortType = req.cookies.passwordSortType;
-        }
-        pwTagTool.resetQuery(sortName, sortType, req.user, req.session, next, function(err, result) {
+        pwTagTool.resetQuery(req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
             }
@@ -3545,15 +3482,15 @@ app.get('/api/password/reset', function(req, res, next){
     });
 });
 
-app.get('/api/password/getOptionTag/:tag?', function(req, res,next) {
+app.post('/api/password/getOptionTag', function(req, res,next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get password option tag');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
         var optionList = [];
-        if (req.params.tag) {
-            pwTagTool.getRelativeTag(req.params.tag, req.user, optionList, next, function(err, relative) {
+        if (req.body.tags.length > 0) {
+            pwTagTool.getRelativeTag(req.body.tags[0], req.user, optionList, next, function(err, relative) {
                 if (err) {
                     util.handleError(err, next, res);
                 }
@@ -3656,8 +3593,6 @@ app.get('/api/parent/password/taglist/:name/:sortName(name|mtime)/:sortType(desc
         console.log(req.url);
         console.log(req.body);
         var page = Number(req.params.page);
-        res.cookie('dirPassword' + req.params.name + 'SortName', req.params.sortName);
-        res.cookie('dirPassword' + req.params.name + 'SortType', req.params.sortType);
         pwTagTool.parentQuery(req.params.name, req.params.sortName, req.params.sortType, page, req.user, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
@@ -3667,25 +3602,19 @@ app.get('/api/parent/password/taglist/:name/:sortName(name|mtime)/:sortType(desc
     });
 });
 
-app.get('/api/parent/password/query/:id/:single?', function(req, res, next) {
+app.get('/api/parent/password/query/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?/:single?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("password parent query");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
+        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
+        req.params.sortType = req.params.sortType ? req.params.sortType : 'asc'
         var id = util.isValidString(req.params.id, 'uid');
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
         }
-        var sortName = 'name';
-        var sortType = 'desc';
-        if (req.cookies.passwordSortName === 'name' || req.cookies.passwordSortName === 'mtime') {
-            sortName = req.cookies.passwordSortName;
-        }
-        if (req.cookies.passwordSortType === 'desc' || req.cookies.passwordSortType === 'asc') {
-            sortType = req.cookies.passwordSortType;
-        }
-        pwTagTool.queryParentTag(id, req.params.single, sortName, sortType, req.user, req.session, next, function(err, result) {
+        pwTagTool.queryParentTag(id, req.params.single, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
             }
@@ -3733,14 +3662,12 @@ app.post('/api/bookmark/password/add', function (req, res, next) {
     });
 });
 
-app.get('/api/bookmark/password/getList/:sortName(name|mtime)/:sortType(desc|asc)', function (req, res, next) {
+app.get('/api/bookmark/password/getList/:sortName(name|mtime)/:sortType(desc|asc)/:page(0)?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("password get bookmark list");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        res.cookie('bookmarkPasswordSortName', req.params.sortName);
-        res.cookie('bookmarkPasswordSortType', req.params.sortType);
         pwTagTool.getBookmarkList(req.params.sortName, req.params.sortType, req.user, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);

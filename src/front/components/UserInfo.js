@@ -1,6 +1,6 @@
 import React from 'react'
 import UserInput from './UserInput'
-import { isValidString, api, killEvent } from '../utility'
+import { isValidString, api, killEvent, checkInput } from '../utility'
 
 const UserInfo = React.createClass({
     getInitialState: function() {
@@ -13,42 +13,15 @@ const UserInfo = React.createClass({
             this._input.initFocus()
         }
     },
-    _checkInput: function(name, orig_input = '', type, confirm='') {
-        if (confirm) {
-            if (this.state[name].toString() !== orig_input.toString()) {
-                this.props.addalert(`${name} is not the same!!!`)
-            } else {
-                if (this.state[name]) {
-                    if (isValidString(this.state[name], type)) {
-                        return {
-                            [name]: this.state[name],
-                            [confirm]: orig_input,
-                        }
-                    } else {
-                        this.props.addalert(`${name} not vaild!!!`)
-                    }
-                }
-            }
-        } else {
-            if (this.state[name].toString() !== orig_input.toString()) {
-                if (isValidString(this.state[name], type)) {
-                    return {[name]: this.state[name]}
-                } else {
-                    this.props.addalert(`${name} not vaild!!!`)
-                }
-            }
-        }
-        return false
-    },
     _handleSubmit: function() {
         const set_obj = Object.assign({},
-            this._checkInput('name', this.props.user.name, 'name'),
-            this._checkInput('auto', this.props.user.auto, 'url'),
-            this._checkInput('perm', this.props.user.perm, 'perm'),
-            this._checkInput('desc', this.props.user.desc, 'desc'),
-            this._checkInput('unDay', this.props.user.unDay, 'int'),
-            this._checkInput('unHit', this.props.user.unHit, 'int'),
-            this._checkInput('newPwd', this.state.conPwd, 'passwd', 'conPwd'))
+            checkInput('name', this.state, this.props.addalert, this.props.user.name, 'name'),
+            checkInput('auto', this.state, this.props.addalert, this.props.user.auto, 'url'),
+            checkInput('perm', this.state, this.props.addalert, this.props.user.perm, 'perm'),
+            checkInput('desc', this.state, this.props.addalert, this.props.user.desc, 'desc'),
+            checkInput('unDay', this.state, this.props.addalert, this.props.user.unDay, 'int'),
+            checkInput('unHit', this.state, this.props.addalert, this.props.user.unHit, 'int'),
+            checkInput('newPwd', this.state, this.props.addalert, this.state.conPwd, 'passwd', 'conPwd'))
         if (this.props.user.newable) {
             if (!set_obj.hasOwnProperty('name')) {
                 this.props.addalert('Please input username!!!')
@@ -185,8 +158,8 @@ const UserInfo = React.createClass({
                                                 getinput={this._input.getInput('auto')}
                                                 edit={this.state.edit&&this.props.user.editAuto}>
                                                 <tr>
-                                                    <td key="1">Auto upload:</td>
-                                                    <td key="2" />
+                                                    <td key={0}>Auto upload:</td>
+                                                    <td key={1} />
                                                 </tr>
                                             </UserInput>
                                             <UserInput
@@ -196,8 +169,8 @@ const UserInfo = React.createClass({
                                                 edit={this.state.edit}
                                                 placeholder="Level">
                                                 <tr>
-                                                    <td key="1">User level:</td>
-                                                    <td key="2" />
+                                                    <td key={0}>User level:</td>
+                                                    <td key={1} />
                                                 </tr>
                                             </UserInput>
                                             <UserInput
@@ -207,8 +180,8 @@ const UserInfo = React.createClass({
                                                 edit={this.state.edit}
                                                 placeholder="Description">
                                                 <tr>
-                                                    <td key="1">Description:</td>
-                                                    <td key="2" />
+                                                    <td key={0}>Description:</td>
+                                                    <td key={1} />
                                                 </tr>
                                             </UserInput>
                                             <UserInput
@@ -217,8 +190,8 @@ const UserInfo = React.createClass({
                                                 show={this.props.user.hasOwnProperty('unDay')}
                                                 edit={this.state.edit}>
                                                 <tr>
-                                                    <td key="1">Unactive Day:</td>
-                                                    <td key="2" />
+                                                    <td key={0}>Unactive Day:</td>
+                                                    <td key={1} />
                                                 </tr>
                                             </UserInput>
                                             <UserInput
@@ -227,8 +200,8 @@ const UserInfo = React.createClass({
                                                 show={this.props.user.hasOwnProperty('unHit')}
                                                 edit={this.state.edit}>
                                                 <tr>
-                                                    <td key="1">Unactive Hit:</td>
-                                                    <td key="2"/>
+                                                    <td key={0}>Unactive Hit:</td>
+                                                    <td key={1} />
                                                 </tr>
                                             </UserInput>
                                             <UserInput
@@ -239,8 +212,8 @@ const UserInfo = React.createClass({
                                                 type="password"
                                                 placeholder="6~20個英數、!、@、#、$、%">
                                                 <tr>
-                                                    <td key="1">New Password:</td>
-                                                    <td key="2" />
+                                                    <td key={0}>New Password:</td>
+                                                    <td key={1} />
                                                 </tr>
                                             </UserInput>
                                             <UserInput
@@ -251,8 +224,8 @@ const UserInfo = React.createClass({
                                                 type="password"
                                                 placeholder="Confirm Password">
                                                 <tr>
-                                                    <td key="1" >Confirm Password:</td>
-                                                    <td key="2" />
+                                                    <td key={0} >Confirm Password:</td>
+                                                    <td key={1} />
                                                 </tr>
                                             </UserInput>
                                         </tbody>

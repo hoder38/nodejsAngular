@@ -2,15 +2,19 @@ import React from 'react'
 import Tooltip from './Tooltip'
 import Dropdown from './Dropdown'
 import { getItemList, resetItemList, isValidString, api, killEvent } from '../utility'
+import { STORAGE } from '../constants'
 
 let key = 0
 
 const ItemPath = React.createClass({
+    componentWillMount: function() {
+        this.props.globalinput(0, 'Search Tag...', (name, exact) => (this.props.pathLength > 0 && !name) ? Promise.reject('') : getItemList(this.props.itemType, this.props.sortName, this.props.sortType, this.props.set, 0, '', false, (name ? name : null), 0, exact, this.props.multi, true))
+    },
     _resetPath: function() {
-        resetItemList(this.props.sortName, this.props.sortType, this.props.set).catch(err => this.props.addalert(err))
+        resetItemList(this.props.itemType, this.props.sortName, this.props.sortType, this.props.set).catch(err => this.props.addalert(err))
     },
     _gotoPath: function(name, index, exact) {
-        getItemList(this.props.sortName, this.props.sortType, this.props.set, 0, '', false, name, index, exact).catch(err => this.props.addalert(err))
+        getItemList(this.props.itemType, this.props.sortName, this.props.sortType, this.props.set, 0, '', false, name, index, exact).catch(err => this.props.addalert(err))
     },
     _addBookmark: function(name) {
         if (this.props.current.length === 0) {
@@ -19,11 +23,11 @@ const ItemPath = React.createClass({
         if (!name) {
             return Promise.reject('')
         }
-        return !isValidString(name, 'name') ? Promise.reject('Bookmark name is not valid!!!') : api('/api/bookmark/add', {name: name}).then(result => {
+        return !isValidString(name, 'name') ? Promise.reject('Bookmark name is not valid!!!') : api(`/api/bookmark/${this.props.itemType}/add`, {name: name}).then(result => {
             if (result.id) {
                 this.props.pushbookmark({id: result.id, name: result.name})
             }
-            if (result.bid) {
+            if (this.props.itemType === STORAGE && result.bid) {
                 result.id = result.bid
                 result.name = result.bname
                 if (result.name) {
@@ -36,7 +40,7 @@ const ItemPath = React.createClass({
         let bookmarkList = [
             {
                 title: 'new...',
-                onclick: () => this.props.globalinput(name => this._addBookmark(name)),
+                onclick: () => this.props.globalinput(1, 'New Bookmark...', name => this._addBookmark(name)),
                 key: 0,
             },
             {key: 1},

@@ -1,6 +1,6 @@
 import fetch from 'isomorphic-fetch'
 import { browserHistory } from 'react-router'
-import { LOGIN_PAGE } from './constants'
+import { LOGIN_PAGE, STORAGE } from './constants'
 
 const re_weburl = new RegExp(
     "^(url:)?" +
@@ -48,6 +48,8 @@ export function isValidString(str, type) {
         return str.match(/^[^\\\/\|\*\?"<:]{1,255}$/)
         case 'passwd':
         return str.match(/^[0-9a-zA-Z!@#$%]{2,30}$/)
+        case 'altpwd':
+        return str.match(/^[0-9a-zA-Z\._!@#$%;\u4e00-\u9fa5]{2,30}$/)
         case 'desc':
         return str.match(/^[^\\\/\|\*\?\'"<>`:&]{0,250}$/)
         case 'int':
@@ -62,6 +64,8 @@ export function isValidString(str, type) {
         break
         case 'url':
         return str.match(re_weburl) || str.match(/^magnet:(\?xt=urn:btih:[a-z0-9]{20,50}|stop)/i)
+        case 'email':
+        return str.match(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,6})+$/)
     }
     return false
 }
@@ -72,8 +76,38 @@ export function killEvent(e, func) {
     func()
 }
 
-export function randomFloor(min,max) {
+export function randomFloor(min, max) {
     return Math.floor(Math.random()*(max-min+1)+min)
+}
+
+export const clearText = text => text.replace('l', '<little L>').replace('I', '<big i>').replace('1', '<number 1>').replace('O', '<big o>').replace('0', '<number 0>')
+
+export function checkInput(name, state, addalert, orig_input = '', type, confirm='') {
+    if (confirm) {
+        if (state[name].toString() !== orig_input.toString()) {
+            addalert(`${name} is not the same!!!`)
+        } else {
+            if (state[name]) {
+                if (isValidString(state[name], type)) {
+                    return {
+                        [name]: state[name],
+                        [confirm]: orig_input,
+                    }
+                } else {
+                    addalert(`${name} not vaild!!!`)
+                }
+            }
+        }
+    } else {
+        if (state[name].toString() !== orig_input.toString()) {
+            if (isValidString(state[name], type)) {
+                return {[name]: state[name]}
+            } else {
+                addalert(`${name} not vaild!!!`)
+            }
+        }
+    }
+    return false
 }
 
 //api
@@ -185,41 +219,48 @@ export const arrayObjectIndexOf = (myArray, searchTerm, property) => {
     return -1
 }
 
-
 //itemlist
-const youtubeList = (pageToken, set, parentList) => api(`/api/youtube/get/${pageToken}`).then(result => set(result.itemList, parentList, null, null, null, null, result.pageToken))
+const youtubeList = (pageToken, set, parentList, sortname) => api(`/api/youtube/get/${sortname}/${pageToken}`).then(result => set(result.itemList, parentList, null, null, null, null, result.pageToken))
 
-export const getItemList = (sortname, type, set, page=0, pageToken='', push=false, name=null, index=0, exact=false, multi=false, random=false) => {
+export const getItemList = (itemType, sortname, type, set, page=0, pageToken='', push=false, name=null, index=0, exact=false, multi=false, random=false) => {
     const rest = result => push ? set(result.itemList) : set(result.itemList, result.parentList, result.bookmarkID, result.latest, sortname, type)
     let queryItem = null
     if (name === null) {
-        queryItem = random ? api(`/api/storage/getRandom/${sortname}/${type}/${page}`) : api(`/api/storage/get/${sortname}/${type}/${page}`)
+        queryItem = random && itemType === STORAGE ? api(`/api/${itemType}/getRandom/${sortname}/${type}/${page}`) : api(`/api/${itemType}/get/${sortname}/${type}/${page}`)
     } else {
         if (!isValidString(name, 'name')) {
             return Promise.reject('search tag is not vaild!!!')
         }
-        queryItem = (multi || index > 0) ? api(`/api/storage/get/${sortname}/${type}/${page}/${name}/${exact}/${index}`) : api(`/api/storage/getSingle/${sortname}/${type}/${page}/${name}/${exact}/${index}`)
+        queryItem = (multi || index > 0) ? api(`/api/${itemType}/get/${sortname}/${type}/${page}/${name}/${exact}/${index}`) : api(`/api/${itemType}/getSingle/${sortname}/${type}/${page}/${name}/${exact}/${index}`)
     }
     return queryItem.then(result => {
         rest(result)
-        return youtubeList(pageToken, set, result.parentList)
+        if (itemType === STORAGE) {
+            return youtubeList(pageToken, set, result.parentList, sortname)
+        }
     })
 }
 
-export const resetItemList = (sortname, type, set) => api('/api/storage/reset').then(result => {
+export const resetItemList = (itemType, sortname, type, set) => api(`/api/${itemType}/reset/${sortname}/${type}`).then(result => {
     set(result.itemList, result.parentList, result.bookmarkID, result.latest, sortname, type)
-    return youtubeList('', set, result.parentList)
+    if (itemType === STORAGE) {
+        return youtubeList('', set, result.parentList, sortname)
+    }
 })
 
-export const dirItemList = (sortname, type, set, id, multi) => {
-    const queryItem = multi ? api(`/api/parent/query/${id}/${sortname}/${type}`) : api(`/api/parent/query/${id}/${sortname}/${type}/single`)
+export const dirItemList = (itemType, sortname, type, set, id, multi) => {
+    const queryItem = multi ? api(`/api/parent/${itemType}/query/${id}/${sortname}/${type}`) : api(`/api/parent/${itemType}/query/${id}/${sortname}/${type}/single`)
     return queryItem.then(result => {
         set(result.itemList, result.parentList, result.bookmarkID, result.latest, sortname, type)
-        return youtubeList('', set, result.parentList)
+        if (itemType === STORAGE) {
+            return youtubeList('', set, result.parentList, sortname)
+        }
     })
 }
 
-export const bookmarkItemList = (type, sortname, sorttype, set, id) => api(`/api/bookmark/${type}/${id}/${sortname}/${sorttype}`).then(result => {
+export const bookmarkItemList = (itemType, type, sortname, sorttype, set, id) => api(`/api/bookmark/${itemType}/${type}/${id}/${sortname}/${sorttype}`).then(result => {
     set(result.itemList, result.parentList, result.bookmarkID, result.latest, sortname, sorttype)
-    return youtubeList('', set, result.parentList)
+    if (itemType === STORAGE) {
+        return youtubeList('', set, result.parentList, sortname)
+    }
 })

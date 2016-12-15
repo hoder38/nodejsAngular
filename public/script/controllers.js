@@ -924,11 +924,11 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     $scope.dirItemlist = function(id) {
         var this_obj = this.$parent.$parent;
         if (this_obj.multiSearch) {
-            var parentApi = $resource('/api/parent/query/' + id, {}, {
+            var parentApi = $resource('/api/parent/storage/query/' + id, {}, {
                 'query': { method:'get' }
             });
         } else {
-            var parentApi = $resource('/api/parent/query/' + id + '/single', {}, {
+            var parentApi = $resource('/api/parent/storage/query/' + id + '/single', {}, {
                 'query': { method:'get' }
             });
         }
@@ -1513,7 +1513,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
 
     $scope.add2Parent = function(item) {
         if (typeof this.toolList.item === 'string') {
-            var Info = $resource('/api/parent/add', {}, {
+            var Info = $resource('/api/parent/storage/add', {}, {
                 'addDir': { method:'POST' }
             });
             var this_obj = this;
@@ -1542,7 +1542,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
 
     $scope.del2Parent = function(id, dir) {
         var this_obj = this;
-        var Info = $resource('/api/parent/del/' + id, {}, {
+        var Info = $resource('/api/parent/storage/del/' + id, {}, {
             'delDir': { method:'DELETE' }
         });
         Info.delDir({}, function (result) {
@@ -1567,7 +1567,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     getTaglist = function(this_obj, item) {
         if (isValidString(item.name, 'name')) {
             item.moreDisabled = true;
-            var Info = $resource('/api/parent/taglist/' + item.name + '/' + item.sort + '/' + item.page, {}, {
+            var Info = $resource('/api/parent/storage/taglist/' + item.name + '/' + item.sort + '/' + item.page, {}, {
                 'getTaglist': { method:'GET' }
             });
             Info.getTaglist({}, function (result) {
@@ -1822,7 +1822,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
 
     $scope.setBookmark = function(item) {
         var this_obj = this.$parent.$parent.$parent;
-        var bookmarkapi = $resource('/api/bookmark/set/' + item.id, {}, {
+        var bookmarkapi = $resource('/api/bookmark/storage/set/' + item.id, {}, {
             'setbookmark': { method:'GET' }
         });
         var more = true;
@@ -2392,7 +2392,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
 
     $scope.getBookmarkItem = function(id) {
         var this_obj = this;
-        var bookmarkapi = $resource('/api/bookmark/get/' + id, {}, {
+        var bookmarkapi = $resource('/api/bookmark/storage/get/' + id, {}, {
             'getbookmark': { method:'GET' }
         });
         var more = true;
@@ -2480,7 +2480,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
     }
 
     getBookmarklist = function() {
-        var bookmarkapi = $resource('/api/bookmark/getlist/' + $scope.bookmarkSort.sort, {}, {
+        var bookmarkapi = $resource('/api/bookmark/storage/getlist/' + $scope.bookmarkSort.sort, {}, {
             'getbookmarklist': { method:'GET' }
         });
         bookmarkapi.getbookmarklist({}, function(result) {
@@ -2512,7 +2512,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
             var this_obj = this;
             this.bookmarkNew = false;
             this.bookmarkName = '';
-            var bookmarkapi = $resource('/api/bookmark/add', {}, {
+            var bookmarkapi = $resource('/api/bookmark/storage/add', {}, {
                 'addbookmark': { method:'POST' }
             });
             bookmarkapi.addbookmark({name: bookmarkName}, function(result) {
@@ -2559,7 +2559,7 @@ function StorageInfoCntl($route, $routeParams, $resource, $scope, $window, $cook
 
     $scope.delBookmark = function(id) {
         var this_obj = this;
-        var bookmarkapi = $resource('/api/bookmark/del/' + id, {}, {
+        var bookmarkapi = $resource('/api/bookmark/storage/del/' + id, {}, {
             'delbookmark': { method:'DELETE' }
         });
         bookmarkapi.delbookmark({}, function(result) {
@@ -3757,7 +3757,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         } else {
             if (isValidString(ctitle, 'name')) {
                 var this_obj = this;
-                var bookmarkapi = $resource('/api/bookmark/subscipt', {}, {
+                var bookmarkapi = $resource('/api/bookmark/storage/subscipt', {}, {
                     'subscipt': { method:'POST' }
                 });
                 bookmarkapi.subscipt({name: ctitle, path: ['ych_' + cid, 'no local', 'youtube playlist', 'youtube ' + type], exactly: [false, false]}, function(result) {
@@ -5712,7 +5712,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
         }
     }
     getParentlist = function() {
-        var Info = $resource('/api/parent/list', {}, {
+        var Info = $resource('/api/parent/storage/list', {}, {
             'parentlist': { method:'GET' }
         });
         Info.parentlist({}, function (result) {
@@ -5737,7 +5737,7 @@ app.controller('mainCtrl', ['$scope', '$http', '$resource', '$location', '$route
     }
     $scope.feedbackAdd2Parent = function(name) {
         if (isValidString(name, 'name') && isValidString($scope.feedbackSelectTag, 'name')) {
-            var Info = $resource('/api/parent/add', {}, {
+            var Info = $resource('/api/parent/storage/add', {}, {
                 'addDir': { method:'POST' }
             });
             var this_obj = this.$parent;

@@ -1,4 +1,3 @@
-import { BOOKMARK_POP, BOOKMARK_PUSH } from '../constants'
 import { arrayObject } from '../utility'
 
 const initialState = {
@@ -9,17 +8,19 @@ const initialState = {
     more: false,
 }
 
-export default function bookmarkDataHandle (state = initialState, action) {
-    switch (action.type) {
-        case BOOKMARK_PUSH:
-        return (action.sortName !== null && action.sortType !== null) ? Object.assign({}, state, {
-            list: arrayObject('push', [], action.bookmark, 'id'),
-            sortName: action.sortName,
-            sortType: action.sortType,
-        }) : Object.assign({}, state, {list: arrayObject('push', state.list, action.bookmark, 'id')})
-        case BOOKMARK_POP:
-        return Object.assign({}, state, {list: arrayObject('pop', state.list, action.id)})
-        default:
-        return state
+export default function bookmarkDataHandle (push, pop) {
+    return (state = initialState, action) => {
+        switch (action.type) {
+            case push:
+            return (action.sortName !== null && action.sortType !== null) ? Object.assign({}, state, {
+                list: arrayObject('push', [], action.bookmark, 'id'),
+                sortName: action.sortName,
+                sortType: action.sortType,
+            }) : Object.assign({}, state, {list: arrayObject('push', state.list, action.bookmark, 'id')})
+            case pop:
+            return Object.assign({}, state, {list: arrayObject('pop', state.list, action.id)})
+            default:
+            return state
+        }
     }
 }

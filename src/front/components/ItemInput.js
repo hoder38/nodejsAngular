@@ -2,7 +2,7 @@ import React from 'react'
 import UserInput from './UserInput'
 import FileUploader from './FileUploader'
 import Tooltip from './Tooltip'
-import { killEvent } from '../utility'
+import { killEvent, clearText } from '../utility'
 
 const ItemInput = React.createClass({
     getInitialState: function() {
@@ -12,6 +12,7 @@ const ItemInput = React.createClass({
             lang: 'ch',
             progress: 0,
             loading: false,
+            showPwd: false,
         }, this._input.initValue())
     },
     componentWillUnmount: function() {
@@ -19,13 +20,23 @@ const ItemInput = React.createClass({
     },
     componentWillReceiveProps: function(nextProps) {
         if (nextProps.index !== this.props.index) {
-            this.setState(this._input.initValue({input1: nextProps.value}))
+            this.setState(Object.assign({}, this.state, this._input.initValue({input1: nextProps.value}), {showPwd: false}))
         }
     },
     componentDidUpdate: function(prevProps) {
-        if (this.props.input !== 0 && prevProps.index !== this.props.index) {
+        if (this.props.input === 3) {
+            this._input.initFocus()
+            this._input.ref.get('input1').selectionStart = 0
+        } else if (this.props.input !== 0 && prevProps.index !== this.props.index) {
             this._input.initFocus()
         }
+    },
+    _copyPassword: function(e) {
+        e.clipboardData.setData('text/plain', this.state.input1)
+        e.preventDefault()
+        e.stopPropagation()
+        this.props.inputclose(false)
+        this._input.allBlur()
     },
     _handleSubmit: function() {
         if (this.props.index === -1) {
@@ -39,10 +50,10 @@ const ItemInput = React.createClass({
                 if (this.props.input !== 0) {
                     this.props.inputclose(false)
                 }
-                this.setState(Object.assign({}, this.state,{loading: false}))
+                this.setState(Object.assign({}, this.state, {loading: false}))
             }).catch(err => {
                 this.props.addalert(err)
-                this.setState(Object.assign({}, this.state,{loading: false}))
+                this.setState(Object.assign({}, this.state, {loading: false}))
             })
             this.setState(Object.assign({}, this.state, this._input.initValue()))
             this._input.allBlur()
@@ -64,11 +75,11 @@ const ItemInput = React.createClass({
         const exactClass1 = this.state.exact ? `btn btn-${this.props.color}` : 'btn active btn-primary'
         const exactClass2 = this.state.exact ? 'glyphicon glyphicon-eye-open' : 'glyphicon glyphicon-eye-close'
         const close = this.props.input === 0 ? (
-            <button className={exactClass1} type="button" onClick={() => this.setState(Object.assign({}, this.state, {exact: !this.state.exact}))}>
+            <button className={exactClass1} type="button" onClick={e => killEvent(e, () => this.setState(Object.assign({}, this.state, {exact: !this.state.exact})))}>
                 <i className={exactClass2}></i>
             </button>
         ) : (
-            <button className={`btn btn-${this.props.color}`} type="button" onClick={() => this.props.inputclose(false)}>
+            <button className={`btn btn-${this.props.color}`} type="button" onClick={e => killEvent(e, () => this.props.inputclose(false))}>
                 <i className="glyphicon glyphicon-remove"></i>
             </button>
         )
@@ -85,36 +96,55 @@ const ItemInput = React.createClass({
             </button>
         )
         switch(this.props.input) {
-            case 3:
-            fromClass = 'input-group double-input'
-            input = (
-                <div className="form-control">
-                    {`${this.state.progress}% Complete`}
-                </div>
-            )
-            input2 = (
-                <select className="form-control" onChange={this._handleSelect} value={this.state.lang} style={{position: 'relative'}}>
-                    <option value="ch" key={0}>中文</option>
-                    <option value="en" key={1}>English</option>
-                </select>
-            )
-            submit = (
-                <div className={`btn btn-${this.props.color} btn-file`}>
-                    <span className="glyphicon glyphicon-folder-open"></span>&nbsp;Choose
-                    <FileUploader url={this.props.placeholder} setUpload={this._setUpload} callback={(ret, e) => e ? this.props.addalert(e) : this._handleSubmit(ret)} params={{lang: this.state.lang}} />
-                </div>
-            )
-            break
             case 2:
-            input2 = <UserInput
-                val={this.state.input2}
-                getinput={this._input.getInput('input2')}
-                placeholder={this.props.placeholder2} />
-            fromClass = 'input-group double-input'
+            if (!this.props.placeholder2) {
+                fromClass = 'input-group double-input'
+                input = (
+                    <div className="form-control">
+                        {`${this.state.progress}% Complete`}
+                    </div>
+                )
+                input2 = (
+                    <select className="form-control" onChange={this._handleSelect} value={this.state.lang} style={{position: 'relative'}}>
+                        <option value="ch" key={0}>中文</option>
+                        <option value="en" key={1}>English</option>
+                    </select>
+                )
+                submit = (
+                    <div className={`btn btn-${this.props.color} btn-file`}>
+                        <span className="glyphicon glyphicon-folder-open"></span>&nbsp;Choose
+                        <FileUploader url={this.props.placeholder} setUpload={this._setUpload} callback={(ret, e) => e ? this.props.addalert(e) : this._handleSubmit(ret)} params={{lang: this.state.lang}} />
+                    </div>
+                )
+                break
+            } else {
+                input2 = <UserInput
+                    val={this.state.input2}
+                    getinput={this._input.getInput('input2')}
+                    placeholder={this.props.placeholder2} />
+                fromClass = 'input-group double-input'
+            }
             case 1:
             submit = (
                 <button className={`btn btn-${this.props.color}`} type="submit" disabled={this.state.loading}>
                     <span className="glyphicon glyphicon-ok"></span>
+                </button>
+            )
+            break
+            case 3:
+            input = <UserInput
+                val={this.props.placeholder2 ? this.state.showPwd ? clearText(this.state.input1) : 'Copy Here' : this.state.input1}
+                getinput={this._input.getInput('input1')}
+                placeholder={this.props.placeholder}
+                copy={this._copyPassword}
+                edit={false} />
+            submit = this.props.placeholder2 ? (
+                <button className={`btn btn-${this.props.color}`} type="button" onClick={e => killEvent(e, () => this.setState(Object.assign({}, this.state, {showPwd: !this.state.showPwd})))}>
+                    <i className={this.state.showPwd ? 'glyphicon glyphicon-eye-open' : 'glyphicon glyphicon-eye-close'}></i>
+                </button>
+            ) : (
+                <button className={`btn btn-${this.props.color}`} type="button" onClick={e => killEvent(e, () => this.props.inputclose(false))}>
+                    <i className="glyphicon glyphicon-ok"></i>
                 </button>
             )
             break

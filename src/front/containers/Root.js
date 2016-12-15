@@ -8,7 +8,7 @@ import ReApp from './ReApp'
 import Homepage from '../components/Homepage'
 import ReUserlist from './ReUserlist'
 import Storage from '../components/Storage'
-import Password from '../components/Password'
+import RePassword from '../containers/RePassword'
 import Stock from '../components/Stock'
 import ReLogin from './ReLogin'
 import { testLogin } from '../utility'
@@ -37,7 +37,7 @@ export default function Root() {
                     <Route path={ROOT_PAGE} component={ReApp}>
                         <IndexRoute component={Homepage} />
                         <Route path={STORAGE_PAGE} component={Storage} />
-                        <Route path={PASSWORD_PAGE} component={Password} />
+                        <Route path={PASSWORD_PAGE} component={RePassword} />
                         <Route path={STOCK_PAGE} component={Stock} />
                         <Route path={USER_PAGE} component={ReUserlist} />
                     </Route>

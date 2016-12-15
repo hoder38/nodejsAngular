@@ -115,7 +115,6 @@ var torrentStream = require('torrent-stream');
 var avconv = require('avconv');
 
 app.use(express.favicon());
-app.use(express.cookieParser());
 app.use(express.urlencoded());
 app.use(express.json());
 app.use(express_session(sessionStore.config));

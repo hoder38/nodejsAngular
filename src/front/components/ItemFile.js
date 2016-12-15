@@ -1,6 +1,7 @@
 import React from 'react'
 import Dropdown from './Dropdown'
 import { api, isValidString, killEvent, bookmarkItemList } from '../utility'
+import { STORAGE } from '../constants'
 
 const ItemFile = React.createClass({
     _download: function(id, name) {
@@ -30,7 +31,7 @@ const ItemFile = React.createClass({
     },
     _subscript: function(id, name, isMusic=false) {
         this.props.sendglbcf(() => {
-            isValidString(name, 'name') ? api('/api/bookmark/subscipt', {
+            isValidString(name, 'name') ? api(`/api/bookmark/${STORAGE}/subscipt`, {
                 name: name,
                 path: ['ych_' + id, 'no local', 'youtube playlist', isMusic ? 'youtube music' : 'youtube video'],
                 exactly: [false, false]
@@ -117,61 +118,60 @@ const ItemFile = React.createClass({
         }, 'warning', 'Search Name or IMDBID: tt1638355', null, 'Episode: S01E01')
     },
     _uploadSub: function(id) {
-        this.props.globalinput(3, () => Promise.resolve(this.props.addalert('subtitle upload success')), 'warning', `${this.props.mainUrl}/upload/subtitle/${id}`)
+        this.props.globalinput(2, () => Promise.resolve(this.props.addalert('subtitle upload success')), 'warning', `${this.props.mainUrl}/upload/subtitle/${id}`)
     },
     _showUrl: function(id, url) {
         window.open(decodeURIComponent(url))
         api(`/api/media/setTime/${id}/url`).then(result => this.props.setLatest(id, this.props.bookmark)).catch(err => this.props.addalert(err))
     },
     _bookmark: function(id) {
-        bookmarkItemList('set', this.props.sortName, this.props.sortType, this.props.set, id).catch(err => this.props.addalert(err))
+        bookmarkItemList(STORAGE, 'set', this.props.sortName, this.props.sortType, this.props.set, id).catch(err => this.props.addalert(err))
     },
     render: function() {
         let item = this.props.item
         let dropList = []
-        let key = 0
         if (!item.thumb && item.status !== 7 && item.status !== 8) {
-            dropList.push({title: 'download', onclick: () => this._download(item.id, item.name), key: key++})
-            dropList.push({title: 'download to drive', onclick: () => this._save2drive(item.id, item.name), key: key++})
+            dropList.push({title: 'download', onclick: () => this._download(item.id, item.name), key: 0})
+            dropList.push({title: 'download to drive', onclick: () => this._save2drive(item.id, item.name), key: 1})
         }
         if (item.isOwn) {
             if (!item.thumb) {
-                dropList.push({title: 'edit', onclick: () => this._edit(item.id, item.name), key: key++})
+                dropList.push({title: 'edit', onclick: () => this._edit(item.id, item.name), key: 2})
             }
-            dropList.push({title: 'delete', onclick: () => this._delete(item.id, item.name, item.recycle), key: key++})
+            dropList.push({title: 'delete', onclick: () => this._delete(item.id, item.name, item.recycle), key: 3})
         }
         if (item.recycle === 1 || item.recycle === 2 || item.recycle === 3 || item.recycle === 4) {
-            dropList.push({title: 'recover', onclick: () => this._recover(item.id, item.name), key: key++})
+            dropList.push({title: 'recover', onclick: () => this._recover(item.id, item.name), key: 4})
         }
         if (item.status === 3) {
             if (!item.thumb) {
-                dropList.push({title: 'search subtitle', onclick: () => this._searchSub(item.id), key: key++})
-                dropList.push({title: 'upload subtitle', onclick: () => this._uploadSub(item.id), key: key++})
+                dropList.push({title: 'search subtitle', onclick: () => this._searchSub(item.id), key: 5})
+                dropList.push({title: 'upload subtitle', onclick: () => this._uploadSub(item.id), key: 6})
             }
             if (item.cid) {
-                dropList.push({title: `訂閱${item.ctitle}`, onclick: () => this._subscript(item.cid, item.ctitle), key: key++})
+                dropList.push({title: `訂閱${item.ctitle}`, onclick: () => this._subscript(item.cid, item.ctitle), key: 7})
             }
             if (item.noDb) {
-                dropList.push({title: '儲存到local', onclick: () => this._save2local(item.id, item.name), key: key++})
+                dropList.push({title: '儲存到local', onclick: () => this._save2local(item.id, item.name), key: 8})
             }
         }
         if (item.status === 4) {
             if (item.cid) {
-                dropList.push({title: `訂閱${item.ctitle}`, onclick: () => this._subscript(item.cid, item.ctitle, true), key: key++})
+                dropList.push({title: `訂閱${item.ctitle}`, onclick: () => this._subscript(item.cid, item.ctitle, true), key: 9})
             }
             if (item.noDb) {
-                dropList.push({title: '儲存到local', onclick: () => this._save2local(item.id, item.name, true), key: key++})
+                dropList.push({title: '儲存到local', onclick: () => this._save2local(item.id, item.name, true), key: 10})
             }
         }
         if (item.media) {
-            dropList.push({title: 'clear media', onclick: () => this._handleMedia(item.id, item.name, true), key: key++})
+            dropList.push({title: 'clear media', onclick: () => this._handleMedia(item.id, item.name, true), key: 11})
         }
         if (item.status === 0 || item.status === 1 || item.status === 9) {
-            dropList.push({title: 'join zips', onclick: this._join, key: key++})
+            dropList.push({title: 'join zips', onclick: this._join, key: 12})
         }
         if (item.status === 9) {
-            dropList.push({title: 'save playlist', onclick: () => this._downloadAll(item.id, item.name), key: key++})
-            dropList.push({title: 'convert zip', onclick: () => this._convert(item.id, item.name), key: key++})
+            dropList.push({title: 'save playlist', onclick: () => this._downloadAll(item.id, item.name), key: 13})
+            dropList.push({title: 'convert zip', onclick: () => this._convert(item.id, item.name), key: 14})
         }
         let content = (
             <a href="#" className="item-point">

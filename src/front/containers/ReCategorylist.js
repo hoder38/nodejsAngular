@@ -1,14 +1,16 @@
 import { connect } from 'react-redux'
-import { bookmarkPush, bookmarkPop, dirPush, dirPop, itemPush } from '../actions'
+import { bookmarkPush, bookmarkPop, dirPush, dirPop, itemPush, alertPush } from '../actions'
 import Categorylist from '../components/Categorylist'
+import { STORAGE } from '../constants'
 
 const mapStateToProps = state => ({
+    itemType: STORAGE,
     sortName: state.itemDataHandle.item.sortName,
     sortType: state.itemDataHandle.item.sortType,
     multi: state.itemDataHandle.multi,
     edit: state.basicDataHandle.edit,
-    bookmark: state.bookmarkDataHandle,
-    dirs: state.dirDataHandle,
+    bookmark: state.ibookmarkDataHandle,
+    dirs: state.idirDataHandle,
 })
 
 const mapDispatchToProps = dispatch => ({
@@ -16,6 +18,7 @@ const mapDispatchToProps = dispatch => ({
     delbookmark: id => dispatch(bookmarkPop(id)),
     dirset: (name, dir, sortName, sortType) => dispatch(dirPush(name, dir, sortName, sortType)),
     deldir: (name, id) => dispatch(dirPop(name, id)),
+    addalert: msg => dispatch(alertPush(msg)),
     set: (item, path, bookmark, latest, sortName, sortType, pageToken) => dispatch(itemPush(item, path, bookmark, latest, sortName, sortType, pageToken)),
 })
 

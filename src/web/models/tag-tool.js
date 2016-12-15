@@ -201,7 +201,7 @@ module.exports = function(collection) {
                     search[name].save[saveName].tags = search[name].tags.slice(0, search[name].index);
                     search[name].save[saveName].exactly = search[name].exactly;
                     search[name].save[saveName].bookmark = search[name].bookmark;
-                    search[name].save[saveName].sortName = sortName;
+                    search[name].save[saveName].sortName = getStorageSortName(sortName);
                     search[name].save[saveName].sortType = sortType;
                 },
                 loadArray: function(saveName) {

@@ -1,6 +1,7 @@
 import { ALERT_PUSH, ALERT_POP, SET_BASIC, SET_UPLOAD, SEND_GLB_PW, CLOSE_GLB_PW, SEND_GLB_CF,
     CLOSE_GLB_CF, FEEDBACK_POP, FEEDBACK_PUSH, BOOKMARK_POP, BOOKMARK_PUSH, SET_DIRS, DIR_POP,
-    DIR_PUSH, USER_POP, USER_PUSH, ITEM_PUSH, ITEM_POP, SET_ITEM, SEND_GLB_IN, CLOSE_GLB_IN } from '../constants'
+    DIR_PUSH, USER_POP, USER_PUSH, ITEM_PUSH, ITEM_POP, SET_ITEM, SEND_GLB_IN, CLOSE_GLB_IN,
+    PASS_PUSH, PASS_POP, SET_PASS, SET_PDIRS, PDIR_POP, PDIR_PUSH, PBOOKMARK_POP, PBOOKMARK_PUSH } from '../constants'
 
 export const alertPush = msg => ({
     type: ALERT_PUSH,
@@ -138,4 +139,65 @@ export const sendGlbIn = (input, callback, color, placeholder, value=null, place
 export const closeGlbIn = clear => ({
     type: CLOSE_GLB_IN,
     clear,
+})
+
+export const passPop = id => ({
+    type: PASS_POP,
+    id,
+})
+
+export const passPush = (item, path=null, bookmark=null, latest=null, sortName=null, sortType=null, pageToken=null, list='item') => ({
+    type: PASS_PUSH,
+    item,
+    path,
+    bookmark,
+    latest,
+    sortName,
+    sortType,
+    pageToken,
+    list,
+})
+
+export const setPass = (select, latest=null, bookmark=null, multi=null, list=null, id=null, opt=null, time=null) => ({
+    type: SET_PASS,
+    select,
+    latest,
+    bookmark,
+    multi,
+    list,
+    id,
+    opt,
+    time,
+})
+
+export const setPdirs = (dirs, rest) => ({
+    type: SET_PDIRS,
+    dirs,
+    rest,
+})
+
+export const pdirPop = (name, id) => ({
+    type: PDIR_POP,
+    name,
+    id,
+})
+
+export const pdirPush = (name, dir, sortName=null, sortType=null) => ({
+    type: PDIR_PUSH,
+    name,
+    dir,
+    sortName,
+    sortType,
+})
+
+export const pbookmarkPop = id => ({
+    type: PBOOKMARK_POP,
+    id,
+})
+
+export const pbookmarkPush = (bookmark, sortName=null, sortType=null) => ({
+    type: PBOOKMARK_PUSH,
+    bookmark,
+    sortName,
+    sortType,
 })

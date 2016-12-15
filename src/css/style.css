@@ -244,6 +244,12 @@ ul.alert-dropdown {
     top: 100px;
 }
 
+#password-section {
+    left: 5px;
+    right: 5px;
+    top: 105px;
+}
+
 @media(min-width:768px) {
     #file-manage-section {
         right:0px;
@@ -265,6 +271,11 @@ ul.alert-dropdown {
         padding-right: 230px;
         top: 50px;
         border-top: 5px solid white;
+    }
+    #password-section {
+        left: 160px;
+        right: 235px;
+        top: 60px;
     }
 }
 

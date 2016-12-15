@@ -1,8 +1,10 @@
 import { connect } from 'react-redux'
 import { itemPush, alertPush, setItem, sendGlbIn } from '../actions'
+import { STORAGE } from '../constants'
 import ItemHead from '../components/ItemHead'
 
 const mapStateToProps = state => ({
+    itemType: STORAGE,
     select: state.itemDataHandle.select,
     sortName: state.itemDataHandle.item.sortName,
     sortType: state.itemDataHandle.item.sortType,

@@ -5,7 +5,7 @@ import FileFeedback from '../components/FileFeedback'
 const mapStateToProps = state => {
     let tmp = state.feedbackDataHandle.values().next().value
     return tmp ? {
-        dirs: state.dirDataHandle,
+        dirs: state.idirDataHandle,
         mainUrl: state.basicDataHandle.url,
         id: tmp.id,
         name: tmp.name,
@@ -13,7 +13,7 @@ const mapStateToProps = state => {
         option: tmp.option,
         other: tmp.other,
     } : {
-        dirs: state.dirDataHandle,
+        dirs: state.idirDataHandle,
         mainUrl: state.basicDataHandle.url,
         id: '',
         name: '',

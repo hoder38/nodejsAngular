@@ -1,8 +1,10 @@
 import React from 'react'
 import ReItemFile from '../containers/ReItemFile'
+import ReItemPassword from '../containers/ReItemPassword'
 import Tooltip from './Tooltip'
 import Dropdown from './Dropdown'
 import { isValidString, getItemList, api, killEvent } from '../utility'
+import { STORAGE, PASSWORD } from '../constants'
 
 const Itemlist = React.createClass({
     getInitialState: function() {
@@ -18,13 +20,13 @@ const Itemlist = React.createClass({
     },
     componentWillMount: function() {
         if (this.props.list.size === 0) {
-            let name = (typeof(Storage) !== "undefined" && localStorage.getItem("fileSortName")) ? localStorage.getItem("fileSortName"): this.props.sortName
-            let type = (typeof(Storage) !== "undefined" && localStorage.getItem("fileSortType")) ? localStorage.getItem("fileSortType"): this.props.sortType
+            let name = (typeof(Storage) !== "undefined" && localStorage.getItem(`${this.props.itemType}SortName`)) ? localStorage.getItem(`${this.props.itemType}SortName`): this.props.sortName
+            let type = (typeof(Storage) !== "undefined" && localStorage.getItem(`${this.props.itemType}SortType`)) ? localStorage.getItem(`${this.props.itemType}SortType`): this.props.sortType
             this._getlist(name, type, false)
         }
     },
     _getlist: function(name=this.props.sortName, type=this.props.sortType, push=true) {
-        this.setState(Object.assign({}, this.state, {loading: true}), () => getItemList(name, type, this.props.set, this.props.page, this.props.pageToken, push).then(() => this.setState(Object.assign({}, this.state, {loading: false}))).catch(err => this.props.addalert(err)))
+        this.setState(Object.assign({}, this.state, {loading: true}), () => getItemList(this.props.itemType, name, type, this.props.set, this.props.page, this.props.pageToken, push).then(() => this.setState(Object.assign({}, this.state, {loading: false}))).catch(err => this.props.addalert(err)))
     },
     _handleSelect: function() {
         let newList = new Set()
@@ -39,7 +41,7 @@ const Itemlist = React.createClass({
         if (this.props.select.size === 0) {
             this.props.addalert('Please selects item!!!')
         } else {
-            isValidString(tag, 'name') ? api(`/api/${type}Tag/${tag}`, {uids: [...this.props.select]}, 'PUT').catch(err => this.props.addalert(err)) : this.props.addalert('Tag is not valid!!!!!!')
+            isValidString(tag, 'name') ? api(`/api/${this.props.itemType}/${type}Tag/${tag}`, {uids: [...this.props.select]}, 'PUT').catch(err => this.props.addalert(err)) : this.props.addalert('Tag is not valid!!!!!!')
         }
     },
     _tagRow: function(tag, className) {
@@ -52,7 +54,7 @@ const Itemlist = React.createClass({
                     </button>
                 </td>
                 <td style={{whiteSpace: 'normal', wordBreak: 'break-all', wordWrap: 'break-word'}}>
-                    <a href="#" className={className} onClick={e => killEvent(e, () => getItemList(this.props.sortName, this.props.sortType, this.props.set, 0, '', false, tag, 0, true, this.props.multi))}>
+                    <a href="#" className={className} onClick={e => killEvent(e, () => getItemList(this.props.itemType, this.props.sortName, this.props.sortType, this.props.set, 0, '', false, tag, 0, true, this.props.multi))}>
                         <i className="glyphicon glyphicon-folder-open" style={{height: '42px', width: '42px', fontSize: '35px'}}></i>
                         {tag}
                     </a>
@@ -76,7 +78,7 @@ const Itemlist = React.createClass({
             relative: new Set(),
         })) : this.setState(Object.assign({}, this.state, {allTag: true}), () => {
             if (this.state.relative.size === 0) {
-                api('/api/getOptionTag', {tags: this._tags}).then(result => this.setState(Object.assign({}, this.state, {relative: new Set(result.relative.filter(x => (!this._tags.has(x) && !this._except.has(x))))})))
+                api(`/api/${this.props.itemType}/getOptionTag`, {tags: this._tags}).then(result => this.setState(Object.assign({}, this.state, {relative: new Set(result.relative.filter(x => (!this._tags.has(x) && !this._except.has(x))))})))
             }
         })
     },
@@ -87,7 +89,14 @@ const Itemlist = React.createClass({
         let exceptTags = new Set()
         this.props.list.forEach((item, i) => {
             let select = this.props.select.has(i)
-            rows.push(<ReItemFile key={item.id} item={item} getRef={ref => this._select.set(i, ref)} onchange={this._handleSelect} latest={this.props.latest} check={select} />)
+            switch(this.props.itemType) {
+                case STORAGE:
+                rows.push(<ReItemFile key={item.id} item={item} getRef={ref => this._select.set(i, ref)} onchange={this._handleSelect} latest={this.props.latest} check={select} />)
+                break
+                case PASSWORD:
+                rows.push(<ReItemPassword key={item.id} item={item} getRef={ref => this._select.set(i, ref)} onchange={this._handleSelect} latest={this.props.latest} check={select} />)
+                break
+            }
             if (select) {
                 if (tags.size > 0) {
                     let newTags = new Set(item.tags.filter(x => tags.has(x)))

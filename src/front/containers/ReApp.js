@@ -1,5 +1,5 @@
 import { connect } from 'react-redux'
-import { alertPush, setBasic, sendGlbCf, feedbackPush, bookmarkPush, setDirs, userPush, itemPop, itemPush, dirPush } from '../actions'
+import { alertPush, setBasic, sendGlbCf, feedbackPush, bookmarkPush, setDirs, userPush, itemPop, itemPush, dirPush, passPop, passPush, closeGlbPw } from '../actions'
 import App from '../components/App'
 
 const mapStateToProps = state => ({
@@ -20,6 +20,9 @@ const mapDispatchToProps = dispatch => ({
     dirsset: (dirs, rest) => dispatch(setDirs(dirs, rest)),
     pushdir: (name, dir) => dispatch(dirPush(name, dir)),
     itemdel: id => dispatch(itemPop(id)),
+    passset: (item, path, bookmark, latest, sortName, sortType, pageToken) => dispatch(passPush(item, path, bookmark, latest, sortName, sortType, pageToken)),
+    passdel: id => dispatch(passPop(id)),
+    closeglbpw: () => dispatch(closeGlbPw()),
 })
 
 const ReApp = connect(

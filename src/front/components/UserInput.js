@@ -1,36 +1,45 @@
 import React from 'react'
 
-export default function UserInput({ val, getinput, edit=true, show=true, type='text', placeholder='', children }) {
+export default function UserInput({ val, getinput, edit=true, show=true, type='text', placeholder='', copy=null, tagv=null, tage=null, copyShow=null, children }) {
     if (!show) {
         return null
     }
-    const content = edit ? (
+    let content = (edit || copy) ? (
         <input
-            type={type}
+            type={(!edit && copy) ? 'text' : type}
             className={getinput.className}
             style={getinput.style}
             placeholder={placeholder}
-            value={val}
+            value={(!edit && copy && copyShow) ? copyShow : val}
             ref={ref => getinput.getRef(ref)}
             onChange={getinput.onchange}
-            onKeyPress={getinput.onenter} />
+            onCopy={(!edit && copy) ? copy : () => {}}
+            onKeyPress={(!edit && copy) ? () => {} : getinput.onenter}
+            readOnly={(!edit && copy) ? true : false} />
     ) : val
-    if (!children) {
-        return content
-    } else if (children.props.children) {
-        return React.cloneElement(children, {}, children.props.children.map(child => {
+
+    content = edit ? insertChild(content, tage) : insertChild(content, tagv)
+
+    return insertChild(content, children)
+}
+
+function insertChild(item1, item2) {
+    if (!item2) {
+        return item1
+    } else if (item2.props.children) {
+        return React.cloneElement(item2, {}, item2.props.children.map(child => {
             if (!child.props.children) {
                 return React.cloneElement(child, {
                     style: {wordBreak: 'break-all', wordWrap: 'break-word', height: 'auto'}
-                }, content)
+                }, item1)
             } else {
                 return child
             }
         }))
     } else {
-        return React.cloneElement(children, {
+        return React.cloneElement(item2, {
             style: {wordBreak: 'break-all', wordWrap: 'break-word', height: 'auto'}
-        }, content)
+        }, item1)
     }
 }
 
