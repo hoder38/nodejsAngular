@@ -4,6 +4,9 @@ import { findDOMNode } from 'react-dom'
 const Tooltip = React.createClass({
     getInitialState: function() {
         this._showed = false
+        this._show = {visibility: 'hidden', whiteSpace: 'nowrap'}
+        this._self = null
+        this._target = null
         return {show: false}
     },
     componentDidMount: function() {
@@ -28,7 +31,7 @@ const Tooltip = React.createClass({
             if (this.state.show) {
                 this._showed = true
             }
-            this._show = {visibility: 'hidden', whiteSpace: 'nowrap'}
+            this._show = {visibility: 'hidden', whiteSpace: 'nowrap', overflowX: 'hidden'}
             switch(this.props.place) {
                 case 'top':
                 if (this._target && this.state.show) {
@@ -36,6 +39,7 @@ const Tooltip = React.createClass({
                         top: `${-this._self.offsetHeight + this._self.offsetTop + 6}px`,
                         left: `${Math.round((this._target.offsetWidth - this._self.offsetWidth) / 2) + this._self.offsetLeft}px`,
                         whiteSpace: 'nowrap',
+                        overflowX: 'hidden',
                     }
                 }
                 break
@@ -45,6 +49,7 @@ const Tooltip = React.createClass({
                         top: `${Math.round((this._target.offsetHeight - this._self.offsetHeight) / 2) + this._self.offsetTop}px`,
                         right: `${this._target.offsetWidth - this._self.offsetLeft}px`,
                         whiteSpace: 'nowrap',
+                        overflowX: 'hidden',
                     }
                 }
                 break
@@ -54,6 +59,7 @@ const Tooltip = React.createClass({
                         top: `${Math.round((this._target.offsetHeight - this._self.offsetHeight) / 2) + this._self.offsetTop}px`,
                         left: `${this._target.offsetWidth + this._self.offsetLeft - 6}px`,
                         whiteSpace: 'nowrap',
+                        overflowX: 'visible',
                     }
                 }
                 break

@@ -16,7 +16,7 @@ const ItemInput = React.createClass({
         }, this._input.initValue())
     },
     componentWillUnmount: function() {
-        this.props.inputclose(true)
+        this.props.inputclose(-1)
     },
     componentWillReceiveProps: function(nextProps) {
         if (nextProps.index !== this.props.index) {
@@ -27,7 +27,7 @@ const ItemInput = React.createClass({
         if (this.props.input === 3) {
             this._input.initFocus()
             this._input.ref.get('input1').selectionStart = 0
-        } else if (this.props.input !== 0 && prevProps.index !== this.props.index) {
+        } else if (this.props.input !== 0 && this.props.input !== 4 && prevProps.index !== this.props.index) {
             this._input.initFocus()
         }
     },
@@ -35,20 +35,18 @@ const ItemInput = React.createClass({
         e.clipboardData.setData('text/plain', this.state.input1)
         e.preventDefault()
         e.stopPropagation()
-        this.props.inputclose(false)
+        this.props.inputclose(this.props.input)
         this._input.allBlur()
     },
     _handleSubmit: function() {
-        if (this.props.index === -1) {
-            return false
-        }
-        if (this.state.loading) {
+        if (this.props.index === -1 || this.props.input === 3 || this.props.input === 4 || this.state.loading) {
             return true
         }
         this.setState(Object.assign({}, this.state,{loading: true}), () => {
+            let input = this.props.input
             this.props.callback(this.state.input1, this.state.exact, this.state.input2).then(() => {
-                if (this.props.input !== 0) {
-                    this.props.inputclose(false)
+                if (input !== 0) {
+                    this.props.inputclose(input)
                 }
                 this.setState(Object.assign({}, this.state, {loading: false}))
             }).catch(err => {
@@ -79,7 +77,7 @@ const ItemInput = React.createClass({
                 <i className={exactClass2}></i>
             </button>
         ) : (
-            <button className={`btn btn-${this.props.color}`} type="button" onClick={e => killEvent(e, () => this.props.inputclose(false))}>
+            <button className={`btn btn-${this.props.color}`} type="button" onClick={e => killEvent(e, () => this.props.inputclose(this.props.input))}>
                 <i className="glyphicon glyphicon-remove"></i>
             </button>
         )
@@ -97,7 +95,7 @@ const ItemInput = React.createClass({
         )
         switch(this.props.input) {
             case 2:
-            if (!this.props.placeholder2) {
+            if (!this.props.option) {
                 fromClass = 'input-group double-input'
                 input = (
                     <div className="form-control">
@@ -121,7 +119,7 @@ const ItemInput = React.createClass({
                 input2 = <UserInput
                     val={this.state.input2}
                     getinput={this._input.getInput('input2')}
-                    placeholder={this.props.placeholder2} />
+                    placeholder={this.props.option} />
                 fromClass = 'input-group double-input'
             }
             case 1:
@@ -131,19 +129,36 @@ const ItemInput = React.createClass({
                 </button>
             )
             break
+            case 4:
+            input = <UserInput
+                val={this.state.input1}
+                getinput={this._input.getInput('input1')}
+                placeholder={this.props.placeholder}
+                copy={() => {}}
+                edit={false} />
+            submit = this.props.option ? (
+                <button className={`btn btn-${this.props.color}`} type="button" onClick={e => killEvent(e, () => this.state.input1 === this.props.value ? this.setState(Object.assign({}, this.state, {input1: this.props.option})) : this.setState(Object.assign({}, this.state, {input1: this.props.value})))}>
+                    <i className="glyphicon glyphicon-chevron-right"></i>
+                </button>
+            ) : (
+                <button className={`btn btn-${this.props.color}`} type="button" onClick={e => killEvent(e, () => this.props.inputclose(this.props.input))}>
+                    <i className="glyphicon glyphicon-ok"></i>
+                </button>
+            )
+            break
             case 3:
             input = <UserInput
-                val={this.props.placeholder2 ? this.state.showPwd ? clearText(this.state.input1) : 'Copy Here' : this.state.input1}
+                val={this.props.option ? this.state.showPwd ? clearText(this.state.input1) : 'Copy Here' : this.state.input1}
                 getinput={this._input.getInput('input1')}
                 placeholder={this.props.placeholder}
                 copy={this._copyPassword}
                 edit={false} />
-            submit = this.props.placeholder2 ? (
+            submit = this.props.option ? (
                 <button className={`btn btn-${this.props.color}`} type="button" onClick={e => killEvent(e, () => this.setState(Object.assign({}, this.state, {showPwd: !this.state.showPwd})))}>
                     <i className={this.state.showPwd ? 'glyphicon glyphicon-eye-open' : 'glyphicon glyphicon-eye-close'}></i>
                 </button>
             ) : (
-                <button className={`btn btn-${this.props.color}`} type="button" onClick={e => killEvent(e, () => this.props.inputclose(false))}>
+                <button className={`btn btn-${this.props.color}`} type="button" onClick={e => killEvent(e, () => this.props.inputclose(this.props.input))}>
                     <i className="glyphicon glyphicon-ok"></i>
                 </button>
             )

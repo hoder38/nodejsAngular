@@ -1,6 +1,6 @@
 import { combineReducers } from 'redux'
 import { routerReducer } from 'react-router-redux'
-import { FEEDBACK_POP, FEEDBACK_PUSH, USER_POP, USER_PUSH, ITEM_PUSH, ITEM_POP, SET_ITEM, PASS_PUSH, PASS_POP, SET_PASS, SET_DIRS, DIR_POP, DIR_PUSH, SET_PDIRS, PDIR_POP, PDIR_PUSH, BOOKMARK_POP, BOOKMARK_PUSH, PBOOKMARK_POP, PBOOKMARK_PUSH } from '../constants'
+import { FEEDBACK_POP, FEEDBACK_PUSH, USER_POP, USER_PUSH, ITEM_PUSH, ITEM_POP, SET_ITEM, SET_DIRS, DIR_POP, DIR_PUSH, BOOKMARK_POP, BOOKMARK_PUSH, PASS_PUSH, PASS_POP, SET_PASS, SET_PDIRS, PDIR_PUSH, PDIR_POP, PBOOKMARK_POP, PBOOKMARK_PUSH, STOCK_PUSH, STOCK_POP, SET_STOCK, SET_SDIRS, SDIR_PUSH, SDIR_POP, SBOOKMARK_POP, SBOOKMARK_PUSH } from '../constants'
 import alertHandle from './alertHandle'
 import basicDataHandle from './basicDataHandle'
 import uploadDataHandle from './uploadDataHandle'
@@ -17,12 +17,15 @@ const userDataHandle = simpleDataHandle(USER_PUSH, USER_POP)
 
 const itemDataHandle = complexDataHandle(ITEM_PUSH, ITEM_POP, SET_ITEM)
 const passDataHandle = complexDataHandle(PASS_PUSH, PASS_POP, SET_PASS)
+const stockDataHandle = complexDataHandle(STOCK_PUSH, STOCK_POP, SET_STOCK)
 
 const idirDataHandle = dirDataHandle(DIR_PUSH, DIR_POP, SET_DIRS)
 const pdirDataHandle = dirDataHandle(PDIR_PUSH, PDIR_POP, SET_PDIRS)
+const sdirDataHandle = dirDataHandle(SDIR_PUSH, SDIR_POP, SET_SDIRS)
 
 const ibookmarkDataHandle = bookmarkDataHandle(BOOKMARK_PUSH, BOOKMARK_POP)
 const pbookmarkDataHandle = bookmarkDataHandle(PBOOKMARK_PUSH, PBOOKMARK_POP)
+const sbookmarkDataHandle = bookmarkDataHandle(SBOOKMARK_PUSH, SBOOKMARK_POP)
 
 const ANoMoPi = combineReducers({
     routing: routerReducer,
@@ -33,10 +36,13 @@ const ANoMoPi = combineReducers({
     userDataHandle,
     ibookmarkDataHandle,
     pbookmarkDataHandle,
+    sbookmarkDataHandle,
     idirDataHandle,
     pdirDataHandle,
+    sdirDataHandle,
     itemDataHandle,
     passDataHandle,
+    stockDataHandle,
     glbPwHandle,
     glbCfHandle,
     glbInHandle,

@@ -31,7 +31,6 @@ const PasswordInfo = React.createClass({
     },
     _handleSubmit: function() {
         if (this.state.edit) {
-            console.log(this.state);
             const important = this.state.important !== this.props.item.important ? {important: this.state.important} : {}
             const set_obj = Object.assign({},
                 checkInput('name', this.state, this.props.addalert, this.props.item.name, 'name'),

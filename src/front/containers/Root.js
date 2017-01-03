@@ -9,7 +9,7 @@ import Homepage from '../components/Homepage'
 import ReUserlist from './ReUserlist'
 import Storage from '../components/Storage'
 import RePassword from '../containers/RePassword'
-import Stock from '../components/Stock'
+import ReStock from '../containers/ReStock'
 import ReLogin from './ReLogin'
 import { testLogin } from '../utility'
 
@@ -26,7 +26,7 @@ const isLogin = (nextState, replaceState, callback) => testLogin()
         callback()
     })
 
-let unsubscribe = store.subscribe(() => console.log(store.getState()))
+//let unsubscribe = store.subscribe(() => console.log(store.getState()))
 
 export default function Root() {
     return (
@@ -38,7 +38,7 @@ export default function Root() {
                         <IndexRoute component={Homepage} />
                         <Route path={STORAGE_PAGE} component={Storage} />
                         <Route path={PASSWORD_PAGE} component={RePassword} />
-                        <Route path={STOCK_PAGE} component={Stock} />
+                        <Route path={STOCK_PAGE} component={ReStock} />
                         <Route path={USER_PAGE} component={ReUserlist} />
                     </Route>
                     <Redirect from="*" to={ROOT_PAGE} />

@@ -1,10 +1,11 @@
 import React from 'react'
 import ReItemFile from '../containers/ReItemFile'
 import ReItemPassword from '../containers/ReItemPassword'
+import ReItemStock from '../containers/ReItemStock'
 import Tooltip from './Tooltip'
 import Dropdown from './Dropdown'
 import { isValidString, getItemList, api, killEvent } from '../utility'
-import { STORAGE, PASSWORD } from '../constants'
+import { STORAGE, PASSWORD, STOCK } from '../constants'
 
 const Itemlist = React.createClass({
     getInitialState: function() {
@@ -31,7 +32,7 @@ const Itemlist = React.createClass({
     _handleSelect: function() {
         let newList = new Set()
         this._select.forEach((item, i) => {
-            if (item.checked) {
+            if (item && item.checked) {
                 newList.add(i)
             }
         })
@@ -45,6 +46,7 @@ const Itemlist = React.createClass({
         }
     },
     _tagRow: function(tag, className) {
+        const td3 = this.props.itemType === STOCK ? <td style={{width: '15%', minWidth: '68px'}}></td> : null
         return (
             <tr key={tag}>
                 <td className="text-center" style={{width: '56px'}}>
@@ -60,7 +62,8 @@ const Itemlist = React.createClass({
                     </a>
                 </td>
                 <td style={{width: '15%', minWidth: '68px'}}></td>
-                <td style={{width: '10%', minWidth: '68px'}}></td>
+                <td style={{width: '15%', minWidth: '68px'}}></td>
+                {td3}
                 <td style={{width: '50px'}}>
                     <Dropdown headelement="span" style={{left: 'auto', right: '0px', top: '0px'}} droplist={this.props.dirs} param={tag}>
                         <Tooltip tip="加到預設分類" place="left" />
@@ -95,6 +98,9 @@ const Itemlist = React.createClass({
                 break
                 case PASSWORD:
                 rows.push(<ReItemPassword key={item.id} item={item} getRef={ref => this._select.set(i, ref)} onchange={this._handleSelect} latest={this.props.latest} check={select} />)
+                break
+                case STOCK:
+                rows.push(<ReItemStock key={item.id} item={item} getRef={ref => this._select.set(i, ref)} onchange={this._handleSelect} latest={this.props.latest} check={select} setstock={this.props.setstock} />)
                 break
             }
             if (select) {
@@ -134,8 +140,6 @@ const Itemlist = React.createClass({
                     <td style={{whiteSpace: 'normal', wordBreak: 'break-all', wordWrap: 'break-word'}}>
                         <button type="button" className="btn btn-default" onClick={this._toggleTags}>{this.state.allTag ? 'Less' : 'All'}</button>
                     </td>
-                    <td style={{width: '15%', minWidth: '68px'}}></td>
-                    <td style={{width: '50px'}}></td>
                 </tr>
             )
             rows.splice(this._first, 0, ...tagRows)
@@ -148,8 +152,6 @@ const Itemlist = React.createClass({
                 <td style={{whiteSpace: 'normal', wordBreak: 'break-all', wordWrap: 'break-word'}}>
                     <button className="btn btn-default" type="button" disabled={this.state.loading} onClick={() => this._getlist()}>More</button>
                 </td>
-                <td style={{width: '15%', minWidth: '68px'}}></td>
-                <td style={{width: '50px'}}></td>
             </tr>
         ) : null
         return (

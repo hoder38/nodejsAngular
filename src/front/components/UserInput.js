@@ -14,7 +14,7 @@ export default function UserInput({ val, getinput, edit=true, show=true, type='t
             ref={ref => getinput.getRef(ref)}
             onChange={getinput.onchange}
             onCopy={(!edit && copy) ? copy : () => {}}
-            onKeyPress={(!edit && copy) ? () => {} : getinput.onenter}
+            onKeyPress={getinput.onenter}
             readOnly={(!edit && copy) ? true : false} />
     ) : val
 

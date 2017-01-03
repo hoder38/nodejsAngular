@@ -1,25 +1,5 @@
 import { arrayObject, arrayId } from '../utility'
-
-const initialState = {
-    list: new Map(),
-    multi: false,
-    path: {
-        cur: [],
-        exactly: [],
-        his: [],
-    },
-    latest: '',
-    item: {
-        list: new Set(),
-        sortName: 'name',
-        sortType: 'asc',
-        bookmark: '',
-        page: 0,
-        more: true,
-        pageToken: '',
-    },
-    select: new Set(),
-}
+import { SET_STOCK } from '../constants'
 
 const rest_item = item => {
     let date = new Date(item.utime * 1000)
@@ -30,6 +10,26 @@ const rest_item = item => {
 let key = 0
 
 export default function complexDataHandle (push, pop, set) {
+    const initialState = {
+        list: new Map(),
+        multi: false,
+        path: {
+            cur: [],
+            exactly: [],
+            his: [],
+        },
+        latest: '',
+        item: {
+            list: new Set(),
+            sortName: 'name',
+            sortType: (set === SET_STOCK) ? 'desc' : 'asc',
+            bookmark: '',
+            page: 0,
+            more: true,
+            pageToken: '',
+        },
+        select: new Set(),
+    }
     return (state = initialState, action) => {
         switch (action.type) {
             case set:

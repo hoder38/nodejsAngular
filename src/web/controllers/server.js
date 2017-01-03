@@ -86,23 +86,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(staticPath));
 
-//global entry
-app.use('/views', function (req, res, next) {
-    "use strict";
-    console.log('views');
-    console.log(new Date());
-    console.log(req.url);
-    console.log(req.body);
-    if (req.isAuthenticated()) {
-        next();
-    } else {
-        fs.readFile(viewsPath + '/login.html', encode, function(err, file) {
-            res.write(file);
-            res.end();
-        });
-    }
-});
-
 app.get('/refresh', function (req, res, next) {
     console.log('refresh');
     console.log(new Date());
@@ -497,7 +480,7 @@ app.get('/api/storage/getSingle/:sortName(name|mtime|count)/:sortType(desc|asc)/
     });
 });
 
-app.get('/api/youtube/get/:sortName(name|mtime|count)?/:pageToken?', function(req, res, next){
+app.get('/api/youtube/get/:sortName(name|mtime|count)/:pageToken?', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("youtube get");
         console.log(new Date());
@@ -508,7 +491,6 @@ app.get('/api/youtube/get/:sortName(name|mtime|count)?/:pageToken?', function(re
             util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
         }
         var parentList = tags.getArray();
-        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
         var index = 1;
         var pageToken = false;
         if (req.params.pageToken) {
@@ -1065,14 +1047,12 @@ app.get('/api/stock/single/:uid', function(req, res, next){
     });
 });
 
-app.get('/api/storage/reset/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function(req, res, next){
+app.get('/api/storage/reset/:sortName(name|mtime|count)/:sortType(desc|asc)', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("resetStorage");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
-        req.params.sortType = req.params.sortType ? req.params.sortType : 'asc'
         tagTool.resetQuery(req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
@@ -1083,14 +1063,12 @@ app.get('/api/storage/reset/:sortName(name|mtime|count)?/:sortType(desc|asc)?', 
     });
 });
 
-app.get('/api/stock/reset/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function(req, res, next){
+app.get('/api/stock/reset/:sortName(name|mtime|count)/:sortType(desc|asc)', function(req, res, next){
     checkLogin(req, res, next, function(req, res, next) {
         console.log("resetStock");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
-        req.params.sortType = req.params.sortType ? req.params.sortType : 'asc'
         stockTagTool.resetQuery(req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if (err) {
                 util.handleError(err, next, res);
@@ -1707,7 +1685,7 @@ app.get('/api/bookmark/storage/getList/:sortName(name|mtime)/:sortType(desc|asc)
     });
 });
 
-app.get('/api/bookmark/stock/getList/:sortName(name|mtime)/:sortType(desc|asc)', function (req, res, next) {
+app.get('/api/bookmark/stock/getList/:sortName(name|mtime)/:sortType(desc|asc)/:page(0)?', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("stock get bookmark list");
         console.log(new Date());
@@ -1722,7 +1700,7 @@ app.get('/api/bookmark/stock/getList/:sortName(name|mtime)/:sortType(desc|asc)',
     });
 });
 
-app.get('/api/bookmark/storage/set/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function (req, res, next) {
+app.get('/api/bookmark/storage/set/:id/:sortName(name|mtime|count)/:sortType(desc|asc)', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("set bookmark");
         console.log(new Date());
@@ -1732,8 +1710,6 @@ app.get('/api/bookmark/storage/set/:id/:sortName(name|mtime|count)?/:sortType(de
         if (id === false) {
             util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
-        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
-        req.params.sortType = req.params.sortType ? req.params.sortType : 'asc'
         mongo.orig("find", "storage", {_id: id, status: 8}, {limit: 1}, function(err, items){
             if(err) {
                 util.handleError(err, next, res);
@@ -1762,7 +1738,7 @@ app.get('/api/bookmark/storage/set/:id/:sortName(name|mtime|count)?/:sortType(de
     });
 });
 
-app.get('/api/bookmark/storage/get/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function (req, res, next) {
+app.get('/api/bookmark/storage/get/:id/:sortName(name|mtime|count)/:sortType(desc|asc)', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get bookmark");
         console.log(new Date());
@@ -1772,8 +1748,6 @@ app.get('/api/bookmark/storage/get/:id/:sortName(name|mtime|count)?/:sortType(de
         if (id === false) {
             util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
-        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
-        req.params.sortType = req.params.sortType ? req.params.sortType : 'desc'
         tagTool.getBookmark(id, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
@@ -1784,7 +1758,7 @@ app.get('/api/bookmark/storage/get/:id/:sortName(name|mtime|count)?/:sortType(de
     });
 });
 
-app.get('/api/bookmark/stock/get/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function (req, res, next) {
+app.get('/api/bookmark/stock/get/:id/:sortName(name|mtime|count)/:sortType(desc|asc)', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("get stock bookmark");
         console.log(new Date());
@@ -1794,8 +1768,6 @@ app.get('/api/bookmark/stock/get/:id/:sortName(name|mtime|count)?/:sortType(desc
         if (id === false) {
             util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
-        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
-        req.params.sortType = req.params.sortType ? req.params.sortType : 'asc'
         stockTagTool.getBookmark(id, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
@@ -2220,7 +2192,7 @@ app.get('/api/media/more/:type(\\d+)/:page(\\d+)/:back(back)?', function(req, re
     });
 });
 
-app.post('/api/media/saveParent/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function(req, res, next) {
+app.post('/api/media/saveParent/:sortName(name|mtime|count)/:sortType(desc|asc)', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('saveParent');
         console.log(new Date());
@@ -2234,8 +2206,6 @@ app.post('/api/media/saveParent/:sortName(name|mtime|count)?/:sortType(desc|asc)
         if (!tags) {
             util.handleError({hoerror: 2, message: 'error search var!!!'}, next, res);
         }
-        req.params.sortName = req.params.sortName ? req.params.sortName : 'name';
-        req.params.sortType = req.params.sortType ? req.params.sortType : 'desc';
         tags.saveArray(name, req.params.sortName, req.params.sortType);
         res.json({apiOK: true});
     });
@@ -2943,25 +2913,17 @@ app.get('/api/stock/getPoint/:uid/:price?', function(req, res, next) {
     });
 });
 
-app.put('/api/stock/filter/:tag/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function(req, res, next) {
+app.put('/api/stock/filter/:tag/:sortName(name|mtime|count)/:sortType(desc|asc)', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('stock filter');
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
-        req.params.sortType = req.params.sortType ? req.params.sortType : 'asc'
         var name = util.isValidString(req.params.tag, 'name');
         if (name === false) {
             util.handleError({hoerror: 2, message: "name is not vaild"}, next, res);
         }
-        var limit = 100;
-        if (typeof req.body.limit !== 'number') {
-            util.handleError({hoerror: 2, message: "limit is not vaild"}, next, res);
-        }
-        if (req.body.limit > 0) {
-            limit = req.body.limit;
-        }
+        var limit = stockFilterlimit;
         var per = false;
         if (req.body.per) {
             per = req.body.per.match(/^([<>])(\d+)$/);
@@ -3444,7 +3406,7 @@ app.get('/api/password/single/:uid', function(req, res, next){
     });
 });
 
-app.get('/api/bookmark/password/get/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?', function (req, res, next) {
+app.get('/api/bookmark/password/get/:id/:sortName(name|mtime|count)/:sortType(desc|asc)', function (req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("password get bookmark");
         console.log(new Date());
@@ -3454,8 +3416,6 @@ app.get('/api/bookmark/password/get/:id/:sortName(name|mtime|count)?/:sortType(d
         if (id === false) {
             util.handleError({hoerror: 2, message: "bookmark is not vaild"}, next, res);
         }
-        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
-        req.params.sortType = req.params.sortType ? req.params.sortType : 'desc'
         pwTagTool.getBookmark(id, req.params.sortName, req.params.sortType, req.user, req.session, next, function(err, result) {
             if(err) {
                 util.handleError(err, next, res);
@@ -3602,14 +3562,12 @@ app.get('/api/parent/password/taglist/:name/:sortName(name|mtime)/:sortType(desc
     });
 });
 
-app.get('/api/parent/password/query/:id/:sortName(name|mtime|count)?/:sortType(desc|asc)?/:single?', function(req, res, next) {
+app.get('/api/parent/password/query/:id/:sortName(name|mtime|count)/:sortType(desc|asc)/:single?', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log("password parent query");
         console.log(new Date());
         console.log(req.url);
         console.log(req.body);
-        req.params.sortName = req.params.sortName ? req.params.sortName : 'name'
-        req.params.sortType = req.params.sortType ? req.params.sortType : 'asc'
         var id = util.isValidString(req.params.id, 'uid');
         if (id === false) {
             util.handleError({hoerror: 2, message: "uid is not vaild"}, next, res);
@@ -3792,7 +3750,7 @@ app.get('/api/getUser', function(req, res, next){
         var isEdit = false;
         if (util.checkAdmin(1, req.user)) {
             level = 2;
-            nav = [{title: "Stock", hash: "/webpack/Stock", css: "glyphicon glyphicon-signal", key: 3}];
+            nav = [{title: "Stock", hash: "/Stock", css: "glyphicon glyphicon-signal", key: 3}];
             isEdit = true;
         } else if (util.checkAdmin(2, req.user)) {
             level = 1;
@@ -3918,95 +3876,7 @@ app.all('/api*', function(req, res, next) {
 });
 
 //view
-app.get('/views/UserInfo', function(req, res, next) {
-    "use strict";
-    console.log("views/userinfo");
-    console.log(new Date());
-    console.log(req.url);
-    console.log(req.body);
-    if (!util.checkAdmin(1, req.user)) {
-        next();
-    } else {
-        var stream = fs.createReadStream(viewsPath + '/UserInfo.html');
-        stream.on('error', function(err){
-            util.handleError(err, next, res);
-        });
-        stream.pipe(res);
-    }
-});
-
-app.get('/views/UserInfo', function(req, res, next) {
-    "use strict";
-    console.log("views userinfo");
-    console.log(new Date());
-    console.log(req.url);
-    console.log(req.body);
-    var stream = fs.createReadStream(viewsPath + '/UserInfo.html');
-    stream.on('error', function(err){
-        util.handleError(err, next, res);
-    });
-    stream.pipe(res);
-});
-
-app.get('/views/Storage', function(req, res, next) {
-    "use strict";
-    console.log("views storage");
-    console.log(new Date());
-    console.log(req.url);
-    console.log(req.body);
-    var stream = fs.createReadStream(viewsPath + '/Storage.html');
-    stream.on('error', function(err){
-        util.handleError(err, next, res);
-    });
-    stream.pipe(res);
-});
-
-app.get('/views/Stock', function(req, res, next) {
-    "use strict";
-    console.log("views stock");
-    console.log(new Date());
-    console.log(req.url);
-    console.log(req.body);
-    if (util.checkAdmin(1, req.user)) {
-         var stream = fs.createReadStream(viewsPath + '/Stock.html');
-        stream.on('error', function(err){
-            util.handleError(err, next, res);
-        });
-        stream.pipe(res);
-    } else {
-        res.send('permission denied');
-    }
-});
-
-app.get('/views/Password', function(req, res, next) {
-    "use strict";
-    console.log("views stock");
-    console.log(new Date());
-    console.log(req.url);
-    console.log(req.body);
-    var stream = fs.createReadStream(viewsPath + '/Password.html');
-    stream.on('error', function(err){
-        util.handleError(err, next, res);
-    });
-    stream.pipe(res);
-});
-
-app.get('/views/homepage', function(req, res, next) {
-    "use strict";
-    console.log("views homepage");
-    console.log(new Date());
-    console.log(req.url);
-    console.log(req.body);
-    var msg = "hello<br/> 壓縮檔加上.book或是cbr、cbz檔可以解壓縮，當作書本觀看<br/>如: xxx.book.zip , aaa.book.rar , bbb.book.7z<br/><br/>指令：<br/>>50: 搜尋大於編號50<br/>all item: 顯示子項目<br/>no local: 不顯示本地搜尋結果<br/>youtube (music) video: 顯示youtube vidoe搜尋結果<br/>youtube playlist: 顯示youtube playlist<br/>youtube music: 顯示youtube video搜尋結果<br/>youtube music playlist: 顯示youtube (music) playlist搜尋結果(可支援多字詞搜尋)<br/>kubo movie: 顯示kubo123電影搜尋結果<br/>kubo tv series: 顯示kubo123電視劇搜尋結果<br/>kubo tv show: 顯示kubo123電視秀搜尋結果<br/>kubo animation: 顯示kubo123動畫搜尋結果(可支援國家[台灣, 香港, 大陸, 日本, 韓國, 歐美, 泰國, 新馬, 印度, 海外]、年份、字詞搜尋)<br/>yify movie: 顯示yify電影搜尋結果(可支援劇情分類[動作, 冒險, 動畫, 傳記, 喜劇, 犯罪, 記錄, 劇情, 家庭, 奇幻, 黑色電影, 歷史, 恐怖, 音樂, 音樂劇, 神祕, 浪漫, 科幻, 運動, 驚悚, 戰爭, 西部]、字詞搜尋)<br/>cartoonmad comic: 顯示cartoonmad漫畫搜尋結果(可支援劇情分類[動作, 奇幻, 犯罪, 運動, 恐怖, 歷史, 神秘, 冒險, 校園, 喜劇, 浪漫, 少男, 科幻, 香港, 其他]、字詞搜尋)<br/>comic99 comic: 顯示comic99漫畫搜尋結果(可支援劇情分類[萌系, 喜劇, 動作, 科幻, 劇情, 犯罪, 運動, 奇幻, 神秘, 校園, 驚悚, 廚藝, 偽娘, 圖片, 冒險, 小說, 香港, 耽美, 經典, 歐美, 日文, 家庭]、字詞搜尋)<br/>bilibili movie: 顯示bilibili電影搜尋結果<br/>bilibili animation: 顯示bilibili動畫搜尋結果(可支援國家[台灣, 香港, 大陸, 日本, 歐美, 韓國, 法國, 泰國, 西班牙, 俄羅斯, 德國, 海外, 完結]、年份、字詞搜尋)<br/><br/>增加bookmark物件：<br/>在儲存bookmark或訂閱youtube channel時產生，<br/>方便整理完的bookmark給其它人參考<br/><br/>指令不算在單項搜尋裡<br/>預設只會搜尋到有first item的檔案<br/>方便尋找，可以縮小範圍後再下all item顯示全部<br/><br/>播放器 快捷鍵:<br/>空白鍵: 播放/暫停<br/>c: 字幕 開/關<br/>f: 校準字幕，固定目前字幕，左右鍵變成移動0.5秒，再按一次 f 鍵發送校正<br/>左: 後退15秒<br/>右: 前進15秒<br/>上: 音量變大<br/>下: 音量變小<br/>影片跟音樂點擊 [選項] 有可開啟選項模式<br/>播放模式: 循環播放, 倒敘播放, 單首播放, 隨機播放(只有music)<br/><br/>URL上傳支援:<br/>Youtube<br/>Youtube music: url結尾加上 :music 會儲存成音樂<br/>Magnet (bit torrent url)<br/>Torrent<br/>Mega<br/>Kubo123<br/>YIFY<br/>CartoonMad<br/>Comic99<br/>Bilibili";
-    var adult_msg = "<br/><br/>18+指令: <br/><br/>18+: 只顯示十八禁的檔案<br/>18-: 不顯示十八禁的檔案";
-    if (util.checkAdmin(2, req.user)) {
-        msg += adult_msg;
-    }
-    res.send(msg);
-});
-
-//webpack
-app.get('/webpack*', function(req, res, next) {
+app.get('*', function(req, res, next) {
     "use strict";
     console.log("webpack.html");
     console.log(new Date());
@@ -4017,36 +3887,6 @@ app.get('/webpack*', function(req, res, next) {
         util.handleError(err, next, res);
     });
     stream.pipe(res);
-});
-
-app.get('/views/:id(\\w+)', function(req, res) {
-    "use strict";
-    console.log("views id");
-    console.log(new Date());
-    console.log(req.url);
-    console.log(req.body);
-    res.send(req.params.id);
-});
-
-//default
-app.get('*', function(req, res, next) {
-    "use strict";
-    console.log("index.html");
-    console.log(new Date());
-    console.log(req.url);
-    console.log(req.body);
-    var stream_header = fs.createReadStream(viewsPath + '/' + config_type.dev_type + '-header.html');
-    stream_header.on('error', function(err){
-        util.handleError(err, next, res);
-    });
-    stream_header.pipe(res, { end: false });
-    stream_header.on('close', function() {
-        var stream = fs.createReadStream(viewsPath + '/index.html');
-        stream.on('error', function(err){
-            util.handleError(err, next, res);
-        });
-        stream.pipe(res);
-    });
 });
 
 app.all('*', function(req, res, next) {

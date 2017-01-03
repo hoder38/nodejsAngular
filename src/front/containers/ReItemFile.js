@@ -14,7 +14,7 @@ const mapDispatchToProps = dispatch => ({
     setLatest: (id, bookmark) => dispatch(setItem(null, id, bookmark)),
     setMedia: (type, id, opt, time=null) => dispatch(setItem(null, null, null, null, type, id, opt, time)),
     addalert: msg => dispatch(alertPush(msg)),
-    globalinput: (type, callback, color, placeholder, value, placeholder2) => dispatch(sendGlbIn(type, callback, color, placeholder, value, placeholder2)),
+    globalinput: (type, callback, color, placeholder, value, option) => dispatch(sendGlbIn(type, callback, color, placeholder, value, option)),
     pushfeedback: feedback => dispatch(feedbackPush(feedback)),
     sendglbcf: (callback, text) => dispatch(sendGlbCf(callback, text)),
     pushbookmark: bookmark => dispatch(bookmarkPush(bookmark)),

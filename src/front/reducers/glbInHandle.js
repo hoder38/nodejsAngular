@@ -14,19 +14,13 @@ export default function glbInHandle (state = initialState, action) {
                 color: action.color,
                 placeholder: action.placeholder,
                 value: action.value === null ? '' : action.value,
-                placeholder2: action.placeholder2 === null ? '' : action.placeholder2,
+                option: action.option === null ? '' : action.option,
                 index: key++,
             },
             ...state.filter(i => i.input !== action.input),
         ]
         case CLOSE_GLB_IN:
-        if (action.clear) {
-            return []
-        } else {
-            let new_state = [...state]
-            new_state.splice(0, 1)
-            return new_state
-        }
+        return action.input === -1 ? [] : state.filter(item => item.input !== action.input)
         default:
         return state
     }

@@ -64,7 +64,7 @@ const ItemPassword = React.createClass({
         }).catch(err => this.props.addalert(err))
     },
     render: function() {
-        let item = this.props.item
+        const item = this.props.item
         let fileType = item.important ? 'recycled' : ''
         let dropList = [
             {title: 'Details & Edit', onclick: () => this.setState({edit: true}), key: 0},
@@ -77,7 +77,7 @@ const ItemPassword = React.createClass({
             dropList.push({title: 'Goto Email', onclick: () => this._gotoEmail(item.email), key: 3})
         }
         fileType = (this.props.latest === item.id) ? `${fileType} info` : fileType
-        let edit = this.state.edit ? <RePasswordInfo item={item} onclose={() => this.setState({edit: false})} gourl={this._gotoUrl} goemail={this._gotoEmail} /> : null
+        const edit = this.state.edit ? <RePasswordInfo item={item} onclose={() => this.setState({edit: false})} gourl={this._gotoUrl} goemail={this._gotoEmail} /> : null
         return (
             <tr className={fileType}>
                 <td className="text-center" style={{width: '56px'}}>
@@ -91,7 +91,7 @@ const ItemPassword = React.createClass({
                     <a href="#" className="item-point" onClick={e => killEvent(e, () => this._getPassword(item.id, item.important))}>{item.name}</a>
                 </td>
                 <td style={{width: '15%', minWidth: '68px'}}>{item.utime}</td>
-                <td style={{width: '10%', minWidth: '68px'}}>
+                <td style={{width: '15%', minWidth: '68px'}}>
                     <a href="#" className="item-point" onClick={e => killEvent(e, () => this._getUsername(item.username))}>{item.username}</a>
                 </td>
                 <td style={{width: '50px'}}>

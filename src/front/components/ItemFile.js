@@ -128,7 +128,7 @@ const ItemFile = React.createClass({
         bookmarkItemList(STORAGE, 'set', this.props.sortName, this.props.sortType, this.props.set, id).catch(err => this.props.addalert(err))
     },
     render: function() {
-        let item = this.props.item
+        const item = this.props.item
         let dropList = []
         if (!item.thumb && item.status !== 7 && item.status !== 8) {
             dropList.push({title: 'download', onclick: () => this._download(item.id, item.name), key: 0})
@@ -295,7 +295,7 @@ const ItemFile = React.createClass({
                     {content}
                 </td>
                 <td style={{width: '15%', minWidth: '68px'}}>{item.utime}</td>
-                <td style={{width: '10%', minWidth: '68px'}}>{item.count}</td>
+                <td style={{width: '15%', minWidth: '68px'}}>{item.count}</td>
                 <td style={{width: '50px'}}>
                     <Dropdown headelement="span" style={{left: 'auto', right: '0px', top: '0px'}} droplist={dropList}>
                         <button type="button" className="btn btn-default">

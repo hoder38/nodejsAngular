@@ -8,7 +8,7 @@ const mapStateToProps = state => state.glbInHandle.length > 0 ? {
     color: state.glbInHandle[0].color,
     placeholder: state.glbInHandle[0].placeholder,
     value: state.glbInHandle[0].value,
-    placeholder2: state.glbInHandle[0].placeholder2,
+    option: state.glbInHandle[0].option,
     index: state.glbInHandle[0].index,
 } : {
     input: 0,
@@ -16,12 +16,12 @@ const mapStateToProps = state => state.glbInHandle.length > 0 ? {
     color: '',
     placeholder: '',
     value: '',
-    placeholder2: '',
+    option: '',
     index: -1,
 }
 
 const mapDispatchToProps = dispatch => ({
-    inputclose: clear => dispatch(closeGlbIn(clear)),
+    inputclose: input => dispatch(closeGlbIn(input)),
     addalert: msg => dispatch(alertPush(msg)),
 })
 

@@ -33,6 +33,10 @@ body {
     line-height: normal;
 }
 
+#stock-info {
+    margin-right: 0px;
+}
+
 @media(min-width:768px) {
     #wrapper {
         padding-left: 150px;
@@ -40,6 +44,10 @@ body {
 
     .storage-wrapper {
         padding-right: 225px;
+    }
+
+    #stock-info {
+        margin-right: -235px;
     }
 
     #page-wrapper {
