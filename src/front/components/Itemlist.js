@@ -156,7 +156,7 @@ const Itemlist = React.createClass({
         ) : null
         return (
             <section style={{paddingTop: '125px'}}>
-                <div className="table-responsive">
+                <div className="table-responsive" style={{overflowX: 'visible'}}>
                     <table className="table table-hover">
                         <tbody>
                             {rows}
