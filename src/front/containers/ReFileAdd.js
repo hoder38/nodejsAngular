@@ -4,6 +4,7 @@ import FileAdd from '../components/FileAdd'
 
 const mapStateToProps = state => ({
     mainUrl: state.basicDataHandle.url,
+    level: state.basicDataHandle.level,
     progress: state.uploadDataHandle,
 })
 

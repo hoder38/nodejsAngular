@@ -14,11 +14,12 @@ export const alertPop = key => ({
     key,
 })
 
-export const setBasic = (id=null, url=null, edit=null, sub=null) => ({
+export const setBasic = (id=null, url=null, edit=null, level=null, sub=null) => ({
     type: SET_BASIC,
     id,
     url,
     edit,
+    level,
     sub,
 })
 

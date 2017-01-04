@@ -32,7 +32,7 @@ const mapStateToProps = (state, ownProps) => state.itemDataHandle[ownProps.media
 
 const mapDispatchToProps = dispatch => ({
     setLatest: (id, bookmark) => dispatch(setItem(null, id, bookmark)),
-    setsub: sub => dispatch(setBasic(null, null, null, sub)),
+    setsub: sub => dispatch(setBasic(null, null, null, null, sub)),
     addalert: msg => dispatch(alertPush(msg)),
     set: (item, type, path=null, pageToken=null) => dispatch(itemPush(item, path, null, null, null, null, pageToken, type)),
     sendglbcf: (callback, text) => dispatch(sendGlbCf(callback, text)),

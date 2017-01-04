@@ -11,7 +11,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
     addalert: msg => dispatch(alertPush(msg)),
-    basicset: (id, url, edit) => dispatch(setBasic(id, url, edit)),
+    basicset: (id, url, edit, level) => dispatch(setBasic(id, url, edit, level)),
     sendglbcf: (callback, text) => dispatch(sendGlbCf(callback, text)),
     feedbackset: feedback => dispatch(feedbackPush(feedback)),
     userset: user => dispatch(userPush(user)),

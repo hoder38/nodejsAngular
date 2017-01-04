@@ -38,7 +38,7 @@ const App = React.createClass({
                         ...userInfo.nav,
                     ],
                 }))
-                this.props.basicset(userInfo.id, userInfo.main_url, userInfo.isEdit)
+                this.props.basicset(userInfo.id, userInfo.main_url, userInfo.isEdit, userInfo.level)
                 if (window.MozWebSocket) {
                     window.WebSocket = window.MozWebSocket
                 }

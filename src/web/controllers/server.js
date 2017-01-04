@@ -94,7 +94,7 @@ app.get('/refresh', function (req, res, next) {
     res.end("refresh");
 });
 
-app.get('/url', function (req, res, next) {
+app.get('/s', function (req, res, next) {
     console.log('short');
     console.log(new Date());
     console.log(req.url);

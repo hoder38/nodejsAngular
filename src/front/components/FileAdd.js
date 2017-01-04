@@ -77,6 +77,16 @@ const FileAdd = React.createClass({
             rows.push(<div style={{color: '#31708f'}} key={file.key}>{file.name}<span className="badge">{file.progress + '%'}</span></div>)
         })
         const show = this.state.show ? {} : {display: 'none'}
+        const isAdult = (this.props.level > 0 && this.props.level <= 2) ? (
+            <span className="input-group-addon">
+                <Tooltip tip="18+" place="top" />
+                <input
+                    type="checkbox"
+                    checked={this.state.type}
+                    ref={ref => this._ref = ref}
+                    onChange={this._handleChange} />
+            </span>
+        ) : null
         return (
             <section className="panel panel-info" style={Object.assign({width: '205px', marginBottom: '0px'}, show)}>
                 <div className="panel-heading" onClick={this._toggle}>
@@ -88,14 +98,7 @@ const FileAdd = React.createClass({
                 </div>
                 <form onSubmit={e => killEvent(e, this._handleSubmit)}>
                     <div className="input-group">
-                        <span className="input-group-addon">
-                            <Tooltip tip="18+" place="top" />
-                            <input
-                                type="checkbox"
-                                checked={this.state.type}
-                                ref={ref => this._ref = ref}
-                                onChange={this._handleChange} />
-                        </span>
+                        {isAdult}
                         <UserInput
                             val={this.state.url}
                             getinput={this._input.getInput('url')}
