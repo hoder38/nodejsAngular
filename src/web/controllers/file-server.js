@@ -2565,7 +2565,7 @@ app.get('/api/external/getSingle/:uid', function(req, res, next) {
                 res.json(ret_obj);
             });
         } else {
-            youtubedl.getInfo(url, [], function(err, info) {
+            youtubedl.getInfo(url, [], {maxBuffer: 10 * 1024 * 1024}, function(err, info) {
                 if (err) {
                     err.hoerror = 2;
                     util.handleError(err, next, res);
