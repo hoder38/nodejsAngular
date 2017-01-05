@@ -491,22 +491,22 @@ const MediaWidget = React.createClass({
             }
         }
         if (this._playlist) {
-            if (this._playlist.obj.sub) {
-                if (previous) {
-                    if (Math.round(this._playlist.obj.index * 1000) % 1000 > 0) {
+            if (previous) {
+                if (this._playlist.obj.sub) {
+                    if (this._playlist.obj.index > 0.001) {
                         this._movePlaylist(-1)
                         return true
                     }
                 } else {
-                    if (Math.round(this._playlist.obj.index * 1000) % 1000 < this._playlist.obj.sub) {
-                        this._movePlaylist(1)
+                    if (this._playlist.obj.index > 0) {
+                        this._movePlaylist(-1)
                         return true
                     }
                 }
-            } else{
-                if (previous) {
-                    if (this._playlist.obj.index > 0) {
-                        this._movePlaylist(-1)
+            } else {
+                if (this._playlist.obj.sub) {
+                    if (this._playlist.obj.index < this._playlist.total || (this._playlist.obj.index < this._playlist.total + 1 && Math.round(this._playlist.obj.index * 1000) % 1000 < this._playlist.obj.sub)) {
+                        this._movePlaylist(1)
                         return true
                     }
                 } else {
@@ -823,8 +823,16 @@ const MediaWidget = React.createClass({
                     <a href="#" style={{position: 'absolute', width: '100px', height: '100px', color: 'rgba(0, 0, 0, 0.3)', top: '0px', right: '0px', fontSize: '600%', lineHeight: '100px', float: 'right', textDecoration: 'none', visibility: 'visible'}} className="text-center" onClick={e => killEvent(e, this._handleExtend)}>
                         <i className="glyphicon glyphicon-resize-small"></i>
                     </a>
-                    <div style={{top: '-90px', visibility: 'visible', position: 'relative', height: '100vh', width: '98vw', overflow: 'auto',cursor: 'pointer', zIndex: -1}}>
-                        <img style={{visibility: 'visible', width: 'auto', height: 'auto', cursor: 'pointer', position: 'relative', top: '0px', zIndex: -1}} src={this.state.src} alt={this._item.name} onClick={e => killEvent(e, this._nextMedia)} />
+                    <div id="extend" style={{top: '-90px', visibility: 'visible', position: 'relative', height: '100vh', width: '98vw', overflow: 'auto',cursor: 'pointer', zIndex: -1}}>
+                        <img style={{visibility: 'visible', width: 'auto', height: 'auto', cursor: 'pointer', position: 'relative', top: '0px', zIndex: -1}} src={this.state.src} alt={this._item.name} onClick={e => killEvent(e, this._nextMedia)} onLoad={() => {
+                            let extNode = document.getElementById('extend')
+                            extNode.scrollTop = 0
+                            if (extNode.scrollLeft < 100) {
+                                extNode.scrollLeft = extNode.scrollWidth
+                            } else {
+                                extNode.scrollLeft = 0
+                            }
+                        }} />
                     </div>
                 </div>
             ) : (
