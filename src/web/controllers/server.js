@@ -3219,7 +3219,7 @@ app.put('/api/stock/filter/:tag/:sortName(name|mtime|count)/:sortType(desc|asc)'
     });
 });
 
-app.post('/api/getOptionTag', function(req, res, next) {
+app.post('/api/storage/getOptionTag', function(req, res, next) {
     checkLogin(req, res, next, function(req, res, next) {
         console.log('get option tag');
         console.log(new Date());
