@@ -4583,7 +4583,7 @@ app.get('/api/torrent/check/:uid/:index(\\d+|v)/:size(\\d+)', function(req, res,
                             startBuffer();
                         }
                         function startBuffer() {
-                            var bufferP = youtubedl('https://drive.google.com/open?id=' + dri_id[1], [], {cwd: filePath});
+                            var bufferP = youtubedl('https://drive.google.com/open?id=' + dri_id[1], [], {cwd: filePath, maxBuffer: 10 * 1024 * 1024});
                             bufferP.on('info', function(info) {
                                 console.log('Download started');
                                 console.log('filename: ' + info._filename);

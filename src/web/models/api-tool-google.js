@@ -976,7 +976,7 @@ var exports = module.exports = {
             } else {
                 console.log(url);
                 console.log(filePath);
-                youtubedl.exec(url, ['-o', filePath, '-f', 'mp4', '--write-thumbnail'], {}, function(err, output) {
+                youtubedl.exec(url, ['-o', filePath, '-f', 'mp4', '--write-thumbnail'], {maxBuffer: 10 * 1024 * 1024}, function(err, output) {
                     if (err) {
                         err.hoerror = 2;
                         util.handleError(err, callback, callback);
@@ -1015,12 +1015,12 @@ var exports = module.exports = {
         console.log(url);
         console.log(filePath);
         var tag_arr = ['影片', 'video'];
-        youtubedl.getInfo(url, [], function(err, info) {
+        youtubedl.getInfo(url, [], {maxBuffer: 10 * 1024 * 1024}, function(err, info) {
             if (err) {
                 err.hoerror = 2;
                 util.handleError(err, callback, callback);
             }
-            youtubedl.exec(url, ['-o', filePath, '-f', 'mp4', '--write-thumbnail'], {}, function(err, output) {
+            youtubedl.exec(url, ['-o', filePath, '-f', 'mp4', '--write-thumbnail'], {maxBuffer: 10 * 1024 * 1024}, function(err, output) {
                 if (err) {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
@@ -1058,7 +1058,7 @@ var exports = module.exports = {
             if (err && !is_ok) {
                 util.handleError(err, callback, callback);
             }
-            youtubedl.exec('https://drive.google.com/open?id=' + key, ['-F'], {}, function(err, output) {
+            youtubedl.exec('https://drive.google.com/open?id=' + key, ['-F'], {maxBuffer: 10 * 1024 * 1024}, function(err, output) {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
@@ -1100,7 +1100,7 @@ var exports = module.exports = {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
-                            youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o', filePath + '_t'], {}, function(err, output) {
+                            youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o', filePath + '_t'], {maxBuffer: 10 * 1024 * 1024}, function(err, output) {
                                 if (err) {
                                     util.handleError(err, callback, callback);
                                 }
@@ -1127,7 +1127,7 @@ var exports = module.exports = {
                             });
                         });
                     } else {
-                        youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o', filePath + '_t'], {}, function(err, output) {
+                        youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o', filePath + '_t'], {maxBuffer: 10 * 1024 * 1024}, function(err, output) {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
@@ -1154,7 +1154,7 @@ var exports = module.exports = {
                         });
                     }
                 } else {
-                    youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o', filePath], {}, function(err, output) {
+                    youtubedl.exec('https://drive.google.com/open?id=' + key, ['--format='+ media_id, '-o', filePath], {maxBuffer: 10 * 1024 * 1024}, function(err, output) {
                         if (err) {
                             util.handleError(err, callback, callback);
                         }
@@ -1233,7 +1233,7 @@ function downloadSubtitle (url, filePath, callback) {
     console.log(sub_location);
     if (fs.existsSync(sub_location)) {
         options.cwd = sub_location;
-        youtubedl.getSubs(url, options, function(err, info) {
+        youtubedl.getSubs(url, options, {maxBuffer: 10 * 1024 * 1024}, function(err, info) {
             if (err) {
                 util.handleError(err, callback, callback);
             }
@@ -1419,7 +1419,7 @@ function downloadSubtitle (url, filePath, callback) {
                 util.handleError(err, callback, callback);
             }
             options.cwd = sub_location;
-            youtubedl.getSubs(url, options, function(err, info) {
+            youtubedl.getSubs(url, options, {maxBuffer: 10 * 1024 * 1024}, function(err, info) {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
