@@ -1233,7 +1233,7 @@ function downloadSubtitle (url, filePath, callback) {
     console.log(sub_location);
     if (fs.existsSync(sub_location)) {
         options.cwd = sub_location;
-        youtubedl.getSubs(url, options, {maxBuffer: 10 * 1024 * 1024}, function(err, info) {
+        youtubedl.getSubs(url, options, function(err, info) {
             if (err) {
                 util.handleError(err, callback, callback);
             }
@@ -1419,7 +1419,7 @@ function downloadSubtitle (url, filePath, callback) {
                 util.handleError(err, callback, callback);
             }
             options.cwd = sub_location;
-            youtubedl.getSubs(url, options, {maxBuffer: 10 * 1024 * 1024}, function(err, info) {
+            youtubedl.getSubs(url, options, function(err, info) {
                 if (err) {
                     util.handleError(err, callback, callback);
                 }
