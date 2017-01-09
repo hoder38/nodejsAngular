@@ -20,7 +20,7 @@ const ItemInput = React.createClass({
     },
     componentWillReceiveProps: function(nextProps) {
         if (nextProps.index !== this.props.index) {
-            this.setState(Object.assign({}, this.state, this._input.initValue({input1: nextProps.value}), {showPwd: false}))
+            this.setState(Object.assign({}, this.state, this._input.initValue({input1: nextProps.value}), {showPwd: false, loading: false}))
         }
     },
     componentDidUpdate: function(prevProps) {

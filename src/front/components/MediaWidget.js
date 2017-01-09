@@ -621,18 +621,18 @@ const MediaWidget = React.createClass({
             let track = this._video.textTracks[0]
             if (track) {
                 let cues = track.cues
-                if (cues) {
-                    for (let i of cues) {
-                        track.removeCue(i)
+                if (cues && cues.length > 0) {
+                    for (let i = cues.length-1; i >= 0; i--) {
+                        track.removeCue(cues[i])
                     }
                 }
             }
             track = this._video.textTracks[1]
             if (track) {
                 let cues = track.cues
-                if (cues) {
-                    for (let i of cues) {
-                        track.removeCue(i)
+                if (cues && cues.length > 0) {
+                    for (let i = cues.length-1; i >= 0; i--) {
+                        track.removeCue(cues[i])
                     }
                 }
             }
