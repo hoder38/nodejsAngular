@@ -5,8 +5,7 @@ var googleapis = require('googleapis'),
     path = require('path'),
     mkdirp = require('mkdirp'),
     child_process = require('child_process'),
-    youtubedl = require('youtube-dl'),
-    xml2js = require('xml2js');
+    youtubedl = require('youtube-dl');
 
 var api = require("../models/api-tool.js");
 
@@ -19,8 +18,6 @@ var mongo = require("../models/mongo-tool.js");
 var util = require("../util/utility.js");
 
 var mime = require('../util/mime.js');
-
-var xml_parser = new xml2js.Parser();
 
 var CLIENT_ID = config_type.google_id,
     CLIENT_SECRET = config_type.google_secret,

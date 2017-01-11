@@ -10,8 +10,9 @@ var mongo = require("../models/mongo-tool.js");
 
 var mime = require('../util/mime.js');
 
+var Transcoder = require('../util/stream-transcoder.js'),
+
 var child_process = require('child_process'),
-    Transcoder = require('stream-transcoder'),
     path = require('path'),
     mkdirp = require('mkdirp'),
     fs = require("fs");

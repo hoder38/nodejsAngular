@@ -13,6 +13,8 @@ var mongo = require("../models/mongo-tool.js");
 
 var util = require("../util/utility.js");
 
+var oth = require('../util/os-torrent-hash.js');
+
 var tagTool = require("../models/tag-tool.js")("storage");
 
 var api = require("../models/api-tool.js");
@@ -101,7 +103,6 @@ var express = require('express'),
     LocalStrategy = require('passport-local').Strategy,
     WebSocketServer = require('ws').Server,
     openSubtitle = require('opensubtitles-api'),
-    oth = require('os-torrent-hash'),
     app = express(),
     urlMod = require('url'),
     youtubedl = require('youtube-dl'),
