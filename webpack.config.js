@@ -2,7 +2,7 @@ var webpack = require('webpack');
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
 
 module.exports = {
-    entry: ['babel-polyfill', './src/front/index.js'],
+    entry: './src/front/index.js',
     output: {
         path: './public',
         publicPath: 'public/',
