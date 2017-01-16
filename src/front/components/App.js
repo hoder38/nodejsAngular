@@ -55,6 +55,9 @@ const App = React.createClass({
                             case 'password':
                             api(`/api/password/single/${wsmsg.data}`).then(result => result.empty ? this.props.passdel(wsmsg.data) : this.props.passset(result.item)).catch(err => this.props.addalert(err))
                             break
+                            case 'stock':
+                            api(`/api/stock/single/${wsmsg.data}`).then(result => result.empty ? this.props.stockdel(wsmsg.data) : this.props.stockset(result.item)).catch(err => this.props.addalert(err))
+                            break
                             case 'sub':
                             this.props.sub.forEach(item => item())
                             break
@@ -105,6 +108,11 @@ const App = React.createClass({
             his: [],
         }, '', '', 'name', 'asc', '')
         this.props.passset([], {
+            cur: [],
+            exactly: [],
+            his: [],
+        }, '', '', 'name', 'asc', '')
+        this.props.stockset([], {
             cur: [],
             exactly: [],
             his: [],

@@ -1,5 +1,5 @@
 import { connect } from 'react-redux'
-import { alertPush, setBasic, sendGlbCf, feedbackPush, bookmarkPush, setDirs, userPush, itemPop, itemPush, dirPush, passPop, passPush, closeGlbPw } from '../actions'
+import { alertPush, setBasic, sendGlbCf, feedbackPush, bookmarkPush, setDirs, userPush, itemPop, itemPush, dirPush, passPop, passPush, stockPop, stockPush, closeGlbPw } from '../actions'
 import App from '../components/App'
 
 const mapStateToProps = state => ({
@@ -22,6 +22,8 @@ const mapDispatchToProps = dispatch => ({
     itemdel: id => dispatch(itemPop(id)),
     passset: (item, path, bookmark, latest, sortName, sortType, pageToken) => dispatch(passPush(item, path, bookmark, latest, sortName, sortType, pageToken)),
     passdel: id => dispatch(passPop(id)),
+    stockset: (item, path, bookmark, latest, sortName, sortType, pageToken) => dispatch(stockPush(item, path, bookmark, latest, sortName, sortType, pageToken)),
+    stockdel: id => dispatch(stockPop(id)),
     closeglbpw: () => dispatch(closeGlbPw()),
 })
 
