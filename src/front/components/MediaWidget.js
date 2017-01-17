@@ -421,7 +421,7 @@ const MediaWidget = React.createClass({
                         return api(`/api/media/more/${this.props.mediaType}/${this.props.page}`).then(result => {
                             this.props.set(result.itemList, this.props.mediaType)
                             parentList = result.parentList
-                            return api(`/api/youtube/get/${this.props.pageToken}`)
+                            return api(`/api/youtube/get/${this.props.sortName}/${this.props.pageToken}`)
                         }).then(result => {
                             this.props.set(result.itemList, this.props.mediaType, parentList, result.pageToken)
                             return (index < 0) ? this.props.list.length - 1 : (index > this.props.list.length - 1) ? 0 : index
