@@ -99,6 +99,7 @@ var https = require('https'),
 var express = require('express'),
     express_session = require('express-session'),
     crypto = require('crypto'),
+    bodyParser = require('body-parser'),
     passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy,
     WebSocketServer = require('ws').Server,
@@ -115,9 +116,8 @@ var express = require('express'),
 var torrentStream = require('torrent-stream');
 var avconv = require('avconv');
 
-app.use(express.favicon());
-app.use(express.urlencoded());
-app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ extended: true }));
 app.use(express_session(sessionStore.config));
 app.use(require('connect-multiparty')({ uploadDir: config_glb.nas_tmp }));
 app.use(passport.initialize());
@@ -2903,7 +2903,7 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                     console.log('req headers:', error.req && error.req._header);
                     console.log('res code:', error.res && error.res.statusCode);
                     console.log('res body:', error.body);
-                    res.send("open subtitle error!!!", 400);
+                    res.status(400).send('open subtitle error!!!');
                 });
             } else {
                 search.query = name;
@@ -6697,10 +6697,11 @@ passport.deserializeUser(function(id, done) {
 });
 
 //api error handle
-app.post('/api*', passport.authenticate('local', { failureRedirect: '/api' }),
-    function(req, res) {
-        console.log("auth ok");
+app.post('/api*', passport.authenticate('local', { failureRedirect: '/api' }), function(req, res) {
+    console.log("auth ok");
+    req.logIn(req.user, function (err) {
         res.json({loginOK: true, id: req.user.username});
+    });
 });
 
 app.all('/api*', function(req, res, next) {
@@ -6709,7 +6710,7 @@ app.all('/api*', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    res.send('auth fail!!!', 401);
+    res.status(401).send('auth fail!!!');
 });
 
 app.all('*', function(req, res, next) {
@@ -6719,14 +6720,14 @@ app.all('*', function(req, res, next) {
     console.log(req.url);
     console.log(req.body);
     //console.log(req.path);
-    res.send('Page not found!', 404);
+    res.status(404).send('Page not found!');
 });
 
 //error handle
 app.use(function(err, req, res, next) {
     "use strict";
     util.handleError(err);
-    res.send('server error occur', 500);
+    res.status(500).send('server error occur');
 });
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";

@@ -73,12 +73,22 @@ var express = require('express'),
     staticPath = path.join(__dirname, "../../../public"),
     sessionStore = require("../models/session-tool.js")(express_session);
 
+var bodyParser = null;
+if (config_type.dev_type === 'dev') {
+    bodyParser = require('body-parser');
+}
+
 var stockFiltering = false;
 var stockFilterlimit = 100;
 
-app.use(express.favicon());
-app.use(express.urlencoded());
-app.use(express.json());
+if (config_type.dev_type === 'dev') {
+    app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(bodyParser.json({ extended: true }));
+} else {
+    app.use(express.favicon());
+    app.use(express.urlencoded());
+    app.use(express.json());
+}
 app.use(express_session(sessionStore.config));
 //app.use(require('connect-multiparty')({ uploadDir: config_glb.nas_tmp }));
 //app.use(express.session({ secret: 'holyhoderhome' }));
@@ -3860,10 +3870,11 @@ passport.deserializeUser(function(id, done) {
 });
 
 //api error handle
-app.post('/api*', passport.authenticate('local', { failureRedirect: '/api' }),
-    function(req, res) {
-        console.log("auth ok");
+app.post('/api*', passport.authenticate('local', { failureRedirect: '/api' }), function(req, res) {
+    console.log("auth ok");
+    req.logIn(req.user, function (err) {
         res.json({loginOK: true, id: req.user.username, url: 'https://' + config_glb.extent_file_ip + ':' + config_glb.extent_file_port});
+    });
 });
 
 app.all('/api*', function(req, res, next) {
@@ -3872,7 +3883,11 @@ app.all('/api*', function(req, res, next) {
     console.log(new Date());
     console.log(req.url);
     console.log(req.body);
-    res.send('auth fail!!!', 401);
+    if (config_type.dev_type === 'dev') {
+        res.status(401).send('auth fail!!!');
+    } else {
+        res.send('auth fail!!!', 401);
+    }
 });
 
 //view
@@ -3896,14 +3911,22 @@ app.all('*', function(req, res, next) {
     console.log(req.url);
     console.log(req.body);
     //console.log(req.path);
-    res.send('Page not found!', 404);
+    if (config_type.dev_type === 'dev') {
+        res.status(404).send('Page not found!');
+    } else {
+        res.send('Page not found!', 404);
+    }
 });
 
 //error handle
 app.use(function(err, req, res, next) {
     "use strict";
     util.handleError(err);
-    res.send('server error occur', 500);
+    if (config_type.dev_type === 'dev') {
+        res.status(500).send('server error occur');
+    } else {
+        res.send('server error occur', 500);
+    }
 });
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";

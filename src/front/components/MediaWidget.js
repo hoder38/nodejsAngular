@@ -861,8 +861,8 @@ const MediaWidget = React.createClass({
             }
             media2 = (
                 <video style={Object.assign(mediaCss, this.props.mediaType === 9 && this._item.type !== 3 ? {display: 'none'} : {})} controls src={this.props.mediaType === 3 || (this.props.mediaType === 9 && this._item.type === 3) ? this.state.src : ''} ref={ref => this._video = ref}>
-                    <track label="Chinese" kind="captions" srclang="ch" src={this.props.mediaType === 3 || (this.props.mediaType === 9 && this._item.type === 3) ? this.state.subCh : ''} default={true} />
-                    <track label="English" kind="captions" srclang="en" src={this.props.mediaType === 3 || (this.props.mediaType === 9 && this._item.type === 3) ? this.state.subEn : ''}/>
+                    <track label="Chinese" kind="captions" srcLang="ch" src={this.props.mediaType === 3 || (this.props.mediaType === 9 && this._item.type === 3) ? this.state.subCh : ''} default={true} />
+                    <track label="English" kind="captions" srcLang="en" src={this.props.mediaType === 3 || (this.props.mediaType === 9 && this._item.type === 3) ? this.state.subEn : ''}/>
                 </video>
             )
         }
