@@ -5,11 +5,10 @@
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\"",
-    "build": "babel src/back --out-dir build; webpack -p --config config/webpack.release.config.js; git commit -a",
     "dev-back": "sudo service nodejs-file.sh stop; sudo service nodejs-file.sh start; sleep 10; sudo service nodejs.sh start",
     "dev-front": "webpack --watch --config nodejsAngular/webpack.config.js",
     "release": "git pull; sudo service release-nodejs.sh stop; sudo service release-nodejs.sh start",
-    "release file": "git pull; sudo service release-nodejs-file.sh stop; sudo service release-nodejs-file.sh start"
+    "release-file": "git pull; sudo service release-nodejs-file.sh stop; sudo service release-nodejs-file.sh start"
   },
   "dependencies": {
     "connect-redis": ">=3.0.0",
