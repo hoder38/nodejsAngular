@@ -167,7 +167,7 @@ module.exports = {
                         } else if (typeof callback === 'object') {
                             code = typeof code !== 'undefined' ? code : 400;
                             console.log("user error: %s [%s]", err.message, err.code);
-                            callback.send(err.message, code);
+                            callback.status(code).send(err.message);
                             throw new Error('terminal');
                         } else if (typeof callback === 'function') {
                             console.log("delay error: %s [%s]", err.message, err.code);

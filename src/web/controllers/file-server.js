@@ -6898,12 +6898,7 @@ if (config_glb.checkMedia) {
 }
 
 function checkLogin(req, res, next, callback) {
-    var parseUrl = req.headers['referer'] ? urlMod.parse(req.headers['referer']) : urlMod.parse(req.headers['origin']);
-    if (!req.headers['host'].match(/^[^:]+/) || parseUrl['hostname'] !== req.headers['host'].match(/^[^:]+/)[0]) {
-        console.log(parseUrl);
-        console.log(req.headers);
-        next();
-    } else if(!req.isAuthenticated()){
+    if(!req.isAuthenticated()){
         if (util.isMobile(req.headers['user-agent']) || req.headers['user-agent'].match(/Firefox/i)|| req.headers['user-agent'].match(/armv7l/i)) {
             if (/^\/video\//.test(req.path) || /^\/subtitle\//.test(req.path) || /^\/torrent\//.test(req.path)) {
                 console.log("mobile or firefox");

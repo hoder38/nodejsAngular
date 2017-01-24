@@ -59,6 +59,32 @@ module.exports = {
                     this_obj.collection[name][functionName].apply(this_obj.collection[name], args).toArray(callback[0]);
                 }, 0);
             } else {
+                var callback = args.splice(-1, 1);
+                if (functionName === 'insert') {
+                    args.push(function(err, data) {
+                        if (data.ops) {
+                            setTimeout(function(){
+                                callback[0](err, data.ops);
+                            }, 0);
+                        } else {
+                            setTimeout(function(){
+                                callback[0](err, data);
+                            }, 0);
+                        }
+                    })
+                } else {
+                    args.push(function(err, data) {
+                        if (data.result) {
+                            setTimeout(function(){
+                                callback[0](err, data.result.n);
+                            }, 0);
+                        } else {
+                            setTimeout(function(){
+                                callback[0](err, data);
+                            }, 0);
+                        }
+                    })
+                }
                 setTimeout(function(){
                     this_obj.collection[name][functionName].apply(this_obj.collection[name], args);
                 }, 0);
@@ -77,6 +103,32 @@ module.exports = {
                             collection[functionName].apply(collection, args).toArray(callback[0]);
                         }, 0);
                     } else {
+                        var callback = args.splice(-1, 1);
+                        if (functionName === 'insert') {
+                            args.push(function(err, data) {
+                                if (data.ops) {
+                                    setTimeout(function(){
+                                        callback[0](err, data.ops);
+                                    }, 0);
+                                } else {
+                                    setTimeout(function(){
+                                        callback[0](err, data);
+                                    }, 0);
+                                }
+                            })
+                        } else {
+                            args.push(function(err, data) {
+                                if (data.result) {
+                                    setTimeout(function(){
+                                        callback[0](err, data.result.n);
+                                    }, 0);
+                                } else {
+                                    setTimeout(function(){
+                                        callback[0](err, data);
+                                    }, 0);
+                                }
+                            })
+                        }
                         setTimeout(function(){
                             collection[functionName].apply(collection, args);
                         }, 0);

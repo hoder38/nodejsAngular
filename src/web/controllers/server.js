@@ -3962,11 +3962,7 @@ function sendWs(data, adultonly, auth) {
 server.listen(config_glb.port, config_glb.ip);
 
 function checkLogin(req, res, next, callback) {
-    var parseUrl = req.headers['referer'] ? urlMod.parse(req.headers['referer']) : urlMod.parse(req.headers['origin']);
-    if (parseUrl['host'] !== req.headers['host']) {
-        console.log(parseUrl);
-        next();
-    } else if(!req.isAuthenticated()){
+    if(!req.isAuthenticated()){
         if (util.isMobile(req.headers['user-agent']) || req.headers['user-agent'].match(/Firefox/i)) {
             if (/^\/video\//.test(req.path)) {
                 console.log("mobile or firefox");
