@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\"",
     "dev-back": "sudo service nodejs-file.sh stop; sudo service nodejs-file.sh start; sleep 10; sudo service nodejs.sh start",
     "dev-front": "webpack --watch --config nodejsAngular/webpack.config.js",
+    "dev-end": "sudo service babel-nodejs-file.sh stop; sudo service nodejs-file.sh stop",
     "release": "git pull; sudo service release-nodejs.sh stop; sudo service release-nodejs.sh start",
     "release-file": "git pull; sudo service release-nodejs-file.sh stop; sudo service release-nodejs-file.sh start"
   },

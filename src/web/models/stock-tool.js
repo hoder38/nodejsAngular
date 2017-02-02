@@ -2867,123 +2867,123 @@ module.exports = {
                                 }
                             }, 10000, false, false);
                         }
-                        function rest_interval(is_stop) {
-                            index++;
-                            if (month === 1) {
-                                year--;
-                                year_str = year - 1911;
-                                month = 12;
-                                month_str = month.toString();
-                            } else {
-                                month--;
-                                month_str = month.toString();
-                                if (month < 10) {
-                                    month_str = '0' + month_str;
+                    }
+                    function rest_interval(is_stop) {
+                        index++;
+                        if (month === 1) {
+                            year--;
+                            year_str = year - 1911;
+                            month = 12;
+                            month_str = month.toString();
+                        } else {
+                            month--;
+                            month_str = month.toString();
+                            if (month < 10) {
+                                month_str = '0' + month_str;
+                            }
+                        }
+                        console.log(year);
+                        console.log(month_str);
+                        if (is_stop || index >= 70 || raw_arr.length > 1150) {
+                            console.log(max);
+                            console.log(min);
+                            var final_arr = [];
+                            var sort_arr = [];
+                            for (var i = 0; i < 100; i++) {
+                                final_arr[i] = 0;
+                            }
+                            var diff = (max - min) / 100;
+                            var s = 0;
+                            var e = 0;
+                            for (var i in raw_arr) {
+                                e = Math.ceil((raw_arr[i].h - min) / diff);
+                                s = Math.floor((raw_arr[i].l - min) / diff);
+                                for (var j = s; j < e; j++) {
+                                    final_arr[j] += raw_arr[i].v;
                                 }
                             }
-                            console.log(year);
-                            console.log(month_str);
-                            if (is_stop || index >= 70 || raw_arr.length > 1150) {
-                                console.log(max);
-                                console.log(min);
-                                var final_arr = [];
-                                var sort_arr = [];
-                                for (var i = 0; i < 100; i++) {
-                                    final_arr[i] = 0;
+                            sort_arr = util.clone(final_arr);
+                            sort_arr.sort(function(a,b) {
+                                return a - b;
+                            });
+                            var interval = null;
+                            for (var i = 19; i > 0; i--) {
+                                interval = group_interval(i, 5);
+                                if (interval) {
+                                    break;
                                 }
-                                var diff = (max - min) / 100;
-                                var s = 0;
-                                var e = 0;
-                                for (var i in raw_arr) {
-                                    e = Math.ceil((raw_arr[i].h - min) / diff);
-                                    s = Math.floor((raw_arr[i].l - min) / diff);
-                                    for (var j = s; j < e; j++) {
-                                        final_arr[j] += raw_arr[i].v;
-                                    }
+                            }
+                            console.log(i);
+                            console.log(j);
+                            console.log(interval);
+                            var ret_str = (Math.ceil(((interval[0].start - 1) * diff + min) * 100) / 100) + '-' + (Math.ceil((interval[0].end * diff + min) * 100) / 100);
+                            for (var i = 1; i < interval.length; i++) {
+                                ret_str = ret_str + ', ' + (Math.ceil(((interval[i].start - 1) * diff + min) * 100) / 100) + '-' + (Math.ceil((interval[i].end * diff + min) * 100) / 100);
+                            }
+                            new_interval_data['return'] = ret_str;
+                            new_interval_data['time'] = new Date().getTime();
+                            var jsonStr = JSON.stringify(new_interval_data);
+                            console.log(jsonStr.length);
+                            fs.writeFile(intervalPath, jsonStr, 'utf8', function (err) {
+                                if (err) {
+                                    util.handleError(err);
                                 }
-                                sort_arr = util.clone(final_arr);
-                                sort_arr.sort(function(a,b) {
-                                    return a - b;
-                                });
-                                var interval = null;
-                                for (var i = 19; i > 0; i--) {
-                                    interval = group_interval(i, 5);
-                                    if (interval) {
-                                        break;
-                                    }
-                                }
-                                console.log(i);
-                                console.log(j);
-                                console.log(interval);
-                                var ret_str = (Math.ceil(((interval[0].start - 1) * diff + min) * 100) / 100) + '-' + (Math.ceil((interval[0].end * diff + min) * 100) / 100);
-                                for (var i = 1; i < interval.length; i++) {
-                                    ret_str = ret_str + ', ' + (Math.ceil(((interval[i].start - 1) * diff + min) * 100) / 100) + '-' + (Math.ceil((interval[i].end * diff + min) * 100) / 100);
-                                }
-                                new_interval_data['return'] = ret_str;
-                                new_interval_data['time'] = new Date().getTime();
-                                var jsonStr = JSON.stringify(new_interval_data);
-                                console.log(jsonStr.length);
-                                fs.writeFile(intervalPath, jsonStr, 'utf8', function (err) {
-                                    if (err) {
-                                        util.handleError(err);
-                                    }
-                                });
-                                setTimeout(function(){
-                                    callback(null, ret_str, items[0].index);
-                                }, 0);
-                                function group_interval(level, gap) {
-                                    var group = [];
-                                    var start = 0;
-                                    var ig = 0;
-                                    level = level * 5;
-                                    for (var i in final_arr) {
-                                        if (final_arr[i] >= sort_arr[level]) {
-                                            if (!start) {
-                                                start = i;
-                                            }
-                                            ig = 0;
-                                        } else {
-                                            if (start) {
-                                                if (ig < gap) {
-                                                    ig++;
-                                                } else {
-                                                    group.push({start: +start, end: i - 1 - ig});
-                                                    start = 0;
-                                                    ig = 0;
-                                                }
+                            });
+                            setTimeout(function(){
+                                callback(null, ret_str, items[0].index);
+                            }, 0);
+                            function group_interval(level, gap) {
+                                var group = [];
+                                var start = 0;
+                                var ig = 0;
+                                level = level * 5;
+                                for (var i in final_arr) {
+                                    if (final_arr[i] >= sort_arr[level]) {
+                                        if (!start) {
+                                            start = i;
+                                        }
+                                        ig = 0;
+                                    } else {
+                                        if (start) {
+                                            if (ig < gap) {
+                                                ig++;
+                                            } else {
+                                                group.push({start: +start, end: i - 1 - ig});
+                                                start = 0;
+                                                ig = 0;
                                             }
                                         }
                                     }
-                                    if (start) {
-                                        group.push({start: +start, end: 99 - ig});
-                                    }
-                                    var group_num = 0;
-                                    var final_group = [];
-                                    for (var i in group) {
-                                        if (group[i].end - group[i].start > 33) {
+                                }
+                                if (start) {
+                                    group.push({start: +start, end: 99 - ig});
+                                }
+                                var group_num = 0;
+                                var final_group = [];
+                                for (var i in group) {
+                                    if (group[i].end - group[i].start > 33) {
+                                        for (var j in group) {
+                                            if (group[j].end - group[j].start > 13) {
+                                                final_group.push(group[j]);
+                                            }
+                                        }
+                                        return final_group;
+                                    } else if (group[i].end - group[i].start > 13) {
+                                        group_num++;
+                                        if (group_num > 2) {
                                             for (var j in group) {
                                                 if (group[j].end - group[j].start > 13) {
                                                     final_group.push(group[j]);
                                                 }
                                             }
                                             return final_group;
-                                        } else if (group[i].end - group[i].start > 13) {
-                                            group_num++;
-                                            if (group_num > 2) {
-                                                for (var j in group) {
-                                                    if (group[j].end - group[j].start > 13) {
-                                                        final_group.push(group[j]);
-                                                    }
-                                                }
-                                                return final_group;
-                                            }
                                         }
                                     }
-                                    return false;
                                 }
-                            } else {
-                                recur_mi(type);
+                                return false;
                             }
+                        } else {
+                            recur_mi(type);
                         }
                     }
                 }
