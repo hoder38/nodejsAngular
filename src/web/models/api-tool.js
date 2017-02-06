@@ -391,7 +391,7 @@ module.exports = {
                                 if (length === stats["size"]) {
                                     var filename = null;
                                     if (res.headers['content-disposition']) {
-                                        filename = res.headers['content-disposition'].match(/attachment; filename=(.*)/);
+                                        filename = res.headers['content-disposition'].match(/^attachment; filename=[\'\"]?(.*?)[\'\"]?$/);
                                     }
                                     this_obj.getApiQueue();
                                     if (filename) {
@@ -423,9 +423,19 @@ module.exports = {
                                 res.pipe(file_write);
                                 file_write.on('finish', function(){
                                     console.log(filePath);
-                                    setTimeout(function(){
-                                        callback(null, urlParse.pathname);
-                                    }, 0);
+                                    var filename = null;
+                                    if (res.headers['content-disposition']) {
+                                        filename = res.headers['content-disposition'].match(/^attachment; filename=[\'\"]?(.*?)[\'\"]?$/);
+                                    }
+                                    if (filename) {
+                                        setTimeout(function(){
+                                            callback(null, urlParse.pathname, filename[1]);
+                                        }, 0);
+                                    } else {
+                                        setTimeout(function(){
+                                            callback(null, urlParse.pathname);
+                                        }, 0);
+                                    }
                                 });
                             }
                         } else {

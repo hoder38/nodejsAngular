@@ -3383,9 +3383,14 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
             if (!choose_subtitle) {
                 util.handleError({hoerror: 2, message: "donot have sub!!!"}, next, callback);
             }
-            var ext = mime.isSub(choose_subtitle);
-            if (!ext) {
-                util.handleError({hoerror: 2, message: "is not sub!!!"}, next, callback);
+            var ext = false;
+            if (is_file) {
+                ext = mime.isSub(choose_subtitle);
+                if (!ext) {
+                    util.handleError({hoerror: 2, message: "is not sub!!!"}, next, callback);
+                }
+            } else {
+                ext = 'srt';
             }
             if (lang === 'en') {
                 subPath = subPath + '.en';
@@ -3414,18 +3419,40 @@ app.post('/api/subtitle/search/:uid/:index(\\d+)?', function(req, res, next) {
                     });
                 });
             } else {
-                api.xuiteDownload(choose_subtitle, subPath + '.' + ext, function(err) {
+                api.xuiteDownload(choose_subtitle, subPath + '.' + ext, function(err, pathname, filename) {
                     if (err) {
                         util.handleError(err, next, callback);
                     }
-                    util.SRT2VTT(subPath, ext, function(err) {
-                        if (err) {
-                            util.handleError(err, next, callback);
+                    ext = mime.isSub(filename);
+                    if (!ext) {
+                        fs.unlink(subPath + '.srt', function(err) {
+                            if (err) {
+                                util.handleError(err, next, callback);
+                            }
+                            if (fs.existsSync(subPath + '.srt1')) {
+                                fs.renameSync(subPath + '.srt1', subPath + '.srt');
+                            }
+                            if (fs.existsSync(subPath + '.ass1')) {
+                                fs.renameSync(subPath + '.ass1', subPath + '.ass');
+                            }
+                            if (fs.existsSync(subPath + '.ssa1')) {
+                                fs.renameSync(subPath + '.ssa1', subPath + '.ssa');
+                            }
+                            util.handleError({hoerror: 2, message: "is not sub!!!"}, next, callback);
+                        });
+                    } else {
+                        if (ext !== 'srt') {
+                            fs.renameSync(subPath + '.srt', subPath + '.' + ext);
                         }
-                        setTimeout(function(){
-                            callback(null);
-                        }, 0);
-                    });
+                        util.SRT2VTT(subPath, ext, function(err) {
+                            if (err) {
+                                util.handleError(err, next, callback);
+                            }
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    }
                 }, null, false);
             }
         }

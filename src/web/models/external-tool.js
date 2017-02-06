@@ -3713,157 +3713,102 @@ module.exports = {
                                 err.hoerror = 2;
                                 util.handleError(err, callback2, callback2);
                             }
-                            var eval_data = flv_data.match(/>(eval\(.*)/);
-                            if (!eval_data) {
+                            var ff_urls = flv_data.match(/var ff\_urls\=\'([^\']+)/);
+                            if (!ff_urls) {
                                 util.handleError({hoerror: 2, message: 'empty list'}, callback2, callback2);
                             }
-                            eval(eval_data[1]);
-                            var raw_multi_list = ff_urls;
+                            var raw_multi_list = null;
+                            try {
+                                raw_multi_list = JSON.parse(ff_urls[1].replace(/\\\"/g, '"'));
+                            } catch (x) {
+                                console.log(ff_urls);
+                                util.handleError({hoerror: 2, message: 'json parse error'}, callback2, callback2);
+                            }
+                            if (!raw_multi_list.Data) {
+                                util.handleError({hoerror: 2, message: 'empty list'}, callback2, callback2);
+                            }
                             var ret_list = [];
-                            driveSource(ret_list);
-                            youkuSource(ret_list);
-                            otherSource(ret_list);
+                            for (var i in raw_multi_list.Data) {
+                                switch (raw_multi_list.Data[i].playname) {
+                                    case 'bj58':
+                                    for (var j in raw_multi_list.Data[i].playurls) {
+                                        var list_match = raw_multi_list.Data[i].playurls[j][1].match(/^fun58_(.*)$/);
+                                        if (list_match) {
+                                            ret_list.push({name: raw_multi_list.Data[i].playurls[j][0], id: 'kdr_' + new Buffer(list_match[1]).toString('base64')});
+                                        } else {
+                                            list_match = raw_multi_list.Data[i].playurls[j][1].match(/^(.*)_wd1$/);
+                                            if (list_match) {
+                                                ret_list.push({name: raw_multi_list.Data[i].playurls[j][0], id: 'yuk_' + list_match[1]});
+                                            } else {
+                                                list_match = raw_multi_list.Data[i].playurls[j][1].match(/^fun23_video\/(.*)\/$/);
+                                                if (list_match) {
+                                                    ret_list.push({name: raw_multi_list.Data[i].playurls[j][0], id: 'bil_' + list_match[1]});
+                                                } else {
+                                                    list_match = raw_multi_list.Data[i].playurls[j][1].match(/^FunCnd1_(.*)$/);
+                                                    if (list_match) {
+                                                        ret_list.push({name: raw_multi_list.Data[i].playurls[j][0], id: 'fc1_' + list_match[1]});
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    break;
+                                    case 'bj':
+                                    for (var j in raw_multi_list.Data[i].playurls) {
+                                        list_match = raw_multi_list.Data[i].playurls[j][1].match(/^(.*)_wd1$/);
+                                        if (list_match) {
+                                            ret_list.push({name: raw_multi_list.Data[i].playurls[j][0], id: 'yuk_' + list_match[1]});
+                                        }
+                                    }
+                                    break;
+                                    case 'bj11':
+                                    for (var j in raw_multi_list.Data[i].playurls) {
+                                        list_match = raw_multi_list.Data[i].playurls[j][1].match(/^fun10_(.*)$/);
+                                        if (list_match) {
+                                            ret_list.push({name: raw_multi_list.Data[i].playurls[j][0], id: 'tud_' + list_match[1]});
+                                        }
+                                    }
+                                    break;
+                                    case 'bj6':
+                                    for (var j in raw_multi_list.Data[i].playurls) {
+                                        list_match = raw_multi_list.Data[i].playurls[j][1].match(/^fun3_(.*)$/);
+                                        if (list_match) {
+                                            ret_list.push({name: raw_multi_list.Data[i].playurls[j][0], id: 'vqq_' + list_match[1]});
+                                        }
+                                    }
+                                    break;
+                                    case 'bj5':
+                                    for (var j in raw_multi_list.Data[i].playurls) {
+                                        list_match = raw_multi_list.Data[i].playurls[j][1].match(/^fun1_(.*)$/);
+                                        if (list_match) {
+                                            ret_list.push({name: raw_multi_list.Data[i].playurls[j][0], id: 'let_' + list_match[1]});
+                                        }
+                                    }
+                                    break;
+                                    case 'bj8':
+                                    for (var j in raw_multi_list.Data[i].playurls) {
+                                        list_match = raw_multi_list.Data[i].playurls[j][1].match(/^fun9_(.*)$/);
+                                        if (list_match) {
+                                            ret_list.push({name: raw_multi_list.Data[i].playurls[j][0], id: 'fun_m_' + list_match[1]});
+                                        }
+                                    }
+                                    break;
+                                    case 'bj7':
+                                    for (var j in raw_multi_list.Data[i].playurls) {
+                                        list_match = raw_multi_list.Data[i].playurls[j][1].match(/^fun5_(.*)$/);
+                                        if (list_match) {
+                                            ret_list.push({name: raw_multi_list.Data[i].playurls[j][0], id: 'soh_' + list_match[1]});
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
                             if (ret_list.length === 0 ) {
                                 util.handleError({hoerror: 2, message: 'not flv'}, callback2, callback2);
                             }
                             setTimeout(function(){
                                 callback2(null, ret_list, is_end);
                             }, 0);
-                            function driveSource(list) {
-                                var flv_list = raw_multi_list.match(/"bj58".*?\}/);
-                                if (!flv_list) {
-                                    return false;
-                                }
-                                var raw_list = flv_list[0].match(/\[[^\[\]]+\]/g);
-                                if (!raw_list) {
-                                    return false;
-                                }
-                                var list_match = false;
-                                for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/^\["([^"]+)","fun58_([^"]+)"/);
-                                    if (list_match) {
-                                        list.push({name: list_match[1], id: 'kdr_' + new Buffer(list_match[2]).toString('base64')});
-                                    }
-                                }
-                                if (list.length > 0) {
-                                    return true;
-                                } else {
-                                    for (var i in raw_list) {
-                                        list_match = raw_list[i].match(/^\["([^"]+)","([^_]+)_wd1"/);
-                                        if (list_match) {
-                                            list.push({name: list_match[1], id: 'yuk_' + list_match[2]});
-                                        }
-                                    }
-                                    if (list.length > 0) {
-                                        return true;
-                                    } else {
-                                        for (var i in raw_list) {
-                                            list_match = raw_list[i].match(/^\["([^"]+)","fun23_video\/([^"]+)\/"/);
-                                            if (list_match) {
-                                                list.push({name: list_match[1], id: 'bil_' + list_match[2]});
-                                            }
-                                        }
-                                        if (list.length > 0) {
-                                            return true;
-                                        } else {
-                                            for (var i in raw_list) {
-                                                list_match = raw_list[i].match(/^\["([^"]+)","FunCnd1_([^"]+)"/);
-                                                if (list_match) {
-                                                    list.push({name: list_match[1], id: 'fc1_' + list_match[2]});
-                                                }
-                                                return true;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            function youkuSource(list) {
-                                var flv_list = raw_multi_list.match(/"bj".*?\}/);
-                                if (!flv_list) {
-                                    return false;
-                                }
-                                var raw_list = flv_list[0].match(/\[.+?\][\],]/g);
-                                if (!raw_list) {
-                                    return false;
-                                }
-                                var list_match = false;
-                                for (var i in raw_list) {
-                                    list_match = raw_list[i].match(/\["([^"]+)","([^_]+)_wd1"/);
-                                    if (list_match) {
-                                        list.push({name: list_match[1], id: 'yuk_' + list_match[2]});
-                                    }
-                                }
-                                return true;
-                            }
-                            function otherSource(list) {
-                                var flv_list11 = raw_multi_list.match(/"bj11".*?\}/);
-                                var flv_list6 = raw_multi_list.match(/"bj6".*?\}/);
-                                var flv_list5 = raw_multi_list.match(/"bj5".*?\}/);
-                                var flv_list8 = raw_multi_list.match(/"bj8".*?\}/);
-                                var flv_list7 = raw_multi_list.match(/"bj7".*?\}/);
-                                if (!flv_list11 && !flv_list6 && !flv_list5 && !flv_list8 && !flv_list7) {
-                                    return false;
-                                }
-                                var list_match = false;
-                                var raw_list = false;
-                                if (flv_list11) {
-                                    raw_list = flv_list11[0].match(/\[.+?\][\],]/g);
-                                    if (raw_list) {
-                                        for (var i in raw_list) {
-                                            list_match = raw_list[i].match(/\["([^"]+)","fun10_([^"]+)"/);
-                                            if (list_match) {
-                                                list.push({name: list_match[1], id: 'tud_' + list_match[2]});
-                                            }
-                                        }
-                                    }
-                                }
-                                if (flv_list6) {
-                                    raw_list = flv_list6[0].match(/\[.+?\][\],]/g);
-                                    if (raw_list) {
-                                        for (var i in raw_list) {
-                                            list_match = raw_list[i].match(/\["([^"]+)","fun3_([^"]+)"/);
-                                            if (list_match) {
-                                                list.push({name: list_match[1], id: 'vqq_' + list_match[2]});
-                                            }
-                                        }
-                                    }
-                                }
-                                if (flv_list5) {
-                                    raw_list = flv_list5[0].match(/\[.+?\][\],]/g);
-                                    console.log(raw_list);
-                                    if (raw_list) {
-                                        for (var i in raw_list) {
-                                            list_match = raw_list[i].match(/\["([^"]+)","fun1_([^"]+)"/);
-                                            if (list_match) {
-                                                list.push({name: list_match[1], id: 'let_' + list_match[2]});
-                                            }
-                                        }
-                                    }
-                                }
-                                if (flv_list8) {
-                                    raw_list = flv_list8[0].match(/\[.+?\][\],]/g);
-                                    if (raw_list) {
-                                        for (var i in raw_list) {
-                                            list_match = raw_list[i].match(/\["([^"]+)","fun9_([^"]+)"/);
-                                            if (list_match) {
-                                                list.push({name: list_match[1], id: 'fun_m_' + list_match[2]});
-                                            }
-                                        }
-                                    }
-                                }
-                                if (flv_list7) {
-                                    raw_list = flv_list7[0].match(/\[.+?\][\],]/g);
-                                    if (raw_list) {
-                                        for (var i in raw_list) {
-                                            list_match = raw_list[i].match(/\["([^"]+)","fun5_([^"]+)"/);
-                                            if (list_match) {
-                                                list.push({name: list_match[1], id: 'soh_' + list_match[2]});
-                                            }
-                                        }
-                                    }
-                                }
-                                return true;
-                            }
                         }, 60000, false, false, 'http://www.123kubo.com/');
                     }
                 }, 60000, false, false, 'http://www.123kubo.com/');
