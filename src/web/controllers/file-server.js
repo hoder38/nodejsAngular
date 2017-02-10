@@ -6505,7 +6505,7 @@ app.get('/api/handleMedia/:uid/:action(act|vlog|del)', function(req, res, next) 
                                     }
                                     console.log('transcode done');
                                     console.log(new Date());
-                                }, false, true);
+                                }, false, items[0].mediaType.key);
                             } else {
                                 mediaHandleTool.handleMedia(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].mediaType.key, req.user, function (err) {
                                     sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
@@ -6553,7 +6553,7 @@ app.get('/api/handleMedia/:uid/:action(act|vlog|del)', function(req, res, next) 
                                         }
                                         console.log('transcode done');
                                         console.log(new Date());
-                                    }, false, true);
+                                    }, false, handleItems[index].key);
                                 } else {
                                     mediaHandleTool.handleMedia(handleItems[index], filePath, items[0]._id, items[0].name, handleItems[index].key, req.user, function (err) {
                                         sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);

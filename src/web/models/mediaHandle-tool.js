@@ -355,10 +355,10 @@ module.exports = function(sendWs) {
                     if (add_noise && mediaType['type'] === 'video') {
                         child_process.exec('cat ' + staticPath + '/noise >> ' + uploadPath, function (err, output) {
                             if (err) {
-                                console.log(cmdline);
+                                console.log('cat ' + staticPath + '/noise >> ' + uploadPath);
                                 util.handleError(err, callback, errerMedia, fileID, callback);
                             }
-                            var data = {fileId: key};
+                            var data = {fileId: add_noise};
                             googleApi.googleApi('delete', data, function(err) {
                                 if (err) {
                                     util.handleError(err);
