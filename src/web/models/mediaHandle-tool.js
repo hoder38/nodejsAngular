@@ -361,7 +361,7 @@ module.exports = function(sendWs) {
                             var data = {fileId: key};
                             googleApi.googleApi('delete', data, function(err) {
                                 if (err) {
-                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                    util.handleError(err);
                                 }
                                 data = {type: 'media', name: fileID.toString() + "." + mediaType['ext'], filePath: uploadPath};
                                 if (mediaType['type'] === 'doc' || mediaType['type'] === 'rawdoc' || mediaType['type'] === 'sheet' || mediaType['type'] === 'present') {
