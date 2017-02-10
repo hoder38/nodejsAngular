@@ -91,7 +91,7 @@ const ItemFile = React.createClass({
         }, `確定要儲存 ${name} 到網站?`)
     },
     _handleMedia: function(id, name, isDel=false) {
-        this.props.sendglbcf(() => api(`${this.props.mainUrl}/api/handleMedia/${id}/${isDel ? 'del' : 'act'}`).catch(err => this.props.addalert(err)), `Would you sure to clear ${name}?`)
+        this.props.sendglbcf(() => api(`${this.props.mainUrl}/api/handleMedia/${id}/${isDel ? 'del' : 'act'}`).catch(err => this.props.addalert(err)), `Would you sure to ${isDel ? 'clear' : 'handle'} ${name}?`)
     },
     _downloadAll: function(id, name) {
         this.props.sendglbcf(() => api(`${this.props.mainUrl}/api/torrent/all/download/${id}`).then(result => result.complete ? this.props.addalert('download complete!!!') : this.props.addalert('starting download')).catch(err => this.props.addalert(err)), `Would you sure to save all of ${name}?`)
@@ -164,14 +164,16 @@ const ItemFile = React.createClass({
             }
         }
         if (item.media) {
-            dropList.push({title: 'clear media', onclick: () => this._handleMedia(item.id, item.name, true), key: 11})
+            dropList.push({title: 'handle media', onclick: () => this._handleMedia(item.id, item.name), key: 11})
+            dropList.push({title: 'clear media', onclick: () => this._handleMedia(item.id, item.name, true), key: 12})
+
         }
         if (item.status === 0 || item.status === 1 || item.status === 9) {
-            dropList.push({title: 'join zips', onclick: this._join, key: 12})
+            dropList.push({title: 'join zips', onclick: this._join, key: 13})
         }
         if (item.status === 9) {
-            dropList.push({title: 'save playlist', onclick: () => this._downloadAll(item.id, item.name), key: 13})
-            dropList.push({title: 'convert zip', onclick: () => this._convert(item.id, item.name), key: 14})
+            dropList.push({title: 'save playlist', onclick: () => this._downloadAll(item.id, item.name), key: 14})
+            dropList.push({title: 'convert zip', onclick: () => this._convert(item.id, item.name), key: 15})
         }
         let content = (
             <a href="#" className="item-point">
@@ -192,6 +194,7 @@ const ItemFile = React.createClass({
                     err: {error}
                 </span>
             )
+            click = () => this._handleMedia(item.id, item.name)
         } else {
             switch(item.status) {
                 case 2:
