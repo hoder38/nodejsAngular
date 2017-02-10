@@ -6542,14 +6542,28 @@ app.get('/api/handleMedia/:uid/:action(act|vlog|del)', function(req, res, next) 
                         recur_handle(0);
                         function recur_handle(index) {
                             if(handleItems[index].key) {
-                                mediaHandleTool.handleMedia(handleItems[index], filePath, items[0]._id, items[0].name, handleItems[index].key, req.user, function (err) {
-                                    sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
-                                    if (err) {
-                                        util.handleError(err);
-                                    }
-                                    console.log('transcode done');
-                                    console.log(new Date());
-                                });
+                                if (new Date().getTime()/1000 - items[0].utime > 172800) {
+                                    console.log('handle 2 days');
+                                    dbStats = fs.statSync(filePath + '/real/' + handleItems[index]['realPath']);
+                                    dbName = path.basename(handleItems[index]['realPath']);
+                                    mediaHandleTool.handleMediaUpload(handleItems[index], filePath, items[0]._id, dbName, dbStats['size'], req.user, function (err) {
+                                        sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                        if (err) {
+                                            util.handleError(err);
+                                        }
+                                        console.log('transcode done');
+                                        console.log(new Date());
+                                    }, false, true);
+                                } else {
+                                    mediaHandleTool.handleMedia(handleItems[index], filePath, items[0]._id, items[0].name, handleItems[index].key, req.user, function (err) {
+                                        sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                        if (err) {
+                                            util.handleError(err);
+                                        }
+                                        console.log('transcode done');
+                                        console.log(new Date());
+                                    });
+                                }
                             } else {
                                 dbStats = fs.statSync(filePath + '/real/' + handleItems[index]['realPath']);
                                 dbName = path.basename(handleItems[index]['realPath']);
