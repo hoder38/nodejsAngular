@@ -116,6 +116,8 @@ var express = require('express'),
 var torrentStream = require('torrent-stream');
 var avconv = require('avconv');
 
+var staticPath = path.join(__dirname, "../../../public");
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({ extended: true }));
 app.use(express_session(sessionStore.config));
@@ -5858,7 +5860,7 @@ app.get('/subtitle/:uid/:lang/:index(\\d+)?/:fresh(0+)?', function(req, res, nex
             fs.exists(subPath + '.vtt', function (exists) {
                 res.writeHead(200, { 'Content-Type': 'text/vtt' });
                 if (!exists) {
-                    var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
+                    var stream = fs.createReadStream(staticPath + '/123.vtt').pipe(res);
                 } else {
                     var stream = fs.createReadStream(subPath + '.vtt').pipe(res);
                 }
@@ -5884,7 +5886,7 @@ app.get('/subtitle/:uid/:lang/:index(\\d+)?/:fresh(0+)?', function(req, res, nex
                     fs.exists(subPath + '.vtt', function (exists) {
                         res.writeHead(200, { 'Content-Type': 'text/vtt' });
                         if (!exists) {
-                            var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
+                            var stream = fs.createReadStream(staticPath + '/123.vtt').pipe(res);
                         } else {
                             var stream = fs.createReadStream(subPath + '.vtt').pipe(res);
                         }
@@ -5909,7 +5911,7 @@ app.get('/subtitle/:uid/:lang/:index(\\d+)?/:fresh(0+)?', function(req, res, nex
                     fs.exists(subPath + '.vtt', function (exists) {
                         res.writeHead(200, { 'Content-Type': 'text/vtt' });
                         if (!exists) {
-                            var stream = fs.createReadStream('/home/pi/app/public/123.vtt').pipe(res);
+                            var stream = fs.createReadStream(staticPath + '/123.vtt').pipe(res);
                         } else {
                             var stream = fs.createReadStream(subPath + '.vtt').pipe(res);
                         }
@@ -6494,14 +6496,25 @@ app.get('/api/handleMedia/:uid/:action(act|vlog|del)', function(req, res, next) 
                     if (items[0].mediaType.type) {
                         res.json({apiOK: true});
                         if(items[0].mediaType.key) {
-                            mediaHandleTool.handleMedia(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].mediaType.key, req.user, function (err) {
-                                sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
-                                if (err) {
-                                    util.handleError(err);
-                                }
-                                console.log('transcode done');
-                                console.log(new Date());
-                            });
+                            if (items[0].utime - new Date().getTime() > 1728000) {
+                                mediaHandleTool.handleMediaUpload(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].size, req.user, function (err) {
+                                    sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    console.log('transcode done');
+                                    console.log(new Date());
+                                }, false, true);
+                            } else {
+                                mediaHandleTool.handleMedia(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].mediaType.key, req.user, function (err) {
+                                    sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
+                                    if (err) {
+                                        util.handleError(err);
+                                    }
+                                    console.log('transcode done');
+                                    console.log(new Date());
+                                });
+                            }
                         } else {
                             mediaHandleTool.handleMediaUpload(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].size, req.user, function (err) {
                                 sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);

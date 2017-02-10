@@ -17,10 +17,12 @@ var child_process = require('child_process'),
     mkdirp = require('mkdirp'),
     fs = require("fs");
 
+var staticPath = path.join(__dirname, "../../../public");
+
 var transTime = 3300000;
 module.exports = function(sendWs) {
     return {
-        handleMediaUpload: function(mediaType, filePath, fileID, fileName, fileSize, user, callback, vlog_act) {
+        handleMediaUpload: function(mediaType, filePath, fileID, fileName, fileSize, user, callback, vlog_act, add_noise) {
             var this_obj = this;
             if (mediaType) {
                 var rmPath = null;
@@ -350,44 +352,97 @@ module.exports = function(sendWs) {
                     if (mediaType['type'] === 'rawdoc') {
                         mediaType['ext'] = 'txt';
                     }
-                    var data = {type: 'media', name: fileID.toString() + "." + mediaType['ext'], filePath: uploadPath};
-                    if (mediaType['type'] === 'doc' || mediaType['type'] === 'rawdoc' || mediaType['type'] === 'sheet' || mediaType['type'] === 'present') {
-                        data['convert'] = true;
-                    }
-                    googleApi.googleApi('upload', data, function(err, metadata) {
-                        if (err) {
-                            util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
-                        }
-                        if(metadata.exportLinks && metadata.exportLinks['application/pdf']) {
-                            mediaType['thumbnail'] = metadata.exportLinks['application/pdf'];
-                            if (mediaType['type'] === 'present') {
-                                if (metadata.alternateLink) {
-                                    mediaType['alternate'] = metadata.alternateLink;
-                                } else {
-                                    console.log(metadata);
-                                    util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback, rmPath, fIndex);
-                                }
+                    if (add_noise && mediaType['type'] === 'video') {
+                        child_process.exec('cat ' + staticPath + '/noise >> ' + uploadPath, function (err, output) {
+                            if (err) {
+                                console.log(cmdline);
+                                util.handleError(err, callback, errerMedia, fileID, callback);
                             }
-                        } else if (mediaType['type'] === 'video' && metadata.alternateLink) {
-                            mediaType['thumbnail'] = metadata.alternateLink;
-                        } else if (metadata.thumbnailLink) {
-                            mediaType['thumbnail'] = metadata.thumbnailLink;
-                        } else {
-                            console.log(metadata);
-                            util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback, rmPath, fIndex);
+                            var data = {fileId: key};
+                            googleApi.googleApi('delete', data, function(err) {
+                                if (err) {
+                                    util.handleError(err, callback, errerMedia, fileID, callback);
+                                }
+                                data = {type: 'media', name: fileID.toString() + "." + mediaType['ext'], filePath: uploadPath};
+                                if (mediaType['type'] === 'doc' || mediaType['type'] === 'rawdoc' || mediaType['type'] === 'sheet' || mediaType['type'] === 'present') {
+                                    data['convert'] = true;
+                                }
+                                googleApi.googleApi('upload', data, function(err, metadata) {
+                                    if (err) {
+                                        util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
+                                    }
+                                    if(metadata.exportLinks && metadata.exportLinks['application/pdf']) {
+                                        mediaType['thumbnail'] = metadata.exportLinks['application/pdf'];
+                                        if (mediaType['type'] === 'present') {
+                                            if (metadata.alternateLink) {
+                                                mediaType['alternate'] = metadata.alternateLink;
+                                            } else {
+                                                console.log(metadata);
+                                                util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback, rmPath, fIndex);
+                                            }
+                                        }
+                                    } else if (mediaType['type'] === 'video' && metadata.alternateLink) {
+                                        mediaType['thumbnail'] = metadata.alternateLink;
+                                    } else if (metadata.thumbnailLink) {
+                                        mediaType['thumbnail'] = metadata.thumbnailLink;
+                                    } else {
+                                        console.log(metadata);
+                                        util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback, rmPath, fIndex);
+                                    }
+                                    var mediaSet = {"mediaType.key": metadata.id};
+                                    if (mediaType['realPath']) {
+                                        mediaSet = {};
+                                        mediaSet['mediaType.' + mediaType['fileIndex'] + '.key'] = metadata.id;
+                                    }
+                                    mongo.orig("update", "storage", { _id: fileID }, {$set: mediaSet}, function(err, item){
+                                        if(err) {
+                                            util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
+                                        }
+                                        this_obj.handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback, vlog_act);
+                                    });
+                                });
+                            });
+                        });
+                    } else {
+                        var data = {type: 'media', name: fileID.toString() + "." + mediaType['ext'], filePath: uploadPath};
+                        if (mediaType['type'] === 'doc' || mediaType['type'] === 'rawdoc' || mediaType['type'] === 'sheet' || mediaType['type'] === 'present') {
+                            data['convert'] = true;
                         }
-                        var mediaSet = {"mediaType.key": metadata.id};
-                        if (mediaType['realPath']) {
-                            mediaSet = {};
-                            mediaSet['mediaType.' + mediaType['fileIndex'] + '.key'] = metadata.id;
-                        }
-                        mongo.orig("update", "storage", { _id: fileID }, {$set: mediaSet}, function(err, item){
-                            if(err) {
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
                                 util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
                             }
-                            this_obj.handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback, vlog_act);
+                            if(metadata.exportLinks && metadata.exportLinks['application/pdf']) {
+                                mediaType['thumbnail'] = metadata.exportLinks['application/pdf'];
+                                if (mediaType['type'] === 'present') {
+                                    if (metadata.alternateLink) {
+                                        mediaType['alternate'] = metadata.alternateLink;
+                                    } else {
+                                        console.log(metadata);
+                                        util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback, rmPath, fIndex);
+                                    }
+                                }
+                            } else if (mediaType['type'] === 'video' && metadata.alternateLink) {
+                                mediaType['thumbnail'] = metadata.alternateLink;
+                            } else if (metadata.thumbnailLink) {
+                                mediaType['thumbnail'] = metadata.thumbnailLink;
+                            } else {
+                                console.log(metadata);
+                                util.handleError({hoerror: 2, message: "error type"}, callback, errerMedia, fileID, callback, rmPath, fIndex);
+                            }
+                            var mediaSet = {"mediaType.key": metadata.id};
+                            if (mediaType['realPath']) {
+                                mediaSet = {};
+                                mediaSet['mediaType.' + mediaType['fileIndex'] + '.key'] = metadata.id;
+                            }
+                            mongo.orig("update", "storage", { _id: fileID }, {$set: mediaSet}, function(err, item){
+                                if(err) {
+                                    util.handleError(err, callback, errerMedia, fileID, callback, rmPath, fIndex);
+                                }
+                                this_obj.handleMedia(mediaType, filePath, fileID, fileName, metadata.id, user, callback, vlog_act);
+                            });
                         });
-                    });
+                    }
                 }
             }
         },
