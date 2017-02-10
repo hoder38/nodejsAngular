@@ -6496,7 +6496,7 @@ app.get('/api/handleMedia/:uid/:action(act|vlog|del)', function(req, res, next) 
                     if (items[0].mediaType.type) {
                         res.json({apiOK: true});
                         if(items[0].mediaType.key) {
-                            if (items[0].utime*1000 - new Date().getTime() > 1728000) {
+                            if (new Date().getTime()/1000 - items[0].utime > 172800) {
                                 console.log('handle 2 days');
                                 mediaHandleTool.handleMediaUpload(items[0].mediaType, filePath, items[0]._id, items[0].name, items[0].size, req.user, function (err) {
                                     sendWs({type: 'file', data: items[0]._id}, items[0].adultonly);
