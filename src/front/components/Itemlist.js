@@ -120,6 +120,14 @@ const Itemlist = React.createClass({
         })
         if (this.props.select.size > 0) {
             if (this.state.allTag) {
+                tagRows.push(
+                    <tr key="?">
+                        <td className="text-center" style={{width: '56px'}}></td>
+                        <td style={{whiteSpace: 'normal', wordBreak: 'break-all', wordWrap: 'break-word'}}>
+                            <button type="button" className="btn btn-default" onClick={this._toggleTags}>Less</button>
+                        </td>
+                    </tr>
+                )
                 tags.forEach(tag => tagRows.push(this._tagRow(tag, 'item-point')))
                 exceptTags.forEach(tag => tagRows.push(this._tagRow(tag, 'history-point')))
                 this.state.relative.forEach(tag => tagRows.push(this._tagRow(tag, 'relative-point')))
@@ -131,17 +139,17 @@ const Itemlist = React.createClass({
                         break
                     }
                 }
+                tagRows.push(
+                    <tr key="?">
+                        <td className="text-center" style={{width: '56px'}}></td>
+                        <td style={{whiteSpace: 'normal', wordBreak: 'break-all', wordWrap: 'break-word'}}>
+                            <button type="button" className="btn btn-default" onClick={this._toggleTags}>All</button>
+                        </td>
+                    </tr>
+                )
             }
             this._tags = tags
             this._except = exceptTags
-            tagRows.push(
-                <tr key="?">
-                    <td className="text-center" style={{width: '56px'}}></td>
-                    <td style={{whiteSpace: 'normal', wordBreak: 'break-all', wordWrap: 'break-word'}}>
-                        <button type="button" className="btn btn-default" onClick={this._toggleTags}>{this.state.allTag ? 'Less' : 'All'}</button>
-                    </td>
-                </tr>
-            )
             rows.splice(this._first, 0, ...tagRows)
         } else {
             this._first = 0

@@ -133,19 +133,23 @@ export default function complexDataHandle (push, pop, set) {
             return Object.assign({}, state, {
                 list: arrayObject('pop', state.list, action.id),
                 item: Object.assign({}, state.item, {
+                    page: state.item.page - 1,
                     list: arrayId('pop', state.item.list, action.id),
                 }),
                 select: arrayId('pop', state.select, action.id),
             }, state[2] ? {
                 2: Object.assign({}, state[2], {
+                    page: state[2].page - 1,
                     list: arrayId('pop', state[2].list, action.id),
                 }),
             } : {}, state[3] ? {
                 3: Object.assign({}, state[3], {
+                    page: state[3].page - 1,
                     list: arrayId('pop', state[3].list, action.id),
                 }),
             } : {}, state[4] ? {
                 4: Object.assign({}, state[4], {
+                    page: state[4].page - 1,
                     list: arrayId('pop', state[4].list, action.id),
                 }),
             } : {})
