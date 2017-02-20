@@ -918,10 +918,20 @@ module.exports = {
                     var list_match = false;
                     var data = null;
                     var date = new Date();
-                    date = new Date(new Date(date).setDate(date.getDate()-1));
-                    var docDate = monthNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
+                    date = new Date(new Date(date).setDate(date.getDate()-4));
+                    var docDate = date.getFullYear();
+                    if (date.getMonth()+1 < 10) {
+                        docDate = docDate + '0' + (date.getMonth()+1);
+                    } else {
+                        docDate = docDate + (date.getMonth()+1);
+                    }
+                    if (date.getDate() < 10) {
+                        docDate = docDate + '0' + date.getDate();
+                    } else {
+                        docDate = docDate + date.getDate();
+                    }
                     console.log(docDate);
-                    list_match = raw_list[0].match(/class="date-display-single">[a-zA-Z]+, ([a-zA-Z]+ \d\d?, \d\d\d\d)/);
+                    list_match = raw_list[0].match(/eta(\d+)\"\>/);
                     if (list_match) {
                         if (list_match[1] === docDate) {
                             data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
