@@ -531,7 +531,8 @@ app.post('/upload/file', function(req, res, next){
         function streamClose(filename, tag_arr, opt_arr, db_obj){
             fs.unlink(req.files.file.path, function(err) {
                 if (err) {
-                    util.handleError(err, next, res);
+                    console.log(filePath);
+                    util.handleError(err);
                 }
                 var name = util.toValidName(req.files.file.name);
                 if (filename) {
