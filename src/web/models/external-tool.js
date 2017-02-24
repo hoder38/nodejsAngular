@@ -918,7 +918,7 @@ module.exports = {
                     var list_match = false;
                     var data = null;
                     var date = new Date();
-                    date = new Date(new Date(date).setDate(date.getDate()-4));
+                    date = new Date(new Date(date).setDate(date.getDate()-1));
                     var docDate = date.getFullYear();
                     if (date.getMonth()+1 < 10) {
                         docDate = docDate + '0' + (date.getMonth()+1);
