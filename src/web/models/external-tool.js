@@ -931,11 +931,11 @@ module.exports = {
                         docDate = docDate + date.getDate();
                     }
                     console.log(docDate);
-                    list_match = raw_list[0].match(/eta(\d+)\"\>/);
+                    list_match = raw_list[0].match(/eta(\d+)['"]\>/);
                     if (list_match) {
                         if (list_match[1] === docDate) {
                             data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
-                            list_match = raw_list[0].match(/href="([^"]+)">([^<]+)/);
+                            list_match = raw_list[0].match(/href=['"]([^'"]+)['"]>([^<]+)/);
                             if (list_match) {
                                 if (!list_match[1].match(/^(http|https):\/\//)) {
                                     if (list_match[1].match(/^\//)) {
@@ -1052,17 +1052,17 @@ module.exports = {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                var raw_list = raw_data.match(/<item [\s\S]+?<\/item>/g);
+                var raw_list = raw_data.match(/<item[\s\S]+?<\/item>/g);
                 if (!raw_list) {
                     util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
                 }
                 var date = new Date();
                 date = new Date(new Date(date).setDate(date.getDate()-1));
-                var docDate = date.getFullYear() + '-';
+                var docDate = date.getFullYear();
                 if (date.getMonth() + 1 < 10) {
-                    docDate = docDate + '0' + (date.getMonth() + 1) + '-';
+                    docDate = docDate + '0' + (date.getMonth() + 1);
                 } else {
-                    docDate = docDate + (date.getMonth() + 1) + '-';
+                    docDate = docDate + (date.getMonth() + 1);
                 }
                 if (date.getDate() < 10) {
                     docDate = docDate + '0' + date.getDate();
@@ -1074,11 +1074,12 @@ module.exports = {
                 var data = null;
                 console.log(docDate);
                 for (var i in raw_list) {
-                    list_match = raw_list[i].match(/<dc:date>(\d\d\d\d-\d\d-\d\d)/);
+                    list_match = raw_list[i].match(new RegExp(docDate));
                     if (list_match) {
-                        if (list_match[1] === docDate) {
-                            data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
-                            list_match = raw_list[i].match(/<link>([^<]+)/);
+                        data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
+                        list_match = raw_list[i].match(/<link>([^\]]+)/);
+                        if (list_match) {
+                            list_match = list_match[1].match(/<\!\[CDATA\[(.*)/);
                             if (list_match) {
                                 if (!list_match[1].match(/^(http|https):\/\//)) {
                                     if (list_match[1].match(/^\//)) {
@@ -1140,21 +1141,23 @@ module.exports = {
                             err.hoerror = 2;
                             util.handleError(err, callback, callback);
                         }
-                        raw_list = raw_data.match(/">Last update:[\s]+([a-zA-Z]+ \d\d?, \d\d\d\d)/);
+                        raw_list = raw_data.match(/>Last Update:[\s]+([a-zA-Z]+ \d\d?, \d\d\d\d)/i);
                         if (!raw_list) {
                             util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
                         }
+                        console.log(raw_list[1]);
                         if (docDate === raw_list[1] || docDate1 === raw_list[1]) {
                             data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
-                            raw_list = raw_data.match(/Current Release[\s]*<a href="([^"]+)/i);
+                            raw_list = raw_data.match(/<a title="Current Release"[^h]+href="([^"]+)/i);
                             if (!raw_list) {
                                 util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
                             }
+                            console.log(raw_list[1]);
                             if (!raw_list[1].match(/^(http|https):\/\//)) {
                                 if (raw_list[1].match(/^\//)) {
-                                    raw_list[1] = 'http://www.federalreserve.gov/releases/g19/current' + raw_list[1];
+                                    raw_list[1] = 'http://www.federalreserve.gov' + raw_list[1];
                                 } else {
-                                    raw_list[1] = 'http://www.federalreserve.gov/releases/g19/current/' + raw_list[1];
+                                    raw_list[1] = 'http://www.federalreserve.gov/' + raw_list[1];
                                 }
                             }
                             data['url'] = raw_list[1];
@@ -5789,29 +5792,59 @@ module.exports = {
                         err.hoerror = 2;
                         util.handleError(err, callback, callback);
                     }
-                    var raw_list = raw_data.match(/<li class="stayconnected3"><a href="([^"]+)/);
+                    var raw_list = raw_data.match(/<a href="([^"]+)"><span class='icon-download/);
                     if (!raw_list) {
-                        util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
-                    }
-                    if (!raw_list[1].match(/^(http|https):\/\//)) {
-                        if (raw_list[1].match(/^\//)) {
-                            raw_list[1] = 'http://www.federalreserve.gov' + raw_list[1];
-                        } else {
-                            raw_list[1] = 'http://www.federalreserve.gov/' + raw_list[1];
-                        }
-                    }
-                    var utime = Math.round(new Date().getTime() / 1000);
-                    var filePath = util.getFileLocation(type, utime);
-                    console.log(filePath);
-                    var folderPath = path.dirname(filePath);
-                    var ext = path.extname(raw_list[1]);
-                    var driveName = obj.name + ' ' + obj.date + ext;
-                    console.log(driveName);
-                    if (!fs.existsSync(folderPath)) {
-                        mkdirp(folderPath, function(err) {
-                            if(err) {
+                        var driveName = obj.name + ' ' + obj.date + '.txt';
+                        console.log(driveName);
+                        var data = {type: 'auto', name: driveName, body: obj.name + '\n\n\r\r' + obj.url, parent: parent};
+                        googleApi.googleApi('upload', data, function(err, metadata) {
+                            if (err) {
                                 util.handleError(err, callback, callback);
                             }
+                            console.log(metadata);
+                            console.log('done');
+                            setTimeout(function(){
+                                callback(null);
+                            }, 0);
+                        });
+                    } else {
+                        if (!raw_list[1].match(/^(http|https):\/\//)) {
+                            if (raw_list[1].match(/^\//)) {
+                                raw_list[1] = 'http://www.federalreserve.gov' + raw_list[1];
+                            } else {
+                                raw_list[1] = 'http://www.federalreserve.gov/' + raw_list[1];
+                            }
+                        }
+                        var utime = Math.round(new Date().getTime() / 1000);
+                        var filePath = util.getFileLocation(type, utime);
+                        console.log(filePath);
+                        var folderPath = path.dirname(filePath);
+                        var ext = path.extname(raw_list[1]);
+                        var driveName = obj.name + ' ' + obj.date + ext;
+                        console.log(driveName);
+                        if (!fs.existsSync(folderPath)) {
+                            mkdirp(folderPath, function(err) {
+                                if(err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                api.xuiteDownload(raw_list[1], filePath, function(err) {
+                                    if (err) {
+                                        util.handleError(err, callback, callback);
+                                    }
+                                    var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                                    googleApi.googleApi('upload', data, function(err, metadata) {
+                                        if (err) {
+                                            util.handleError(err, callback, callback);
+                                        }
+                                        console.log(metadata);
+                                        console.log('done');
+                                        setTimeout(function(){
+                                            callback(null);
+                                        }, 0);
+                                    });
+                                });
+                            });
+                        } else {
                             api.xuiteDownload(raw_list[1], filePath, function(err) {
                                 if (err) {
                                     util.handleError(err, callback, callback);
@@ -5828,24 +5861,7 @@ module.exports = {
                                     }, 0);
                                 });
                             });
-                        });
-                    } else {
-                        api.xuiteDownload(raw_list[1], filePath, function(err) {
-                            if (err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
-                            googleApi.googleApi('upload', data, function(err, metadata) {
-                                if (err) {
-                                    util.handleError(err, callback, callback);
-                                }
-                                console.log(metadata);
-                                console.log('done');
-                                setTimeout(function(){
-                                    callback(null);
-                                }, 0);
-                            });
-                        });
+                        }
                     }
                 }, 60000, false, false);
             }
