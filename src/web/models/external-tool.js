@@ -1054,7 +1054,7 @@ module.exports = {
                 }
                 var raw_list = raw_data.match(/<item[\s\S]+?<\/item>/g);
                 if (!raw_list) {
-                    util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
+                    util.handleError({hoerror: 2, message: 'cannot find fed latest 1'}, callback, callback);
                 }
                 var date = new Date();
                 date = new Date(new Date(date).setDate(date.getDate()-1));
@@ -1120,18 +1120,7 @@ module.exports = {
                     }
                     if (docDate === raw_list[1] || docDate1 === raw_list[1]) {
                         data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
-                        raw_list = raw_data.match(/Current Release[\s]*<a href="([^"]+)/i);
-                        if (!raw_list) {
-                            util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
-                        }
-                        if (!raw_list[1].match(/^(http|https):\/\//)) {
-                            if (raw_list[1].match(/^\//)) {
-                                raw_list[1] = 'http://www.federalreserve.gov/releases/g17/Current' + raw_list[1];
-                            } else {
-                                raw_list[1] = 'http://www.federalreserve.gov/releases/g17/Current/' + raw_list[1];
-                            }
-                        }
-                        data['url'] = raw_list[1];
+                        data['url'] = 'https://www.federalreserve.gov/releases/g17/Current/g17.pdf';
                         data['name'] = util.toValidName('INDUSTRIAL PRODUCTION AND CAPACITY UTILIZATION');
                         list.push(data);
                     }
@@ -1143,14 +1132,14 @@ module.exports = {
                         }
                         raw_list = raw_data.match(/>Last Update:[\s]+([a-zA-Z]+ \d\d?, \d\d\d\d)/i);
                         if (!raw_list) {
-                            util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
+                            util.handleError({hoerror: 2, message: 'cannot find fed latest 2'}, callback, callback);
                         }
                         console.log(raw_list[1]);
                         if (docDate === raw_list[1] || docDate1 === raw_list[1]) {
                             data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
                             raw_list = raw_data.match(/<a title="Current Release"[^h]+href="([^"]+)/i);
                             if (!raw_list) {
-                                util.handleError({hoerror: 2, message: 'cannot find fed latest'}, callback, callback);
+                                util.handleError({hoerror: 2, message: 'cannot find fed latest 3'}, callback, callback);
                             }
                             console.log(raw_list[1]);
                             if (!raw_list[1].match(/^(http|https):\/\//)) {
@@ -5614,18 +5603,48 @@ module.exports = {
             break;
             case 'dol':
             console.log(obj);
-            var utime = Math.round(new Date().getTime() / 1000);
-            var filePath = util.getFileLocation(type, utime);
-            console.log(filePath);
-            var folderPath = path.dirname(filePath);
-            var driveName = obj.name + ' ' + obj.date + '.pdf';
-            console.log(driveName);
-            if (!fs.existsSync(folderPath)) {
-                mkdirp(folderPath, function(err) {
-                    if(err) {
-                        util.handleError(err, callback, callback);
+            api.xuiteDownload(obj.url, '', function(err, raw_data) {
+                var pdfUrl = raw_data.match(/<H4><A HREF=\"([^\"]+)/);
+                if (!pdfUrl) {
+                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
+                }
+                if (!pdfUrl[1].match(/^(http|https):\/\//)) {
+                    if (pdfUrl[1].match(/^\//)) {
+                        pdfUrl[1] = 'https://www.bls.gov' + pdfUrl[1];
+                    } else {
+                        pdfUrl[1] = 'https://www.bls.gov/' + pdfUrl[1];
                     }
-                    api.xuiteDownload(obj.url, filePath, function(err) {
+                }
+                var utime = Math.round(new Date().getTime() / 1000);
+                var filePath = util.getFileLocation(type, utime);
+                console.log(filePath);
+                var folderPath = path.dirname(filePath);
+                var driveName = obj.name + ' ' + obj.date + '.pdf';
+                console.log(driveName);
+                if (!fs.existsSync(folderPath)) {
+                    mkdirp(folderPath, function(err) {
+                        if(err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        api.xuiteDownload(pdfUrl, filePath, function(err) {
+                            if (err) {
+                                util.handleError(err, callback, callback);
+                            }
+                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                            googleApi.googleApi('upload', data, function(err, metadata) {
+                                if (err) {
+                                    util.handleError(err, callback, callback);
+                                }
+                                console.log(metadata);
+                                console.log('done');
+                                setTimeout(function(){
+                                    callback(null);
+                                }, 0);
+                            });
+                        });
+                    });
+                } else {
+                    api.xuiteDownload(pdfUrl, filePath, function(err) {
                         if (err) {
                             util.handleError(err, callback, callback);
                         }
@@ -5641,25 +5660,8 @@ module.exports = {
                             }, 0);
                         });
                     });
-                });
-            } else {
-                api.xuiteDownload(obj.url, filePath, function(err) {
-                    if (err) {
-                        util.handleError(err, callback, callback);
-                    }
-                    var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
-                    googleApi.googleApi('upload', data, function(err, metadata) {
-                        if (err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        console.log(metadata);
-                        console.log('done');
-                        setTimeout(function(){
-                            callback(null);
-                        }, 0);
-                    });
-                });
-            }
+                }
+            }, 60000, false, false);
             break;
             case 'rea':
             console.log(obj);
