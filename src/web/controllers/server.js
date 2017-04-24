@@ -120,9 +120,9 @@ app.get('/s', function (req, res, next) {
             util.handleError({hoerror: 2, message: "dont have url"}, next, res);
         }
         var url = decodeURIComponent(items[0].url);
-        var body = '302. Redirecting to ' + url;
+        var body = '301. Redirecting to ' + url;
         res.header('Content-Type', 'text/plain');
-        res.statusCode = 302;
+        res.statusCode = 301;
         res.header('Location', url);
         res.end(body);
     });

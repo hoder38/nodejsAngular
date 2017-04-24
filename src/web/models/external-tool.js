@@ -5604,15 +5604,15 @@ module.exports = {
             case 'dol':
             console.log(obj);
             api.xuiteDownload(obj.url, '', function(err, raw_data) {
-                var pdfUrl = raw_data.match(/<H4><A HREF=\"([^\"]+)/);
+                var pdfUrl = raw_data.match(/href=\"([^\"]+)\" type=\"application\/pdf; length=/);
                 if (!pdfUrl) {
                     util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
                 }
                 if (!pdfUrl[1].match(/^(http|https):\/\//)) {
                     if (pdfUrl[1].match(/^\//)) {
-                        pdfUrl[1] = 'https://www.bls.gov' + pdfUrl[1];
+                        pdfUrl[1] = 'https://www.dol.gov' + pdfUrl[1];
                     } else {
-                        pdfUrl[1] = 'https://www.bls.gov/' + pdfUrl[1];
+                        pdfUrl[1] = 'https://www.dol.gov/' + pdfUrl[1];
                     }
                 }
                 var utime = Math.round(new Date().getTime() / 1000);
@@ -5626,7 +5626,7 @@ module.exports = {
                         if(err) {
                             util.handleError(err, callback, callback);
                         }
-                        api.xuiteDownload(pdfUrl, filePath, function(err) {
+                        api.xuiteDownload(pdfUrl[1], filePath, function(err) {
                             if (err) {
                                 util.handleError(err, callback, callback);
                             }
@@ -5644,7 +5644,7 @@ module.exports = {
                         });
                     });
                 } else {
-                    api.xuiteDownload(pdfUrl, filePath, function(err) {
+                    api.xuiteDownload(pdfUrl[1], filePath, function(err) {
                         if (err) {
                             util.handleError(err, callback, callback);
                         }
