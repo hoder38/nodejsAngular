@@ -912,7 +912,7 @@ module.exports = {
                     err.hoerror = 2;
                     util.handleError(err, callback, callback);
                 }
-                var raw_list = raw_data.match(/.+Unemployment Insurance Weekly Claims Report.+/);
+                var raw_list = raw_data.match(/([^\'\"]+)[\'\"]>Unemployment Insurance Weekly Claims Report/);
                 var list = [];
                 if (raw_list) {
                     var list_match = false;
@@ -931,23 +931,20 @@ module.exports = {
                         docDate = docDate + date.getDate();
                     }
                     console.log(docDate);
-                    list_match = raw_list[0].match(/eta(\d+)['"]\>/);
+                    list_match = raw_list[1].match(/eta(\d+)/);
                     if (list_match) {
                         if (list_match[1] === docDate) {
                             data = {date: (date.getMonth()+1)+'_'+date.getDate()+'_'+date.getFullYear()};
-                            list_match = raw_list[0].match(/href=['"]([^'"]+)['"]>([^<]+)/);
-                            if (list_match) {
-                                if (!list_match[1].match(/^(http|https):\/\//)) {
-                                    if (list_match[1].match(/^\//)) {
-                                        list_match[1] = 'http://www.dol.gov' + list_match[1];
-                                    } else {
-                                        list_match[1] = 'http://www.dol.gov/' + list_match[1];
-                                    }
-                                    data['url'] = list_match[1];
-                                    data['name'] = util.toValidName(list_match[2]);
-                                    list.push(data);
+                            if (!raw_list[1].match(/^(http|https):\/\//)) {
+                                if (raw_list[1].match(/^\//)) {
+                                    raw_list[1] = 'http://www.dol.gov' + raw_list[1];
+                                } else {
+                                    raw_list[1] = 'http://www.dol.gov/' + raw_list[1];
                                 }
                             }
+                            data['url'] = raw_list[1];
+                            data['name'] = 'Unemployment Insurance Weekly Claims Report';
+                            list.push(data);
                         }
                     }
                 }
@@ -5603,48 +5600,18 @@ module.exports = {
             break;
             case 'dol':
             console.log(obj);
-            api.xuiteDownload(obj.url, '', function(err, raw_data) {
-                var pdfUrl = raw_data.match(/href=\"([^\"]+)\" type=\"application\/pdf; length=/);
-                if (!pdfUrl) {
-                    util.handleError({hoerror: 2, message: 'cannot find release'}, callback, callback);
-                }
-                if (!pdfUrl[1].match(/^(http|https):\/\//)) {
-                    if (pdfUrl[1].match(/^\//)) {
-                        pdfUrl[1] = 'https://www.dol.gov' + pdfUrl[1];
-                    } else {
-                        pdfUrl[1] = 'https://www.dol.gov/' + pdfUrl[1];
+            var utime = Math.round(new Date().getTime() / 1000);
+            var filePath = util.getFileLocation(type, utime);
+            console.log(filePath);
+            var folderPath = path.dirname(filePath);
+            var driveName = obj.name + ' ' + obj.date + '.pdf';
+            console.log(driveName);
+            if (!fs.existsSync(folderPath)) {
+                mkdirp(folderPath, function(err) {
+                    if(err) {
+                        util.handleError(err, callback, callback);
                     }
-                }
-                var utime = Math.round(new Date().getTime() / 1000);
-                var filePath = util.getFileLocation(type, utime);
-                console.log(filePath);
-                var folderPath = path.dirname(filePath);
-                var driveName = obj.name + ' ' + obj.date + '.pdf';
-                console.log(driveName);
-                if (!fs.existsSync(folderPath)) {
-                    mkdirp(folderPath, function(err) {
-                        if(err) {
-                            util.handleError(err, callback, callback);
-                        }
-                        api.xuiteDownload(pdfUrl[1], filePath, function(err) {
-                            if (err) {
-                                util.handleError(err, callback, callback);
-                            }
-                            var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
-                            googleApi.googleApi('upload', data, function(err, metadata) {
-                                if (err) {
-                                    util.handleError(err, callback, callback);
-                                }
-                                console.log(metadata);
-                                console.log('done');
-                                setTimeout(function(){
-                                    callback(null);
-                                }, 0);
-                            });
-                        });
-                    });
-                } else {
-                    api.xuiteDownload(pdfUrl[1], filePath, function(err) {
+                    api.xuiteDownload(obj.url, filePath, function(err) {
                         if (err) {
                             util.handleError(err, callback, callback);
                         }
@@ -5660,8 +5627,25 @@ module.exports = {
                             }, 0);
                         });
                     });
-                }
-            }, 60000, false, false);
+                });
+            } else {
+                api.xuiteDownload(obj.url, filePath, function(err) {
+                    if (err) {
+                        util.handleError(err, callback, callback);
+                    }
+                    var data = {type: 'auto', name: driveName, filePath: filePath, parent: parent};
+                    googleApi.googleApi('upload', data, function(err, metadata) {
+                        if (err) {
+                            util.handleError(err, callback, callback);
+                        }
+                        console.log(metadata);
+                        console.log('done');
+                        setTimeout(function(){
+                            callback(null);
+                        }, 0);
+                    });
+                });
+            }
             break;
             case 'rea':
             console.log(obj);
