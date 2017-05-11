@@ -1054,7 +1054,7 @@ module.exports = {
                     util.handleError({hoerror: 2, message: 'cannot find fed latest 1'}, callback, callback);
                 }
                 var date = new Date();
-                date = new Date(new Date(date).setDate(date.getDate()-1));
+                date = new Date(new Date(date).setDate(date.getDate()-6));
                 var docDate = date.getFullYear();
                 if (date.getMonth() + 1 < 10) {
                     docDate = docDate + '0' + (date.getMonth() + 1);
@@ -5778,7 +5778,7 @@ module.exports = {
                         err.hoerror = 2;
                         util.handleError(err, callback, callback);
                     }
-                    var raw_list = raw_data.match(/<a href="([^"]+)"><span class='icon-download/);
+                    var raw_list = raw_data.match(/href="([^"]+\.pdf)"/);
                     if (!raw_list) {
                         var driveName = obj.name + ' ' + obj.date + '.txt';
                         console.log(driveName);
