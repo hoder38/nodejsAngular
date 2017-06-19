@@ -353,9 +353,9 @@ module.exports = function(sendWs) {
                         mediaType['ext'] = 'txt';
                     }
                     if (add_noise && mediaType['type'] === 'video') {
-                        child_process.exec('cat ' + staticPath + '/noise >> ' + uploadPath, function (err, output) {
+                        child_process.exec('cat ' + staticPath + '/noise >> "' + uploadPath + '"', function (err, output) {
                             if (err) {
-                                console.log('cat ' + staticPath + '/noise >> ' + uploadPath);
+                                console.log('cat ' + staticPath + '/noise >> "' + uploadPath + '"');
                                 util.handleError(err, callback, errerMedia, fileID, callback);
                             }
                             var data = {fileId: add_noise};
