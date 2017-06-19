@@ -4054,7 +4054,7 @@ function getYoutubeItem(items, type) {
                 items[i].snippet.tags = ['first item'];
             }
             yd = new Date(items[i].snippet.publishedAt.match(/^\d\d\d\d-\d\d-\d\d/)[0]);
-            data = {name: items[i].snippet.title, id: 'you_' + items[i].id, tags: items[i].snippet.tags, recycle: 0, isOwn: false, utime: yd.getTime()/1000, thumb: items[i].snippet.thumbnails.default.url, cid: items[i].snippet.channelId, ctitle: items[i].snippet.channelTitle, noDb: true};
+            data = {name: items[i].snippet.title, id: 'you_' + items[i].id, tags: items[i].snippet.tags, recycle: 0, isOwn: false, utime: yd.getTime()/1000, thumb: items[i].snippet.thumbnails.default ? items[i].snippet.thumbnails.default.url : items[i].snippet.thumbnails.standard.url, cid: items[i].snippet.channelId, ctitle: items[i].snippet.channelTitle, noDb: true};
             if (items[i].statistics) {
                 data['count'] = items[i].statistics.viewCount;
             } else {
